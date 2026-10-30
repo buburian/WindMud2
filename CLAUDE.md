@@ -29,9 +29,19 @@ uv run pytest tests/test_telnet.py::test_encode   # 單一測試
   `tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit。
 - `test_server.py` 的 client 連線一定要在 `finally` 關掉：Python 3.12 起，離開 `async with server` 會等所有連線斷掉，
   測試中途失敗時不先關就會永遠卡住。
-- 伺服器只講 **Big5（cp950）**。手動測試時終端機維持 UTF-8，用 luit 轉碼：`luit -encoding Big5 telnet 127.0.0.1 4000`
-  （`brew install luit`）。直接用 UTF-8 終端機 telnet，中文會是亂碼。
-  **不要把終端機切成 Big5**：在 macOS 26 上，Big5 視窗用輸入法打中文會整個卡死（iTerm2、Terminal.app 都會），跟伺服器無關。
+
+### 手動連線
+
+伺服器只講 **Big5（cp950）**。終端機維持 UTF-8，中間用 luit 轉碼：
+
+```sh
+brew install luit                          # 只要裝一次
+uv run python -m mud                       # 視窗 1：開伺服器
+luit -encoding Big5 telnet 127.0.0.1 4000  # 視窗 2：連線
+```
+
+- 直接用 UTF-8 終端機 telnet，中文會是亂碼。
+- **不要把終端機切成 Big5**：在 macOS 26 上，Big5 視窗用輸入法打中文會整個卡死（iTerm2、Terminal.app 都會），跟伺服器無關。
 - telnet 是 line mode，由本機終端機自己處理倒退鍵，一次只刪一個 byte。所以刪一個 Big5 中文字要按兩次倒退鍵，只按一次會送出半個字。
 
 ## 架構
