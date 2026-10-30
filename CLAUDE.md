@@ -4,8 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 專案概況
 
-最小的 MUD telnet 伺服器原型，程式碼在 `mud/` 套件。只用標準庫（asyncio），沒有執行期依賴；
-唯一的開發依賴是 pytest（`pyproject.toml` 的 dev group）。
+最小的 MUD telnet 伺服器原型，程式碼在 `mud/` 套件，網路用標準庫 asyncio。
+執行期依賴只有 rich（畫面上的紀錄顯示）；開發依賴是 pytest（`pyproject.toml` 的 dev group）。
 
 ## 參考資料（唯讀，不可修改）
 
@@ -25,7 +25,8 @@ uv run pytest                                     # 全部測試
 uv run pytest tests/test_telnet.py::test_encode   # 單一測試
 ```
 
-- `tests/test_telnet.py` 是 `Telnet` 狀態機的單元測試；`tests/test_commands.py` 測指令縮寫比對和 quit；`tests/test_act.py` 測 `act()` 的代換和送給誰；
+- `tests/test_telnet.py` 是 `Telnet` 狀態機的單元測試；`tests/test_commands.py` 測指令縮寫比對、tell、reply 和 quit；`tests/test_color.py` 測顏色代碼；`tests/test_act.py` 測 `act()` 的代換和送給誰；
+  `tests/test_log.py` 測紀錄檔的編號、換檔和刪舊檔；
   `tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit。
 - `test_server.py` 的 client 連線一定要在 `finally` 關掉：Python 3.12 起，離開 `async with server` 會等所有連線斷掉，
   測試中途失敗時不先關就會永遠卡住。
@@ -56,8 +57,9 @@ luit -encoding Big5 telnet 127.0.0.1 4000  # 視窗 2：連線
   累積在 `replies`，由 `handle()` 寫出。
 - **`encode()`**（`telnet.py`）：送出的**文字**一律經過它（`\n`→`\r\n`、cp950 編碼、`0xFF` 寫兩次），也就是用 `send()` 寫。
   telnet 控制碼（例如 `START`、`tn.replies`）則要直接 `writer.write(bytes)`，**絕不能**經過 `encode()`——IAC 就是 `0xFF`，會被寫成兩次而失效。
-- **`players`**（`players.py`）：全域 dict，`writer → Player(name, sex)`，只放已登入的人。還沒有地方選性別，先都預設男（`SEX_MALE`）。
-  斷線清理在 `handle()` 的 `finally`。它和 `send()` 獨立一檔，是因為 `commands/`、`act.py`、`server.py` 都要用，放其中一邊會互相 import。
+- **`players`**（`players.py`）：全域 dict，`writer → Player`，只放已登入的人。`Player` 有 `name`、`sex`（還沒有地方選，
+  先都預設男 `SEX_MALE`）、`reply`（最後一個 tell 我的人的 writer）。斷線清理在 `handle()` 的 `finally`，
+  也會清掉別人身上指向這條連線的 `reply`。它和 `send()` 獨立一檔，是因為 `commands/`、`act.py`、`server.py` 都要用，放其中一邊會互相 import。
 - **`act()`**（`act.py`）：送訊息給別人一律用它。`to` 決定送給誰：`TO_CHAR` 自己、`TO_VICT` 對象、`TO_ROOM` 自己以外、
   `TO_NOTVICT` 自己和對象以外（還沒有房間，「同房間」先等於所有在線的人）。`ch`、`vch` 都是 writer。
   代換碼（字母跟 C 版一樣）：`$n`/`$N` 名字（`$n` 送給自己時變「你」）、`$e $m`/`$E $M` 他她它、`$s`/`$S` 他的她的它的、
@@ -66,7 +68,14 @@ luit -encoding Big5 telnet 127.0.0.1 4000  # 視窗 2：連線
   （例如 `c` → chat），表的順序就是縮寫的優先順序。指令依類別分檔：系統類在 `system.py`，技能法術類之後另開檔。
   加新指令：在類別檔寫 `do_xxx(writer, name, arg)`（回傳 `False` 代表斷線），再加進 `COMMANDS`。
   `command()` 會在指令跑完後補送 `PROMPT`（斷線時不送）。
+- **顏色**（`color.py`）：字串裡寫代碼，`colorize()` 換成 C 版 `merc.h` 的色碼：`{r{R{g{G{y{Y{b{B{m{M{c{C{w{W{D`
+  （小寫暗、大寫亮），`{x` 回到原本顏色，`{{` 印出 `{`，不認得的代碼原樣留著。不能巢狀：`{x` 是全部回到原本顏色。
+  `act()` 會先對 fmt 做 `colorize()` 再代換 `$` 碼，所以玩家打的代碼會原樣顯示。`send()` 不轉代碼，要顏色就自己包 `colorize()`。
+  目前 chat 用 `{M`（亮紫），tell／reply 用 `{G`（亮綠），跟 C 版一樣。
 - **存檔**（`save.py`）：`save_player()` 還沒實作，只是留好位置；`quit` 會呼叫它。直接斷線（沒打 quit）不會存檔。
+- **紀錄**（`log.py`）：`__main__` 啟動時呼叫 `setup()`。畫面用 rich 的 `RichHandler`，同時用 `DailyFileHandler` 存到
+  `logs/日期_編號.log`（例如 `2026-10-30_001.log`）：換日從 001 重新編號，超過 5MB 換下一個編號，只留最新 30 個檔。
+  檔名格式不符的檔案不會被刪。
 - `send()` 只寫進 buffer，`drain()` 在 `handle()` 每處理完一批 read 才做一次。
 
 ## 必須守住的規則
@@ -80,4 +89,7 @@ luit -encoding Big5 telnet 127.0.0.1 4000  # 視窗 2：連線
 - 協商：一連上就送 `START`（`IAC DO BINARY`）請客戶端用 8-bit 傳。坑：沒談好 BINARY，macOS 的 telnet 會把每個 byte 的
   第 8 bit 拿掉，中文全壞（加 `-8` 也一樣）。對方回 `WILL BINARY` 是答應，不再回覆。
   其他一律拒絕：對方 WILL 回 DONT、DO 回 WONT，同一組 (verb, option) 只回一次；對方 WONT/DONT 不回，避免兩邊無限互回。
+- 玩家打的字（訊息內容、名字）一律用 `$t`、`$n` 這些代換碼帶進 `act()`，不要用 f-string 拼進 fmt：
+  拼進去的字會被當成顏色代碼，玩家就能自己上色。
+- 系統訊息用 `logging.getLogger(__name__)` 記錄，不要用 `print()`。
 - 程式碼註解用繁體中文；telnet／編碼的陷阱用 `坑：` 開頭標記，新增同類處理時沿用這個寫法。

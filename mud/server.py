@@ -1,8 +1,12 @@
 """一條連線從登入到離線的流程。"""
+import logging
+
 from .commands import command
 from .config import PROMPT
 from .players import Player, players, send
 from .telnet import START, Telnet
+
+log = logging.getLogger(__name__)
 
 
 async def handle(reader, writer):
@@ -25,7 +29,7 @@ async def handle(reader, writer):
                     if line:
                         name = line
                         players[writer] = Player(name)
-                        print(f"{name} 登入，目前 {len(players)} 人", flush=True)
+                        log.info(f"{name} 登入，目前 {len(players)} 人")
                         send(writer, f"歡迎，{name}。\n{PROMPT}")
                     else:
                         send(writer, "Login: ")
@@ -36,5 +40,8 @@ async def handle(reader, writer):
         pass
     finally:
         if players.pop(writer, None) is not None:
-            print(f"{name} 離線，目前 {len(players)} 人", flush=True)
+            log.info(f"{name} 離線，目前 {len(players)} 人")
+            for p in players.values():              # 別人的 reply 還指著這條連線，清掉記憶體才放得掉
+                if p.reply is writer:
+                    p.reply = None
         writer.close()

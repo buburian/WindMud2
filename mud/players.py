@@ -10,6 +10,7 @@ class Player:
     def __init__(self, name, sex=SEX_MALE):  # 還沒有建立角色，性別先都當男生
         self.name = name
         self.sex = sex
+        self.reply = None                    # 最後一個 tell 我的人（writer），reply 指令用
 
 
 players = {}  # writer → Player（已登入的人）

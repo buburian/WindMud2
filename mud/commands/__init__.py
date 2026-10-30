@@ -7,6 +7,8 @@ from . import system
 # 要改優先順序，調整這裡的順序就好。
 COMMANDS = [
     ("chat", system.do_chat),
+    ("tell", system.do_tell),
+    ("reply", system.do_reply),
     ("quit", system.do_quit),
 ]
 

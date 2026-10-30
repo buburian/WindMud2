@@ -36,10 +36,16 @@ async def login_chat_quit():
             await expect(r2, "歡迎，阿華。\r\nHP100> ")
 
             w1.write("chat 你好\r\n".encode(ENCODING))
-            await expect(r1, "你聊天：你好\r\nHP100> ")
-            await expect(r2, "\r\n小明 聊天：你好\r\nHP100> ")
+            # chat 是亮紫色（C 版的 MAGENTA），說完回到原本顏色
+            await expect(r1, "\x1b[35;1m你聊天：你好\x1b[0m\r\nHP100> ")
+            await expect(r2, "\r\n\x1b[35;1m小明 聊天：你好\x1b[0m\r\nHP100> ")
 
+            # 小明 tell 阿華之後離線：阿華身上指著小明的 reply 要被清掉
+            w1.write("tell 阿華 掰\r\n".encode(ENCODING))
+            await expect(r1, "\x1b[32;1m你告訴阿華：掰\x1b[0m\r\nHP100> ")
+            await expect(r2, "\r\n\x1b[32;1m小明告訴你：掰\x1b[0m\r\nHP100> ")
             await quit(r1, w1)
+            assert [p.reply for p in players.values()] == [None]
             await quit(r2, w2)
         finally:
             # 坑：Python 3.12 起，離開 async with server 會等所有連線都斷掉。

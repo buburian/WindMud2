@@ -3,7 +3,9 @@ name = "mud-server"
 version = "0.1.0"
 description = "最小的 MUD telnet 原型"
 requires-python = ">=3.9"
-dependencies = []
+dependencies = [
+    "rich>=15.0.0",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

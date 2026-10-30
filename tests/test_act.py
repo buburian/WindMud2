@@ -77,8 +77,14 @@ def test_each_target_type_reaches_right_people(online):
         assert {w for w in online.values() if w.data} == readers
 
 
-def test_bad_code_is_kept_and_logged(online, capsys):
+def test_colors_in_fmt_but_not_in_player_text(online):
+    ming = online["小明"]
+    act("{M$n說：$t{x", ming, t="{R紅字", to=TO_CHAR)  # 玩家打的 {R 不能變色
+    assert ming.text() == "\x1b[35;1m你說：{R紅字\x1b[0m\r\n"
+
+
+def test_bad_code_is_kept_and_logged(online, caplog):
     ming = online["小明"]
     act("$x $N", ming, to=TO_CHAR)           # $x 不存在；$N 沒給對象
     assert ming.text() == "$x $N\r\n"
-    assert capsys.readouterr().out.count("act：無法代換") == 2
+    assert caplog.text.count("act：無法代換") == 2

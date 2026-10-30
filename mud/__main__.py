@@ -1,9 +1,13 @@
 """啟動伺服器：uv run python -m mud"""
 import argparse
 import asyncio
+import logging
 
 from .config import ENCODING
+from .log import setup
 from .server import handle
+
+log = logging.getLogger(__name__)
 
 
 async def main():
@@ -11,8 +15,9 @@ async def main():
     p.add_argument("--host", default="127.0.0.1", help="給別台電腦連就用 0.0.0.0")
     p.add_argument("--port", type=int, default=4000)
     args = p.parse_args()
+    setup()                                         # 放在 parse_args 後面，--help 才不會建出 logs/
     server = await asyncio.start_server(handle, args.host, args.port)
-    print(f"伺服器開在 {args.host}:{args.port}，編碼 {ENCODING}。按 Ctrl+C 結束。", flush=True)
+    log.info(f"伺服器開在 {args.host}:{args.port}，編碼 {ENCODING}。按 Ctrl+C 結束。")
     async with server:
         await server.serve_forever()
 
