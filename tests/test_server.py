@@ -9,7 +9,7 @@ from mud.telnet import BINARY, DO, DONT, IAC, WILL
 
 AREAS = Path(__file__).resolve().parent.parent / "areas"
 
-# 登入後站在房間 1，看到的樣子（不含其他玩家）
+# 登入後站在房間 101，看到的樣子（不含其他玩家）
 ROOM1 = (
     "\x1b[32;1m【\x1b[33;1m測試房間（南）\x1b[32;1m】\x1b[0m\r\n"
     "\x1b[32;1m【出口： \x1b[36;1m北\x1b[32;1m】\x1b[0m\r\n"

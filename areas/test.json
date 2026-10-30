@@ -2,13 +2,14 @@
   "schema_version": 1,
   "file": "test.json",
   "area": {
-    "name": "{ 1  5} Test        測試區域",
     "header": {
-      "levels": "1  5",
-      "level_min": 1,
-      "level_max": 5,
+      "levels": [
+        1,
+        5
+      ],
       "author": "Test",
-      "title": "測試區域"
+      "title": "測試區域",
+      "area_number": 100
     },
     "recall": 1,
     "no_teleport": null,
@@ -20,40 +21,21 @@
       "vnum": 1,
       "name": "測試房間（南）",
       "description": "這是測試區域南邊的房間。\n往北可以走到另一個房間。\n",
-      "area_number": 0,
-      "room_flags": {
-        "value": 0,
-        "names": []
-      },
-      "sector": {
-        "value": 0,
-        "name": "inside"
-      },
+      "room_flags": 0,
+      "sector": 0,
       "exits": {
         "north": {
           "description": "往北看，是測試區域北邊的房間。\n",
           "keywords": "",
           "locks": 0,
-          "door_flags": [],
           "key": -1,
           "to_room": 2
         }
       },
-      "overridden_exits": [
-        {
-          "direction": "north",
-          "description": "（範例）同一個方向寫了兩個出口時，被後面那個蓋掉的出口會記在這裡。\n",
-          "keywords": "",
-          "locks": 0,
-          "door_flags": [],
-          "key": -1,
-          "to_room": 2
-        }
-      ],
       "extra_descriptions": [
         {
           "keywords": "牌子 sign",
-          "description": "牌子上寫著：這裡是測試區域。\n"
+          "description": "牌子上寫著：這裡是測試區域。牆上有一行{R紅色{x的字。\n"
         }
       ],
       "script": null
@@ -62,26 +44,17 @@
       "vnum": 2,
       "name": "測試房間（北）",
       "description": "這是測試區域北邊的房間。\n往南可以回到剛才的房間。\n",
-      "area_number": 0,
-      "room_flags": {
-        "value": 0,
-        "names": []
-      },
-      "sector": {
-        "value": 0,
-        "name": "inside"
-      },
+      "room_flags": "0",
+      "sector": 0,
       "exits": {
         "south": {
           "description": "往南看，是測試區域南邊的房間。\n",
           "keywords": "",
           "locks": 0,
-          "door_flags": [],
           "key": -1,
           "to_room": 1
         }
       },
-      "overridden_exits": [],
       "extra_descriptions": [],
       "script": {
         "trigger": {

@@ -34,19 +34,21 @@ uv run pytest tests/test_telnet.py::test_encode   # 單一測試
 
 ### 手動連線
 
-伺服器只講 **Big5（cp950）**。終端機維持 UTF-8，中間用 luit 轉碼：
+伺服器只講 **Big5（cp950）**。終端機維持 UTF-8，中間用 cocot 轉碼：
 
 ```sh
-brew install luit                          # 只要裝一次
-uv run python -m mud                       # 視窗 1：開伺服器
-luit -encoding Big5 telnet 127.0.0.1 4000  # 視窗 2：連線
+brew install telnet cocot                       # 只要裝一次
+uv run python -m mud                            # 視窗 1：開伺服器
+cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
 ```
 
 - 直接用 UTF-8 終端機 telnet，中文會是亂碼。
 - **不要把終端機切成 Big5**：在 macOS 26 上，Big5 視窗用輸入法打中文會整個卡死（iTerm2、Terminal.app 都會），跟伺服器無關。
 - telnet 是 line mode，由本機終端機自己處理倒退鍵，一次只刪一個 byte。所以刪一個 Big5 中文字要按兩次倒退鍵，只按一次會送出半個字。
-- **luit 的 Big5 對照表有錯**：13752 個字裡有 191 個轉錯，其中 134 個是漢字，很多是常用字（例如 往、成、為、馬、活、應）。
-  畫面上這些字會顯示成別的字，但伺服器送出的 bytes 是對的（用 Python `cp950` 解得回來）。看到怪字先別懷疑伺服器。
+- cocot 用系統的 iconv 轉碼。整張字表來回測過：漢字全對，只有 12 個符號不同（例如 ～→∼、￥→¥，€、¯ 變成 `#`）。
+  `-p` 要寫 `BIG5`：macOS 的 CP950 表少了 249 個字。
+- **不要用 luit**：它的 Big5 對照表有錯，134 個漢字會轉錯，很多是常用字（例如 往、成、為、馬）。
+  看到畫面上的怪字，先確認轉碼工具，伺服器送出的 bytes 是對的（用 Python `cp950` 解得回來）。
 
 ## 架構
 
@@ -74,15 +76,36 @@ luit -encoding Big5 telnet 127.0.0.1 4000  # 視窗 2：連線
   `command()` 會在指令跑完後補送 `PROMPT`（斷線時不送）。
   `COMMANDS` 最前面是六個方向（`n e s w u d` 都是走路），接著 `look`。方向指令用 `walk(方向)` 做出來，共用 `move()`。
   `look()` 回傳房間畫面的字串，登入時 `server.py` 也用它。
-- **區域**（`area.py`、`areas/`）：開機時 `load()` 讀 `areas/*.json`，存成 `rooms`（vnum → `Room`）。
-  現在只取 `vnum`、`name`、`description`、`exits.<方向>.to_room`，其他欄位不管。
-  重複的 vnum、出口指到不存在的房間 → 丟 `ValueError`，開機停止。
+  `look 東西或方向`（照 C 版的順序）：先找房間的 `extra_descriptions`（名字要整個字一樣，英文不分大小寫），
+  再當成方向（`n`、`no`、`north` 都算北）顯示出口的 `description`，**不是**隔壁房間的描述。
+  沒出口或出口沒描述 →「那裡沒有什麼特別的東西。」；都對不上 →「在這裡找不到你要看的東西。」
+- **區域**（`area.py`、`areas/`）：開機時 `load()` 讀 `areas/*.json`，存成 `rooms`（遊戲號碼 → `Room`）。
+  現在只取 `area.header.area_number` 和房間的 `vnum`、`name`、`description`、`exits.<方向>.to_room`、
+  `exits.<方向>.description`、`extra_descriptions`、`room_flags`、`sector`，其他欄位不管（一間房由 `parse_room()` 讀）。`room_flags` 用 `parse_flags()` 解析：可以寫數字（`5`），
+  也可以寫字串（`"5"`、`"1|4"`，`|` 是把幾個數字的位元合起來，`"1|3"` 是 3 不是 4）；`sector` 只能寫一個整數
+  （地形一間房只有一種）。其他寫法都報錯。伺服器還沒用到這兩個值，只是先存在 `Room` 上。
+  **號碼規則**（使用者定的）：
+  - 檔案裡的房間、物品、怪物號碼各自只能是 1～99；遊戲裡的號碼 ＝ `area.header.area_number` ＋ 檔案號碼（3200 ＋ 3 ＝ 3203）。
+  - 出口 `to_room` 寫 1～99 是同一個區域（一樣加上 area_number），100 以上是完整號碼，用來通到別的區域。
+    門的鑰匙 `key`、區域的 `recall` 也照這個規則（`key` 寫 -1 或 0 是不用鑰匙）；這兩個還沒實作，做的時候要照規則換算。
+  - 所以遊戲號碼 1～99 是保留的（`area_number` 不能是 0）：算出來小於 100 就報錯。`area_number` 不必是 100 的倍數。
+  格式不對、少了欄位、遊戲號碼重複、出口通到不存在的房間 → 丟 `ValueError`，開機停止。
   **區域檔格式是我們自己的**：舊區域的流程是 `.are` → area2json → 我們的區域編輯器處理 → 才給伺服器用。
-  `mud_design/area_convert/out/*.json` 只是拿來打底的參考，伺服器不直接載入它。
-  `areas/test.json` 是測試區域（房間 1 南、2 北，南北相連），目前以 area2json 的輸出打底，
-  之後會照使用者的指示改成真正的區域檔格式。`area` 和每個房間的欄位**一個都不能少**，
-  巢狀欄位也要有範例值（`extra_descriptions`、`script`、`overridden_exits` 各放一筆）：使用者靠它看系統還缺哪些功能。
+  `mud_design/area_convert/out/*.json` 只是拿來打底的參考，伺服器不直接載入它；兩者已經不同：
+  房間沒有 `area_number`，改成寫在 `area.header`；等級範圍只有一個 `header.levels`（`[最低, 最高]`）；
+  沒有 `area.name`，之後遊戲要用 header 的資料自己組出顯示的名稱；
+  `room_flags`（數字或字串）、`sector`（整數）不是 `{"value": …, "names": …}` 這種 dict；沒有 `overridden_exits`。
+  `areas/test.json` 是測試區域：`area_number` 100，房間 1（南）、2（北）在遊戲裡是 101、102，南北相連；
+  起始房間 `config.START_ROOM` 是 101。之後會照使用者的指示繼續改格式。`area` 和每個房間的欄位**一個都不能少**，
+  巢狀欄位也要有範例值（`extra_descriptions`、`script` 各放一筆）：使用者靠它看系統還缺哪些功能。
   房間的文字可以用顏色代碼。
+  **每個欄位的意思和新系統的實作進度寫在 `docs/區域製作手冊.md`**：改區域檔格式、或做了新的區域功能時，
+  要同步更新它（開頭的進度總表，以及各欄位「新系統」那一欄）。
+- **門（還沒做，使用者定的規則）**：出口的 `keywords` 是門的名字，只有 `locks` 不是 0（有門）的出口才用到。
+  門的種類只看 `locks`（0 沒有門，1～8 是門加上撬不開、撞不開、法術穿不過的組合，對照表在手冊），區域檔沒有 `door_flags`。
+  - 玩家用它指定要動哪扇門：open、close、lock、unlock、pick、bash 先找名字對得上的門，找不到才把輸入當方向（同 C 版 `find_door`）。
+  - 門關著還要走過去：有 `keywords` → 「【鐵門】關起來了。」（取 `keywords` 的第一個字）；
+    **沒寫 `keywords` → 用方向，例如「北方關起來了。」**（C 版沒寫時是顯示 door，我們不照它）。
 - **顏色**（`color.py`）：字串裡寫代碼，`colorize()` 換成 C 版 `merc.h` 的色碼：`{r{R{g{G{y{Y{b{B{m{M{c{C{w{W{D`
   （小寫暗、大寫亮），`{x` 回到原本顏色，`{{` 印出 `{`，不認得的代碼原樣留著。不能巢狀：`{x` 是全部回到原本顏色。
   `act()` 會先對 fmt 做 `colorize()` 再代換 `$` 碼，所以玩家打的代碼會原樣顯示。`send()` 不轉代碼，要顏色就自己包 `colorize()`。

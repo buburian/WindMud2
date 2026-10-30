@@ -32,12 +32,12 @@ uv run pytest
 
 ## 在 Mac 上連線測試
 
-伺服器只講 Big5。Mac 的終端機維持 UTF-8，中間用 luit 把 UTF-8 和 Big5 互相轉換。
+伺服器只講 Big5。Mac 的終端機維持 UTF-8，中間用 cocot 把 UTF-8 和 Big5 互相轉換。
 
 ### 1. 安裝工具（只要做一次）
 
 ```sh
-brew install telnet luit
+brew install telnet cocot
 ```
 
 macOS 從 10.13 起就不再內建 telnet，所以要自己裝。
@@ -47,16 +47,20 @@ macOS 從 10.13 起就不再內建 telnet，所以要自己裝。
 伺服器開著，另外開一個終端機視窗：
 
 ```sh
-luit -encoding Big5 telnet 127.0.0.1 4000
+cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000
 ```
 
-看到 `Login:` 就輸入名字。登入後會站在測試區域南邊的房間（區域檔在 `areas/test.json`）。
+`-t UTF-8` 是終端機的編碼，`-p BIG5` 是 telnet 那一邊的編碼。要寫 `BIG5`，不要寫 `CP950`：macOS 的 CP950 對照表少了 249 個字。
+
+看到 `Login:` 就輸入名字。登入後會站在測試區域南邊的房間（區域檔在 `areas/test.json`，寫法見 `docs/區域製作手冊.md`）。
 
 ### 3. 試試看
 
 | 輸入 | 結果 |
 |---|---|
 | `look` | 看看所在的房間：名稱、出口、描述、同房間的人 |
+| `look n` | 往北看會看到什麼（其他方向也可以，例如 `look south`） |
+| `look 牌子`、`look sign` | 細看房間裡的東西。測試區域南邊的房間有一塊牌子 |
 | `north`、`south` | 往北、往南走。測試區域只有南北兩間房；六個方向 north、east、south、west、up、down 都能用 |
 | `chat 你好` | 所有在線的人都會看到你說的話（亮紫色） |
 | `tell 阿華 你好` | 只有阿華看得到（亮綠色） |
@@ -71,5 +75,6 @@ luit -encoding Big5 telnet 127.0.0.1 4000
 
 - **終端機不要切成 Big5。** 在 macOS 26 上，Big5 視窗用輸入法打中文會整個卡死，iTerm2 和內建終端機都會。
 - 打錯中文時，倒退鍵要按兩次才會刪掉一個中文字。只按一次會送出半個字，變成亂碼。
-- 不用 luit、直接 telnet 的話，中文會是亂碼。
-- luit 本身的 Big5 對照表有錯，大約 130 個漢字會顯示成別的字（例如「往」會變成「⿍」，「成」「為」「馬」也會錯）。這是 luit 的問題，伺服器送出的字是對的。
+- 不用 cocot、直接 telnet 的話，中文會是亂碼。
+- cocot 轉漢字全部正確，只有 12 個符號會換成長得很像的字，例如「～」變「∼」、「￥」變「¥」；「€」和「¯」會變成 `#`。
+- 不要用 luit：它的 Big5 對照表有錯，大約 130 個常用漢字會顯示成別的字，例如「往」會變成「⿍」。

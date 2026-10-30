@@ -7,7 +7,29 @@ from ..save import save_player
 
 
 def do_look(writer, name, arg):
-    send(writer, look(writer))
+    if not arg:
+        send(writer, look(writer))
+        return
+    room = rooms[players[writer].room]
+    target = arg.split()[0].lower()
+    # 照 C 版的順序：先找房間裡可以細看的東西（名字要整個字一樣），再把它當成方向（n、no、north 都算北）
+    for keywords, text in room.extra_descriptions:
+        if target in keywords:
+            send(writer, block(text))
+            return
+    direction = next((d for d in DIRECTIONS if d.startswith(target)), None)
+    if direction is None:
+        send(writer, "在這裡找不到你要看的東西。\n")
+    elif room.exit_descriptions.get(direction):
+        send(writer, block(room.exit_descriptions[direction]))
+    else:                                   # 那個方向沒有出口，或出口沒寫描述
+        send(writer, "那裡沒有什麼特別的東西。\n")
+
+
+def block(text):
+    """區域作者寫的一段文字：轉顏色代碼，最後補上換行。"""
+    text = colorize(text)
+    return text if text.endswith("\n") else text + "\n"
 
 
 def look(writer):

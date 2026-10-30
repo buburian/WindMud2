@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -10,7 +11,7 @@ from mud.players import Player, players
 
 AREAS = Path(__file__).resolve().parent.parent / "areas"
 
-# 站在房間 1 用 look 看到的樣子（不含其他玩家）
+# 站在房間 101 用 look 看到的樣子（不含其他玩家）
 ROOM1 = (
     "\x1b[32;1m【\x1b[33;1m測試房間（南）\x1b[32;1m】\x1b[0m\r\n"
     "\x1b[32;1m【出口： \x1b[36;1m北\x1b[32;1m】\x1b[0m\r\n"
@@ -148,7 +149,7 @@ def test_tell_missing_message(online):
 
 @pytest.fixture
 def world(online):
-    # 三個人都站在房間 1
+    # 三個人都站在房間 101
     area.load(AREAS)
     return online
 
@@ -163,7 +164,7 @@ def test_look_shows_room_and_others(world):
 def test_walk_north_then_follow(world):
     ming, hua, bob = world["小明"], world["阿華"], world["Bob"]
     commands.command(ming, "小明", "n")
-    assert players[ming].room == 2
+    assert players[ming].room == 102
     assert hua.data == "\r\n小明朝北離開。\r\nHP100> ".encode(ENCODING)
     assert bob.data == "\r\n小明朝北離開。\r\nHP100> ".encode(ENCODING)
     # 自己走過去之後自動 look：新房間只有自己，出口只有南
@@ -185,4 +186,67 @@ def test_no_exit_that_way(world):
     ming = world["小明"]
     commands.command(ming, "小明", "south")
     assert ming.data == "那裡不能走。\r\nHP100> ".encode(ENCODING)
-    assert players[ming].room == 1
+    assert players[ming].room == 101
+
+
+@pytest.mark.parametrize("line", ["look n", "look no", "look north", "l n"])
+def test_look_direction_shows_exit_description(world, line):
+    ming = world["小明"]
+    commands.command(ming, "小明", line)
+    assert ming.data == "往北看，是測試區域北邊的房間。\r\nHP100> ".encode(ENCODING)
+
+
+@pytest.mark.parametrize("line", ["look 牌子", "look sign", "look SIGN"])
+def test_look_extra_description(world, line):
+    ming = world["小明"]
+    commands.command(ming, "小明", line)
+    # 描述裡的 {R…{x 會變成亮紅色
+    assert ming.data == "牌子上寫著：這裡是測試區域。牆上有一行\x1b[31;1m紅色\x1b[0m的字。\r\nHP100> ".encode(ENCODING)
+
+
+@pytest.mark.parametrize("line, want", [
+    ("look s", "那裡沒有什麼特別的東西。"),    # 101 往南沒有出口
+    ("look 牌", "在這裡找不到你要看的東西。"),  # 名字要整個字一樣
+    ("look x", "在這裡找不到你要看的東西。"),
+])
+def test_look_nothing_there(world, line, want):
+    ming = world["小明"]
+    commands.command(ming, "小明", line)
+    assert ming.data == f"{want}\r\nHP100> ".encode(ENCODING)
+
+
+def test_sign_is_only_in_its_own_room(world):
+    ming = world["小明"]
+    commands.command(ming, "小明", "n")
+    ming.data = b""
+    commands.command(ming, "小明", "look 牌子")
+    assert ming.data == "在這裡找不到你要看的東西。\r\nHP100> ".encode(ENCODING)
+
+
+def test_look_direction_without_description(online, tmp_path):
+    # 有出口但沒寫描述
+    data = {"area": {"header": {"area_number": 100}}, "rooms": [
+        {"vnum": 1, "name": "甲", "description": "", "room_flags": 0, "sector": 0, "extra_descriptions": [],
+         "exits": {"north": {"to_room": 2, "description": ""}}},
+        {"vnum": 2, "name": "乙", "description": "", "room_flags": 0, "sector": 0, "extra_descriptions": [],
+         "exits": {}},
+    ]}
+    (tmp_path / "a.json").write_text(json.dumps(data), encoding="utf-8")
+    area.load(tmp_path)
+    ming = online["小明"]
+    commands.command(ming, "小明", "look n")
+    assert ming.data == "那裡沒有什麼特別的東西。\r\nHP100> ".encode(ENCODING)
+
+
+def test_things_come_before_directions(online, tmp_path):
+    # 照 C 版：名字跟方向撞在一起時，先看東西
+    data = {"area": {"header": {"area_number": 100}}, "rooms": [
+        {"vnum": 1, "name": "甲", "description": "", "room_flags": 0, "sector": 0,
+         "extra_descriptions": [{"keywords": "north 北牆", "description": "北牆上刻著字。\n"}],
+         "exits": {"north": {"to_room": 1, "description": "往北看。\n"}}},
+    ]}
+    (tmp_path / "a.json").write_text(json.dumps(data), encoding="utf-8")
+    area.load(tmp_path)
+    ming = online["小明"]
+    commands.command(ming, "小明", "look north")
+    assert ming.data == "北牆上刻著字。\r\nHP100> ".encode(ENCODING)
