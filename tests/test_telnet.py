@@ -1,5 +1,5 @@
 from mud.config import ENCODING, MAX_LINE
-from mud.telnet import DO, DONT, IAC, SB, SE, WILL, WONT, Telnet, encode
+from mud.telnet import BINARY, DO, DONT, IAC, SB, SE, START, WILL, WONT, Telnet, encode
 
 
 def test_newlines_each_count_once():
@@ -33,6 +33,16 @@ def test_refuse_once_and_ignore_wont_dont():
     tn = Telnet()
     tn.feed(bytes([IAC, WILL, 1, IAC, WILL, 1, IAC, DO, 3, IAC, WONT, 5, IAC, DONT, 6]))
     assert tn.replies == bytes([IAC, DONT, 1, IAC, WONT, 3])
+
+
+def test_start_asks_for_binary_and_accepts_will():
+    # 一連上請對方用 8-bit 傳；對方回 WILL BINARY 是答應，不能再回 DONT
+    assert START == bytes([IAC, DO, BINARY])
+    tn = Telnet()
+    tn.feed(bytes([IAC, WILL, BINARY]))
+    assert tn.replies == b""
+    tn.feed(bytes([IAC, DO, BINARY]))
+    assert tn.replies == bytes([IAC, WONT, BINARY])
 
 
 def test_subnegotiation_dropped():

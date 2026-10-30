@@ -3,7 +3,7 @@ import asyncio
 from mud.config import ENCODING
 from mud.players import players
 from mud.server import handle
-from mud.telnet import DONT, IAC, WILL
+from mud.telnet import BINARY, DO, DONT, IAC, WILL
 
 
 async def expect(reader, text):
@@ -25,8 +25,9 @@ async def login_chat_quit():
         r1, w1 = await asyncio.open_connection("127.0.0.1", port)
         r2, w2 = await asyncio.open_connection("127.0.0.1", port)
         try:
-            await expect(r1, "Login: ")
-            await expect(r2, "Login: ")
+            # 一連上先請對方用 8-bit 傳（DO BINARY），再問名字
+            await expect(r1, bytes([IAC, DO, BINARY]) + "Login: ".encode(ENCODING))
+            await expect(r2, bytes([IAC, DO, BINARY]) + "Login: ".encode(ENCODING))
 
             # 客戶端一連上就問 WILL ECHO：先回 DONT ECHO，再歡迎
             w1.write(bytes([IAC, WILL, 1]) + "小明\r\n".encode(ENCODING))

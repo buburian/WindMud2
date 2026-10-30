@@ -3,6 +3,11 @@ from .config import ENCODING, MAX_LINE
 
 # telnet 控制碼
 IAC, DONT, DO, WONT, WILL, SB, SE = 255, 254, 253, 252, 251, 250, 240
+BINARY = 0                          # telnet 選項：用 8-bit 傳
+
+# 坑：沒談好 BINARY，有些客戶端（例如 macOS 的 telnet）會把每個 byte 的第 8 bit 拿掉，
+# Big5 中文就全壞了。所以一連上就送這個，請對方用 8-bit 傳。
+START = bytes((IAC, DO, BINARY))
 
 
 class Telnet:
@@ -14,7 +19,7 @@ class Telnet:
         self.line = bytearray()
         self.last_cr = False
         self.replies = bytearray()  # 要回給客戶端的協商
-        self.refused = set()
+        self.answered = {(WILL, BINARY)}  # 回過的協商；對方回 WILL BINARY 是答應 START，不能再回 DONT
 
     def feed(self, data):
         # 坑：一次 read 可能只收到半行，也可能收到好幾行；IAC 序列也可能被切成兩半。
@@ -76,10 +81,10 @@ class Telnet:
 
     def _refuse(self, verb, opt):
         # 坑：有些客戶端一連上就問「要不要開某功能」，不回它會一直等。
-        # 我們什麼都不開：對方 WILL 回 DONT，對方 DO 回 WONT，同一件事只回一次。
+        # 除了 START 請對方開的 BINARY，我們什麼都不開：對方 WILL 回 DONT，對方 DO 回 WONT，同一件事只回一次。
         # 對方說 WONT/DONT 就不回，避免兩邊無限互回。
-        if verb in (WILL, DO) and (verb, opt) not in self.refused:
-            self.refused.add((verb, opt))
+        if verb in (WILL, DO) and (verb, opt) not in self.answered:
+            self.answered.add((verb, opt))
             self.replies += bytes((IAC, DONT if verb == WILL else WONT, opt))
 
 

@@ -25,10 +25,14 @@ uv run pytest                                     # 全部測試
 uv run pytest tests/test_telnet.py::test_encode   # 單一測試
 ```
 
-- `tests/test_telnet.py` 是 `Telnet` 狀態機的單元測試；`tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit。
+- `tests/test_telnet.py` 是 `Telnet` 狀態機的單元測試；`tests/test_commands.py` 測指令縮寫比對和 quit；
+  `tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit。
 - `test_server.py` 的 client 連線一定要在 `finally` 關掉：Python 3.12 起，離開 `async with server` 會等所有連線斷掉，
   測試中途失敗時不先關就會永遠卡住。
-- 伺服器只講 **Big5（cp950）**。終端機是 UTF-8 的話，手動 `telnet 127.0.0.1 4000` 看到的中文會是亂碼。
+- 伺服器只講 **Big5（cp950）**。手動測試時終端機維持 UTF-8，用 luit 轉碼：`luit -encoding Big5 telnet 127.0.0.1 4000`
+  （`brew install luit`）。直接用 UTF-8 終端機 telnet，中文會是亂碼。
+  **不要把終端機切成 Big5**：在 macOS 26 上，Big5 視窗用輸入法打中文會整個卡死（iTerm2、Terminal.app 都會），跟伺服器無關。
+- telnet 是 line mode，由本機終端機自己處理倒退鍵，一次只刪一個 byte。所以刪一個 Big5 中文字要按兩次倒退鍵，只按一次會送出半個字。
 
 ## 架構
 
@@ -41,11 +45,14 @@ uv run pytest tests/test_telnet.py::test_encode   # 單一測試
   狀態跨 `read()` 保留。負責去掉 telnet 協商、處理換行與退格，並把要回給客戶端的拒絕協商
   累積在 `replies`，由 `handle()` 寫出。
 - **`encode()`**（`telnet.py`）：送出的**文字**一律經過它（`\n`→`\r\n`、cp950 編碼、`0xFF` 寫兩次），也就是用 `send()` 寫。
-  telnet 控制碼（例如 `tn.replies`）則要直接 `writer.write(bytes)`，**絕不能**經過 `encode()`——IAC 就是 `0xFF`，會被寫成兩次而失效。
+  telnet 控制碼（例如 `START`、`tn.replies`）則要直接 `writer.write(bytes)`，**絕不能**經過 `encode()`——IAC 就是 `0xFF`，會被寫成兩次而失效。
 - **`players`**（`players.py`）：全域 dict，`writer → 名字`，只放已登入的人；廣播就是走訪它。斷線清理在 `handle()` 的 `finally`。
-  它和 `send()` 獨立一檔，是因為 `commands.py`、`server.py` 都要用，放其中一邊會互相 import。
-- **`command()`**（`commands.py`）：指令分派，加新指令就加一個 `elif verb == ...` 分支。回傳 `False` 代表斷線。
-  除了 `quit`，每條路徑最後都會補送 `PROMPT`。
+  它和 `send()` 獨立一檔，是因為 `commands/`、`server.py` 都要用，放其中一邊會互相 import。
+- **指令**（`commands/`）：`__init__.py` 的 `COMMANDS` 是指令表，輸入的字照表的順序找**第一個用它開頭的指令**
+  （例如 `c` → chat），表的順序就是縮寫的優先順序。指令依類別分檔：系統類在 `system.py`，技能法術類之後另開檔。
+  加新指令：在類別檔寫 `do_xxx(writer, name, arg)`（回傳 `False` 代表斷線），再加進 `COMMANDS`。
+  `command()` 會在指令跑完後補送 `PROMPT`（斷線時不送）。
+- **存檔**（`save.py`）：`save_player()` 還沒實作，只是留好位置；`quit` 會呼叫它。直接斷線（沒打 quit）不會存檔。
 - `send()` 只寫進 buffer，`drain()` 在 `handle()` 每處理完一批 read 才做一次。
 
 ## 必須守住的規則
@@ -54,5 +61,7 @@ uv run pytest tests/test_telnet.py::test_encode   # 單一測試
   用 byte 切行之所以安全，是因為 Big5 第二碼不會是 `\r` `\n` `\0`。
 - Big5 一個中文字 2 bytes（第一碼 ≥ `0x81`）。任何截斷、退格都要以「整個字」為單位（參考 `_backspace()`）。
 - 廣播給其他人的訊息格式是 `"\n...\n" + PROMPT`：先換行避免接在對方 prompt 後面，說完再補回對方的 prompt。
-- 協商一律拒絕：對方 WILL 回 DONT、DO 回 WONT，同一組 (verb, option) 只回一次；對方 WONT/DONT 不回，避免兩邊無限互回。
+- 協商：一連上就送 `START`（`IAC DO BINARY`）請客戶端用 8-bit 傳。坑：沒談好 BINARY，macOS 的 telnet 會把每個 byte 的
+  第 8 bit 拿掉，中文全壞（加 `-8` 也一樣）。對方回 `WILL BINARY` 是答應，不再回覆。
+  其他一律拒絕：對方 WILL 回 DONT、DO 回 WONT，同一組 (verb, option) 只回一次；對方 WONT/DONT 不回，避免兩邊無限互回。
 - 程式碼註解用繁體中文；telnet／編碼的陷阱用 `坑：` 開頭標記，新增同類處理時沿用這個寫法。

@@ -2,12 +2,13 @@
 from .commands import command
 from .config import PROMPT
 from .players import players, send
-from .telnet import Telnet
+from .telnet import START, Telnet
 
 
 async def handle(reader, writer):
     tn = Telnet()
     name = None
+    writer.write(START)                             # 協商是控制碼，直接寫 bytes，不能經過 encode()
     send(writer, "Login: ")
     try:
         while True:
