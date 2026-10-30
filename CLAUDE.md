@@ -26,8 +26,9 @@ uv run pytest tests/test_telnet.py::test_encode   # 單一測試
 ```
 
 - `tests/test_telnet.py` 是 `Telnet` 狀態機的單元測試；`tests/test_commands.py` 測指令縮寫比對、tell、reply 和 quit；`tests/test_color.py` 測顏色代碼；`tests/test_act.py` 測 `act()` 的代換和送給誰；
-  `tests/test_log.py` 測紀錄檔的編號、換檔和刪舊檔；
+  `tests/test_log.py` 測紀錄檔的編號、換檔和刪舊檔；`tests/test_area.py` 測區域載入；
   `tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit。
+  用到房間的測試要自己先 `area.load(areas 資料夾)`：`area.rooms` 是全域的，不要依賴別的測試先載入過。
 - `test_server.py` 的 client 連線一定要在 `finally` 關掉：Python 3.12 起，離開 `async with server` 會等所有連線斷掉，
   測試中途失敗時不先關就會永遠卡住。
 
@@ -44,6 +45,8 @@ luit -encoding Big5 telnet 127.0.0.1 4000  # 視窗 2：連線
 - 直接用 UTF-8 終端機 telnet，中文會是亂碼。
 - **不要把終端機切成 Big5**：在 macOS 26 上，Big5 視窗用輸入法打中文會整個卡死（iTerm2、Terminal.app 都會），跟伺服器無關。
 - telnet 是 line mode，由本機終端機自己處理倒退鍵，一次只刪一個 byte。所以刪一個 Big5 中文字要按兩次倒退鍵，只按一次會送出半個字。
+- **luit 的 Big5 對照表有錯**：13752 個字裡有 191 個轉錯，其中 134 個是漢字，很多是常用字（例如 往、成、為、馬、活、應）。
+  畫面上這些字會顯示成別的字，但伺服器送出的 bytes 是對的（用 Python `cp950` 解得回來）。看到怪字先別懷疑伺服器。
 
 ## 架構
 
@@ -58,16 +61,28 @@ luit -encoding Big5 telnet 127.0.0.1 4000  # 視窗 2：連線
 - **`encode()`**（`telnet.py`）：送出的**文字**一律經過它（`\n`→`\r\n`、cp950 編碼、`0xFF` 寫兩次），也就是用 `send()` 寫。
   telnet 控制碼（例如 `START`、`tn.replies`）則要直接 `writer.write(bytes)`，**絕不能**經過 `encode()`——IAC 就是 `0xFF`，會被寫成兩次而失效。
 - **`players`**（`players.py`）：全域 dict，`writer → Player`，只放已登入的人。`Player` 有 `name`、`sex`（還沒有地方選，
-  先都預設男 `SEX_MALE`）、`reply`（最後一個 tell 我的人的 writer）。斷線清理在 `handle()` 的 `finally`，
+  先都預設男 `SEX_MALE`）、`reply`（最後一個 tell 我的人的 writer）、`room`（所在房間的 vnum，登入時是 `config.START_ROOM`）。
+  斷線清理在 `handle()` 的 `finally`，
   也會清掉別人身上指向這條連線的 `reply`。它和 `send()` 獨立一檔，是因為 `commands/`、`act.py`、`server.py` 都要用，放其中一邊會互相 import。
-- **`act()`**（`act.py`）：送訊息給別人一律用它。`to` 決定送給誰：`TO_CHAR` 自己、`TO_VICT` 對象、`TO_ROOM` 自己以外、
-  `TO_NOTVICT` 自己和對象以外（還沒有房間，「同房間」先等於所有在線的人）。`ch`、`vch` 都是 writer。
+- **`act()`**（`act.py`）：送訊息給別人一律用它。`to` 決定送給誰：`TO_CHAR` 自己、`TO_VICT` 對象、`TO_ROOM` 同房間自己以外、
+  `TO_NOTVICT` 同房間自己和對象以外。`ch`、`vch` 都是 writer。全服頻道（chat）不用 `TO_ROOM`，要自己走訪所有玩家。
   代換碼（字母跟 C 版一樣）：`$n`/`$N` 名字（`$n` 送給自己時變「你」）、`$e $m`/`$E $M` 他她它、`$s`/`$S` 他的她的它的、
   `$t`/`$T` 帶進來的文字；小寫是自己、大寫是對象。寫錯的碼原樣保留，並在伺服器視窗印警告。
 - **指令**（`commands/`）：`__init__.py` 的 `COMMANDS` 是指令表，輸入的字照表的順序找**第一個用它開頭的指令**
   （例如 `c` → chat），表的順序就是縮寫的優先順序。指令依類別分檔：系統類在 `system.py`，技能法術類之後另開檔。
   加新指令：在類別檔寫 `do_xxx(writer, name, arg)`（回傳 `False` 代表斷線），再加進 `COMMANDS`。
   `command()` 會在指令跑完後補送 `PROMPT`（斷線時不送）。
+  `COMMANDS` 最前面是六個方向（`n e s w u d` 都是走路），接著 `look`。方向指令用 `walk(方向)` 做出來，共用 `move()`。
+  `look()` 回傳房間畫面的字串，登入時 `server.py` 也用它。
+- **區域**（`area.py`、`areas/`）：開機時 `load()` 讀 `areas/*.json`，存成 `rooms`（vnum → `Room`）。
+  現在只取 `vnum`、`name`、`description`、`exits.<方向>.to_room`，其他欄位不管。
+  重複的 vnum、出口指到不存在的房間 → 丟 `ValueError`，開機停止。
+  **區域檔格式是我們自己的**：舊區域的流程是 `.are` → area2json → 我們的區域編輯器處理 → 才給伺服器用。
+  `mud_design/area_convert/out/*.json` 只是拿來打底的參考，伺服器不直接載入它。
+  `areas/test.json` 是測試區域（房間 1 南、2 北，南北相連），目前以 area2json 的輸出打底，
+  之後會照使用者的指示改成真正的區域檔格式。`area` 和每個房間的欄位**一個都不能少**，
+  巢狀欄位也要有範例值（`extra_descriptions`、`script`、`overridden_exits` 各放一筆）：使用者靠它看系統還缺哪些功能。
+  房間的文字可以用顏色代碼。
 - **顏色**（`color.py`）：字串裡寫代碼，`colorize()` 換成 C 版 `merc.h` 的色碼：`{r{R{g{G{y{Y{b{B{m{M{c{C{w{W{D`
   （小寫暗、大寫亮），`{x` 回到原本顏色，`{{` 印出 `{`，不認得的代碼原樣留著。不能巢狀：`{x` 是全部回到原本顏色。
   `act()` 會先對 fmt 做 `colorize()` 再代換 `$` 碼，所以玩家打的代碼會原樣顯示。`send()` 不轉代碼，要顏色就自己包 `colorize()`。

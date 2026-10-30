@@ -19,17 +19,16 @@ CODE = re.compile(r"\$(.)")
 def act(fmt, ch, vch=None, t=None, T=None, to=TO_ROOM):
     """把 fmt 代換後送出去。ch 是做這件事的人，vch 是對象，兩個都是 writer。
 
-    to：TO_CHAR 自己、TO_VICT 對象、TO_ROOM 自己以外的人、TO_NOTVICT 自己和對象以外的人。
-    現在沒有房間，「同房間」先等於所有在線的人。
+    to：TO_CHAR 自己、TO_VICT 對象、TO_ROOM 同房間自己以外的人、TO_NOTVICT 同房間自己和對象以外的人。
     """
     if to == TO_CHAR:
         readers = [ch]
     elif to == TO_VICT:
         readers = [vch] if vch is not None and vch is not ch else []
-    elif to == TO_ROOM:
-        readers = [w for w in players if w is not ch]
     else:
-        readers = [w for w in players if w is not ch and w is not vch]
+        room = players[ch].room
+        readers = [w for w, p in players.items()
+                   if p.room == room and w is not ch and (to == TO_ROOM or w is not vch)]
     for reader in readers:
         text = fill(fmt, ch, vch, t, T, reader)
         if reader is ch:

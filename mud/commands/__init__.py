@@ -6,6 +6,13 @@ from . import system
 # 指令表。輸入的字照這個順序比對，第一個用它開頭的指令就是答案（c 會找到 chat）。
 # 要改優先順序，調整這裡的順序就好。
 COMMANDS = [
+    ("north", system.do_north),             # 方向放最前面：n、e、s、w、u、d 都是走路
+    ("east", system.do_east),
+    ("south", system.do_south),
+    ("west", system.do_west),
+    ("up", system.do_up),
+    ("down", system.do_down),
+    ("look", system.do_look),
     ("chat", system.do_chat),
     ("tell", system.do_tell),
     ("reply", system.do_reply),

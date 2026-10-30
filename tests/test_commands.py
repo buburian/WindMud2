@@ -1,9 +1,21 @@
+from pathlib import Path
+
 import pytest
 
 import mud.commands as commands
+from mud import area
 from mud.commands import system
 from mud.config import ENCODING
 from mud.players import Player, players
+
+AREAS = Path(__file__).resolve().parent.parent / "areas"
+
+# 站在房間 1 用 look 看到的樣子（不含其他玩家）
+ROOM1 = (
+    "\x1b[32;1m【\x1b[33;1m測試房間（南）\x1b[32;1m】\x1b[0m\r\n"
+    "\x1b[32;1m【出口： \x1b[36;1m北\x1b[32;1m】\x1b[0m\r\n"
+    "這是測試區域南邊的房間。\r\n往北可以走到另一個房間。\r\n"
+)
 
 
 class FakeWriter:
@@ -44,6 +56,9 @@ def test_order_decides_priority(monkeypatch):
 
 
 def test_real_table():
+    assert commands.find("n") is system.do_north
+    assert commands.find("s") is system.do_south
+    assert commands.find("l") is system.do_look
     assert commands.find("c") is system.do_chat
     assert commands.find("t") is system.do_tell
     assert commands.find("r") is system.do_reply
@@ -129,3 +144,45 @@ def test_tell_missing_message(online):
         ming.data = b""
         commands.command(ming, "小明", line)
         assert ming.data == "你想要告訴誰些什麼呢？\r\nHP100> ".encode(ENCODING)
+
+
+@pytest.fixture
+def world(online):
+    # 三個人都站在房間 1
+    area.load(AREAS)
+    return online
+
+
+def test_look_shows_room_and_others(world):
+    ming = world["小明"]
+    commands.command(ming, "小明", "look")
+    want = ROOM1 + "阿華站在這裡。\r\nBob站在這裡。\r\nHP100> "
+    assert ming.data == want.encode(ENCODING)
+
+
+def test_walk_north_then_follow(world):
+    ming, hua, bob = world["小明"], world["阿華"], world["Bob"]
+    commands.command(ming, "小明", "n")
+    assert players[ming].room == 2
+    assert hua.data == "\r\n小明朝北離開。\r\nHP100> ".encode(ENCODING)
+    assert bob.data == "\r\n小明朝北離開。\r\nHP100> ".encode(ENCODING)
+    # 自己走過去之後自動 look：新房間只有自己，出口只有南
+    assert ming.data == (
+        "\x1b[32;1m【\x1b[33;1m測試房間（北）\x1b[32;1m】\x1b[0m\r\n"
+        "\x1b[32;1m【出口： \x1b[36;1m南\x1b[32;1m】\x1b[0m\r\n"
+        "這是測試區域北邊的房間。\r\n往南可以回到剛才的房間。\r\n"
+        "HP100> "
+    ).encode(ENCODING)
+
+    ming.data = bob.data = b""
+    commands.command(hua, "阿華", "north")       # 阿華跟上去
+    assert ming.data == "\r\n阿華從南邊走了過來。\r\nHP100> ".encode(ENCODING)
+    assert bob.data == "\r\n阿華朝北離開。\r\nHP100> ".encode(ENCODING)
+    assert "小明站在這裡。".encode(ENCODING) in hua.data
+
+
+def test_no_exit_that_way(world):
+    ming = world["小明"]
+    commands.command(ming, "小明", "south")
+    assert ming.data == "那裡不能走。\r\nHP100> ".encode(ENCODING)
+    assert players[ming].room == 1

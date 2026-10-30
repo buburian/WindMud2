@@ -62,6 +62,15 @@ def test_text_arguments(online):
     assert ming.text() == "你說：你好（小聲）\r\n"
 
 
+def test_room_targets_only_same_room(online):
+    ming, mei, hua = online["小明"], online["小美"], online["阿華"]
+    players[hua].room = 2                      # 阿華在別的房間
+    act("嗨", ming, to=TO_ROOM)
+    act("嗨", ming, vch=mei, to=TO_NOTVICT)
+    assert mei.text() == to_other("嗨")       # 只收到 TO_ROOM 那一次
+    assert hua.data == b""
+
+
 def test_each_target_type_reaches_right_people(online):
     ming, mei, hua = online["小明"], online["小美"], online["阿華"]
     cases = [

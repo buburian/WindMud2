@@ -3,7 +3,8 @@ import argparse
 import asyncio
 import logging
 
-from .config import ENCODING
+from . import area
+from .config import AREA_DIR, ENCODING, START_ROOM
 from .log import setup
 from .server import handle
 
@@ -16,6 +17,14 @@ async def main():
     p.add_argument("--port", type=int, default=4000)
     args = p.parse_args()
     setup()                                         # 放在 parse_args 後面，--help 才不會建出 logs/
+    try:
+        area.load(AREA_DIR)
+    except ValueError as e:
+        log.error(f"區域載入失敗：{e}")
+        raise SystemExit(1)
+    if START_ROOM not in area.rooms:
+        log.error(f"起始房間 {START_ROOM} 不存在")
+        raise SystemExit(1)
     server = await asyncio.start_server(handle, args.host, args.port)
     log.info(f"伺服器開在 {args.host}:{args.port}，編碼 {ENCODING}。按 Ctrl+C 結束。")
     async with server:

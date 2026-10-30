@@ -2,6 +2,7 @@
 import logging
 
 from .commands import command
+from .commands.system import look
 from .config import PROMPT
 from .players import Player, players, send
 from .telnet import START, Telnet
@@ -30,7 +31,7 @@ async def handle(reader, writer):
                         name = line
                         players[writer] = Player(name)
                         log.info(f"{name} 登入，目前 {len(players)} 人")
-                        send(writer, f"歡迎，{name}。\n{PROMPT}")
+                        send(writer, f"歡迎，{name}。\n" + look(writer) + PROMPT)
                     else:
                         send(writer, "Login: ")
                 elif not command(writer, name, line):

@@ -1,9 +1,20 @@
 import asyncio
+from pathlib import Path
 
+from mud import area
 from mud.config import ENCODING
 from mud.players import players
 from mud.server import handle
 from mud.telnet import BINARY, DO, DONT, IAC, WILL
+
+AREAS = Path(__file__).resolve().parent.parent / "areas"
+
+# 登入後站在房間 1，看到的樣子（不含其他玩家）
+ROOM1 = (
+    "\x1b[32;1m【\x1b[33;1m測試房間（南）\x1b[32;1m】\x1b[0m\r\n"
+    "\x1b[32;1m【出口： \x1b[36;1m北\x1b[32;1m】\x1b[0m\r\n"
+    "這是測試區域南邊的房間。\r\n往北可以走到另一個房間。\r\n"
+)
 
 
 async def expect(reader, text):
@@ -19,6 +30,7 @@ async def quit(reader, writer):
 
 
 async def login_chat_quit():
+    area.load(AREAS)
     server = await asyncio.start_server(handle, "127.0.0.1", 0)
     port = server.sockets[0].getsockname()[1]
     async with server:
@@ -29,11 +41,11 @@ async def login_chat_quit():
             await expect(r1, bytes([IAC, DO, BINARY]) + "Login: ".encode(ENCODING))
             await expect(r2, bytes([IAC, DO, BINARY]) + "Login: ".encode(ENCODING))
 
-            # 客戶端一連上就問 WILL ECHO：先回 DONT ECHO，再歡迎
+            # 客戶端一連上就問 WILL ECHO：先回 DONT ECHO，再歡迎、再看到所在的房間
             w1.write(bytes([IAC, WILL, 1]) + "小明\r\n".encode(ENCODING))
-            await expect(r1, bytes([IAC, DONT, 1]) + "歡迎，小明。\r\nHP100> ".encode(ENCODING))
+            await expect(r1, bytes([IAC, DONT, 1]) + f"歡迎，小明。\r\n{ROOM1}HP100> ".encode(ENCODING))
             w2.write("阿華\r\n".encode(ENCODING))
-            await expect(r2, "歡迎，阿華。\r\nHP100> ")
+            await expect(r2, f"歡迎，阿華。\r\n{ROOM1}小明站在這裡。\r\nHP100> ")
 
             w1.write("chat 你好\r\n".encode(ENCODING))
             # chat 是亮紫色（C 版的 MAGENTA），說完回到原本顏色
