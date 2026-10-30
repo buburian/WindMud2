@@ -1,0 +1,15 @@
+[project]
+name = "mud-server"
+version = "0.1.0"
+description = "最小的 MUD telnet 原型"
+requires-python = ">=3.9"
+dependencies = []
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+]

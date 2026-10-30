@@ -4,41 +4,47 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 專案概況
 
-最小的 MUD telnet 伺服器原型，全部程式碼在 `server.py` 一個檔案。只用標準庫（asyncio），
-依賴宣告在檔頭的 PEP 723 inline metadata（`dependencies = []`），沒有 pyproject、沒有測試。
+最小的 MUD telnet 伺服器原型，程式碼在 `mud/` 套件。只用標準庫（asyncio），沒有執行期依賴；
+唯一的開發依賴是 pytest（`pyproject.toml` 的 dev group）。
 
 ## 參考資料（唯讀，不可修改）
 
 - `/Volumes/DevSSD/Projects/claude_project/mud_design`：新遊戲邏輯的設計規劃書（主文件 `設計文件.md`）。
 - `/Volumes/DevSSD/Projects/claude_project/mud/sourcecode/WindSrc`：原始遊戲的 C 語言版本。
-  要看連線通訊和核心程式時參考它，連線通訊在 `comm.c`（`game_loop_unix`、`read_from_descriptor`、`write_to_descriptor`）。
+  **只是參考：這是新遊戲，不是把 C 版改寫**，不照它的結構和命名。要看連線通訊和核心程式時參考它，連線通訊在 `comm.c`（`game_loop_unix`、`read_from_descriptor`、`write_to_descriptor`）。
   原始碼是 Big5，搜尋要用 `LC_ALL=C grep -a`，不然會搜不到。
 
 ## 指令
 
+都要在專案根目錄執行（套件沒有安裝，`python -m mud` 靠目前目錄找到 `mud/`）：
+
 ```sh
-uv run server.py                          # 預設 127.0.0.1:4000
-uv run server.py --port 4055 --host 0.0.0.0   # 給別台電腦連
+uv run python -m mud                              # 預設 127.0.0.1:4000
+uv run python -m mud --port 4055 --host 0.0.0.0   # 給別台電腦連
+uv run pytest                                     # 全部測試
+uv run pytest tests/test_telnet.py::test_encode   # 單一測試
 ```
 
-沒有測試套件。驗證方式是實際啟動 server，再用 client 連上去：
-
-- 伺服器只講 **Big5（cp950）**。終端機是 UTF-8 的話，`telnet 127.0.0.1 4000` 看到的中文會是亂碼。
-- 要自動驗證就寫一支 asyncio client：送出前 `.encode("cp950")`、收到後 `.decode("cp950")`。
-  讀取迴圈要處理 `read()` 回傳 `b""`（EOF），否則 `quit` 之後會卡成無窮迴圈。
-- 值得測的邊界：IAC 序列被切在兩個封包、中文字被切在兩個封包、兩個連線互相 `chat`。
+- `tests/test_telnet.py` 是 `Telnet` 狀態機的單元測試；`tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit。
+- `test_server.py` 的 client 連線一定要在 `finally` 關掉：Python 3.12 起，離開 `async with server` 會等所有連線斷掉，
+  測試中途失敗時不先關就會永遠卡住。
+- 伺服器只講 **Big5（cp950）**。終端機是 UTF-8 的話，手動 `telnet 127.0.0.1 4000` 看到的中文會是亂碼。
 
 ## 架構
 
-一條連線的資料流：`handle()` 讀 bytes → `Telnet.feed()` 切成整行字串 → 未登入時當名字，登入後交給 `command()`。
+核心程式要模組化開發（使用者要求）：`mud/` 依職責分檔，新功能放進對應模組或開新模組，不要塞回單一檔案。
+`config.py` 放共用常數，`__main__.py` 解析參數、開伺服器。
 
-- **`Telnet`**：每條連線一個實例，逐 byte 跑的狀態機（`data / iac / opt / sb / sb_iac`），
+一條連線的資料流：`server.py` 的 `handle()` 讀 bytes → `Telnet.feed()` 切成整行字串 → 未登入時當名字，登入後交給 `command()`。
+
+- **`Telnet`**（`telnet.py`）：每條連線一個實例，逐 byte 跑的狀態機（`data / iac / opt / sb / sb_iac`），
   狀態跨 `read()` 保留。負責去掉 telnet 協商、處理換行與退格，並把要回給客戶端的拒絕協商
   累積在 `replies`，由 `handle()` 寫出。
-- **`encode()`**：送出的**文字**一律經過它（`\n`→`\r\n`、cp950 編碼、`0xFF` 寫兩次），也就是用 `send()` 寫。
+- **`encode()`**（`telnet.py`）：送出的**文字**一律經過它（`\n`→`\r\n`、cp950 編碼、`0xFF` 寫兩次），也就是用 `send()` 寫。
   telnet 控制碼（例如 `tn.replies`）則要直接 `writer.write(bytes)`，**絕不能**經過 `encode()`——IAC 就是 `0xFF`，會被寫成兩次而失效。
-- **`players`**：全域 dict，`writer → 名字`，只放已登入的人；廣播就是走訪它。斷線清理在 `handle()` 的 `finally`。
-- **`command()`**：指令分派，加新指令就加一個 `elif verb == ...` 分支。回傳 `False` 代表斷線。
+- **`players`**（`players.py`）：全域 dict，`writer → 名字`，只放已登入的人；廣播就是走訪它。斷線清理在 `handle()` 的 `finally`。
+  它和 `send()` 獨立一檔，是因為 `commands.py`、`server.py` 都要用，放其中一邊會互相 import。
+- **`command()`**（`commands.py`）：指令分派，加新指令就加一個 `elif verb == ...` 分支。回傳 `False` 代表斷線。
   除了 `quit`，每條路徑最後都會補送 `PROMPT`。
 - `send()` 只寫進 buffer，`drain()` 在 `handle()` 每處理完一批 read 才做一次。
 
