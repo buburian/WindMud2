@@ -2,8 +2,9 @@ import asyncio
 from pathlib import Path
 
 from mud import area
+from mud.characters import characters
 from mud.config import ENCODING
-from mud.players import players
+from mud.players import online_players
 from mud.server import handle
 from mud.telnet import BINARY, DO, DONT, IAC, WILL
 
@@ -57,14 +58,14 @@ async def login_chat_quit():
             await expect(r1, "\x1b[32;1m你告訴阿華：掰\x1b[0m\r\nHP100> ")
             await expect(r2, "\r\n\x1b[32;1m小明告訴你：掰\x1b[0m\r\nHP100> ")
             await quit(r1, w1)
-            assert [p.reply for p in players.values()] == [None]
+            assert [p.reply for p in online_players()] == [None]
             await quit(r2, w2)
         finally:
             # 坑：Python 3.12 起，離開 async with server 會等所有連線都斷掉。
             # 測試中途失敗時連線還開著，不先關掉就會永遠卡住，連 wait_for 的 timeout 都救不了。
             w1.close()
             w2.close()
-    assert players == {}
+    assert characters == []
 
 
 def test_login_chat_quit():

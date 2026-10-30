@@ -6,6 +6,7 @@ from area_helpers import make_area, make_room, write_area, write_json
 from mud import area
 
 AREAS = Path(__file__).resolve().parent.parent / "areas"
+MANUAL = Path(__file__).resolve().parent.parent / "docs" / "區域製作手冊.md"
 
 
 def write(folder, name, rooms, area_number=100):
@@ -48,6 +49,42 @@ def test_test_area_flags_and_sector():
     area.load(AREAS)
     for vnum in (101, 102):
         assert (area.rooms[vnum].room_flags, area.rooms[vnum].sector) == (0, 0)
+
+
+def test_flags_and_sector_are_stored_with_names(tmp_path):
+    # 記憶體裡存的不只是數字，印出來看得到名字
+    write(tmp_path, "a.json", [room(1, room_flags="1|4", sector=3)])
+    area.load(tmp_path)
+    assert repr(area.rooms[101].room_flags) == "<RoomFlag.DARK|NO_MOB: 5>"
+    assert area.rooms[101].sector is area.Sector.FOREST
+
+
+def manual_table(marker):
+    """手冊裡 marker 後面的第一個表格，不含表頭：[[第一欄, 第二欄, …], …]。"""
+    lines = MANUAL.read_text(encoding="utf-8").split(marker, 1)[1].splitlines()
+    start = next(i for i, line in enumerate(lines) if line.startswith("|"))
+    rows = []
+    for line in lines[start + 2:]:              # 跳過表頭和 |---|
+        if not line.startswith("|"):
+            break
+        rows.append([cell.strip() for cell in line.strip().strip("|").split("|")])
+    return rows
+
+
+@pytest.mark.parametrize("marker, cls", [
+    pytest.param("### room_flags（房間旗標）", area.RoomFlag, id="room_flags"),
+    pytest.param("### sector（地形）", area.Sector, id="sector"),
+])
+def test_definitions_match_manual(marker, cls):
+    # 手冊表格的「數字、C 版名稱」跟程式裡的定義要一模一樣（中文意思寫在註解，測試看不到）
+    want = [(int(number), name.upper()) for number, name, _ in manual_table(marker)]
+    assert [(m.value, m.name) for m in cls] == want
+
+
+def test_locks_match_manual():
+    # 手冊的 locks 表只有數字和意思，名字是照 C 版的門旗標取的，所以只比數字
+    want = [int(locks) for locks, _ in manual_table("`locks` 的值：")]
+    assert [m.value for m in area.Locks] == want
 
 
 @pytest.mark.parametrize("value, want", [

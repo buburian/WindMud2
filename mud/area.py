@@ -8,6 +8,7 @@
 100 以上是完整號碼（指到別的區域）。所以遊戲號碼 1～99 是保留的：有房間用了它，
 別的區域寫 1～99 就分不出是指哪一個（area_number 不能是 0）。
 """
+import enum
 import json
 import logging
 from pathlib import Path
@@ -17,11 +18,66 @@ log = logging.getLogger(__name__)
 DIRECTIONS = {"north": "北", "east": "東", "south": "南", "west": "西", "up": "上", "down": "下"}
 REVERSE = {"north": "south", "east": "west", "south": "north", "west": "east", "up": "down", "down": "up"}
 
-# 手冊 room_flags 表裡有的旗標（2 沒有用到）
-ROOM_FLAGS = (1, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768,
-              65536, 131072, 262144, 524288, 1048576, 2097152, 4194304, 8388608)
-SECTOR_MAX = 10                             # sector 是 0～10
-LOCKS_MAX = 8                               # locks 是 0～8
+
+# 手冊三張數字表的定義，要跟手冊一模一樣（tests/test_area.py 會比對數字和名字）。
+# 程式裡用名字（例如 RoomFlag.SAFE），不要直接寫數字。
+class RoomFlag(enum.IntFlag):
+    """房間旗標（room_flags）。名字是手冊的 C 版名稱；可以用 | 合起來，2 沒有用到。"""
+    DARK = 1                                # 很暗
+    NO_MOB = 4                              # 怪物不會走進來
+    INDOORS = 8                             # 室內
+    UNDERGROUND = 16                        # 地底：吸血鬼白天在這裡不怕陽光
+    CLANREST_LV1 = 32                       # 幫派休息室（第 1 級）
+    CLANREST_LV2 = 64                       # 幫派休息室（第 2 級）
+    CLANREST_LV3 = 128                      # 幫派休息室（第 3 級）
+    CLANROOM = 256                          # 幫派房間：只有這個幫派的人能進來
+    PRIVATE = 512                           # 私人房間：最多 2 個人
+    SAFE = 1024                             # 安全區：不能戰鬥
+    SOLITARY = 2048                         # 單人房：最多 1 個人
+    PET_SHOP = 4096                         # 寵物店
+    NO_RECALL = 8192                        # 不能用回城
+    CONE_OF_SILENCE = 16384                 # 不能說話（頻道和 tell 都不能用）
+    NO_MURDER = 32768                       # 不能殺玩家
+    FEN = 65536                             # 沼氣：不會飛的人會中毒
+    NO_SUMMON = 131072                      # 不能用召喚術（C 版註解：不可 cast summon 的房間）
+    HALF_GAIN = 262144                      # 回復力減半
+    NO_TELEPORT = 524288                    # 傳送術不會落在這間房
+    DEADTRAPS = 1048576                     # 死亡陷阱：走進來就會死（神族除外）
+    BANK = 2097152                          # 銀行
+    DAMAGETRAP = 4194304                    # 每個 tick 扣一半的生命、法力和體力
+    EQBANK = 8388608                        # 裝備銀行
+
+
+class Sector(enum.IntEnum):
+    """地形（sector）。名字是手冊的 C 版名稱；一間房只會有一種。"""
+    INSIDE = 0                              # 室內
+    CITY = 1                                # 城市
+    FIELD = 2                               # 原野
+    FOREST = 3                              # 森林
+    HILLS = 4                               # 丘陵
+    MOUNTAIN = 5                            # 山地
+    WATER_SWIM = 6                          # 可以游泳過去的水
+    WATER_NOSWIM = 7                        # 要有船才能過去的水
+    UNDERWATER = 8                          # 水底，要會在水裡呼吸
+    AIR = 9                                 # 空中，要會飛
+    DESERT = 10                             # 沙漠
+
+
+class Locks(enum.IntEnum):
+    """門的種類（出口的 locks）。1～8 都是門。
+
+    手冊的表沒有名稱，名字照 C 版的門旗標：PICKPROOF 撬不開、BASHPROOF 撞不開、PASSPROOF 法術穿不過去。
+    """
+    NO_DOOR = 0                             # 沒有門
+    DOOR = 1                                # 門
+    PICKPROOF = 2                           # 門，撬不開
+    BASHPROOF = 3                           # 門，撞不開
+    PICKPROOF_BASHPROOF = 4                 # 門，撬不開也撞不開
+    PASSPROOF = 5                           # 門，法術穿不過去
+    PICKPROOF_PASSPROOF = 6                 # 門，撬不開、法術穿不過去
+    BASHPROOF_PASSPROOF = 7                 # 門，撞不開、法術穿不過去
+    PICKPROOF_BASHPROOF_PASSPROOF = 8       # 門，撬不開、撞不開、法術穿不過去
+
 
 # 每一層要剛好有這些欄位
 TOP_KEYS = ("schema_version", "file", "area", "rooms")
@@ -42,8 +98,8 @@ class Room:
         self.name = name
         self.description = description
         self.exits = exits                  # 方向 → 房間 vnum
-        self.room_flags = room_flags        # 房間旗標（數字，用 | 合起來的）
-        self.sector = sector                # 地形代號
+        self.room_flags = room_flags        # 房間旗標（RoomFlag，用 | 合起來的）
+        self.sector = sector                # 地形（Sector）
         self.exit_descriptions = exit_descriptions    # 方向 → 往那個方向看到的樣子（look 方向）
         self.extra_descriptions = extra_descriptions  # [(小寫的名字們, 描述)]：可以細看的東西（look 牌子）
 
@@ -240,15 +296,15 @@ def check_room(where, r, problems):
         problems.append(f"{where}的 description 要是字串，不能是 {r['description']!r}")
     if "room_flags" in r:
         try:
-            unknown = parse_flags(r["room_flags"]) & ~sum(ROOM_FLAGS)
+            unknown = parse_flags(r["room_flags"]) & ~sum(RoomFlag)
         except ValueError as e:
             problems.append(f"{where}的 room_flags {e}")
         else:
             if unknown:
                 bits = [1 << i for i in range(unknown.bit_length()) if unknown >> i & 1]
                 problems.append(f"{where}的 room_flags 用了沒有的旗標 {bits}")
-    if "sector" in r and not (is_int(r["sector"]) and 0 <= r["sector"] <= SECTOR_MAX):
-        problems.append(f"{where}的 sector 要寫 0～{SECTOR_MAX} 的整數，不能是 {r['sector']!r}")
+    if "sector" in r and not (is_int(r["sector"]) and r["sector"] in Sector):
+        problems.append(f"{where}的 sector 要寫 0～{max(Sector)} 的整數，不能是 {r['sector']!r}")
 
     exits = []
     if "exits" in r:
@@ -283,8 +339,8 @@ def check_exit(where, e, problems):
     for k in ("description", "keywords"):
         if k in e and not isinstance(e[k], str):
             problems.append(f"{where}的 {k} 要是字串，不能是 {e[k]!r}")
-    if "locks" in e and not (is_int(e["locks"]) and 0 <= e["locks"] <= LOCKS_MAX):
-        problems.append(f"{where}的 locks 要是 0～{LOCKS_MAX} 的整數，不能是 {e['locks']!r}")
+    if "locks" in e and not (is_int(e["locks"]) and e["locks"] in Locks):
+        problems.append(f"{where}的 locks 要是 0～{max(Locks)} 的整數，不能是 {e['locks']!r}")
     if "key" in e and not (is_int(e["key"]) and e["key"] >= -1):
         problems.append(f"{where}的 key 要是 -1、0 或物品號碼，不能是 {e['key']!r}")
     if "to_room" not in e:
@@ -316,8 +372,8 @@ def build_room(base, r):
     # 名字用空白隔開（例如 "牌子 sign"），存成小寫，英文比對時不分大小寫
     extra_descriptions = [([k.lower() for k in ed["keywords"].split()], ed["description"])
                           for ed in r["extra_descriptions"]]
-    return Room(base + r["vnum"], r["name"], r["description"], exits, parse_flags(r["room_flags"]), r["sector"],
-                exit_descriptions, extra_descriptions)
+    return Room(base + r["vnum"], r["name"], r["description"], exits,
+                RoomFlag(parse_flags(r["room_flags"])), Sector(r["sector"]), exit_descriptions, extra_descriptions)
 
 
 def load(directory):

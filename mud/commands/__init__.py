@@ -1,6 +1,5 @@
 """處理玩家輸入的指令：照 COMMANDS 的順序，找第一個用輸入開頭的指令。"""
 from ..config import PROMPT
-from ..players import send
 from . import system
 
 # 指令表。輸入的字照這個順序比對，第一個用它開頭的指令就是答案（c 會找到 chat）。
@@ -28,15 +27,15 @@ def find(word):
     return None
 
 
-def command(writer, name, line):
-    """處理一行指令。回傳 False 代表要斷線。"""
+def command(ch, line):
+    """處理角色 ch 下的一行指令（玩家或 NPC 都可以）。回傳 False 代表要斷線。"""
     verb, _, arg = line.partition(" ")
     verb, arg = verb.lower(), arg.strip()
     if line:
         func = find(verb)
         if func is None:
-            send(writer, "什麼？\n")
-        elif func(writer, name, arg) is False:
+            ch.send("什麼？\n")
+        elif func(ch, arg) is False:
             return False
-    send(writer, PROMPT)
+    ch.send(PROMPT)
     return True

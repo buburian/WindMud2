@@ -28,10 +28,11 @@ uv run python -m mud.areacheck areas/test.json    # 只檢查一個區域檔
 ```
 
 - `tests/test_telnet.py` 是 `Telnet` 狀態機的單元測試；`tests/test_commands.py` 測指令縮寫比對、tell、reply 和 quit；`tests/test_color.py` 測顏色代碼；`tests/test_act.py` 測 `act()` 的代換和送給誰；
-  `tests/test_log.py` 測紀錄檔的編號、換檔和刪舊檔；`tests/test_area.py` 測區域載入；`tests/test_areacheck.py` 測區域檔檢查的每條規則；
+  `tests/test_log.py` 測紀錄檔的編號、換檔和刪舊檔；`tests/test_area.py` 測區域載入，也比對手冊的數字表跟程式的定義；`tests/test_areacheck.py` 測區域檔檢查的每條規則；
   要自己做區域檔的測試，用 `tests/area_helpers.py` 做出完整的檔案再改欄位（直接 `from area_helpers import …`）；
   `tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit。
   用到房間的測試要自己先 `area.load(areas 資料夾)`：`area.rooms` 是全域的，不要依賴別的測試先載入過。
+  `characters` 也是全域的：測試加進去的角色（玩家、NPC）要在 fixture 結束時 `characters.clear()`，不然會跑進別的測試的 look 裡。
 - `test_server.py` 的 client 連線一定要在 `finally` 關掉：Python 3.12 起，離開 `async with server` 會等所有連線斷掉，
   測試中途失敗時不先關就會永遠卡住。
 
@@ -65,20 +66,26 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   累積在 `replies`，由 `handle()` 寫出。
 - **`encode()`**（`telnet.py`）：送出的**文字**一律經過它（`\n`→`\r\n`、cp950 編碼、`0xFF` 寫兩次），也就是用 `send()` 寫。
   telnet 控制碼（例如 `START`、`tn.replies`）則要直接 `writer.write(bytes)`，**絕不能**經過 `encode()`——IAC 就是 `0xFF`，會被寫成兩次而失效。
-- **`players`**（`players.py`）：全域 dict，`writer → Player`，只放已登入的人。`Player` 有 `name`、`sex`（還沒有地方選，
-  先都預設男 `SEX_MALE`）、`reply`（最後一個 tell 我的人的 writer）、`room`（所在房間的 vnum，登入時是 `config.START_ROOM`）。
-  斷線清理在 `handle()` 的 `finally`，
-  也會清掉別人身上指向這條連線的 `reply`。它和 `send()` 獨立一檔，是因為 `commands/`、`act.py`、`server.py` 都要用，放其中一邊會互相 import。
+- **角色**（`characters.py`、`players.py`、`npcs.py`）：玩家和 NPC 都是角色（使用者要求先分好骨架，資料只放現在用得到的）。
+  - `Character`：`name`、`sex`、`room`（所在房間的 vnum）。`send(text)` 送文字給這個角色，預設什麼都不做。
+    全域的 `characters` 是遊戲裡所有的角色（玩家和 NPC），找同房間的人都從這裡找。
+  - `Player`：多了 `writer`（連線）和 `reply`（最後一個 tell 我的玩家），`send()` 寫到連線。性別還沒有地方選，
+    先都預設男 `SEX_MALE`；登入時站在 `config.START_ROOM`。`online_players()` 是在線的玩家（chat、tell 只找他們）。
+    模組的 `send(writer, text)` 給還沒登入時用（例如 `Login:`）。
+  - `Npc`：還沒有自己的欄位，`send()` 什麼都不做，所以送給 NPC 的訊息等於沒送。區域檔還沒有怪物，遊戲裡還不會出現 NPC。
+  - `handle()` 登入時建立 `Player` 加進 `characters`；斷線清理在 `handle()` 的 `finally`：移出 `characters`，
+    也清掉別人身上指向這個玩家的 `reply`。
 - **`act()`**（`act.py`）：送訊息給別人一律用它。`to` 決定送給誰：`TO_CHAR` 自己、`TO_VICT` 對象、`TO_ROOM` 同房間自己以外、
-  `TO_NOTVICT` 同房間自己和對象以外。`ch`、`vch` 都是 writer。全服頻道（chat）不用 `TO_ROOM`，要自己走訪所有玩家。
+  `TO_NOTVICT` 同房間自己和對象以外。`ch`、`vch` 都是角色（玩家或 NPC）。全服頻道（chat）不用 `TO_ROOM`，要自己走訪所有玩家。
   代換碼（字母跟 C 版一樣）：`$n`/`$N` 名字（`$n` 送給自己時變「你」）、`$e $m`/`$E $M` 他她它、`$s`/`$S` 他的她的它的、
   `$t`/`$T` 帶進來的文字；小寫是自己、大寫是對象。寫錯的碼原樣保留，並在伺服器視窗印警告。
 - **指令**（`commands/`）：`__init__.py` 的 `COMMANDS` 是指令表，輸入的字照表的順序找**第一個用它開頭的指令**
   （例如 `c` → chat），表的順序就是縮寫的優先順序。指令依類別分檔：系統類在 `system.py`，技能法術類之後另開檔。
-  加新指令：在類別檔寫 `do_xxx(writer, name, arg)`（回傳 `False` 代表斷線），再加進 `COMMANDS`。
+  加新指令：在類別檔寫 `do_xxx(ch, arg)`（`ch` 是下指令的角色，回傳 `False` 代表斷線），再加進 `COMMANDS`。
+  走路、look 這類指令 NPC 也能用（`command(npc, line)`）；reply、quit 只給玩家用（NPC 沒有 `reply`，quit 對它沒意義）。
   `command()` 會在指令跑完後補送 `PROMPT`（斷線時不送）。
   `COMMANDS` 最前面是六個方向（`n e s w u d` 都是走路），接著 `look`。方向指令用 `walk(方向)` 做出來，共用 `move()`。
-  `look()` 回傳房間畫面的字串，登入時 `server.py` 也用它。
+  `look()` 回傳房間畫面的字串（同房間的其他角色都列「X站在這裡。」，玩家和 NPC 都算），登入時 `server.py` 也用它。
   `look 東西或方向`（照 C 版的順序）：先找房間的 `extra_descriptions`（名字要整個字一樣，英文不分大小寫），
   再當成方向（`n`、`no`、`north` 都算北）顯示出口的 `description`，**不是**隔壁房間的描述。
   沒出口或出口沒描述 →「那裡沒有什麼特別的東西。」；都對不上 →「在這裡找不到你要看的東西。」
@@ -88,8 +95,13 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   檢查工具 `mud/areacheck.py` 也是呼叫它，所以伺服器和工具的判斷永遠一樣。
   **改區域檔格式時，`check_files()`、手冊、`areas/test.json`、`tests/area_helpers.py` 要一起改。**
   `Room` 上存了 `name`、`description`、出口（`exits`、`exit_descriptions`）、`extra_descriptions`、`room_flags`、`sector`。
+  **手冊的三張數字表在 `area.py` 寫成有名字的定義**（使用者要求程式裡不能只有數字）：`RoomFlag`（room_flags）、
+  `Sector`（sector）、`Locks`（出口的 locks）。名字用手冊的 C 版名稱（locks 的表沒有名稱，照 C 版的門旗標取），
+  中文意思寫在每一行的註解。檢查區域檔只認這些定義；`Room` 存的是 `RoomFlag`、`Sector`，印出來看得到名字
+  （例如 `<RoomFlag.DARK|NO_MOB: 5>`）。**改手冊的表時要一起改這些定義**：`tests/test_area.py` 會比對數字和名字，
+  註解的中文意思測試看不到，要自己對。**程式裡用名字（例如 `RoomFlag.SAFE`），不要直接寫數字。**
   `room_flags` 用 `parse_flags()` 解析：可以寫數字（`5`），
-  也可以寫字串（`"5"`、`"1|4"`，`|` 是把幾個數字的位元合起來，`"1|3"` 是 3 不是 4），只能用手冊表裡有的旗標；
+  也可以寫字串（`"5"`、`"1|4"`，`|` 是把幾個數字的位元合起來，`"1|3"` 是 3 不是 4），只能用 `RoomFlag` 裡有的旗標；
   `sector` 只能寫 0～10 的一個整數（地形一間房只有一種）。伺服器還沒用到這兩個值，只是先存在 `Room` 上。
   **號碼規則**（使用者定的）：
   - 檔案裡的房間、物品、怪物號碼各自只能是 1～99；遊戲裡的號碼 ＝ `area.header.area_number` ＋ 檔案號碼（3200 ＋ 3 ＝ 3203）。
@@ -109,7 +121,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   **每個欄位的意思和新系統的實作進度寫在 `docs/區域製作手冊.md`**：改區域檔格式、或做了新的區域功能時，
   要同步更新它（開頭的進度總表，以及各欄位「新系統」那一欄）。
 - **門（還沒做，使用者定的規則）**：出口的 `keywords` 是門的名字，只有 `locks` 不是 0（有門）的出口才用到。
-  門的種類只看 `locks`（0 沒有門，1～8 是門加上撬不開、撞不開、法術穿不過的組合，對照表在手冊），區域檔沒有 `door_flags`。
+  門的種類只看 `locks`（0 沒有門，1～8 是門加上撬不開、撞不開、法術穿不過的組合，對照表在手冊，程式裡是 `area.Locks`），區域檔沒有 `door_flags`。
   - 玩家用它指定要動哪扇門：open、close、lock、unlock、pick、bash 先找名字對得上的門，找不到才把輸入當方向（同 C 版 `find_door`）。
   - 門關著還要走過去：有 `keywords` → 「【鐵門】關起來了。」（取 `keywords` 的第一個字）；
     **沒寫 `keywords` → 用方向，例如「北方關起來了。」**（C 版沒寫時是顯示 door，我們不照它）。

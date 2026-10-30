@@ -1,21 +1,24 @@
-"""已登入的玩家，以及送文字給玩家。"""
+"""玩家：有連線的角色，以及送文字到連線。"""
+from .characters import SEX_MALE, Character, characters
 from .config import START_ROOM
 from .telnet import encode
 
-SEX_NEUTRAL, SEX_MALE, SEX_FEMALE = 0, 1, 2
 
-
-class Player:
+class Player(Character):
     """已登入的玩家。"""
 
-    def __init__(self, name, sex=SEX_MALE):  # 還沒有建立角色，性別先都當男生
-        self.name = name
-        self.sex = sex
-        self.reply = None                    # 最後一個 tell 我的人（writer），reply 指令用
-        self.room = START_ROOM               # 所在房間的 vnum
+    def __init__(self, name, writer, sex=SEX_MALE):  # 還沒有建立角色，性別先都當男生
+        super().__init__(name, sex, START_ROOM)
+        self.writer = writer                 # 這個玩家的連線
+        self.reply = None                    # 最後一個 tell 我的玩家（Player），reply 指令用
+
+    def send(self, text):
+        send(self.writer, text)              # 下面那個 send()：寫到連線
 
 
-players = {}  # writer → Player（已登入的人）
+def online_players():
+    """在線的玩家：characters 裡的 Player。"""
+    return [c for c in characters if isinstance(c, Player)]
 
 
 def send(writer, text):

@@ -2,9 +2,9 @@
 import logging
 import re
 
+from .characters import characters
 from .color import colorize
 from .config import PROMPT
-from .players import players, send
 
 log = logging.getLogger(__name__)
 
@@ -17,25 +17,25 @@ CODE = re.compile(r"\$(.)")
 
 
 def act(fmt, ch, vch=None, t=None, T=None, to=TO_ROOM):
-    """把 fmt 代換後送出去。ch 是做這件事的人，vch 是對象，兩個都是 writer。
+    """把 fmt 代換後送出去。ch 是做這件事的角色，vch 是對象，兩個都是角色（玩家或 NPC）。
 
     to：TO_CHAR 自己、TO_VICT 對象、TO_ROOM 同房間自己以外的人、TO_NOTVICT 同房間自己和對象以外的人。
+    送給 NPC 等於沒送：NPC 沒有連線，它的 send() 什麼都不做。
     """
     if to == TO_CHAR:
         readers = [ch]
     elif to == TO_VICT:
         readers = [vch] if vch is not None and vch is not ch else []
     else:
-        room = players[ch].room
-        readers = [w for w, p in players.items()
-                   if p.room == room and w is not ch and (to == TO_ROOM or w is not vch)]
+        readers = [c for c in characters
+                   if c.room == ch.room and c is not ch and (to == TO_ROOM or c is not vch)]
     for reader in readers:
         text = fill(fmt, ch, vch, t, T, reader)
         if reader is ch:
-            send(reader, text + "\n")           # prompt 由 command() 補
+            reader.send(text + "\n")            # prompt 由 command() 補
         else:
             # 先換行，才不會接在對方的 prompt 後面；說完再補回對方的 prompt
-            send(reader, f"\n{text}\n{PROMPT}")
+            reader.send(f"\n{text}\n{PROMPT}")
 
 
 def fill(fmt, ch, vch, t, T, reader):
@@ -47,7 +47,7 @@ def fill(fmt, ch, vch, t, T, reader):
 
     def one(m):
         code = m.group(1)
-        who = players.get(ch if code.islower() else vch)
+        who = ch if code.islower() else vch
         value = None
         if code == "t":
             value = t
