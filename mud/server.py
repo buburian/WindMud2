@@ -1,7 +1,7 @@
 """一條連線從登入到離線的流程。"""
 from .commands import command
 from .config import PROMPT
-from .players import players, send
+from .players import Player, players, send
 from .telnet import START, Telnet
 
 
@@ -24,7 +24,7 @@ async def handle(reader, writer):
                 if name is None:
                     if line:
                         name = line
-                        players[writer] = name
+                        players[writer] = Player(name)
                         print(f"{name} 登入，目前 {len(players)} 人", flush=True)
                         send(writer, f"歡迎，{name}。\n{PROMPT}")
                     else:

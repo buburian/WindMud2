@@ -25,7 +25,7 @@ uv run pytest                                     # 全部測試
 uv run pytest tests/test_telnet.py::test_encode   # 單一測試
 ```
 
-- `tests/test_telnet.py` 是 `Telnet` 狀態機的單元測試；`tests/test_commands.py` 測指令縮寫比對和 quit；
+- `tests/test_telnet.py` 是 `Telnet` 狀態機的單元測試；`tests/test_commands.py` 測指令縮寫比對和 quit；`tests/test_act.py` 測 `act()` 的代換和送給誰；
   `tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit。
 - `test_server.py` 的 client 連線一定要在 `finally` 關掉：Python 3.12 起，離開 `async with server` 會等所有連線斷掉，
   測試中途失敗時不先關就會永遠卡住。
@@ -56,8 +56,12 @@ luit -encoding Big5 telnet 127.0.0.1 4000  # 視窗 2：連線
   累積在 `replies`，由 `handle()` 寫出。
 - **`encode()`**（`telnet.py`）：送出的**文字**一律經過它（`\n`→`\r\n`、cp950 編碼、`0xFF` 寫兩次），也就是用 `send()` 寫。
   telnet 控制碼（例如 `START`、`tn.replies`）則要直接 `writer.write(bytes)`，**絕不能**經過 `encode()`——IAC 就是 `0xFF`，會被寫成兩次而失效。
-- **`players`**（`players.py`）：全域 dict，`writer → 名字`，只放已登入的人；廣播就是走訪它。斷線清理在 `handle()` 的 `finally`。
-  它和 `send()` 獨立一檔，是因為 `commands/`、`server.py` 都要用，放其中一邊會互相 import。
+- **`players`**（`players.py`）：全域 dict，`writer → Player(name, sex)`，只放已登入的人。還沒有地方選性別，先都預設男（`SEX_MALE`）。
+  斷線清理在 `handle()` 的 `finally`。它和 `send()` 獨立一檔，是因為 `commands/`、`act.py`、`server.py` 都要用，放其中一邊會互相 import。
+- **`act()`**（`act.py`）：送訊息給別人一律用它。`to` 決定送給誰：`TO_CHAR` 自己、`TO_VICT` 對象、`TO_ROOM` 自己以外、
+  `TO_NOTVICT` 自己和對象以外（還沒有房間，「同房間」先等於所有在線的人）。`ch`、`vch` 都是 writer。
+  代換碼（字母跟 C 版一樣）：`$n`/`$N` 名字（`$n` 送給自己時變「你」）、`$e $m`/`$E $M` 他她它、`$s`/`$S` 他的她的它的、
+  `$t`/`$T` 帶進來的文字；小寫是自己、大寫是對象。寫錯的碼原樣保留，並在伺服器視窗印警告。
 - **指令**（`commands/`）：`__init__.py` 的 `COMMANDS` 是指令表，輸入的字照表的順序找**第一個用它開頭的指令**
   （例如 `c` → chat），表的順序就是縮寫的優先順序。指令依類別分檔：系統類在 `system.py`，技能法術類之後另開檔。
   加新指令：在類別檔寫 `do_xxx(writer, name, arg)`（回傳 `False` 代表斷線），再加進 `COMMANDS`。
@@ -70,7 +74,9 @@ luit -encoding Big5 telnet 127.0.0.1 4000  # 視窗 2：連線
 - **收進來的一律當 bytes，收滿一行才 decode**。不要在 `Telnet` 裡提早 decode，也不要改成用文字模式讀。
   用 byte 切行之所以安全，是因為 Big5 第二碼不會是 `\r` `\n` `\0`。
 - Big5 一個中文字 2 bytes（第一碼 ≥ `0x81`）。任何截斷、退格都要以「整個字」為單位（參考 `_backspace()`）。
-- 廣播給其他人的訊息格式是 `"\n...\n" + PROMPT`：先換行避免接在對方 prompt 後面，說完再補回對方的 prompt。
+- 送給別人的訊息用 `act()`，不要自己 `send()`：`act()` 會包成 `"\n...\n" + PROMPT`（先換行避免接在對方 prompt 後面，
+  說完再補回對方的 prompt）；送給自己只加換行，prompt 由 `command()` 補。
+  已知限制：一個指令對同一個別人送兩次 `act()`，對方會看到兩個 prompt。要送多行，就放在同一段文字裡。
 - 協商：一連上就送 `START`（`IAC DO BINARY`）請客戶端用 8-bit 傳。坑：沒談好 BINARY，macOS 的 telnet 會把每個 byte 的
   第 8 bit 拿掉，中文全壞（加 `-8` 也一樣）。對方回 `WILL BINARY` 是答應，不再回覆。
   其他一律拒絕：對方 WILL 回 DONT、DO 回 WONT，同一組 (verb, option) 只回一次；對方 WONT/DONT 不回，避免兩邊無限互回。
