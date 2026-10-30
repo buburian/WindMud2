@@ -30,6 +30,15 @@ uv run python -m mud
 uv run pytest
 ```
 
+## 檢查區域檔
+
+```sh
+uv run python -m mud.areacheck                     # 檢查 areas/ 裡全部的區域檔
+uv run python -m mud.areacheck areas/test.json     # 只檢查一個檔案
+```
+
+會把所有問題一次列出來；有問題時結束代碼是 1。規則見 `docs/區域製作手冊.md`。
+
 ## 在 Mac 上連線測試
 
 伺服器只講 Big5。Mac 的終端機維持 UTF-8，中間用 cocot 把 UTF-8 和 Big5 互相轉換。

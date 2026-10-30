@@ -23,10 +23,13 @@ uv run python -m mud                              # 預設 127.0.0.1:4000
 uv run python -m mud --port 4055 --host 0.0.0.0   # 給別台電腦連
 uv run pytest                                     # 全部測試
 uv run pytest tests/test_telnet.py::test_encode   # 單一測試
+uv run python -m mud.areacheck                    # 檢查 areas/ 全部的區域檔（有問題時結束代碼 1）
+uv run python -m mud.areacheck areas/test.json    # 只檢查一個區域檔
 ```
 
 - `tests/test_telnet.py` 是 `Telnet` 狀態機的單元測試；`tests/test_commands.py` 測指令縮寫比對、tell、reply 和 quit；`tests/test_color.py` 測顏色代碼；`tests/test_act.py` 測 `act()` 的代換和送給誰；
-  `tests/test_log.py` 測紀錄檔的編號、換檔和刪舊檔；`tests/test_area.py` 測區域載入；
+  `tests/test_log.py` 測紀錄檔的編號、換檔和刪舊檔；`tests/test_area.py` 測區域載入；`tests/test_areacheck.py` 測區域檔檢查的每條規則；
+  要自己做區域檔的測試，用 `tests/area_helpers.py` 做出完整的檔案再改欄位（直接 `from area_helpers import …`）；
   `tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit。
   用到房間的測試要自己先 `area.load(areas 資料夾)`：`area.rooms` 是全域的，不要依賴別的測試先載入過。
 - `test_server.py` 的 client 連線一定要在 `finally` 關掉：Python 3.12 起，離開 `async with server` 會等所有連線斷掉，
@@ -80,16 +83,20 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   再當成方向（`n`、`no`、`north` 都算北）顯示出口的 `description`，**不是**隔壁房間的描述。
   沒出口或出口沒描述 →「那裡沒有什麼特別的東西。」；都對不上 →「在這裡找不到你要看的東西。」
 - **區域**（`area.py`、`areas/`）：開機時 `load()` 讀 `areas/*.json`，存成 `rooms`（遊戲號碼 → `Room`）。
-  現在只取 `area.header.area_number` 和房間的 `vnum`、`name`、`description`、`exits.<方向>.to_room`、
-  `exits.<方向>.description`、`extra_descriptions`、`room_flags`、`sector`，其他欄位不管（一間房由 `parse_room()` 讀）。`room_flags` 用 `parse_flags()` 解析：可以寫數字（`5`），
-  也可以寫字串（`"5"`、`"1|4"`，`|` 是把幾個數字的位元合起來，`"1|3"` 是 3 不是 4）；`sector` 只能寫一個整數
-  （地形一間房只有一種）。其他寫法都報錯。伺服器還沒用到這兩個值，只是先存在 `Room` 上。
+  **規則只有一份：`check_files()`**，照手冊檢查每一個欄位（欄位要剛好，少了或多了都算錯），把所有問題收集起來。
+  `load()` 先呼叫它，有問題就報第一個（加上總數）並停止開機；沒問題才用 `build_room()` 建房間。
+  檢查工具 `mud/areacheck.py` 也是呼叫它，所以伺服器和工具的判斷永遠一樣。
+  **改區域檔格式時，`check_files()`、手冊、`areas/test.json`、`tests/area_helpers.py` 要一起改。**
+  `Room` 上存了 `name`、`description`、出口（`exits`、`exit_descriptions`）、`extra_descriptions`、`room_flags`、`sector`。
+  `room_flags` 用 `parse_flags()` 解析：可以寫數字（`5`），
+  也可以寫字串（`"5"`、`"1|4"`，`|` 是把幾個數字的位元合起來，`"1|3"` 是 3 不是 4），只能用手冊表裡有的旗標；
+  `sector` 只能寫 0～10 的一個整數（地形一間房只有一種）。伺服器還沒用到這兩個值，只是先存在 `Room` 上。
   **號碼規則**（使用者定的）：
   - 檔案裡的房間、物品、怪物號碼各自只能是 1～99；遊戲裡的號碼 ＝ `area.header.area_number` ＋ 檔案號碼（3200 ＋ 3 ＝ 3203）。
   - 出口 `to_room` 寫 1～99 是同一個區域（一樣加上 area_number），100 以上是完整號碼，用來通到別的區域。
     門的鑰匙 `key`、區域的 `recall` 也照這個規則（`key` 寫 -1 或 0 是不用鑰匙）；這兩個還沒實作，做的時候要照規則換算。
   - 所以遊戲號碼 1～99 是保留的（`area_number` 不能是 0）：算出來小於 100 就報錯。`area_number` 不必是 100 的倍數。
-  格式不對、少了欄位、遊戲號碼重複、出口通到不存在的房間 → 丟 `ValueError`，開機停止。
+  `key` 指到的物品存不存在還沒檢查（還沒有物品）。
   **區域檔格式是我們自己的**：舊區域的流程是 `.are` → area2json → 我們的區域編輯器處理 → 才給伺服器用。
   `mud_design/area_convert/out/*.json` 只是拿來打底的參考，伺服器不直接載入它；兩者已經不同：
   房間沒有 `area_number`，改成寫在 `area.header`；等級範圍只有一個 `header.levels`（`[最低, 最高]`）；

@@ -1,9 +1,9 @@
-import json
 from pathlib import Path
 
 import pytest
 
 import mud.commands as commands
+from area_helpers import make_exit, make_room, write_area
 from mud import area
 from mud.commands import system
 from mud.config import ENCODING
@@ -224,14 +224,8 @@ def test_sign_is_only_in_its_own_room(world):
 
 
 def test_look_direction_without_description(online, tmp_path):
-    # 有出口但沒寫描述
-    data = {"area": {"header": {"area_number": 100}}, "rooms": [
-        {"vnum": 1, "name": "甲", "description": "", "room_flags": 0, "sector": 0, "extra_descriptions": [],
-         "exits": {"north": {"to_room": 2, "description": ""}}},
-        {"vnum": 2, "name": "乙", "description": "", "room_flags": 0, "sector": 0, "extra_descriptions": [],
-         "exits": {}},
-    ]}
-    (tmp_path / "a.json").write_text(json.dumps(data), encoding="utf-8")
+    # 有出口但沒寫描述（make_room 的出口描述是空字串）
+    write_area(tmp_path, "a.json", [make_room(1, north=2), make_room(2)])
     area.load(tmp_path)
     ming = online["小明"]
     commands.command(ming, "小明", "look n")
@@ -240,12 +234,10 @@ def test_look_direction_without_description(online, tmp_path):
 
 def test_things_come_before_directions(online, tmp_path):
     # 照 C 版：名字跟方向撞在一起時，先看東西
-    data = {"area": {"header": {"area_number": 100}}, "rooms": [
-        {"vnum": 1, "name": "甲", "description": "", "room_flags": 0, "sector": 0,
-         "extra_descriptions": [{"keywords": "north 北牆", "description": "北牆上刻著字。\n"}],
-         "exits": {"north": {"to_room": 1, "description": "往北看。\n"}}},
-    ]}
-    (tmp_path / "a.json").write_text(json.dumps(data), encoding="utf-8")
+    r = make_room(1)
+    r["exits"]["north"] = make_exit(1, "往北看。\n")
+    r["extra_descriptions"] = [{"keywords": "north 北牆", "description": "北牆上刻著字。\n"}]
+    write_area(tmp_path, "a.json", [r])
     area.load(tmp_path)
     ming = online["小明"]
     commands.command(ming, "小明", "look north")

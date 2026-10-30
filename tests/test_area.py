@@ -1,22 +1,21 @@
-import json
 from pathlib import Path
 
 import pytest
 
+from area_helpers import make_area, make_room, write_area, write_json
 from mud import area
 
 AREAS = Path(__file__).resolve().parent.parent / "areas"
 
 
 def write(folder, name, rooms, area_number=100):
-    data = {"schema_version": 1, "area": {"header": {"area_number": area_number}}, "rooms": rooms}
-    (folder / name).write_text(json.dumps(data), encoding="utf-8")
+    write_area(folder, name, rooms, area_number)
 
 
 def room(vnum, room_flags=0, sector=0, **exits):
-    return {"vnum": vnum, "name": f"房間{vnum}", "description": "", "room_flags": room_flags, "sector": sector,
-            "exits": {d: {"to_room": to, "description": ""} for d, to in exits.items()},
-            "extra_descriptions": []}
+    r = make_room(vnum, **exits)
+    r["room_flags"], r["sector"] = room_flags, sector
+    return r
 
 
 def test_test_area_numbers_are_area_number_plus_vnum():
@@ -104,8 +103,17 @@ def test_game_numbers_1_to_99_are_reserved(tmp_path, area_number):
 
 
 def test_missing_area_number_is_an_error(tmp_path):
-    (tmp_path / "a.json").write_text(json.dumps({"rooms": [room(1)]}), encoding="utf-8")
+    data = make_area("a.json", [room(1)])
+    del data["area"]["header"]["area_number"]
+    write_json(tmp_path, "a.json", data)
     with pytest.raises(ValueError, match="area_number"):
+        area.load(tmp_path)
+
+
+def test_load_reports_first_problem_and_how_many(tmp_path):
+    # 有好幾個問題時，開機訊息是第一個問題，再加上總數和查看全部的指令
+    write(tmp_path, "a.json", [room(1, sector=99, north=9)])
+    with pytest.raises(ValueError, match="sector.*共 2 個問題.*mud.areacheck"):
         area.load(tmp_path)
 
 
