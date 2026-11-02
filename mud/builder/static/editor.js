@@ -23,6 +23,7 @@ export const isDirty = () => !!state && state.version !== state.savedVersion;
 export function closeEditor() {
   if (state) clearTimeout(state.checkTimer);
   closeProblems();
+  closeGhostMenu();
   state = null;
   ui = {};
 }
@@ -255,6 +256,45 @@ function grow(dir) {
   rebuild();
 }
 
+// 地圖虛線格的小選單：加一間新房間，或填「通到」的號碼只加出口（例如通到別的區域）
+function openGhostMenu(anchor, dir) {
+  closeGhostMenu();
+  const input = textInput({ id: "ghost-to" });
+  const addExit = () => {
+    const to = parseNumber(input.value);
+    if (to === null) return input.focus();
+    state.selected.exits[dir] = M.newExit(to);
+    state.exitDir = dir;
+    closeGhostMenu();
+    rebuild();
+  };
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") addExit(); });
+  const menu = h("div", { class: "ghost-menu", role: "dialog", "aria-label": `往${M.DIR_NAMES[dir]}新增` },
+    h("button", { type: "button", class: "menu-item", onclick: () => { closeGhostMenu(); grow(dir); } }, icon("plus", 18), "新房間"),
+    h("div", { class: "ghost-menu-to" },
+      field({ id: "ghost-to", label: "通到", code: "to_room", input }),
+      h("button", { type: "button", class: "btn btn-filled", onclick: addExit }, "好")));
+  menu.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeGhostMenu(); anchor.focus(); } });
+  document.body.append(menu);
+  const r = anchor.getBoundingClientRect();             // 放在虛線格下面；下面放不下就放上面，也不超出右邊
+  menu.style.left = `${Math.max(8, Math.min(r.left, innerWidth - menu.offsetWidth - 8))}px`;
+  menu.style.top = `${r.bottom + 8 + menu.offsetHeight > innerHeight ? r.top - 8 - menu.offsetHeight : r.bottom + 8}px`;
+  ui.ghostMenu = menu;
+  document.addEventListener("mousedown", outsideGhostMenu);
+  input.focus();
+}
+
+function closeGhostMenu() {
+  if (!ui.ghostMenu) return;
+  ui.ghostMenu.remove();
+  ui.ghostMenu = null;
+  document.removeEventListener("mousedown", outsideGhostMenu);
+}
+
+function outsideGhostMenu(e) {
+  if (!ui.ghostMenu.contains(e.target)) closeGhostMenu();
+}
+
 function settings() {
   openSettings({ data: state.data, roomChip, onDone: rebuild });
 }
@@ -361,6 +401,7 @@ function renderMap() {
   const plan = h("div", { class: "plan-layer" });   // 房間都放這層，拖拉、縮放時整層一起動
   const box = h("div", { class: "floor-plan" }, plan);
   const side = h("div", { class: "updown" });
+  closeGhostMenu();                             // 地圖重畫了，選單對著的虛線格已經不在
   ui.map.replaceChildren(box, side);
   panZoom(box, plan);
   if (!selected) {
@@ -400,7 +441,8 @@ function renderMap() {
     const [dx, dy] = M.STEP[d];
     if (d in selected.exits || taken.has(`${dx},${dy}`)) continue;
     plan.append(...lane({ x: 0, y: 0 }, d, { dashed: true }).items,
-      h("button", { type: "button", class: "ghost", style: cellStyle({ x: dx, y: dy }), "aria-label": `往${M.DIR_NAMES[d]}新增房間`, onclick: () => grow(d) }, icon("plus")));
+      h("button", { type: "button", class: "ghost", style: cellStyle({ x: dx, y: dy }), "aria-label": `往${M.DIR_NAMES[d]}新增`, "aria-haspopup": "dialog",
+        onclick: (e) => openGhostMenu(e.currentTarget, d) }, icon("plus")));
   }
   box.append(floorPill(selected));              // 樓層標籤放在外面，不跟著動
   side.append(...upDown(selected));
@@ -431,6 +473,7 @@ function panZoom(box, plan) {
   // 滾輪縮放，滑鼠底下那一點不動。Mac 觸控板雙指捏合也是 wheel（ctrlKey），一定要擋掉，不然整頁網頁會跟著放大
   box.addEventListener("wheel", (e) => {
     e.preventDefault();
+    closeGhostMenu();                           // 地圖動了，選單會對不到虛線格
     const delta = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;   // Firefox 的滑鼠滾輪是用「行」算
     const zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, view.zoom * Math.exp(-delta * (e.ctrlKey ? 0.01 : 0.002))));
     const r = ui.planBox.getBoundingClientRect();
@@ -490,7 +533,8 @@ function upDown(room) {
     const line = { left: "81px", top: `calc(50% + ${lineTop}px)`, height: "58px" };
     if (!exit) {
       items.push(h("div", { class: "link-dash", style: { ...line, width: "0", borderLeft: "2px dashed var(--off)" }, "aria-hidden": "true" }),
-        h("button", { type: "button", class: "ghost tile-wide", style, "aria-label": `${label}新增房間`, onclick: () => grow(d) }, icon(arrow, 18), label));
+        h("button", { type: "button", class: "ghost tile-wide", style, "aria-label": `${label}新增`, "aria-haspopup": "dialog",
+          onclick: (e) => openGhostMenu(e.currentTarget, d) }, icon(arrow, 18), label));
       continue;
     }
     const other = M.exitRoom(state.data, exit);

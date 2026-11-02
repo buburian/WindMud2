@@ -126,6 +126,12 @@ button.lane-label:hover { border-color: var(--blue); color: var(--blue); }
 .lane-missing { color: var(--red); }
 .connect { position: absolute; z-index: 1; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; padding: 0; border: 1px dashed var(--outline); border-radius: 50%; background: #FFFFFF; color: var(--ink2); }
 .connect:hover { border-color: var(--blue); color: var(--blue); }
+.ghost-menu { position: fixed; z-index: 6; width: 240px; padding: 8px 0; background: #FFFFFF; border-radius: 8px; box-shadow: var(--shadow-high); }
+.menu-item { width: 100%; display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 16px; border: 0; background: transparent; color: var(--ink); font-size: 14px; text-align: left; }
+.menu-item:hover { background: rgba(32,33,36,0.04); }
+.menu-item svg { color: var(--ink2); }
+.ghost-menu-to { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 16px 16px 8px; border-top: 1px solid var(--app); }
+.ghost-menu-to .btn-filled { flex: 0 0 auto; height: 44px; padding: 0 16px; }
 .here { position: absolute; left: 16px; width: 132px; display: flex; justify-content: center; }
 .here span { height: 28px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 14px; background: var(--blue-bg); color: var(--blue-ink); font-size: 12px; font-weight: 500; }
 
