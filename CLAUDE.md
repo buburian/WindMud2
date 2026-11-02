@@ -25,12 +25,14 @@ uv run pytest                                     # 全部測試
 uv run pytest tests/test_telnet.py::test_encode   # 單一測試
 uv run python -m mud.areacheck                    # 檢查 areas/ 全部的區域檔（有問題時結束代碼 1）
 uv run python -m mud.areacheck areas/test.json    # 只檢查一個區域檔
+uv run python -m mud.builder                      # 區域編輯器，瀏覽器開 http://127.0.0.1:1234（區域檔存在 builder_area/）
 ```
 
 - `tests/test_telnet.py` 是 `Telnet` 狀態機的單元測試；`tests/test_commands.py` 測指令縮寫比對、tell、reply 和 quit；`tests/test_color.py` 測顏色代碼；`tests/test_act.py` 測 `act()` 的代換和送給誰；
   `tests/test_log.py` 測紀錄檔的編號、換檔和刪舊檔；`tests/test_area.py` 測區域載入，也比對手冊的數字表跟程式的定義；`tests/test_areacheck.py` 測區域檔檢查的每條規則；
   要自己做區域檔的測試，用 `tests/area_helpers.py` 做出完整的檔案再改欄位（直接 `from area_helpers import …`）；
   `tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit。
+  `tests/test_builder.py` 用 port 0 開真的區域編輯器（資料夾是 `tmp_path`），用 urllib 打 API；也比對網頁的數字表跟 `area.py` 的定義。
   用到房間的測試要自己先 `area.load(areas 資料夾)`：`area.rooms` 是全域的，不要依賴別的測試先載入過。
   `characters` 也是全域的：測試加進去的角色（玩家、NPC）要在 fixture 結束時 `characters.clear()`，不然會跑進別的測試的 look 裡。
 - `test_server.py` 的 client 連線一定要在 `finally` 關掉：Python 3.12 起，離開 `async with server` 會等所有連線斷掉，
@@ -93,7 +95,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   **規則只有一份：`check_files()`**，照手冊檢查每一個欄位（欄位要剛好，少了或多了都算錯），把所有問題收集起來。
   `load()` 先呼叫它，有問題就報第一個（加上總數）並停止開機；沒問題才用 `build_room()` 建房間。
   檢查工具 `mud/areacheck.py` 也是呼叫它，所以伺服器和工具的判斷永遠一樣。
-  **改區域檔格式時，`check_files()`、手冊、`areas/test.json`、`tests/area_helpers.py` 要一起改。**
+  **改區域檔格式時，`check_files()`、手冊、`areas/test.json`、`tests/area_helpers.py`、
+  區域編輯器（`builder/server.py` 的 `new_area()`、`builder/static/model.js` 的 `newRoom()`、`newExit()` 和畫面）要一起改。**
   `Room` 上存了 `name`、`description`、出口（`exits`、`exit_descriptions`）、`extra_descriptions`、`room_flags`、`sector`。
   **手冊的三張數字表在 `area.py` 寫成有名字的定義**（使用者要求程式裡不能只有數字）：`RoomFlag`（room_flags）、
   `Sector`（sector）、`Locks`（出口的 locks）。名字用手冊的 C 版名稱（locks 的表沒有名稱，照 C 版的門旗標取），
@@ -120,6 +123,18 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     房間的文字可以用顏色代碼。
     **每個欄位的意思和新系統的實作進度寫在 `docs/區域製作手冊.md`**：改區域檔格式、或做了新的區域功能時，
     要同步更新它（開頭的進度總表，以及各欄位「新系統」那一欄）。
+- **區域編輯器**（`mud/builder/`）：給區域作者用的網頁，畫面照設計稿（https://claude.ai/artifact/UwgbazUdvQKNEiPLQE8GW5）。
+  區域檔存在 `builder_area/`（`config.BUILDER_DIR`），port 1234（`config.BUILDER_PORT`）。只用標準庫，前端不用打包工具。
+  - 後端 `server.py`（`ThreadingHTTPServer`）：給網頁檔案，讀、存、檢查區域檔的 JSON API（清單寫在檔案開頭）。
+    檔名只收 `英數字_-.json`，網頁檔案只給 `static/` 裡的。存檔格式跟 `areas/test.json` 一樣（縮排 2、中文照寫、結尾不換行），
+    `test.json` 存回去要一個 byte 都不差（有測試）。
+  - **檢查只用 `area.check_files()`**：還沒存的內容寫進暫存資料夾的同名檔去檢查，對照 `builder_area/` 裡其他檔名的檔
+    （同名的舊檔不對照，不然會全部「重複」）。有問題也照樣存，還沒寫完也要能存。
+  - 前端 `static/`：`model.js` 是純資料操作，`editor.js` 是編輯畫面，`files.js` 選檔畫面，`settings.js` 區域設定，`ui.js` 小工具，
+    `app.js` 用網址的 `#檔名` 換畫面。載入的 JSON 直接改，**沒動到的欄位原樣存回去**（例如 `"1|4"`、`script`）。
+  - **出口一律比算出來的遊戲號碼**（`model.js` 照 `area.resolve()` 寫了一份）：同一區域的出口也可能寫完整號碼（101 指到房間 1）。
+  - 區域檔的文字一律當純文字放進畫面（`h()` 的子元素字串是 textNode），不用 `innerHTML`。
+  - `model.js` 也有旗標、地形、門的數字表（畫面用的短名字）。**改手冊的表時要一起改**，`test_builder.py` 會比對數字。
 - **門（還沒做，使用者定的規則）**：出口的 `keywords` 是門的名字，只有 `locks` 不是 0（有門）的出口才用到。
   門的種類只看 `locks`（0 沒有門，1～8 是門加上撬不開、撞不開、法術穿不過的組合，對照表在手冊，程式裡是 `area.Locks`），區域檔沒有 `door_flags`。
   - 玩家用它指定要動哪扇門：open、close、lock、unlock、pick、bash 先找名字對得上的門，找不到才把輸入當方向（同 C 版 `find_door`）。

@@ -39,6 +39,22 @@ uv run python -m mud.areacheck areas/test.json     # 只檢查一個檔案
 
 會把所有問題一次列出來；有問題時結束代碼是 1。規則見 `docs/區域製作手冊.md`。
 
+## 區域編輯器
+
+用瀏覽器編輯區域檔。區域檔存在 `builder_area/` 資料夾（第一次開會自動建立）。
+
+```sh
+uv run python -m mud.builder
+```
+
+- 開好之後，用瀏覽器打開 http://127.0.0.1:1234
+- 換 port：`uv run python -m mud.builder --port 1235`
+- 讓別台電腦也能用：`uv run python -m mud.builder --host 0.0.0.0`。
+  **沒有登入**，連得到的人都能改檔，只在信得過的網路上這樣開。
+- 中間的地圖可以用滑鼠拖拉移動，用滾輪（觸控板用兩指捏合）放大縮小。點一間房，它會回到中間。
+- 改的內容會自動檢查，規則跟 `mud.areacheck` 一樣。有問題也能存，還沒寫完可以先存起來。
+- 編輯器只看 `builder_area/`。做好的區域檔要自己放進 `areas/`，遊戲伺服器才會載入。
+
 ## 在 Mac 上連線測試
 
 伺服器只講 Big5。Mac 的終端機維持 UTF-8，中間用 cocot 把 UTF-8 和 Big5 互相轉換。

@@ -246,7 +246,7 @@ def check_structure(name, data, problems):
         elif vnum in vnums:
             problems.append(f"{name}：房間 {vnum} 在這個檔案裡重複")
         elif base is not None and base + vnum < 100:
-            problems.append(f"{where}算出來的號碼 {base + vnum} 小於 100（1～99 是保留的，area_number 不能是 0）")
+            problems.append(f"{where}的遊戲號碼是 area_number {base} ＋ {vnum} ＝ {base + vnum}，不能小於 100（1～99 是保留的）")
         else:
             vnums.append(vnum)
             exits += [(vnum, d, to) for d, to in room_exits]
