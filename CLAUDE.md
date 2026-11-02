@@ -108,18 +108,18 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - 出口 `to_room` 寫 1～99 是同一個區域（一樣加上 area_number），100 以上是完整號碼，用來通到別的區域。
     門的鑰匙 `key`、區域的 `recall` 也照這個規則（`key` 寫 -1 或 0 是不用鑰匙）；這兩個還沒實作，做的時候要照規則換算。
   - 所以遊戲號碼 1～99 是保留的（`area_number` 不能是 0）：算出來小於 100 就報錯。`area_number` 不必是 100 的倍數。
-  `key` 指到的物品存不存在還沒檢查（還沒有物品）。
-  **區域檔格式是我們自己的**：舊區域的流程是 `.are` → area2json → 我們的區域編輯器處理 → 才給伺服器用。
-  `mud_design/area_convert/out/*.json` 只是拿來打底的參考，伺服器不直接載入它；兩者已經不同：
-  房間沒有 `area_number`，改成寫在 `area.header`；等級範圍只有一個 `header.levels`（`[最低, 最高]`）；
-  沒有 `area.name`，之後遊戲要用 header 的資料自己組出顯示的名稱；
-  `room_flags`（數字或字串）、`sector`（整數）不是 `{"value": …, "names": …}` 這種 dict；沒有 `overridden_exits`。
-  `areas/test.json` 是測試區域：`area_number` 100，房間 1（南）、2（北）在遊戲裡是 101、102，南北相連；
-  起始房間 `config.START_ROOM` 是 101。之後會照使用者的指示繼續改格式。`area` 和每個房間的欄位**一個都不能少**，
-  巢狀欄位也要有範例值（`extra_descriptions`、`script` 各放一筆）：使用者靠它看系統還缺哪些功能。
-  房間的文字可以用顏色代碼。
-  **每個欄位的意思和新系統的實作進度寫在 `docs/區域製作手冊.md`**：改區域檔格式、或做了新的區域功能時，
-  要同步更新它（開頭的進度總表，以及各欄位「新系統」那一欄）。
+    `key` 指到的物品存不存在還沒檢查（還沒有物品）。
+    **區域檔格式是我們自己的**：舊區域的流程是 `.are` → area2json → 我們的區域編輯器處理 → 才給伺服器用。
+    `mud_design/area_convert/out/*.json` 只是拿來打底的參考，伺服器不直接載入它；兩者已經不同：
+    房間沒有 `area_number`，改成寫在 `area.header`；等級範圍只有一個 `header.levels`（`[最低, 最高]`）；
+    沒有 `area.name`，之後遊戲要用 header 的資料自己組出顯示的名稱；
+    `room_flags`（數字或字串）、`sector`（整數）不是 `{"value": …, "names": …}` 這種 dict；沒有 `overridden_exits`。
+    `areas/test.json` 是測試區域：`area_number` 100，房間 1（南）、2（北）在遊戲裡是 101、102，南北相連；
+    起始房間 `config.START_ROOM` 是 101。之後會照使用者的指示繼續改格式。`area` 和每個房間的欄位**一個都不能少**，
+    巢狀欄位也要有範例值（`extra_descriptions`、`script` 各放一筆）：使用者靠它看系統還缺哪些功能。
+    房間的文字可以用顏色代碼。
+    **每個欄位的意思和新系統的實作進度寫在 `docs/區域製作手冊.md`**：改區域檔格式、或做了新的區域功能時，
+    要同步更新它（開頭的進度總表，以及各欄位「新系統」那一欄）。
 - **門（還沒做，使用者定的規則）**：出口的 `keywords` 是門的名字，只有 `locks` 不是 0（有門）的出口才用到。
   門的種類只看 `locks`（0 沒有門，1～8 是門加上撬不開、撞不開、法術穿不過的組合，對照表在手冊，程式裡是 `area.Locks`），區域檔沒有 `door_flags`。
   - 玩家用它指定要動哪扇門：open、close、lock、unlock、pick、bash 先找名字對得上的門，找不到才把輸入當方向（同 C 版 `find_door`）。
@@ -137,6 +137,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
 
 ## 必須守住的規則
 
+- Avoid unnecessary secondary labels and descriptions. Let the layout do the explaining.
 - **收進來的一律當 bytes，收滿一行才 decode**。不要在 `Telnet` 裡提早 decode，也不要改成用文字模式讀。
   用 byte 切行之所以安全，是因為 Big5 第二碼不會是 `\r` `\n` `\0`。
 - Big5 一個中文字 2 bytes（第一碼 ≥ `0x81`）。任何截斷、退格都要以「整個字」為單位（參考 `_backspace()`）。
