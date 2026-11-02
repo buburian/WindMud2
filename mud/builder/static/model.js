@@ -197,6 +197,18 @@ export function addRoomTowards(data, room, dir) {
   return next;
 }
 
+// room 往 dir 走過去，再往反方向走，會不會回到 room（迷宮的出口會回不來）
+export function comesBack(data, room, dir) {
+  const other = exitRoom(data, room.exits[dir]);
+  return !!other && exitRoom(data, other.exits[REVERSE[dir]]) === room;
+}
+
+// 把 room 往 dir 接到已經有的房間 other；other 的反方向還空著才一起接回來
+export function connect(data, room, dir, other) {
+  room.exits[dir] = newExit(other.vnum);
+  if (!other.exits[REVERSE[dir]]) other.exits[REVERSE[dir]] = newExit(room.vnum);
+}
+
 // 拿掉 room 往 dir 的出口；對面的反方向出口真的指回 room 才一起拿掉
 export function removeExit(data, room, dir) {
   const other = exitRoom(data, room.exits[dir]);

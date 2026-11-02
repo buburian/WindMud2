@@ -265,18 +265,79 @@ function settings() {
 const at = (x, y, dx, dy) => ({ left: `calc(50% + ${x * PITCH_X + dx}px)`, top: `calc(50% + ${y * PITCH_Y + dy}px)` });
 const cellStyle = (p) => at(p.x, p.y, -60, -24);
 
-// 從 p 那格往 d 的一段線（剛好接到隔壁格）
-function link(p, d, on, dashed) {
-  const vertical = d === "north" || d === "south";
-  const offset = { north: [-1, -72], south: [-1, 24], east: [60, -1], west: [-108, -1] }[d];
-  const style = at(p.x, p.y, offset[0], offset[1]);
-  if (dashed) {
-    Object.assign(style, vertical ? { width: "0", height: "48px", borderLeft: "2px dashed var(--off)" }
-      : { width: "48px", height: "0", borderTop: "2px dashed var(--off)" });
-    return h("div", { class: "link-dash", style, "aria-hidden": "true" });
+const GAP = 48;                  // 格子跟隔壁格中間的空隙（橫的直的都是 48）
+const STUB = 28;                 // 通到不在旁邊的房間：線只畫這麼長，不碰到隔壁格
+const BORDER = { north: [0, -24], south: [0, 24], east: [60, 0], west: [-60, 0] };   // 格子中心到邊的位置
+const SIDE = { north: -8, south: 8, east: -8, west: 8 };   // 一段空隙有兩條線時各走一邊：往北走左邊、往東走上面
+
+// 從 p 那格的邊往 d 畫一條線，回傳 { items, end }。offset 是往旁邊挪幾 px；end 是線的終點（相對 p 的中心）
+function lane(p, d, { offset = 0, length = GAP, arrow = false, on = false, dashed = false } = {}) {
+  const [ux, uy] = M.STEP[d];
+  const vertical = ux === 0;
+  const sx = BORDER[d][0] + (vertical ? offset : 0);
+  const sy = BORDER[d][1] + (vertical ? 0 : offset);
+  const ex = sx + ux * length;
+  const ey = sy + uy * length;
+  const style = vertical ? { ...at(p.x, p.y, sx - 1, Math.min(sy, ey)), width: "2px", height: `${length}px` }
+    : { ...at(p.x, p.y, Math.min(sx, ex), sy - 1), width: `${length}px`, height: "2px" };
+  if (dashed) Object.assign(style, vertical ? { width: "0", borderLeft: "2px dashed var(--off)" } : { height: "0", borderTop: "2px dashed var(--off)" });
+  const items = [h("div", { class: dashed ? "link-dash" : "link" + (on ? " link-on" : ""), style, "aria-hidden": "true" })];
+  if (arrow) {                                  // 箭頭的尖端在終點
+    const box = { north: [-5, 0], south: [-5, -7], east: [-7, -5], west: [0, -5] }[d];
+    items.push(h("div", { class: `arrow arrow-${d}` + (on ? " arrow-on" : ""), style: at(p.x, p.y, ex + box[0], ey + box[1]), "aria-hidden": "true" }));
   }
-  Object.assign(style, vertical ? { width: "2px", height: "48px" } : { width: "48px", height: "2px" });
-  return h("div", { class: "link" + (on ? " link-on" : ""), style, "aria-hidden": "true" });
+  return { items, end: [ex, ey] };
+}
+
+// 線旁邊的號碼：通到這個檔的房間（點了就選它），或別的區域、找不到的號碼
+function laneLabel(p, d, offset, exit, [ex, ey]) {
+  const vertical = M.STEP[d][0] === 0;
+  const style = vertical
+    ? { ...at(p.x, p.y, ex + (offset < 0 ? -6 : 6), ey), transform: offset < 0 ? "translate(-100%, -50%)" : "translate(0, -50%)" }
+    : { ...at(p.x, p.y, ex, ey + (offset > 0 ? 6 : -6)), transform: offset > 0 ? "translate(-50%, 0)" : "translate(-50%, -100%)" };
+  const room = M.exitRoom(state.data, exit);
+  if (room) return h("button", { type: "button", class: "lane-label", style, onclick: () => select(room) }, numberText(room.vnum));
+  const t = M.target(state.data, exit);
+  const missing = t === null || state.elsewhere[t] === undefined;
+  return h("span", { class: "lane-label" + (missing ? " lane-missing" : ""), style }, t === null ? "?" : String(t));
+}
+
+// 房間 room 往 d 的出口，通到的不是旁邊那格：短線、箭頭、號碼
+function stub(room, p, d, offset) {
+  const exit = room.exits[d];
+  const on = room === state.selected || M.exitRoom(state.data, exit) === state.selected;
+  const { items, end } = lane(p, d, { offset, length: STUB, arrow: true, on });
+  return [...items, laneLabel(p, d, offset, exit, end)];
+}
+
+// p 的 room 跟往 d 隔壁的 neighbor 中間那段空隙。互相走得回來：一條沒有箭頭的線；
+// 不然兩邊的出口各畫一條（通到隔壁的畫箭頭，通到別處的畫短線加號碼）；選到的房間這邊還沒出口就畫虛線＋
+function gap(room, p, d, neighbor) {
+  const { data, selected } = state;
+  const back = M.REVERSE[d];
+  const q = { x: p.x + M.STEP[d][0], y: p.y + M.STEP[d][1] };
+  const toNeighbor = !!room.exits[d] && M.exitRoom(data, room.exits[d]) === neighbor;
+  const toRoom = !!neighbor.exits[back] && M.exitRoom(data, neighbor.exits[back]) === room;
+  if (toNeighbor && toRoom) return lane(p, d, { on: room === selected || neighbor === selected }).items;
+  const sides = [[room, p, d, neighbor, toNeighbor], [neighbor, q, back, room, toRoom]];
+  const count = sides.filter(([r, , dir]) => r.exits[dir] || r === selected).length;
+  const items = [];
+  for (const [r, from, dir, other, adjacent] of sides) {
+    const offset = count > 1 ? SIDE[dir] : 0;
+    if (r.exits[dir] && adjacent) items.push(...lane(from, dir, { offset, arrow: true, on: r === selected || other === selected }).items);
+    else if (r.exits[dir]) items.push(...stub(r, from, dir, offset));
+    else if (r === selected) {
+      items.push(...lane(from, dir, { offset, dashed: true }).items);
+      const [ux, uy] = M.STEP[dir];
+      const vertical = ux === 0;
+      const cx = BORDER[dir][0] + ux * GAP / 2 + (vertical ? offset : 0);
+      const cy = BORDER[dir][1] + uy * GAP / 2 + (vertical ? 0 : offset);
+      items.push(h("button", { type: "button", class: "connect", style: at(from.x, from.y, cx - 10, cy - 10),
+        "aria-label": `往${M.DIR_NAMES[dir]}接到房間 ${numberText(other.vnum)}`,
+        onclick: () => { M.connect(data, r, dir, other); rebuild(); } }, icon("plus", 14)));
+    }
+  }
+  return items;
 }
 
 function roomTile(room, style, current, wide) {
@@ -307,28 +368,29 @@ function renderMap() {
     return;
   }
   const pos = M.layout(data, selected);
-  const taken = new Set([...pos.values()].map((p) => `${p.x},${p.y}`));
-  const drawn = new Set();
+  const cells = new Map([...pos].map(([room, p]) => [`${p.x},${p.y}`, room]));   // 格子 → 畫在那裡的房間
+  const taken = new Set(cells.keys());
+  const done = new Set();                       // 畫過的空隙（兩間房中間那段只畫一次）
   const far = [];
   for (const [room, p] of pos) {
     for (const d of M.FLAT) {
-      const exit = room.exits[d];
-      if (!exit) continue;
-      const other = M.exitRoom(data, exit);
       const [dx, dy] = M.STEP[d];
       const next = { x: p.x + dx, y: p.y + dy };
-      const q = other && pos.get(other);
-      if (q) {                                   // 兩間都畫出來了，而且剛好相鄰才畫線
+      const neighbor = cells.get(`${next.x},${next.y}`);
+      if (neighbor) {
         const key = [`${p.x},${p.y}`, `${next.x},${next.y}`].sort().join("|");
-        if (q.x === next.x && q.y === next.y && !drawn.has(key)) {
-          drawn.add(key);
-          plan.append(link(p, d, room === selected || other === selected));
-        }
+        if (!done.has(key)) plan.append(...gap(room, p, d, neighbor));
+        done.add(key);
         continue;
       }
-      if (other || taken.has(`${next.x},${next.y}`)) continue;   // 這個檔的房間但格子被佔了，就不畫
-      taken.add(`${next.x},${next.y}`);
-      plan.append(link(p, d, room === selected));
+      const exit = room.exits[d];
+      if (!exit) continue;
+      if (M.exitRoom(data, exit) || taken.has(`${next.x},${next.y}`)) {   // 這個檔的房間但不在旁邊，或那格已經有東西
+        plan.append(...stub(room, p, d, 0));
+        continue;
+      }
+      taken.add(`${next.x},${next.y}`);         // 通到別的區域、找不到的：旁邊畫一格灰色的
+      plan.append(...lane(p, d, { on: room === selected }).items);
       far.push(farTile(exit, cellStyle(next)));
     }
   }
@@ -337,7 +399,7 @@ function renderMap() {
   for (const d of M.FLAT) {                     // 選到的房間四周空的方向：虛線格，點了就加一間房
     const [dx, dy] = M.STEP[d];
     if (d in selected.exits || taken.has(`${dx},${dy}`)) continue;
-    plan.append(link({ x: 0, y: 0 }, d, false, true),
+    plan.append(...lane({ x: 0, y: 0 }, d, { dashed: true }).items,
       h("button", { type: "button", class: "ghost", style: cellStyle({ x: dx, y: dy }), "aria-label": `往${M.DIR_NAMES[d]}新增房間`, onclick: () => grow(d) }, icon("plus")));
   }
   box.append(floorPill(selected));              // 樓層標籤放在外面，不跟著動
@@ -434,6 +496,10 @@ function upDown(room) {
     const other = M.exitRoom(state.data, exit);
     items.push(h("div", { class: "link link-on", style: { ...line, width: "2px" }, "aria-hidden": "true" }),
       other ? roomTile(other, style, false, true) : farTile(exit, style, true));
+    if (other && !M.comesBack(state.data, room, d)) {     // 走過去回不來：箭頭指向要去的房間
+      items.push(h("div", { class: `arrow arrow-${d === "up" ? "north" : "south"} arrow-on`,
+        style: { left: "77px", top: `calc(50% + ${d === "up" ? -72 : 65}px)` }, "aria-hidden": "true" }));
+    }
   }
   items.push(h("div", { class: "here", style: { top: "calc(50% - 14px)" } }, h("span", null, "這間房")));
   return items;
