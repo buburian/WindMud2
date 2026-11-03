@@ -23,6 +23,8 @@ export function h(tag, props, ...children) {
 
 // 圖示的線條（都是固定的字串，不是區域檔的內容）
 const ICONS = {
+  grip: '<circle cx="9" cy="6" r="1"></circle><circle cx="15" cy="6" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="9" cy="18" r="1"></circle><circle cx="15" cy="18" r="1"></circle>',
+  follow: '<path d="M6 4v8a3 3 0 0 0 3 3h10M15 11l4 4-4 4"></path>',
   plus: '<path d="M12 5v14M5 12h14"></path>',
   close: '<path d="M6 6l12 12M18 6L6 18"></path>',
   ok: '<circle cx="12" cy="12" r="9"></circle><path d="M8 12.5l2.5 2.5L16 9.5"></path>',
@@ -66,6 +68,13 @@ export function parseNumber(text) {
   return /^-?\d+$/.test(t) ? Number(t) : text;
 }
 
+// 同 parseNumber，但可以有小數（例如生物的 exp 倍數 1.5）
+export function parseDecimal(text) {
+  const t = text.trim();
+  if (t === "") return null;
+  return /^-?\d+(\.\d+)?$/.test(t) ? Number(t) : text;
+}
+
 // 描述類的文字：顯示時拿掉最後一個換行；存回時不是空的才補一個換行（跟現有檔案一樣）
 export function plainText(v) {
   if (typeof v !== "string") return numberText(v);
@@ -78,11 +87,12 @@ export function storedText(text) {
 
 // ---- 輸入框 ----
 
-// 外框線的輸入框，名字浮在左上角；code 是區域檔裡的英文欄位名
-export function field({ id, label, code, input, error, off, extra, style }) {
+// 外框線的輸入框，名字浮在左上角；code 是區域檔裡的英文欄位名，tip 是滑鼠停上去才出現的規則
+export function field({ id, label, code, input, error, off, extra, style, tip }) {
   const cls = "field" + (error ? " field-bad" : "") + (off ? " field-off" : "");
   return h("div", { class: cls, style },
-    h("label", { class: "field-label", for: id }, label, code ? h("span", { class: "key" }, code) : null),
+    h("label", { class: "field-label", for: id, title: tip }, tip ? h("span", { class: "tip" }, label) : label,
+      code ? h("span", { class: "key" }, code) : null),
     input, extra,
     error ? h("div", { class: "field-error" }, error) : null);
 }

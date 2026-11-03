@@ -1,9 +1,16 @@
-// 編輯畫面：上方｜左邊房間清單｜中間整層地圖｜右邊分頁。照設計稿第 8 版。
+// 編輯畫面：上方｜左欄（切換 房間／生物／物品／重置 ＋ 清單）｜依切換換掉的中間和右邊。照設計稿第 13 版。
+// 房間：中間整層地圖、右邊分頁（這個檔）；生物、物品：右邊表單佔滿（mobiles.js、objects.js）；
+// 重置：中間照順序的表格、右邊改選到的那一筆（resets.js）。房間的「重置」分頁在 roomresets.js。
 //
 // 載入的 JSON 直接改，沒動到的欄位原樣存回去。改了內容就停手半秒自動檢查（不存檔），
 // 檢查一律交給後端的 check_files()，這裡不另外寫規則。
 import * as api from "./api.js";
+import { extraList, scriptRow } from "./forms.js";
 import * as M from "./model.js";
+import * as MOB from "./mobiles.js";
+import * as OBJ from "./objects.js";
+import * as RES from "./resets.js";
+import * as RR from "./roomresets.js";
 import { openSettings } from "./settings.js";
 import {
   brand, checkbox, chip, confirmDialog, field, h, icon, numberText, parseNumber, plainText,
@@ -12,7 +19,8 @@ import {
 
 const PITCH_X = 168;            // 地圖格子的間距：格子 120×48，中間的線 48
 const PITCH_Y = 96;
-const TABS = [["basic", "基本資料"], ["exits", "出口"], ["flags", "地形和旗標"], ["extra", "可以細看的東西"]];
+const TABS = [["basic", "基本資料"], ["exits", "出口"], ["flags", "地形和旗標"], ["extra", "可以細看的東西"], ["resets", "重置"]];
+const MODES = [["rooms", "房間"], ["mobiles", "生物"], ["objects", "物品"], ["resets", "重置"]];
 
 let state = null;               // 現在打開的檔；選檔畫面時是 null
 let ui = {};                    // 畫面上會重畫的幾個區塊
@@ -24,14 +32,19 @@ export function closeEditor() {
   if (state) clearTimeout(state.checkTimer);
   closeProblems();
   closeGhostMenu();
+  RES.closeAddMenu();
   state = null;
   ui = {};
 }
 
 export async function openEditor(name) {
   const me = state = {
-    file: name, data: null, elsewhere: {}, problems: [], checking: false,
+    file: name, data: null, elsewhere: {}, elsewhereMobiles: {}, elsewhereObjects: {}, problems: [], checking: false,
+    mode: "rooms",                                  // 左欄切換到哪一種：rooms、mobiles、objects、resets
     selected: null, tab: "exits", exitDir: null, vnumDraft: null, vnumError: null,   // 設計稿預設是「出口」分頁
+    mob: null, mobTab: "basic", obj: null, objTab: "basic",   // 選到的生物、物品和它們的分頁
+    thingDraft: null, thingError: null,             // 生物、物品的號碼欄位打錯時，留著打的字和錯誤
+    resetFilter: "all", resetIndex: -1,             // 重置總覽：篩選哪一種指令、選到第幾筆
     version: 0, savedVersion: 0, checkTimer: null,
     view: { room: null, x: 0, y: 0, zoom: 1 },      // 地圖平面拖拉移動了多少、放大幾倍；room 是那時選到的房間
   };
@@ -46,13 +59,19 @@ export async function openEditor(name) {
     return;
   }
   if (state !== me) return;                     // 載入時已經換到別的畫面
-  Object.assign(me, { data: result.data, problems: result.problems, elsewhere: result.elsewhere });
+  Object.assign(me, {
+    data: result.data, problems: result.problems, elsewhere: result.elsewhere,
+    elsewhereMobiles: result.elsewhere_mobiles || {}, elsewhereObjects: result.elsewhere_objects || {},
+  });
   const shape = M.shapeProblem(me.data);
   if (shape) {
     showNotice(`編輯器打不開這個檔：${shape}。請先照下面的問題手改。`, result.problems);
     return;
   }
   me.selected = M.sortedRooms(me.data)[0] || null;
+  me.mob = M.sortedList(M.listOf(me.data, "mobiles"))[0] || null;
+  me.obj = M.sortedList(M.listOf(me.data, "objects"))[0] || null;
+  me.resetIndex = M.listOf(me.data, "resets").length ? 0 : -1;
   buildLayout();
 }
 
@@ -82,31 +101,73 @@ function buildLayout() {
     h("div", { class: "actions" }, ui.status,
       h("button", { type: "button", class: "btn", onclick: () => scheduleCheck(0) }, "檢查"),
       ui.saveButton));
-  ui.list = h("nav", { class: "rooms-nav", "aria-label": "房間" });
-  ui.map = h("section", { class: "map", "aria-label": "區域地圖" });
-  ui.inspector = h("section", { class: "inspector", "aria-label": "房間設定" });
-  document.getElementById("app").replaceChildren(h("div", { class: "screen" },
-    ui.topbar,
-    h("div", { class: "body" },
-      h("aside", { class: "rooms" }, ui.list,
-        h("div", { class: "rooms-foot" },
-          h("button", { type: "button", class: "nav-item", "aria-haspopup": "dialog", onclick: settings },
-            icon("gear"), "區域設定"))),
-      h("main", { class: "map-wrap" }, ui.map),
-      ui.inspector)));
+  ui.switch = h("div", { class: "mode-row" });
+  ui.list = h("nav", { class: "rooms-nav", "aria-label": "清單" });
+  ui.aside = h("aside", { class: "rooms" }, ui.switch, ui.list,
+    h("div", { class: "rooms-foot" },
+      h("button", { type: "button", class: "nav-item", "aria-haspopup": "dialog", onclick: settings },
+        icon("gear"), "區域設定")));
+  ui.body = h("div", { class: "body" });
+  document.getElementById("app").replaceChildren(h("div", { class: "screen" }, ui.topbar, ui.body));
+  layoutMode();
+  renderAll();
+}
+
+// 依 state.mode 換掉左欄以外的區塊
+function layoutMode() {
+  closeGhostMenu();
+  RES.closeAddMenu();
+  if (state.mode === "rooms") {
+    ui.map = h("section", { class: "map", "aria-label": "區域地圖" });
+    ui.inspector = h("section", { class: "inspector", "aria-label": "房間設定" });
+    ui.body.replaceChildren(ui.aside, h("main", { class: "map-wrap" }, ui.map), ui.inspector);
+  } else if (state.mode === "resets") {
+    ui.table = h("section", { class: "table-card", "aria-label": "重置" });
+    ui.detail = h("section", { class: "inspector inspector-narrow", "aria-label": "這筆重置" });
+    ui.body.replaceChildren(ui.aside, h("main", { class: "map-wrap" }, ui.table), ui.detail);
+  } else {
+    ui.panel = h("section", { class: "form-panel", "aria-label": state.mode === "mobiles" ? "生物設定" : "物品設定" });
+    ui.body.replaceChildren(ui.aside, ui.panel);
+  }
+}
+
+function setMode(mode) {
+  Object.assign(state, { mode, thingDraft: null, thingError: null });
+  layoutMode();
   renderAll();
 }
 
 function renderAll() {
   renderTitle();
   renderStatus();
+  renderSwitch();
   renderList();
-  renderMap();
-  renderInspector();
+  if (state.mode === "rooms") {
+    renderMap();
+    renderInspector();
+  } else if (state.mode === "mobiles") MOB.render(ctx);
+  else if (state.mode === "objects") OBJ.render(ctx);
+  else RES.render(ctx);
 }
 
 function renderTitle() {
   ui.docTitle.textContent = textOf(state.data.area.header.title);
+}
+
+// 左欄上方：四格切換，旁邊的＋是新增現在這一種
+function renderSwitch() {
+  const [add, label] = {
+    rooms: [addRoom, "新增房間"],
+    mobiles: [() => MOB.add(ctx), "新增生物"],
+    objects: [() => OBJ.add(ctx), "新增物品"],
+    resets: [(e) => RES.openAddMenu(ctx, e.currentTarget), "新增重置"],
+  }[state.mode];
+  ui.switch.replaceChildren(
+    h("div", { class: "mode-switch", role: "group", "aria-label": "要編輯的東西" }, MODES.map(([key, text]) =>
+      h("button", { type: "button", "aria-pressed": String(state.mode === key),
+        onclick: () => { if (state.mode !== key) setMode(key); } }, text))),
+    h("button", { type: "button", class: "icon-btn", "aria-label": label, "aria-haspopup": state.mode === "resets" ? "menu" : null,
+      onclick: add }, icon("plus")));
 }
 
 // 改了欄位的字：重畫不含輸入框的區塊（輸入框不能重畫，不然打字打到一半會跳掉）
@@ -114,7 +175,8 @@ function edited() {
   state.version++;
   renderTitle();
   renderList();
-  renderMap();
+  if (state.mode === "rooms") renderMap();
+  else if (state.mode === "resets") RES.renderTable(ctx);
   scheduleCheck();
 }
 
@@ -132,7 +194,25 @@ function select(room) {
   renderInspector();
 }
 
+// 從生物、物品、重置的畫面跳到某間房的房間畫面
+function goRoom(room) {
+  Object.assign(state, { selected: room, exitDir: null, vnumDraft: null, vnumError: null });
+  setMode("rooms");
+}
+
 const textOf = (v) => (typeof v === "string" ? v : numberText(v));
+
+// 給各畫面模組用的：讀現在的狀態、改完通知、換畫面、號碼旁的名字標籤
+const ctx = {
+  get state() { return state; },
+  get ui() { return ui; },
+  edited: () => edited(),
+  rebuild: () => rebuild(),
+  refresh: () => renderAll(),                       // 重畫但不算改過（例如選了別隻生物）
+  setMode: (mode) => setMode(mode),
+  goRoom: (room) => goRoom(room),
+  chipOf: (kind, number) => thingChip(kind, number),
+};
 const shortProblem = (p) => (p.startsWith(`${state.file}：`) ? p.slice(state.file.length + 1) : p);
 
 // ---- 檢查、存檔 ----
@@ -224,8 +304,11 @@ function outsideProblems(e) {
 
 // ---- 左邊：房間清單 ----
 
-// 房間照「接在一起的算一塊」分組，塊跟塊中間用「沒連在一起」的線隔開
+// 左欄的清單：房間照「接在一起的算一塊」分組，塊跟塊中間用「沒連在一起」的線隔開；其他種類交給各自的模組
 function renderList() {
+  if (state.mode === "mobiles") return ui.list.replaceChildren(...MOB.listItems(ctx));
+  if (state.mode === "objects") return ui.list.replaceChildren(...OBJ.listItems(ctx));
+  if (state.mode === "resets") return ui.list.replaceChildren(...RES.listItems(ctx));
   const rows = [];
   M.pieces(state.data).forEach((piece, i) => {
     if (i > 0) rows.push(h("div", { class: "nav-split" }, "沒連在一起"));
@@ -235,10 +318,7 @@ function renderList() {
         h("span", { class: "nav-name" }, textOf(room.name))));
     }
   });
-  ui.list.replaceChildren(
-    h("div", { class: "rooms-head" }, h("span", null, "房間"),
-      h("button", { type: "button", class: "icon-btn", "aria-label": "新增房間", onclick: addRoom }, icon("plus"))),
-    ...rows);
+  ui.list.replaceChildren(...rows);
 }
 
 function addRoom() {
@@ -559,7 +639,7 @@ function renderInspector() {
   }
   const number = M.roomNumber(state.data, room);
   ui.title = h("h1", { class: "insp-title" }, textOf(room.name));
-  const render = { basic: basicTab, exits: exitsTab, flags: flagsTab, extra: extraTab }[state.tab];
+  const render = { basic: basicTab, exits: exitsTab, flags: flagsTab, extra: extraTab, resets: (r) => RR.resetsTab(ctx, r) }[state.tab];
   ui.inspector.replaceChildren(
     h("div", { class: "insp-head" },
       h("div", { class: "insp-names" },
@@ -575,9 +655,10 @@ function renderInspector() {
 async function removeRoom() {
   const me = state;
   const room = me.selected;
+  const resets = M.resetsGoingWith(me.data, "rooms", room);
   const ok = await confirmDialog({
     title: `刪除房間 ${numberText(room.vnum)}？`,
-    text: `「${textOf(room.name)}」和指到它的出口會一起拿掉。`,
+    text: `「${textOf(room.name)}」和指到它的出口${resets ? `、${resets} 筆重置` : ""}會一起拿掉。`,
     ok: "刪除", danger: true,
   });
   if (!ok || state !== me) return;
@@ -611,24 +692,24 @@ function basicTab(room) {
       id: "room-desc", rows: 5, value: plainText(room.description),
       oninput: (e) => { room.description = storedText(e.target.value); edited(); },
     }) }),
-    h("div", { class: "info-row" },
-      h("span", { class: "label" }, "觸發程式", h("span", { class: "code", style: "margin-left: 6px" }, "script")),
-      h("span", null, scriptText(room.script))));
-}
-
-function scriptText(script) {
-  if (script === null || script === undefined) return "沒有";
-  return script && typeof script.function === "string" && script.function ? script.function : "有";
+    scriptRow(room.script));
 }
 
 // 「通到」「回城房間」旁邊的房間名：找得到是綠色，找不到是紅色
 function roomChip(number) {
+  return thingChip("rooms", number);
+}
+
+// 號碼旁的名字標籤（kind 是 rooms、mobiles、objects）：這個檔或別的檔找得到是綠色，找不到是紅色
+function thingChip(kind, number) {
   if (number === null || number === undefined || number === "") return null;
   const t = M.gameNumber(state.data, number);
   if (t === null) return chip("bad", "號碼不對");
-  const room = M.roomByNumber(state.data, t);
-  const name = room ? textOf(room.name) : state.elsewhere[t];
-  return name === undefined ? chip("bad", `找不到房間 ${t}`) : chip("ok", name || `房間 ${t}`);
+  const what = { rooms: "房間", mobiles: "生物", objects: "物品" }[kind];
+  const item = M.findByNumber(state.data, kind, t);
+  const others = { rooms: state.elsewhere, mobiles: state.elsewhereMobiles, objects: state.elsewhereObjects }[kind];
+  const name = item ? textOf(kind === "rooms" ? item.name : item.short) : others[t];
+  return name === undefined ? chip("bad", `找不到${what} ${t}`) : chip("ok", name || `${what} ${t}`);
 }
 
 function exitLabel(exit) {
@@ -707,31 +788,6 @@ function flagsTab(room) {
       })))));
 }
 
-function firstWord(keywords) {
-  return typeof keywords === "string" ? keywords.trim().split(/\s+/)[0] : "";
-}
-
 function extraTab(room) {
-  const list = room.extra_descriptions;
-  const cards = list.map((ed, i) => {
-    const title = h("h2", { class: "card-title" }, firstWord(ed.keywords));
-    return h("div", { class: "card" },
-      h("div", { class: "card-head" }, title,
-        h("button", { type: "button", class: "btn btn-text btn-danger", onclick: () => { list.splice(i, 1); rebuild(); } }, "移除")),
-      field({ id: `extra-${i}-keywords`, label: "名字", code: "keywords", input: textInput({
-        id: `extra-${i}-keywords`, value: textOf(ed.keywords),
-        oninput: (e) => { ed.keywords = e.target.value; title.textContent = firstWord(ed.keywords); edited(); },
-      }) }),
-      field({ id: `extra-${i}-desc`, label: "看到的文字", code: "description", input: textArea({
-        id: `extra-${i}-desc`, rows: 3, value: plainText(ed.description),
-        oninput: (e) => { ed.description = storedText(e.target.value); edited(); },
-      }) }));
-  });
-  return h("div", { class: "stack", style: "gap: 16px" }, cards,
-    h("div", null, h("button", { type: "button", class: "btn",
-      onclick: () => {
-        list.push({ keywords: "", description: "" });
-        rebuild();
-        document.getElementById(`extra-${list.length - 1}-keywords`).focus();
-      } }, icon("plus", 18), "新增")));
+  return extraList({ list: room.extra_descriptions, prefix: "extra", edited, rebuild });
 }

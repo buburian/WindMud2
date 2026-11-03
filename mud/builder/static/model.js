@@ -73,6 +73,9 @@ export const AREA_RULES = [
 export const isInt = Number.isInteger;
 const isObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 
+// 清單欄位沒寫或不是 […] 時當成空的（少了欄位交給檢查報出來）；值是 {…} 的清單
+const objectList = (v) => v === undefined || (Array.isArray(v) && v.every(isObject));
+
 // 編輯器要能改，至少要有這些形狀；其他不對的地方交給檢查報出來
 export function shapeProblem(data) {
   if (!isObject(data) || !isObject(data.area) || !isObject(data.area.header) || !Array.isArray(data.rooms)) {
@@ -84,7 +87,33 @@ export function shapeProblem(data) {
       return "有房間的形狀不對（房間、exits、extra_descriptions）";
     }
   }
+  if (!objectList(data.mobiles) || !objectList(data.objects) || !objectList(data.resets)) {
+    return "mobiles、objects 或 resets 的形狀不對";
+  }
+  for (const m of data.mobiles || []) {
+    if (!objectList(m.actions) || !objectList(m.fight_actions)
+        || ![undefined, null].includes(m.shop) && !isObject(m.shop)
+        || ![undefined, null].includes(m.random_drop) && !isObject(m.random_drop)) {
+      return "有生物的形狀不對（actions、fight_actions、shop、random_drop）";
+    }
+  }
+  for (const o of data.objects || []) {
+    if (!objectList(o.affects) || !objectList(o.extra_descriptions) || o.values !== undefined && !Array.isArray(o.values)) {
+      return "有物品的形狀不對（affects、extra_descriptions、values）";
+    }
+  }
   return null;
+}
+
+// data[key] 是清單就回傳它，沒寫就是空的（rooms、mobiles、objects、resets）
+export function listOf(data, key) {
+  return Array.isArray(data[key]) ? data[key] : [];
+}
+
+// 要加東西時才補上清單（檔案原本沒有這個欄位時）
+function ensureList(data, key) {
+  if (!Array.isArray(data[key])) data[key] = [];
+  return data[key];
 }
 
 export function base(data) {
@@ -103,6 +132,7 @@ export function gameNumber(data, number) {
   return b !== null && isInt(number) && number >= 1 ? resolve(b, number) : null;
 }
 
+// 房間、生物、物品的遊戲號碼（area_number ＋ vnum）
 export function roomNumber(data, room) {
   const b = base(data);
   return b !== null && isInt(room.vnum) ? b + room.vnum : null;
@@ -112,9 +142,14 @@ export function target(data, exit) {
   return exit ? gameNumber(data, exit.to_room) : null;
 }
 
-export function roomByNumber(data, number) {
+// kind 是 "rooms"、"mobiles"、"objects"：在那張清單裡找遊戲號碼是 number 的
+export function findByNumber(data, kind, number) {
   if (number === null) return null;
-  return data.rooms.find((r) => roomNumber(data, r) === number) || null;
+  return listOf(data, kind).find((x) => roomNumber(data, x) === number) || null;
+}
+
+export function roomByNumber(data, number) {
+  return findByNumber(data, "rooms", number);
 }
 
 export function exitRoom(data, exit) {
@@ -133,9 +168,14 @@ export function parseFlags(value) {
   return result;
 }
 
-export function sortedRooms(data) {
+// 照檔案號碼排（號碼不對的放最後）
+export function sortedList(list) {
   const key = (r) => (isInt(r.vnum) ? r.vnum : Infinity);
-  return [...data.rooms].sort((a, b) => key(a) - key(b));
+  return [...list].sort((a, b) => key(a) - key(b));
+}
+
+export function sortedRooms(data) {
+  return sortedList(data.rooms);
 }
 
 // 照出口接在一起的房間算一塊（六個方向都算，單向的出口也算接著；通到別的區域的不算）。
@@ -165,8 +205,9 @@ export function pieces(data) {
   return Array.from({ length: count }, (_, i) => order.filter((r) => pieceOf.get(r) === i));
 }
 
-export function freeVnum(data) {
-  const used = new Set(data.rooms.map((r) => r.vnum));
+// list（房間、生物或物品）裡最小沒用過的檔案號碼；1～99 都用完了是 null
+export function freeVnum(list) {
+  const used = new Set(list.map((r) => r.vnum));
   for (let v = 1; v <= 99; v++) if (!used.has(v)) return v;
   return null;
 }
@@ -181,7 +222,7 @@ export function newExit(toRoom) {
 
 // 加一間房（號碼用最小沒用過的）；號碼用完了回傳 null
 export function addRoom(data) {
-  const vnum = freeVnum(data);
+  const vnum = freeVnum(data.rooms);
   if (vnum === null) return null;
   const room = newRoom(vnum);
   data.rooms.push(room);
@@ -218,7 +259,7 @@ export function removeExit(data, room, dir) {
   if (back && me !== null && target(data, back) === me) delete other.exits[REVERSE[dir]];
 }
 
-// 刪掉一間房，連這個檔裡指到它的出口一起拿掉
+// 刪掉一間房，連這個檔裡指到它的出口、重置一起拿掉
 export function deleteRoom(data, room) {
   const me = roomNumber(data, room);
   data.rooms.splice(data.rooms.indexOf(room), 1);
@@ -226,25 +267,211 @@ export function deleteRoom(data, room) {
   for (const r of data.rooms) {
     for (const d of Object.keys(r.exits)) if (target(data, r.exits[d]) === me) delete r.exits[d];
   }
+  dropResets(data, "rooms", me);
 }
 
-// 改房間號碼：號碼不對回傳錯誤訊息，對就改好（這個檔裡指到它的出口和 recall 一起改）回傳 null
+// 刪掉一隻生物或一個物品（kind 是 "mobiles"、"objects"），連指到它的重置一起拿掉
+export function deleteThing(data, kind, item) {
+  const me = roomNumber(data, item);
+  const list = listOf(data, kind);
+  list.splice(list.indexOf(item), 1);
+  if (me !== null) dropResets(data, kind, me);
+}
+
+const KIND_NAMES = { rooms: "房間", mobiles: "生物", objects: "物品" };
+
+// 改房間號碼：號碼不對回傳錯誤訊息，對就改好（這個檔裡指到它的出口、recall、重置一起改）回傳 null
 export function renumber(data, room, vnum) {
-  if (vnum === room.vnum) return null;
+  return renumberThing(data, "rooms", room, vnum);
+}
+
+// 改房間、生物或物品的號碼，這個檔裡指到它的地方一起改：
+// 房間：出口、recall、重置的 room_vnum；生物：重置的 mob_vnum；
+// 物品：重置的 obj_vnum、container_vnum，生物的 random_drop，出口的 key
+export function renumberThing(data, kind, item, vnum) {
+  if (vnum === item.vnum) return null;
   if (!isInt(vnum) || vnum < 1 || vnum > 99) return "號碼要是 1～99 的整數";
-  if (data.rooms.some((r) => r !== room && r.vnum === vnum)) return `房間 ${vnum} 已經有了`;
+  if (listOf(data, kind).some((x) => x !== item && x.vnum === vnum)) return `${KIND_NAMES[kind]} ${vnum} 已經有了`;
   const b = base(data);
-  const old = roomNumber(data, room);
+  const old = roomNumber(data, item);
   if (b !== null && old !== null) {
     // 原本寫 1～99 的改成新的檔案號碼，原本寫完整號碼的改成新的完整號碼
-    const moved = (n) => (n <= 99 ? vnum : b + vnum);
-    for (const r of data.rooms) {
-      for (const e of Object.values(r.exits)) if (target(data, e) === old) e.to_room = moved(e.to_room);
+    const fix = (obj, key) => {
+      if (isObject(obj) && gameNumber(data, obj[key]) === old) obj[key] = obj[key] <= 99 ? vnum : b + vnum;
+    };
+    for (const r of listOf(data, "resets")) {
+      for (const [key, k] of Object.entries(RESET_REFS)) if (k === kind && isObject(r) && key in r) fix(r, key);
     }
-    if (gameNumber(data, data.area.recall) === old) data.area.recall = moved(data.area.recall);
+    if (kind === "rooms") {
+      for (const r of data.rooms) for (const e of Object.values(r.exits)) fix(e, "to_room");
+      fix(data.area, "recall");
+    }
+    if (kind === "objects") {
+      for (const m of listOf(data, "mobiles")) fix(m.random_drop, "obj_vnum");
+      for (const r of data.rooms) for (const e of Object.values(r.exits)) fix(e, "key");   // -1、0 算不出號碼，不會被改
+    }
   }
-  room.vnum = vnum;
+  item.vnum = vnum;
   return null;
+}
+
+// ---- 生物、物品 ----
+
+export function newMobile(vnum) {
+  return {
+    vnum, keywords: "新生物", short: "新生物", long: "", description: "", level: 1, act: 0, affected_by: 0,
+    alignment: 0, race: "human", sex: 0, exp: 1, position: 7, random_drop: null, script: null,
+    actions: [], fight_actions: [], shop: null, special: null,
+  };
+}
+
+export function newObject(vnum) {
+  return {
+    vnum, keywords: "新物品", short: "新物品", long: "", item_type: 8, extra_flags: 0, wear_flags: 1,
+    values: [0, 0, 0, 0], weight: 1, cost: 0, affects: [], extra_descriptions: [], script: null,
+  };
+}
+
+// 勾「牠是店主」「死掉時可能掉東西」時先填的值
+export const newShop = () => ({ buy_types: [], profit_buy: 100, profit_sell: 100, open_hour: 0, close_hour: 23 });
+export const newDrop = () => ({ chance: 10000, obj_vnum: 1 });
+export const newAction = () => ({ when: 0, mode: 0, text: "" });
+export const newFightAction = () => ({ rate: 10, message: "", command: "" });
+export const newAffect = () => ({ location: 1, modifier: 0 });
+
+// 加一隻生物或一個物品（號碼用最小沒用過的）；號碼用完了回傳 null
+export function addThing(data, kind) {
+  const list = ensureList(data, kind);
+  const vnum = freeVnum(list);
+  if (vnum === null) return null;
+  const item = kind === "mobiles" ? newMobile(vnum) : newObject(vnum);
+  list.push(item);
+  return item;
+}
+
+// ---- 重置 ----
+
+// 重置裡寫號碼的欄位 → 指到哪一種東西
+export const RESET_REFS = { room_vnum: "rooms", mob_vnum: "mobiles", obj_vnum: "objects", container_vnum: "objects" };
+
+// 重置 r 的 key 欄位指到的東西（找不到是 null）
+export function resetThing(data, r, key) {
+  return findByNumber(data, RESET_REFS[key], gameNumber(data, r[key]));
+}
+
+// 新的一筆重置，各欄位先填的值
+export function newReset(cmd, fields = {}) {
+  const made = {
+    M: { cmd, rare: 0, mob_vnum: 1, limit: 1, room_vnum: 1, comment: "" },
+    G: { cmd, rare: 0, obj_vnum: 1, limit: 0, comment: "" },
+    O: { cmd, if_flag: 0, obj_vnum: 1, limit: 0, room_vnum: 1, comment: "" },
+    P: { cmd, if_flag: 0, obj_vnum: 1, limit: 0, container_vnum: 1, comment: "" },
+    D: { cmd, if_flag: 0, room_vnum: 1, direction: "north", state: 0, comment: "" },
+    R: { cmd, if_flag: 0, room_vnum: 1, exit_count: 2, comment: "" },
+    "*": { cmd, comment: "" },
+  }[cmd];
+  for (const k of Object.keys(fields)) if (k in made) made[k] = fields[k];
+  return made;
+}
+
+// 緊接在第 i 筆 M 後面的 G、O 後面的 P（它們是跟著這一筆的）
+export function followersOf(resets, i) {
+  const lead = resets[i];
+  const kind = isObject(lead) && lead.cmd === "M" ? "G" : isObject(lead) && lead.cmd === "O" ? "P" : null;
+  const out = [];
+  for (let j = i + 1; kind && j < resets.length && isObject(resets[j]) && resets[j].cmd === kind; j++) out.push(j);
+  return out;
+}
+
+// 第 j 筆 G、P 跟著哪一筆 M、O（中間只隔著同一種）；沒有是 -1
+export function leaderOf(resets, j) {
+  const r = resets[j];
+  const lead = r.cmd === "G" ? "M" : r.cmd === "P" ? "O" : null;
+  if (!lead) return -1;
+  let i = j - 1;
+  while (i >= 0 && isObject(resets[i]) && resets[i].cmd === r.cmd) i--;
+  return i >= 0 && isObject(resets[i]) && resets[i].cmd === lead ? i : -1;
+}
+
+// 這間房的重置：放進來的生物（和跟著的 G）、物品（和跟著的 P）、門的狀態（方向 → 第幾筆）、打亂出口（第幾筆，沒有是 -1）
+export function roomResets(data, room) {
+  const me = roomNumber(data, room);
+  const resets = listOf(data, "resets");
+  const result = { mobs: [], objs: [], doors: {}, random: -1 };
+  resets.forEach((r, i) => {
+    if (!isObject(r) || me === null || gameNumber(data, r.room_vnum) !== me) return;
+    if (r.cmd === "M") result.mobs.push({ index: i, followers: followersOf(resets, i) });
+    else if (r.cmd === "O") result.objs.push({ index: i, followers: followersOf(resets, i) });
+    else if (r.cmd === "D" && typeof r.direction === "string" && !(r.direction in result.doors)) result.doors[r.direction] = i;
+    else if (r.cmd === "R" && result.random < 0) result.random = i;
+  });
+  return result;
+}
+
+// 指到 item（kind 的東西）的重置：[{ index, key }]，key 是指到它的欄位
+export function resetsPointingAt(data, kind, item) {
+  const me = roomNumber(data, item);
+  const out = [];
+  if (me === null) return out;
+  listOf(data, "resets").forEach((r, i) => {
+    if (!isObject(r)) return;
+    for (const [key, k] of Object.entries(RESET_REFS)) {
+      if (k === kind && key in r && gameNumber(data, r[key]) === me) out.push({ index: i, key });
+    }
+  });
+  return out;
+}
+
+// 會被一起刪掉的重置：指到 number（kind 的遊戲號碼）的，加上 M、O 跟著的 G、P
+function doomedResets(data, kind, number) {
+  const resets = listOf(data, "resets");
+  const doomed = new Set();
+  resets.forEach((r, i) => {
+    if (!isObject(r)) return;
+    for (const [key, k] of Object.entries(RESET_REFS)) {
+      if (k === kind && key in r && gameNumber(data, r[key]) === number) {
+        doomed.add(i);
+        for (const j of followersOf(resets, i)) doomed.add(j);
+      }
+    }
+  });
+  return doomed;
+}
+
+// 刪 item 時會一起刪掉幾筆重置（給確認視窗用）
+export function resetsGoingWith(data, kind, item) {
+  const me = roomNumber(data, item);
+  return me === null ? 0 : doomedResets(data, kind, me).size;
+}
+
+function dropResets(data, kind, number) {
+  const doomed = doomedResets(data, kind, number);
+  if (doomed.size) data.resets = data.resets.filter((_, i) => !doomed.has(i));
+}
+
+// 加一筆重置到第 at 筆（沒給就加在最後），回傳它在第幾筆
+export function insertReset(data, entry, at) {
+  const resets = ensureList(data, "resets");
+  const i = at === undefined ? resets.length : at;
+  resets.splice(i, 0, entry);
+  return i;
+}
+
+// 在第 i 筆 M、O 和它已經跟著的 G、P 後面加一筆（新的 G、P 就會跟著它）
+export function addFollower(data, i, entry) {
+  return insertReset(data, entry, i + 1 + followersOf(data.resets, i).length);
+}
+
+// 刪第 i 筆；是 M、O 的話，跟著的 G、P 一起刪
+export function removeReset(data, i) {
+  const doomed = new Set([i, ...followersOf(data.resets, i)]);
+  data.resets = data.resets.filter((_, j) => !doomed.has(j));
+}
+
+// 把第 from 筆移到第 to 筆（只移這一筆）
+export function moveReset(data, from, to) {
+  const [r] = data.resets.splice(from, 1);
+  data.resets.splice(to, 0, r);
 }
 
 // 整層地圖：從 start 出發沿東南西北走，回傳 Map(房間 → {x, y})。格子被佔了的房間就不畫

@@ -32,7 +32,7 @@ uv run python -m mud.builder                      # 區域編輯器，瀏覽器�
   `tests/test_log.py` 測紀錄檔的編號、換檔和刪舊檔；`tests/test_area.py` 測區域載入，也比對手冊的數字表跟程式的定義；`tests/test_areacheck.py` 測區域檔檢查的每條規則；
   要自己做區域檔的測試，用 `tests/area_helpers.py` 做出完整的檔案再改欄位（直接 `from area_helpers import …`）；
   `tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit。
-  `tests/test_builder.py` 用 port 0 開真的區域編輯器（資料夾是 `tmp_path`），用 urllib 打 API；也比對網頁的數字表跟 `area.py` 的定義。
+  `tests/test_builder.py` 用 port 0 開真的區域編輯器（資料夾是 `tmp_path`），用 urllib 打 API；也比對網頁的數字表跟 `area.py` 的定義、手冊的表。
   用到房間的測試要自己先 `area.load(areas 資料夾)`：`area.rooms` 是全域的，不要依賴別的測試先載入過。
   `characters` 也是全域的：測試加進去的角色（玩家、NPC）要在 fixture 結束時 `characters.clear()`，不然會跑進別的測試的 look 裡。
 - `test_server.py` 的 client 連線一定要在 `finally` 關掉：Python 3.12 起，離開 `async with server` 會等所有連線斷掉，
@@ -70,11 +70,13 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   telnet 控制碼（例如 `START`、`tn.replies`）則要直接 `writer.write(bytes)`，**絕不能**經過 `encode()`——IAC 就是 `0xFF`，會被寫成兩次而失效。
 - **角色**（`characters.py`、`players.py`、`npcs.py`）：玩家和 NPC 都是角色（使用者要求先分好骨架，資料只放現在用得到的）。
   - `Character`：`name`、`sex`、`room`（所在房間的 vnum）。`send(text)` 送文字給這個角色，預設什麼都不做。
+    還沒有姿勢。**使用者說很重要**：手冊生物那章的 position 表（0 dead～7 standing）也是角色（玩家和生物）現在狀態的定義，
+    遊戲用它判斷角色是在休息、站著走動還是在戰鬥；之後做角色狀態時就用這張表（寫成有名字的定義），不要另外發明一套。
     全域的 `characters` 是遊戲裡所有的角色（玩家和 NPC），找同房間的人都從這裡找。
   - `Player`：多了 `writer`（連線）和 `reply`（最後一個 tell 我的玩家），`send()` 寫到連線。性別還沒有地方選，
     先都預設男 `SEX_MALE`；登入時站在 `config.START_ROOM`。`online_players()` 是在線的玩家（chat、tell 只找他們）。
     模組的 `send(writer, text)` 給還沒登入時用（例如 `Login:`）。
-  - `Npc`：還沒有自己的欄位，`send()` 什麼都不做，所以送給 NPC 的訊息等於沒送。區域檔還沒有怪物，遊戲裡還不會出現 NPC。
+  - `Npc`：還沒有自己的欄位，`send()` 什麼都不做，所以送給 NPC 的訊息等於沒送。區域檔的 `mobiles` 還只檢查格式，`load()` 不會把它們變成 NPC，遊戲裡還不會出現 NPC。
   - `handle()` 登入時建立 `Player` 加進 `characters`；斷線清理在 `handle()` 的 `finally`：移出 `characters`，
     也清掉別人身上指向這個玩家的 `reply`。
 - **`act()`**（`act.py`）：送訊息給別人一律用它。`to` 決定送給誰：`TO_CHAR` 自己、`TO_VICT` 對象、`TO_ROOM` 同房間自己以外、
@@ -95,8 +97,11 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   **規則只有一份：`check_files()`**，照手冊檢查每一個欄位（欄位要剛好，少了或多了都算錯），把所有問題收集起來。
   `load()` 先呼叫它，有問題就報第一個（加上總數）並停止開機；沒問題才用 `build_room()` 建房間。
   檢查工具 `mud/areacheck.py` 也是呼叫它，所以伺服器和工具的判斷永遠一樣。
-  **改區域檔格式時，`check_files()`、手冊、`areas/test.json`、`tests/area_helpers.py`、
-  區域編輯器（`builder/server.py` 的 `new_area()`、`builder/static/model.js` 的 `newRoom()`、`newExit()` 和畫面）要一起改。**
+  **區域檔格式的流程（使用者定的）：先改手冊和 `areas/test.json`；使用者全部確認後，才會請你照手冊改系統。**
+  在那之前，系統只改到「還讀得懂 test.json」為止：`check_files()` 認得新欄位、檢查寫法，
+  `tests/area_helpers.py` 和編輯器的 `new_area()` 補上欄位，讓伺服器開得了機、測試會過；遊戲裡的效果不做。
+  照手冊改系統時，`check_files()`、`tests/area_helpers.py`、
+  區域編輯器（`builder/server.py` 的 `new_area()`、`builder/static/model.js` 的 `newRoom()`、`newExit()` 和畫面）要一起改。
   `Room` 上存了 `name`、`description`、出口（`exits`、`exit_descriptions`）、`extra_descriptions`、`room_flags`、`sector`。
   **手冊的三張數字表在 `area.py` 寫成有名字的定義**（使用者要求程式裡不能只有數字）：`RoomFlag`（room_flags）、
   `Sector`（sector）、`Locks`（出口的 locks）。名字用手冊的 C 版名稱（locks 的表沒有名稱，照 C 版的門旗標取），
@@ -107,22 +112,46 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   也可以寫字串（`"5"`、`"1|4"`，`|` 是把幾個數字的位元合起來，`"1|3"` 是 3 不是 4），只能用 `RoomFlag` 裡有的旗標；
   `sector` 只能寫 0～10 的一個整數（地形一間房只有一種）。伺服器還沒用到這兩個值，只是先存在 `Room` 上。
   **號碼規則**（使用者定的）：
-  - 檔案裡的房間、物品、怪物號碼各自只能是 1～99；遊戲裡的號碼 ＝ `area.header.area_number` ＋ 檔案號碼（3200 ＋ 3 ＝ 3203）。
+  - 檔案裡的房間、物品、生物號碼各自只能是 1～99；遊戲裡的號碼 ＝ `area.header.area_number` ＋ 檔案號碼（3200 ＋ 3 ＝ 3203）。
+    三種號碼分開算（房間 101 和生物 101 可以同時存在），跨檔案的重複檢查也是各算各的。
   - 出口 `to_room` 寫 1～99 是同一個區域（一樣加上 area_number），100 以上是完整號碼，用來通到別的區域。
     門的鑰匙 `key`、區域的 `recall` 也照這個規則（`key` 寫 -1 或 0 是不用鑰匙）；這兩個還沒實作，做的時候要照規則換算。
   - 所以遊戲號碼 1～99 是保留的（`area_number` 不能是 0）：算出來小於 100 就報錯。`area_number` 不必是 100 的倍數。
-    `key` 指到的物品存不存在還沒檢查（還沒有物品）。
+    `key` 指到的物品存不存在還沒檢查（物品目前只檢查格式）。
     **區域檔格式是我們自己的**：舊區域的流程是 `.are` → area2json → 我們的區域編輯器處理 → 才給伺服器用。
     `mud_design/area_convert/out/*.json` 只是拿來打底的參考，伺服器不直接載入它；兩者已經不同：
     房間沒有 `area_number`，改成寫在 `area.header`；等級範圍只有一個 `header.levels`（`[最低, 最高]`）；
     沒有 `area.name`，之後遊戲要用 header 的資料自己組出顯示的名稱；
     `room_flags`（數字或字串）、`sector`（整數）不是 `{"value": …, "names": …}` 這種 dict；沒有 `overridden_exits`。
     `areas/test.json` 是測試區域：`area_number` 100，房間 1（南）、2（北）在遊戲裡是 101、102，南北相連；
-    起始房間 `config.START_ROOM` 是 101。之後會照使用者的指示繼續改格式。`area` 和每個房間的欄位**一個都不能少**，
-    巢狀欄位也要有範例值（`extra_descriptions`、`script` 各放一筆）：使用者靠它看系統還缺哪些功能。
+    起始房間 `config.START_ROOM` 是 101。之後會照使用者的指示繼續改格式。`area`、每個房間、每隻生物、每個物品和每筆重置的欄位**一個都不能少**，
+    巢狀欄位也要有範例值（`extra_descriptions`、`script` 各放一筆；生物 1「測試商人」的每個欄位都有值，生物 2「測試坐騎」示範 null／空的寫法；
+    物品 1～4 是藥水、長劍、箱子、麵包（重置用到 1、3、4），物品 2「測試長劍」每個欄位都有值；
+    `resets` 每種指令各一筆；房間 1 往北的出口有木門，給 `D` 的範例用）：使用者靠它看系統還缺哪些功能。
     房間的文字可以用顏色代碼。
     **每個欄位的意思和新系統的實作進度寫在 `docs/區域製作手冊.md`**：改區域檔格式、或做了新的區域功能時，
     要同步更新它（開頭的進度總表，以及各欄位「新系統」那一欄）。
+  - **生物（`mobiles`）**：最上層的清單，欄位照舊版 `#MOBILES`（含 A、F、P、R 行）加上 `#SHOPS`（`shop`）、`#SPECIALS`（`special`）整理，
+    名稱沿用 area2json；`act`、`affected_by` 寫法同 `room_flags`，`sex`、`actions` 的 `when`/`mode` 是整數。
+    使用者刪掉了舊版的 `hitroll`、`ac`、`hit_dice`、`damage_dice`、`gold`、`custom`（K 行）：系統之後也不用，不要加回來。
+    `exp` 是使用者改的：經驗值的**倍數**（預設 1、0 不給、1.5 多給 50%，可以有小數）。實際經驗值之後由等級和稀有度算，
+    稀有度在重置（舊版 `#RESETS`）那邊定義，不放在生物裡。
+    物品種類只有一張表：手冊物品那章的 item_type 表（1 照明用具～26 藥錠），商店 `shop.buy_types` 也用它，不要再寫一份。
+    使用者會看過再刪減欄位，所以 `check_mobile()` 現在**只檢查寫法**（欄位剛好、型別、號碼），數字代表什麼還沒檢查，
+    也還沒寫成有名字的定義（欄位定案後再照「程式裡不能只有數字」補上）。
+  - **物品（`objects`）**：最上層的清單，放在 `mobiles` 後面，欄位照舊版 `#OBJECTS`（含 A、E、P 行）整理，名稱沿用 area2json（不放 `values_raw`）。
+    使用者刪掉了舊版的 `action_description`、`cost_per_day`：系統之後也不用，不要加回來。
+    `cost`（價格）使用者拿掉後又放回來了，可以是 0；商店的 `profit_buy`、`profit_sell` 是乘在它上面的倍率。
+    `item_type`、`affects.location` 寫數字，`extra_flags`、`wear_flags` 寫法同 `room_flags`。`values` 是 4 個整數或字串：
+    法術類（卷軸、藥水、藥錠的第 2～4 個，魔杖、魔棒的第 4 個）寫法術名稱；容器旗標這類要相加，`values` 裡不能用 `|`（C 版用 atoi 讀）。
+    `check_object()` 只檢查寫法；可以細看的東西跟房間共用 `check_extra_descriptions()`。物品號碼跟房間、生物分開算。
+    `wear_flags` 的位置照 `mud_design` 設計文件 §3.3 的裝備欄位（使用者要求）：512 shield 當「副手」（盾牌或副手武器），
+    1 take（能不能撿起來）留著；光源不在 wear_flags，照明用具自己放光源位置。
+  - **重置（`resets`）**：最上層的清單，照舊版 `#RESETS` 一串指令照順序執行（`M G O P D R` 和 `*` 註解），`G` 跟著前面最近的 `M`。
+    每種 `cmd` 的欄位在 `area.RESET_KEYS`，名稱沿用 area2json。`direction` 寫方向名稱（同出口），`state` 寫數字。
+    **使用者說生物不穿裝備**：舊版的 `E`（穿裝備；`wear_loc` 100 是給坐騎）連同坐騎一起拿掉了，`wear_loc` 表也拿掉，不要加回來。
+    `rare` 就是使用者說的「稀有度」，之後拿來算經驗值。
+    使用者會再刪改，所以 `check_resets()` 只檢查寫法；號碼指到的東西存不存在、`G` 前面有沒有 `M`、`D` 的出口有沒有門都還沒查。
 - **區域編輯器**（`mud/builder/`）：給區域作者用的網頁，畫面照設計稿（https://claude.ai/artifact/UwgbazUdvQKNEiPLQE8GW5）。
   區域檔存在 `builder_area/`（`config.BUILDER_DIR`），port 1234（`config.BUILDER_PORT`）。只用標準庫，前端不用打包工具。
   - 後端 `server.py`（`ThreadingHTTPServer`）：給網頁檔案，讀、存、檢查區域檔的 JSON API（清單寫在檔案開頭）。
@@ -130,11 +159,22 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `test.json` 存回去要一個 byte 都不差（有測試）。
   - **檢查只用 `area.check_files()`**：還沒存的內容寫進暫存資料夾的同名檔去檢查，對照 `builder_area/` 裡其他檔名的檔
     （同名的舊檔不對照，不然會全部「重複」）。有問題也照樣存，還沒寫完也要能存。
-  - 前端 `static/`：`model.js` 是純資料操作，`editor.js` 是編輯畫面，`files.js` 選檔畫面，`settings.js` 區域設定，`ui.js` 小工具，
-    `app.js` 用網址的 `#檔名` 換畫面。載入的 JSON 直接改，**沒動到的欄位原樣存回去**（例如 `"1|4"`、`script`）。
-  - **出口一律比算出來的遊戲號碼**（`model.js` 照 `area.resolve()` 寫了一份）：同一區域的出口也可能寫完整號碼（101 指到房間 1）。
+  - 讀檔時也回傳別的檔的房間名（`elsewhere`）、生物名（`elsewhere_mobiles`）、物品名（`elsewhere_objects`），給號碼旁的名字標籤用。
+  - 前端 `static/`：`model.js` 是純資料操作，`editor.js` 是編輯畫面的外框和房間畫面，`files.js` 選檔畫面，`settings.js` 區域設定，
+    `ui.js` 小工具，`forms.js` 綁在區域檔物件上的表單欄位（改了直接寫回），`app.js` 用網址的 `#檔名` 換畫面。
+    載入的 JSON 直接改，**沒動到的欄位原樣存回去**（例如 `"1|4"`、`script`）。
+  - **左欄上方切換四種畫面**（`state.mode`）：房間（中間地圖、右邊分頁，多一個「重置」分頁在 `roomresets.js`）、
+    生物（`mobiles.js`）、物品（`objects.js`）：沒有地圖，右邊表單佔滿；重置總覽（`resets.js`）：照檔案順序的表格，可拖曳排順序。
+    各畫面模組拿 `editor.js` 的 `ctx`（`state`、`edited()`、`rebuild()`、`refresh()`、`goRoom()`、`chipOf()`），不互相 import 成一圈。
+    **分頁規則（使用者定的）**：只有一份的欄位放同一個分頁，可以一直新增的清單才各自一個分頁。
+  - **號碼一律比算出來的遊戲號碼**（`model.js` 照 `area.resolve()` 寫了一份）：同一區域也可能寫完整號碼（101 指到房間 1）。
+    房間、生物、物品的號碼分開算。改號碼時這個檔裡指到它的地方一起改（出口、recall、重置、random_drop、出口的 key，`renumberThing()`）；
+    刪除時指到它的重置一起刪，M、O 後面跟著的 G、P 也一起刪（`deleteRoom()`、`deleteThing()`），確認視窗會寫刪幾筆。
+  - 重置的分組：緊接在 M 後面的 G、O 後面的 P 算跟著它（`followersOf()`、`leaderOf()`）。房間分頁新增時，M、O、D、R 加在最後，
+    G、P 插在它跟著的那筆後面；總覽新增時插在選到的那筆後面。
   - 區域檔的文字一律當純文字放進畫面（`h()` 的子元素字串是 textNode），不用 `innerHTML`。
-  - `model.js` 也有旗標、地形、門的數字表（畫面用的短名字）。**改手冊的表時要一起改**，`test_builder.py` 會比對數字。
+  - `model.js` 有旗標、地形、門的數字表，`tables.js` 有生物、物品、重置用的數字表（畫面用的短名字）。**改手冊的表時要一起改**：
+    `test_builder.py` 會比對 `model.js` 跟 `area.py` 的定義、`tables.js` 跟手冊的表。
 - **門（還沒做，使用者定的規則）**：出口的 `keywords` 是門的名字，只有 `locks` 不是 0（有門）的出口才用到。
   門的種類只看 `locks`（0 沒有門，1～8 是門加上撬不開、撞不開、法術穿不過的組合，對照表在手冊，程式裡是 `area.Locks`），區域檔沒有 `door_flags`。
   - 玩家用它指定要動哪扇門：open、close、lock、unlock、pick、bash 先找名字對得上的門，找不到才把輸入當方向（同 C 版 `find_door`）。

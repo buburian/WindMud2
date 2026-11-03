@@ -2,15 +2,16 @@ from pathlib import Path
 
 import pytest
 
-from area_helpers import make_area, make_exit, make_room, write_area, write_json
+from area_helpers import make_area, make_exit, make_mobile, make_object, make_resets, make_room, write_area, write_json
 from mud import area, areacheck
 
 ROOT = Path(__file__).resolve().parent.parent
 
 
 def good_area():
-    # 兩間房南北相連，每個欄位都有，而且都寫對
-    return make_area("a.json", [make_room(1, north=2), make_room(2, south=1)])
+    # 兩間房南北相連、一隻生物、一個物品、每種重置指令各一筆，每個欄位都有，而且都寫對
+    return make_area("a.json", [make_room(1, north=2), make_room(2, south=1)], mobiles=[make_mobile(1)],
+                     objects=[make_object(1)], resets=make_resets())
 
 
 def problems_of(tmp_path, data):
@@ -36,12 +37,25 @@ def north(d):
     return d["rooms"][0]["exits"]["north"]
 
 
+def mob(d):
+    return d["mobiles"][0]
+
+
+def obj(d):
+    return d["objects"][0]
+
+
+def reset(d, cmd):
+    """第一筆是 cmd 的重置。"""
+    return next(r for r in d["resets"] if r["cmd"] == cmd)
+
+
 # 每條規則：怎麼改壞、問題裡要出現的字
 RULES = [
     pytest.param(lambda d: d.update(schema_version=2), "schema_version", id="schema_version"),
     pytest.param(lambda d: d.update(file="b.json"), "file 要寫實際的檔名", id="file"),
     pytest.param(lambda d: d.pop("rooms"), "少了欄位 rooms", id="少了最上層欄位"),
-    pytest.param(lambda d: d.update(mobiles=[]), "多了不認得的欄位 mobiles", id="多了最上層欄位"),
+    pytest.param(lambda d: d.update(helps=[]), "多了不認得的欄位 helps", id="多了最上層欄位"),
     pytest.param(lambda d: d["area"]["header"].update(levels=[5, 1]), "levels", id="levels 反了"),
     pytest.param(lambda d: d["area"]["header"].update(levels="1  5"), "levels", id="levels 是字串"),
     pytest.param(lambda d: d["area"]["header"].update(author=3), "author", id="author"),
@@ -74,6 +88,63 @@ RULES = [
                  "少了欄位 names", id="script trigger"),
     pytest.param(lambda d: room(d).update(script={"trigger": {"value": 64, "names": ["say"]}, "function": ""}),
                  "function 不能是空的", id="script function"),
+    # 生物：這次只檢查寫法，數字代表什麼還不檢查
+    pytest.param(lambda d: d.pop("mobiles"), "少了欄位 mobiles", id="少了 mobiles"),
+    pytest.param(lambda d: d.update(mobiles={}), "mobiles 要寫成 […]", id="mobiles 不是清單"),
+    pytest.param(lambda d: mob(d).update(vnum=100), "生物號碼 100 不在 1～99", id="生物 vnum 太大"),
+    pytest.param(lambda d: d["mobiles"].append(make_mobile(1)), "生物 1 在這個檔案裡重複", id="生物 vnum 重複"),
+    pytest.param(lambda d: mob(d).update(size=1), "生物 1 多了不認得的欄位 size", id="生物多欄位"),
+    pytest.param(lambda d: mob(d).pop("special"), "生物 1 少了欄位 special", id="生物少欄位"),
+    pytest.param(lambda d: mob(d).update(hitroll=0), "多了不認得的欄位 hitroll", id="生物舊欄位"),   # 使用者刪掉的欄位
+    pytest.param(lambda d: mob(d).update(keywords=" "), "keywords 不能是空的", id="生物 keywords"),
+    pytest.param(lambda d: mob(d).update(short=""), "short 不能是空的", id="生物 short"),
+    pytest.param(lambda d: mob(d).update(race=3), "race 要是字串", id="生物 race"),
+    pytest.param(lambda d: mob(d).update(level="5"), "level 要是整數", id="生物 level"),
+    pytest.param(lambda d: mob(d).update(act="2|x"), "act 看不懂", id="生物 act"),
+    pytest.param(lambda d: mob(d).update(affected_by=-1), "affected_by 不能是負數", id="生物 affected_by"),
+    pytest.param(lambda d: mob(d).update(custom=None), "多了不認得的欄位 custom", id="生物舊欄位 custom"),
+    pytest.param(lambda d: mob(d).update(exp=-1), "exp 是經驗值的倍數", id="生物 exp 負數"),
+    pytest.param(lambda d: mob(d).update(exp="1.5"), "exp 是經驗值的倍數", id="生物 exp 字串"),
+    pytest.param(lambda d: mob(d).update(exp=True), "exp 是經驗值的倍數", id="生物 exp true"),
+    pytest.param(lambda d: mob(d)["random_drop"].update(obj_vnum=0), "obj_vnum 要是物品號碼", id="生物 random_drop"),
+    pytest.param(lambda d: mob(d)["script"].update(function=""), "function 不能是空的", id="生物 script"),
+    pytest.param(lambda d: mob(d).update(actions={}), "actions 要寫成 […]", id="生物 actions 不是清單"),
+    pytest.param(lambda d: mob(d)["actions"][0].pop("text"), "actions 第 1 項少了欄位 text", id="生物 actions 少欄位"),
+    pytest.param(lambda d: mob(d)["fight_actions"][0].update(rate="10"), "rate 要是整數", id="生物 fight_actions"),
+    pytest.param(lambda d: mob(d)["shop"].update(buy_types="8"), "buy_types 要是整數的清單", id="生物 shop buy_types"),
+    pytest.param(lambda d: mob(d)["shop"].update(open_hour=None), "open_hour 要是整數", id="生物 shop 時間"),
+    pytest.param(lambda d: mob(d).update(special=""), "special 要是 null 或函式名稱", id="生物 special"),
+    # 物品：這次只檢查寫法
+    pytest.param(lambda d: d.pop("objects"), "少了欄位 objects", id="少了 objects"),
+    pytest.param(lambda d: d.update(objects={}), "objects 要寫成 […]", id="objects 不是清單"),
+    pytest.param(lambda d: obj(d).update(vnum=0), "物品號碼 0 不在 1～99", id="物品 vnum 0"),
+    pytest.param(lambda d: d["objects"].append(make_object(1)), "物品 1 在這個檔案裡重複", id="物品 vnum 重複"),
+    pytest.param(lambda d: obj(d).update(values_raw=[]), "物品 1 多了不認得的欄位 values_raw", id="物品多欄位"),
+    pytest.param(lambda d: obj(d).update(cost_per_day=0), "多了不認得的欄位 cost_per_day", id="物品舊欄位"),   # 使用者刪掉的欄位
+    pytest.param(lambda d: obj(d).update(cost="0"), "cost 要是整數", id="物品 cost"),
+    pytest.param(lambda d: obj(d).update(keywords=""), "keywords 不能是空的", id="物品 keywords"),
+    pytest.param(lambda d: obj(d).update(item_type="5"), "item_type 要是整數", id="物品 item_type"),
+    pytest.param(lambda d: obj(d).update(wear_flags="1|x"), "wear_flags 看不懂", id="物品 wear_flags"),
+    pytest.param(lambda d: obj(d).update(values=[0, 1, 4]), "values 要寫 4 個", id="物品 values 3 個"),
+    pytest.param(lambda d: obj(d).update(values=[0, 1, 4, {}]), "values 要寫 4 個", id="物品 values 放 {}"),
+    pytest.param(lambda d: obj(d)["affects"][0].pop("modifier"), "affects 第 1 項少了欄位 modifier", id="物品 affects"),
+    pytest.param(lambda d: obj(d)["extra_descriptions"][0].update(keywords=" "), "keywords 不能是空的",
+                 id="物品 extra 名字空的"),
+    pytest.param(lambda d: obj(d)["script"].update(function=""), "function 不能是空的", id="物品 script"),
+    # 重置：這次只檢查寫法
+    pytest.param(lambda d: d.pop("resets"), "少了欄位 resets", id="少了 resets"),
+    pytest.param(lambda d: d.update(resets={}), "resets 要寫成 […]", id="resets 不是清單"),
+    pytest.param(lambda d: d["resets"].append({"cmd": "X", "comment": ""}), "cmd 要是", id="不認得的 cmd"),
+    pytest.param(lambda d: d["resets"].append(["M"]), "cmd 要是", id="重置不是 {…}"),
+    pytest.param(lambda d: reset(d, "M").pop("limit"), "（M）少了欄位 limit", id="M 少欄位"),
+    pytest.param(lambda d: reset(d, "M").update(room_vnum=0), "room_vnum 號碼 0 不對", id="M 房間號碼"),
+    pytest.param(lambda d: reset(d, "G").update(rare="0"), "rare 要是整數", id="G rare"),
+    pytest.param(lambda d: d["resets"].append({"cmd": "E", "rare": 0, "obj_vnum": 2, "limit": 0, "wear_loc": 16, "comment": ""}),
+                 "cmd 要是", id="E 拿掉了"),   # 使用者說生物不穿裝備
+    pytest.param(lambda d: reset(d, "P").update(container_vnum=-1), "container_vnum 號碼 -1 不對", id="P 容器號碼"),
+    pytest.param(lambda d: reset(d, "D").update(direction="northeast"), "direction 'northeast' 不對", id="D 方向"),
+    pytest.param(lambda d: reset(d, "R").update(exit_count="4"), "exit_count 要是整數", id="R exit_count"),
+    pytest.param(lambda d: reset(d, "*").update(comment=None), "comment 要是字串", id="註解不是字串"),
 ]
 
 
@@ -105,6 +176,45 @@ def test_cross_file_exit_and_duplicate(tmp_path):
     found = area.check_files([a, b, c], [a, b, c])
     assert found[a] == [] and found[b] == []
     assert found[c] == ["c.json：房間 201 跟 b.json 重複"]
+
+
+def test_mobile_parts_can_be_null(tmp_path):
+    data = good_area()
+    mob(data).update(random_drop=None, script=None, shop=None, special=None, actions=[], fight_actions=[])
+    assert problems_of(tmp_path, data) == []
+
+
+@pytest.mark.parametrize("exp", [0, 1, 1.5])
+def test_mobile_exp_is_a_multiplier(tmp_path, exp):
+    # 0 不給經驗值、1 正常、1.5 多給 50%
+    data = good_area()
+    mob(data).update(exp=exp)
+    assert problems_of(tmp_path, data) == []
+
+
+def test_mobile_game_number_below_100(tmp_path):
+    data = make_area("a.json", [make_room(50, north=51), make_room(51, south=50)], area_number=50,
+                     mobiles=[make_mobile(1)])
+    assert problems_of(tmp_path, data) == [
+        "a.json：生物 1 的遊戲號碼是 area_number 50 ＋ 1 ＝ 51，不能小於 100（1～99 是保留的）"]
+
+
+def test_cross_file_mobile_duplicate(tmp_path):
+    # 生物跟房間分開算：a.json 的房間 101 和生物 101 可以同時存在；生物 160 兩個檔都有就算重複
+    a = write_area(tmp_path, "a.json", [make_room(1)], area_number=100, mobiles=[make_mobile(1), make_mobile(60)])
+    b = write_area(tmp_path, "b.json", [make_room(1)], area_number=150, mobiles=[make_mobile(10)])
+    found = area.check_files([a, b], [a, b])
+    assert found[a] == []
+    assert found[b] == ["b.json：生物 160 跟 a.json 重複"]
+
+
+def test_cross_file_object_duplicate(tmp_path):
+    # 物品也是自己算：a.json 的房間 101、物品 101 可以同時存在；物品 160 兩個檔都有就算重複
+    a = write_area(tmp_path, "a.json", [make_room(1)], area_number=100, objects=[make_object(1), make_object(60)])
+    b = write_area(tmp_path, "b.json", [make_room(1)], area_number=150, objects=[make_object(10)])
+    found = area.check_files([a, b], [a, b])
+    assert found[a] == []
+    assert found[b] == ["b.json：物品 160 跟 a.json 重複"]
 
 
 def test_cli_one_file_looks_in_same_folder(tmp_path, capsys):

@@ -3,7 +3,9 @@
 API（內容都是 JSON）：
 - GET  /api/areas                 檔案清單
 - POST /api/areas                 新增區域檔 {"file", "title", "area_number"}
-- GET  /api/areas/<檔名>          {"data": 內容, "problems": [...], "elsewhere": {遊戲號碼: 房間名}}
+- GET  /api/areas/<檔名>          {"data": 內容, "problems": [...], "elsewhere": {遊戲號碼: 房間名},
+                                   "elsewhere_mobiles": {遊戲號碼: 生物名}, "elsewhere_objects": {遊戲號碼: 物品名}}
+                                   （elsewhere 是別的檔裡的）
 - PUT  /api/areas/<檔名>          存檔（有問題也照樣存），回傳 {"problems": [...]}
 - POST /api/areas/<檔名>/check    只檢查不存，回傳 {"problems": [...]}
 出錯時回傳 {"error": 訊息}。
@@ -46,6 +48,9 @@ def new_area(name, title, area_number):
         },
         "rooms": [{"vnum": 1, "name": "新房間", "description": "", "room_flags": 0, "sector": 0,
                    "exits": {}, "extra_descriptions": [], "script": None}],
+        "mobiles": [],
+        "objects": [],
+        "resets": [],
     }
 
 
@@ -96,21 +101,24 @@ class Builder:
             result.append(item)
         return result
 
-    def elsewhere(self, name):
-        """別的檔的房間：遊戲號碼 → 房間名。顯示「通到 3201」是哪間房用，看不懂的部分略過。"""
+    def elsewhere(self, name, kind="rooms", label="name"):
+        """別的檔的房間（kind="mobiles"、"objects" 是生物、物品）：遊戲號碼 → 名字。
+
+        顯示「通到 3201」是哪間房、重置放的是哪隻生物用，看不懂的部分略過。
+        """
         names = {}
         for path in self.others(name):
             data = area.read_json(path, [])
             try:
                 base = data["area"]["header"]["area_number"]
-                rooms = list(data["rooms"])
+                items = list(data[kind])
             except (KeyError, TypeError):
                 continue
             if not area.is_int(base):
                 continue
-            for r in rooms:
-                if isinstance(r, dict) and area.is_int(r.get("vnum")) and isinstance(r.get("name"), str):
-                    names.setdefault(base + r["vnum"], r["name"])
+            for r in items:
+                if isinstance(r, dict) and area.is_int(r.get("vnum")) and isinstance(r.get(label), str):
+                    names.setdefault(base + r["vnum"], r[label])
         return names
 
     def read(self, name):
@@ -119,7 +127,9 @@ class Builder:
         data = area.read_json(path, problems)
         if data is None:
             raise Problem(HTTPStatus.NOT_FOUND if not path.exists() else HTTPStatus.BAD_REQUEST, problems[0])
-        return {"data": data, "problems": self.problems(name, data), "elsewhere": self.elsewhere(name)}
+        return {"data": data, "problems": self.problems(name, data), "elsewhere": self.elsewhere(name),
+                "elsewhere_mobiles": self.elsewhere(name, "mobiles", "short"),
+                "elsewhere_objects": self.elsewhere(name, "objects", "short")}
 
     def save(self, name, data):
         path = self.path(name)

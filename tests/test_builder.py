@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from area_helpers import make_area, make_room, write_area, write_json
+from area_helpers import make_area, make_mobile, make_object, make_room, write_area, write_json
 from mud.area import Locks, RoomFlag, Sector
 from mud.builder.server import make_server
 
@@ -109,10 +109,13 @@ def test_check_uses_other_files(builder):
 def test_read_gives_room_names_of_other_files(builder):
     base, folder = builder
     write_area(folder, "a.json", [make_room(1)])
-    write_area(folder, "b.json", [make_room(1), make_room(2)], area_number=200)
+    write_area(folder, "b.json", [make_room(1), make_room(2)], area_number=200,
+               mobiles=[make_mobile(5)], objects=[make_object(7)])
     write_json(folder, "broken.json", {"rooms": "壞掉"})        # 看不懂的檔略過，不會讓整個讀取失敗
     _, result, _ = call(f"{base}/api/areas/a.json")
     assert result["elsewhere"] == {"201": "房間1", "202": "房間2"}
+    assert result["elsewhere_mobiles"] == {"205": "生物5"}
+    assert result["elsewhere_objects"] == {"207": "物品7"}
 
 
 def test_listing_marks_unreadable_files(builder):
@@ -186,3 +189,54 @@ def test_page_tables_match_area_definitions():
     assert js_table("FLAGS") == [f.value for f in RoomFlag]
     assert js_table("SECTORS") == [s.value for s in Sector]
     assert js_table("LOCKS") == [lock.value for lock in Locks]
+
+
+MANUAL = ROOT / "docs" / "區域製作手冊.md"
+
+
+def manual_rows(marker):
+    """手冊裡 marker 這個標題下面的第一個表格，不含表頭：[[欄, 欄, …], …]。"""
+    rows = []
+    for line in MANUAL.read_text(encoding="utf-8").split(marker, 1)[1].splitlines():
+        if line.startswith("|"):
+            rows.append([cell.strip() for cell in line.strip().strip("|").split("|")])
+        elif rows:
+            break
+    return rows[2:]                                     # 拿掉表頭和 |---|
+
+
+def tables_js(name):
+    """tables.js 裡 export const NAME = [[數字或名稱, …], …] 的第一欄。"""
+    text = (STATIC / "tables.js").read_text(encoding="utf-8")
+    block = re.search(rf"export const {name} = \[(.*?)\n\];", text, re.S)[1]
+    return [json.loads(key) for key in re.findall(r'^\s*\[(\d+|"[^"]*"),', block, re.M)]
+
+
+@pytest.mark.parametrize("name, marker", [
+    ("ACT", "### act（行為旗標）"),
+    ("AFFECTED", "### affected_by（身上的效果）"),
+    ("POSITIONS", "### position（姿勢）"),
+    ("ITEM_TYPES", "### item_type（物品種類）"),
+    ("EXTRA_FLAGS", "### extra_flags（特性旗標）"),
+    ("WEAR_FLAGS", "### wear_flags（拿起來、穿在哪裡）"),
+    ("APPLY", "### affects（加成）"),
+    ("CONTAINER_FLAGS", "### 容器旗標"),
+])
+def test_page_tables_match_manual(name, marker):
+    # 編輯器的數字表照手冊抄的；改手冊的表時這裡會提醒要一起改 tables.js
+    assert tables_js(name) == [int(row[0]) for row in manual_rows(marker)]
+
+
+def test_page_tables_with_several_columns_match_manual():
+    # 這幾張表在手冊裡一列放好幾組（數字、名字、數字、名字…）
+    attacks = [int(row[i]) for row in manual_rows("### 武器的攻擊方式") for i in (0, 2) if row[i]]
+    assert tables_js("ATTACKS") == sorted(attacks)
+    liquids = [int(row[i]) for row in manual_rows("### 液體種類") for i in (0, 3) if row[i]]
+    assert tables_js("LIQUIDS") == sorted(liquids)
+    races = [row[i].lower() for row in manual_rows("### race（種族）") for i in (0, 2, 4) if row[i]]
+    assert tables_js("RACES") == races
+
+
+def test_page_specials_match_manual():
+    section = MANUAL.read_text(encoding="utf-8").split("### special（特殊程式）", 1)[1].split("\n## ", 1)[0]
+    assert sorted(tables_js("SPECIALS")) == sorted(set(re.findall(r"spec_\w+", section)))
