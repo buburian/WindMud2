@@ -1,7 +1,7 @@
 // 區域設定的浮動視窗：改的是整個區域共用的欄位（area、area.header）。
 // 「完成」才套用，「取消」不改；只寫回有改過的欄位，沒動到的原樣保留（例如 gem 寫 2）。
-import { AREA_RULES } from "./model.js";
-import { checkbox, field, h, numberText, openDialog, parseNumber, textInput } from "./ui.js";
+import { AREA_RULES, AREA_TYPES } from "./model.js";
+import { checkbox, field, h, numberText, openDialog, parseNumber, selectArrow, selectInput, textInput } from "./ui.js";
 
 const textOf = (v) => (typeof v === "string" ? v : numberText(v));
 
@@ -16,6 +16,7 @@ export function openSettings({ data, roomChip, onDone }) {
     min: textInput({ id: "area-level-min", value: numberText(levels[0]) }),
     max: textInput({ id: "area-level-max", value: numberText(levels[1]) }),
     number: textInput({ id: "area-number", value: numberText(header.area_number) }),
+    type: selectInput({ id: "area-type", value: header.type, options: AREA_TYPES }),
     recall: textInput({ id: "area-recall", value: numberText(area.recall) }),
   };
   const initial = Object.fromEntries(Object.entries(inputs).map(([k, el]) => [k, el.value]));
@@ -38,6 +39,7 @@ export function openSettings({ data, roomChip, onDone }) {
     if (changed("author")) set(header, "author", inputs.author.value);
     if (changed("min") || changed("max")) set(header, "levels", [parseNumber(inputs.min.value), parseNumber(inputs.max.value)]);
     if (changed("number")) set(header, "area_number", parseNumber(inputs.number.value));
+    if (changed("type")) set(header, "type", inputs.type.value);
     if (changed("recall")) set(area, "recall", parseNumber(inputs.recall.value));
     for (const r of rules) if (r.input.checked !== r.was) set(area, r.rule.key, r.input.checked ? 1 : null);
     close();
@@ -59,6 +61,8 @@ export function openSettings({ data, roomChip, onDone }) {
           field({ id: "area-level-max", label: "最高等級", input: inputs.max, style: "flex: 0 0 96px" }),
           h("span", { class: "code" }, "levels")),
         field({ id: "area-number", label: "區域號碼", code: "area_number", input: inputs.number })),
+      h("div", { class: "row" },
+        field({ id: "area-type", label: "區域種類", code: "type", input: inputs.type, extra: selectArrow(), style: "flex: 0 0 220px" })),
       h("div", { class: "row", style: "gap: 12px" },
         field({ id: "area-recall", label: "回城房間", code: "recall", input: inputs.recall, style: "flex: 0 0 120px" }),
         chipBox),

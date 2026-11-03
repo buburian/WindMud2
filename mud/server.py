@@ -1,10 +1,12 @@
 """一條連線從登入到離線的流程。"""
 import logging
 
+from . import zones
 from .characters import characters
 from .commands import command
 from .commands.system import look
 from .config import PROMPT
+from .fight import stop_fighting
 from .players import Player, online_players, send
 from .telnet import START, Telnet
 
@@ -29,7 +31,7 @@ async def handle(reader, writer):
                 line = line.strip()
                 if me is None:
                     if line:
-                        me = Player(line, writer)
+                        me = Player(line, writer, zones.start_room())
                         characters.append(me)
                         log.info(f"{me.name} 登入，目前 {len(online_players())} 人")
                         me.send(f"歡迎，{me.name}。\n" + look(me) + PROMPT)
@@ -42,6 +44,7 @@ async def handle(reader, writer):
         pass
     finally:
         if me is not None:
+            stop_fighting(me)
             characters.remove(me)
             log.info(f"{me.name} 離線，目前 {len(online_players())} 人")
             for p in online_players():              # 別人的 reply 還指著這個玩家，清掉記憶體才放得掉

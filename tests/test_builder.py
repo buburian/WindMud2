@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from area_helpers import make_area, make_mobile, make_object, make_room, write_area, write_json
-from mud.area import Locks, RoomFlag, Sector
+from mud.area import AreaType, Locks, RoomFlag, Sector
 from mud.builder.server import make_server
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -49,6 +49,7 @@ def test_new_area_has_no_problems(builder):
     assert result["problems"] == []
     assert result["data"]["file"] == "new.json"
     assert result["data"]["area"]["header"]["area_number"] == 200
+    assert result["data"]["area"]["header"]["type"] == "world"
     assert [r["name"] for r in result["data"]["rooms"]] == ["新房間"]
     _, listing, _ = call(f"{base}/api/areas")
     assert listing == [{"file": "new.json", "title": "新區域", "area_number": 200, "rooms": 1}]
@@ -189,6 +190,13 @@ def test_page_tables_match_area_definitions():
     assert js_table("FLAGS") == [f.value for f in RoomFlag]
     assert js_table("SECTORS") == [s.value for s in Sector]
     assert js_table("LOCKS") == [lock.value for lock in Locks]
+
+
+def test_area_type_options_match_area_definitions():
+    # 區域設定的「區域種類」選單，值是字串，要跟 AreaType 一樣
+    text = (STATIC / "model.js").read_text(encoding="utf-8")
+    block = re.search(r"export const AREA_TYPES = \[(.*?)\n\];", text, re.S)[1]
+    assert re.findall(r'^\s*\["(\w+)",', block, re.M) == [t.value for t in AreaType]
 
 
 MANUAL = ROOT / "docs" / "區域製作手冊.md"

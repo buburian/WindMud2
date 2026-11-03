@@ -1,14 +1,13 @@
 """玩家：有連線的角色，以及送文字到連線。"""
 from .characters import SEX_MALE, Character, characters
-from .config import START_ROOM
 from .telnet import encode
 
 
 class Player(Character):
     """已登入的玩家。"""
 
-    def __init__(self, name, writer, sex=SEX_MALE):  # 還沒有建立角色，性別先都當男生
-        super().__init__(name, sex, START_ROOM)
+    def __init__(self, name, writer, room, sex=SEX_MALE):  # 還沒有建立角色，性別先都當男生
+        super().__init__(name, sex, room)
         self.writer = writer                 # 這個玩家的連線
         self.reply = None                    # 最後一個 tell 我的玩家（Player），reply 指令用
 

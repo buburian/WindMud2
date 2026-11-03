@@ -1,6 +1,7 @@
 """系統類指令。每個指令都長 do_xxx(ch, arg)：ch 是下指令的角色，回傳 False 代表要斷線。"""
+from .. import weather, zones
 from ..act import TO_CHAR, TO_ROOM, TO_VICT, act
-from ..area import DIRECTIONS, REVERSE, rooms
+from ..area import DIRECTIONS, REVERSE
 from ..characters import characters
 from ..color import colorize
 from ..players import online_players
@@ -11,7 +12,7 @@ def do_look(ch, arg):
     if not arg:
         ch.send(look(ch))
         return
-    room = rooms[ch.room]
+    room = ch.room
     target = arg.split()[0].lower()
     # 照 C 版的順序：先找房間裡可以細看的東西（名字要整個字一樣），再把它當成方向（n、no、north 都算北）
     for keywords, text in room.extra_descriptions:
@@ -35,8 +36,8 @@ def block(text):
 
 def look(ch):
     """ch 所在房間的樣子：名稱、出口、描述、同房間的其他角色。登入時也用這個。"""
-    room = rooms[ch.room]
-    exits = "".join(" {C" + DIRECTIONS[d] for d in DIRECTIONS if d in room.exits) or " 沒有"
+    room = ch.room
+    exits ="".join(" {C" + DIRECTIONS[d] for d in DIRECTIONS if d in room.exits) or " 沒有"
     # 房間的文字是區域作者寫的，可以用顏色代碼；角色名字是後面才接上去的，不會被轉
     text = colorize("{G【{Y" + room.name + "{G】{x\n{G【出口：" + exits + "{G】{x\n" + room.description)
     if not text.endswith("\n"):
@@ -48,7 +49,9 @@ def look(ch):
 
 
 def move(ch, direction):
-    to = rooms[ch.room].exits.get(direction)
+    vnum = ch.room.exits.get(direction)
+    # 在副本、動態區域裡走會留在同一份；走進還沒建立的動態區域時，room_at 會建立它
+    to = zones.room_at(ch.room, vnum) if vnum is not None else None
     if to is None:
         ch.send("那裡不能走。\n")
         return
@@ -114,6 +117,13 @@ def tell(ch, victim, msg):
     act("{G你告訴$N：$t{x", ch, vch=victim, t=msg, to=TO_CHAR)
     act("{G$n告訴你：$t{x", ch, vch=victim, t=msg, to=TO_VICT)
     victim.reply = ch
+
+
+def do_weather(ch, arg):
+    if not weather.outside(ch):
+        ch.send("你現在在室內是看不到天氣的。\n")
+        return
+    ch.send(weather.current.describe() + "\n")
 
 
 def do_quit(ch, arg):

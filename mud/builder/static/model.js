@@ -63,6 +63,13 @@ export const LOCKS = [
   [8, "門，撬不開、撞不開、法術穿不過去"],
 ];
 
+// 區域的種類（header.type），值是字串
+export const AREA_TYPES = [
+  ["world", "世界區域"],
+  ["dynamic", "動態區域"],
+  ["instance", "副本區域"],
+];
+
 // 區域設定的三個特殊規則：勾＝1，不勾＝null。on() 照手冊判斷檔案裡的值算不算有勾
 export const AREA_RULES = [
   { key: "no_teleport", label: "傳送術不會傳到這個區域", tip: "傳送術隨機挑落點時，不會挑到這個區域", on: (v) => v === 1 },

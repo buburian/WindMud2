@@ -16,6 +16,7 @@ COMMANDS = [
     ("tell", system.do_tell),
     ("reply", system.do_reply),
     ("quit", system.do_quit),
+    ("weather", system.do_weather),         # 放最後：w 還是 west，wea 才是 weather
 ]
 
 

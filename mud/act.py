@@ -34,8 +34,16 @@ def act(fmt, ch, vch=None, t=None, T=None, to=TO_ROOM):
         if reader is ch:
             reader.send(text + "\n")            # prompt 由 command() 補
         else:
-            # 先換行，才不會接在對方的 prompt 後面；說完再補回對方的 prompt
-            reader.send(f"\n{text}\n{PROMPT}")
+            notify(reader, text)
+
+
+def notify(ch, text):
+    """主動送給 ch 的訊息（不是 ch 自己下指令引起的，例如別人說話、天氣變化）。
+
+    先換行，才不會接在 ch 的 prompt 後面；說完再補回 prompt。
+    text 不轉顏色代碼：act() 傳進來的已經轉過，再轉一次會讓玩家打的 {R 變成顏色。
+    """
+    ch.send(f"\n{text}\n{PROMPT}")
 
 
 def fill(fmt, ch, vch, t, T, reader):

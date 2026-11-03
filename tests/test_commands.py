@@ -4,7 +4,7 @@ import pytest
 
 import mud.commands as commands
 from area_helpers import make_exit, make_room, write_area
-from mud import area
+from mud import zones
 from mud.characters import SEX_NEUTRAL, characters
 from mud.commands import system
 from mud.config import ENCODING
@@ -71,24 +71,24 @@ def test_real_table():
 def test_quit_abbreviation_saves_and_disconnects(monkeypatch):
     saved = []
     monkeypatch.setattr(system, "save_player", saved.append)
-    ming = Player("小明", FakeWriter())
+    ming = Player("小明", FakeWriter(), None)   # 用不到房間
     assert commands.command(ming, "q") is False
     assert saved == ["小明"]
     assert ming.writer.data == "再見。\r\n".encode(ENCODING)
 
 
 def test_unknown_command():
-    ming = Player("小明", FakeWriter())
+    ming = Player("小明", FakeWriter(), None)   # 用不到房間
     assert commands.command(ming, "xyz") is True
     assert ming.writer.data == "什麼？\r\nHP100> ".encode(ENCODING)
 
 
 @pytest.fixture
 def online():
-    # 小明、阿華、Bob 都在線，站在同一個房間
+    # 小明、阿華、Bob 都在線；要站在房間裡的測試用 stand_in() 載入區域
     ps = {}
     for name in ("小明", "阿華", "Bob"):
-        ps[name] = Player(name, FakeWriter())
+        ps[name] = Player(name, FakeWriter(), None)
         characters.append(ps[name])
     yield ps
     characters.clear()
@@ -152,14 +152,21 @@ def test_tell_missing_message(online):
 @pytest.fixture
 def world(online):
     # 三個人都站在房間 101
-    area.load(AREAS)
+    stand_in(AREAS, online)
     return online
+
+
+def stand_in(folder, online):
+    """載入 folder 的區域，大家都站在世界的房間 101。"""
+    zones.load(folder)
+    for p in online.values():
+        p.room = zones.world.rooms[101]
 
 
 @pytest.fixture
 def dog(world):
     # 一隻野狗（NPC）也站在房間 101；online 結束時會一起清掉
-    npc = Npc("野狗", SEX_NEUTRAL, 101)
+    npc = Npc("野狗", SEX_NEUTRAL, zones.world.rooms[101])
     characters.append(npc)
     return npc
 
@@ -174,7 +181,7 @@ def test_look_shows_room_and_others(world):
 def test_walk_north_then_follow(world):
     ming, hua, bob = world["小明"], world["阿華"], world["Bob"]
     commands.command(ming, "n")
-    assert ming.room == 102
+    assert ming.room.vnum == 102
     assert hua.writer.data == "\r\n小明朝北離開。\r\nHP100> ".encode(ENCODING)
     assert bob.writer.data == "\r\n小明朝北離開。\r\nHP100> ".encode(ENCODING)
     # 自己走過去之後自動 look：新房間只有自己，出口只有南
@@ -196,7 +203,7 @@ def test_no_exit_that_way(world):
     ming = world["小明"]
     commands.command(ming, "south")
     assert ming.writer.data == "那裡不能走。\r\nHP100> ".encode(ENCODING)
-    assert ming.room == 101
+    assert ming.room.vnum == 101
 
 
 @pytest.mark.parametrize("line", ["look n", "look no", "look north", "l n"])
@@ -237,7 +244,7 @@ def test_sign_is_only_in_its_own_room(world):
 def test_look_direction_without_description(online, tmp_path):
     # 有出口但沒寫描述（make_room 的出口描述是空字串）
     write_area(tmp_path, "a.json", [make_room(1, north=2), make_room(2)])
-    area.load(tmp_path)
+    stand_in(tmp_path, online)
     ming = online["小明"]
     commands.command(ming, "look n")
     assert ming.writer.data == "那裡沒有什麼特別的東西。\r\nHP100> ".encode(ENCODING)
@@ -249,7 +256,7 @@ def test_things_come_before_directions(online, tmp_path):
     r["exits"]["north"] = make_exit(1, "往北看。\n")
     r["extra_descriptions"] = [{"keywords": "north 北牆", "description": "北牆上刻著字。\n"}]
     write_area(tmp_path, "a.json", [r])
-    area.load(tmp_path)
+    stand_in(tmp_path, online)
     ming = online["小明"]
     commands.command(ming, "look north")
     assert ming.writer.data == "北牆上刻著字。\r\nHP100> ".encode(ENCODING)
@@ -266,6 +273,6 @@ def test_look_shows_npc(world, dog):
 def test_npc_can_walk(world, dog):
     # NPC 也能下指令：走到北邊，原本房間的玩家都看到它離開
     assert commands.command(dog, "north") is True
-    assert dog.room == 102
+    assert dog.room.vnum == 102
     for p in world.values():
         assert p.writer.data == "\r\n野狗朝北離開。\r\nHP100> ".encode(ENCODING)

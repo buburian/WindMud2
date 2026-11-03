@@ -1,7 +1,8 @@
-"""區域：檢查並載入 areas/ 裡的區域檔。
+"""區域檔：格式、檢查，以及把房間建成 Room。
 
 區域檔是我們自己的格式，每個欄位的意思寫在 docs/區域製作手冊.md。
-規則只在 check_files() 一份：伺服器開機（load）和檢查工具（python -m mud.areacheck）都用它。
+規則只在 check_files() 一份：伺服器開機（zones.load）、檢查工具（python -m mud.areacheck）和區域編輯器都用它。
+開機後真的在跑的區域（世界、動態區域、副本）在 zones.py。
 
 號碼規則：檔案裡的房間、生物號碼只能是 1～99，遊戲裡的號碼是 area.header.area_number 加上它
 （房間和生物的號碼分開算）。
@@ -11,17 +12,14 @@
 """
 import enum
 import json
-import logging
 import math
 from pathlib import Path
-
-log = logging.getLogger(__name__)
 
 DIRECTIONS = {"north": "北", "east": "東", "south": "南", "west": "西", "up": "上", "down": "下"}
 REVERSE = {"north": "south", "east": "west", "south": "north", "west": "east", "up": "down", "down": "up"}
 
 
-# 手冊三張數字表的定義，要跟手冊一模一樣（tests/test_area.py 會比對數字和名字）。
+# 手冊的表在程式裡的定義，要跟手冊一模一樣（tests/test_area.py 會比對數字和名字）。
 # 程式裡用名字（例如 RoomFlag.SAFE），不要直接寫數字。
 class RoomFlag(enum.IntFlag):
     """房間旗標（room_flags）。名字是手冊的 C 版名稱；可以用 | 合起來，2 沒有用到。"""
@@ -81,10 +79,17 @@ class Locks(enum.IntEnum):
     PICKPROOF_BASHPROOF_PASSPROOF = 8       # 門，撬不開、撞不開、法術穿不過去
 
 
+class AreaType(enum.StrEnum):
+    """區域的種類（area.header.type）。值就是區域檔裡寫的字串，要跟手冊「三種區域」的表一樣。"""
+    WORLD = "world"                         # 世界區域：開機就建好，沒人也不釋放
+    DYNAMIC = "dynamic"                     # 動態區域：有人走進去才建立，大家共用一份；沒有玩家一段時間就釋放
+    INSTANCE = "instance"                   # 副本區域：用 enter 進去、recall 出來，一個隊伍一份；沒有玩家一段時間就釋放
+
+
 # 每一層要剛好有這些欄位
 TOP_KEYS = ("schema_version", "file", "area", "rooms", "mobiles", "objects", "resets")
 AREA_KEYS = ("header", "recall", "no_teleport", "clan_recall", "gem")
-HEADER_KEYS = ("levels", "author", "title", "area_number")
+HEADER_KEYS = ("levels", "author", "title", "area_number", "type")
 ROOM_KEYS = ("vnum", "name", "description", "room_flags", "sector", "exits", "extra_descriptions", "script")
 EXIT_KEYS = ("description", "keywords", "locks", "key", "to_room")
 EXTRA_KEYS = ("keywords", "description")
@@ -125,9 +130,7 @@ class Room:
         self.sector = sector                # 地形（Sector）
         self.exit_descriptions = exit_descriptions    # 方向 → 往那個方向看到的樣子（look 方向）
         self.extra_descriptions = extra_descriptions  # [(小寫的名字們, 描述)]：可以細看的東西（look 牌子）
-
-
-rooms = {}  # vnum → Room
+        self.zone = None                    # 屬於哪個區域物件（zones.Zone），建進區域物件時設定
 
 
 def parse_flags(value):
@@ -191,11 +194,21 @@ def check_files(paths, reference=()):
         return owner
 
     owner = owners("rooms", "房間", lambda info: info.vnums)
-    # 出口和 recall 指到的房間要存在
+    # 每個檔案是哪一種區域（檔名 → AreaType），出口通到別的檔案時要看
+    kinds = {path.name: area_kind(path) for path in reference if path.resolve() not in checked}
+    kinds.update({path.name: info.kind for path, info in found.items()})
+    # 出口和 recall 指到的房間要存在；副本只能用 enter 進去、recall 出來，所以出口不能跨進或跨出副本
     for path, info in found.items():
         for vnum, d, to in info.exits:
-            if resolve(info.base, to) not in owner:
-                problems[path].append(f"{path.name}：房間 {vnum} 往 {d} 的出口指到不存在的房間 {resolve(info.base, to)}")
+            target = resolve(info.base, to)
+            if target not in owner:
+                problems[path].append(f"{path.name}：房間 {vnum} 往 {d} 的出口指到不存在的房間 {target}")
+            elif owner[target] != path.name and info.kind == AreaType.INSTANCE:
+                problems[path].append(f"{path.name}：房間 {vnum} 往 {d} 的出口通到 {owner[target]} 的房間 {target}，"
+                                      f"副本的出口不能通到別的區域（要用 recall 出來）")
+            elif owner[target] != path.name and kinds.get(owner[target]) == AreaType.INSTANCE:
+                problems[path].append(f"{path.name}：房間 {vnum} 往 {d} 的出口通到副本 {owner[target]} 的房間 {target}，"
+                                      f"副本不能走進去（要用 enter）")
         if info.recall is not None and resolve(info.base, info.recall) not in owner:
             problems[path].append(f"{path.name}：area.recall 指到不存在的房間 {resolve(info.base, info.recall)}")
     owners("mobiles", "生物", lambda info: info.mobiles)
@@ -208,6 +221,7 @@ class Found:
 
     def __init__(self):
         self.base = None                    # area_number
+        self.kind = None                    # 格式沒問題的 header.type（AreaType）
         self.vnums = []                     # 號碼沒問題的房間（檔案號碼）
         self.exits = []                     # [(房間檔案號碼, 方向, to_room)]：格式沒問題的出口
         self.recall = None                  # 格式沒問題的 recall
@@ -237,6 +251,15 @@ def game_numbers(path, key="rooms"):
             if isinstance(r, dict) and is_int(r.get("vnum")) and 1 <= r["vnum"] <= 99]
 
 
+def area_kind(path):
+    """盡量讀出一個檔案的 header.type（給對照用，讀不到就是 None）。"""
+    data = read_json(path, [])
+    try:
+        return data["area"]["header"]["type"]
+    except (KeyError, TypeError):
+        return None
+
+
 def check_keys(obj, keys, where, problems):
     """obj 要是 dict，而且欄位剛好是 keys。回傳 obj 是不是 dict。"""
     if not isinstance(obj, dict):
@@ -256,7 +279,8 @@ def check_structure(name, data, problems):
         problems.append(f"{name}：schema_version 要是 1，不能是 {data['schema_version']!r}")
     if "file" in data and data["file"] != name:
         problems.append(f"{name}：file 要寫實際的檔名 {name!r}，不能是 {data['file']!r}")
-    base, recall = check_area(name, data["area"], problems) if "area" in data else (None, None)
+    base, recall, kind = check_area(name, data["area"], problems) if "area" in data else (None, None, None)
+    found.kind = kind
     rooms = check_rooms(name, data, base, problems)
     mobiles = check_mobiles(name, data, base, problems)
     objects = check_objects(name, data, base, problems)
@@ -322,10 +346,10 @@ def check_mobiles(name, data, base, problems):
 
 
 def check_area(name, area, problems):
-    """檢查 area 區塊。回傳 (area_number, recall)，不對的就是 None。"""
-    base = recall = None
+    """檢查 area 區塊。回傳 (area_number, recall, type)，不對的就是 None。"""
+    base = recall = kind = None
     if not check_keys(area, AREA_KEYS, f"{name}：area ", problems):
-        return None, None
+        return None, None, None
     header = area.get("header")
     if "header" in area and check_keys(header, HEADER_KEYS, f"{name}：area.header ", problems):
         levels = header.get("levels")
@@ -341,6 +365,12 @@ def check_area(name, area, problems):
             else:
                 problems.append(f"{name}：area.header.area_number 要是正整數（1～99 是保留的號碼，area_number 不能是 0），"
                                 f"不能是 {header['area_number']!r}")
+        if "type" in header:
+            if header["type"] in [t.value for t in AreaType]:    # 用 list 比對：寫成 [] 這種不能雜湊的值也不會出錯
+                kind = AreaType(header["type"])
+            else:
+                problems.append(f"{name}：area.header.type 要寫 {'、'.join(t.value for t in AreaType)} 其中一個，"
+                                f"不能是 {header['type']!r}")
     if "recall" in area and area["recall"] is not None:
         if is_int(area["recall"]) and area["recall"] >= 1:
             recall = area["recall"]
@@ -351,7 +381,7 @@ def check_area(name, area, problems):
     for k in ("clan_recall", "gem"):
         if k in area and not (area[k] is None or (is_int(area[k]) and area[k] >= 0)):
             problems.append(f"{name}：area.{k} 要是 null 或不小於 0 的整數，不能是 {area[k]!r}")
-    return base, recall
+    return base, recall, kind
 
 
 def check_room(where, r, problems):
@@ -577,26 +607,3 @@ def build_room(base, r):
                           for ed in r["extra_descriptions"]]
     return Room(base + r["vnum"], r["name"], r["description"], exits,
                 RoomFlag(parse_flags(r["room_flags"])), Sector(r["sector"]), exit_descriptions, extra_descriptions)
-
-
-def load(directory):
-    """檢查並讀 directory 裡全部的 *.json。
-
-    有任何問題就丟 ValueError（訊息是第一個問題），原本載入的房間不動。
-    """
-    paths = sorted(Path(directory).glob("*.json"))
-    problems = check_files(paths, paths)
-    found = [p for path in paths for p in problems[path]]
-    if found:
-        more = f"（共 {len(found)} 個問題，用 uv run python -m mud.areacheck 看全部）" if len(found) > 1 else ""
-        raise ValueError(found[0] + more)
-    loaded = {}
-    for path in paths:
-        data = json.loads(path.read_text(encoding="utf-8"))
-        base = data["area"]["header"]["area_number"]
-        for r in data["rooms"]:
-            room = build_room(base, r)
-            loaded[room.vnum] = room
-    rooms.clear()
-    rooms.update(loaded)
-    log.info(f"載入 {len(paths)} 個區域、{len(rooms)} 個房間")

@@ -7,6 +7,10 @@ from mud.npcs import Npc
 from mud.players import Player
 
 
+# act() 只比較兩個角色的 room 是不是同一個，用兩個不同的物件代表兩間房就夠了
+HERE, THERE = object(), object()
+
+
 class FakeWriter:
     """假的連線：只把送出的 bytes 收起來。"""
 
@@ -25,7 +29,7 @@ def online():
     # 小明（男）、小美（女）、阿華（男）都在線，站在同一個房間
     ps = {}
     for name, sex in (("小明", SEX_MALE), ("小美", SEX_FEMALE), ("阿華", SEX_MALE)):
-        ps[name] = Player(name, FakeWriter(), sex)
+        ps[name] = Player(name, FakeWriter(), HERE, sex)
         characters.append(ps[name])
     yield ps
     characters.clear()
@@ -74,7 +78,7 @@ def test_text_arguments(online):
 
 def test_room_targets_only_same_room(online):
     ming, mei, hua = online["小明"], online["小美"], online["阿華"]
-    hua.room = 102                              # 阿華在別的房間
+    hua.room = THERE                            # 阿華在別的房間
     act("嗨", ming, to=TO_ROOM)
     act("嗨", ming, vch=mei, to=TO_NOTVICT)
     assert mei.writer.text() == to_other("嗨")  # 只收到 TO_ROOM 那一次

@@ -9,7 +9,8 @@
       ],
       "author": "Test",
       "title": "測試區域",
-      "area_number": 100
+      "area_number": 100,
+      "type": "world"
     },
     "recall": 1,
     "no_teleport": null,

@@ -31,10 +31,15 @@ uv run python -m mud.builder                      # 區域編輯器，瀏覽器�
 - `tests/test_telnet.py` 是 `Telnet` 狀態機的單元測試；`tests/test_commands.py` 測指令縮寫比對、tell、reply 和 quit；`tests/test_color.py` 測顏色代碼；`tests/test_act.py` 測 `act()` 的代換和送給誰；
   `tests/test_log.py` 測紀錄檔的編號、換檔和刪舊檔；`tests/test_area.py` 測區域載入，也比對手冊的數字表跟程式的定義；`tests/test_areacheck.py` 測區域檔檢查的每條規則；
   要自己做區域檔的測試，用 `tests/area_helpers.py` 做出完整的檔案再改欄位（直接 `from area_helpers import …`）；
-  `tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit。
+  `tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit；另一個測試讓 tick 和幾場戰鬥一直跑，確認玩家打字照樣馬上回應。
   `tests/test_builder.py` 用 port 0 開真的區域編輯器（資料夾是 `tmp_path`），用 urllib 打 API；也比對網頁的數字表跟 `area.py` 的定義、手冊的表。
-  用到房間的測試要自己先 `area.load(areas 資料夾)`：`area.rooms` 是全域的，不要依賴別的測試先載入過。
+  `tests/test_weather.py` 測天氣（時間、日夜、天空一次只走一格、送給誰、weather 指令）；`tests/test_clock.py` 測定時器；`tests/test_zones.py` 測區域物件（動態區域、副本的建立和釋放、tick）；`tests/test_fight.py` 測戰鬥 loop。
+  用到房間的測試要自己先 `zones.load(areas 資料夾)`：`zones.world` 是全域的，不要依賴別的測試先載入過。
+  角色的 `room` 是 Room 物件：載入之後再把角色放進 `zones.world.rooms[101]` 這種房間（重新載入後舊的 Room 就不是世界裡的了）。
   `characters` 也是全域的：測試加進去的角色（玩家、NPC）要在 fixture 結束時 `characters.clear()`，不然會跑進別的測試的 look 裡。
+  會開 loop 的動作（`zones.start()`、`zones.instance()`、`start_fight()`）要在 `asyncio.run()` 裡做，fixture 結束時 `zones.stop()`；
+  要等時間的測試用 monkeypatch 把 `zones.TICK_SECONDS`、`zones.RELEASE_SECONDS`、`fight.ROUND_SECONDS` 改成很小的數字，
+  用 `until(條件)` 輪詢等待，不要寫死等多久。
 - `test_server.py` 的 client 連線一定要在 `finally` 關掉：Python 3.12 起，離開 `async with server` 會等所有連線斷掉，
   測試中途失敗時不先關就會永遠卡住。
 
@@ -69,20 +74,25 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
 - **`encode()`**（`telnet.py`）：送出的**文字**一律經過它（`\n`→`\r\n`、cp950 編碼、`0xFF` 寫兩次），也就是用 `send()` 寫。
   telnet 控制碼（例如 `START`、`tn.replies`）則要直接 `writer.write(bytes)`，**絕不能**經過 `encode()`——IAC 就是 `0xFF`，會被寫成兩次而失效。
 - **角色**（`characters.py`、`players.py`、`npcs.py`）：玩家和 NPC 都是角色（使用者要求先分好骨架，資料只放現在用得到的）。
-  - `Character`：`name`、`sex`、`room`（所在房間的 vnum）。`send(text)` 送文字給這個角色，預設什麼都不做。
-    還沒有姿勢。**使用者說很重要**：手冊生物那章的 position 表（0 dead～7 standing）也是角色（玩家和生物）現在狀態的定義，
-    遊戲用它判斷角色是在休息、站著走動還是在戰鬥；之後做角色狀態時就用這張表（寫成有名字的定義），不要另外發明一套。
-    全域的 `characters` 是遊戲裡所有的角色（玩家和 NPC），找同房間的人都從這裡找。
-  - `Player`：多了 `writer`（連線）和 `reply`（最後一個 tell 我的玩家），`send()` 寫到連線。性別還沒有地方選，
-    先都預設男 `SEX_MALE`；登入時站在 `config.START_ROOM`。`online_players()` 是在線的玩家（chat、tell 只找他們）。
+  - `Character`：`name`、`sex`、`room`（所在的 **Room 物件**，不是號碼：兩份副本的同號房間是不同的 Room，
+    所以 `act()`、`look()` 比 `c.room == ch.room` 時看不到別份的人）、`position`、`fighting`（正在打誰）、`fight`（在哪一場）。
+    `send(text)` 送文字給這個角色，預設什麼都不做。
+    **姿勢用 `Position`**（`characters.py`）：**使用者說很重要**，就是手冊生物那章的 position 表（0 DEAD～7 STANDING），
+    也是角色（玩家和生物）現在狀態的定義，遊戲用它判斷角色是在休息、站著走動還是在戰鬥；不要另外發明一套。
+    改手冊的表要一起改它（`tests/test_area.py` 會比對）。現在只有戰鬥會切換 FIGHTING／STANDING。
+    全域的 `characters` 是遊戲裡所有的角色（玩家和 NPC，所有區域物件裡的），找同房間的人都從這裡找。
+  - `Player(name, writer, room)`：多了 `writer`（連線）和 `reply`（最後一個 tell 我的玩家），`send()` 寫到連線。性別還沒有地方選，
+    先都預設男 `SEX_MALE`；登入時站在 `zones.start_room()`（世界區域的 `config.START_ROOM`）。`online_players()` 是在線的玩家（chat、tell 只找他們）。
     模組的 `send(writer, text)` 給還沒登入時用（例如 `Login:`）。
-  - `Npc`：還沒有自己的欄位，`send()` 什麼都不做，所以送給 NPC 的訊息等於沒送。區域檔的 `mobiles` 還只檢查格式，`load()` 不會把它們變成 NPC，遊戲裡還不會出現 NPC。
-  - `handle()` 登入時建立 `Player` 加進 `characters`；斷線清理在 `handle()` 的 `finally`：移出 `characters`，
+  - `Npc`：還沒有自己的欄位，`send()` 什麼都不做，所以送給 NPC 的訊息等於沒送。區域檔的 `mobiles` 還只檢查格式，`zones.load()` 不會把它們變成 NPC，遊戲裡還不會出現 NPC。
+  - `handle()` 登入時建立 `Player` 加進 `characters`；斷線清理在 `handle()` 的 `finally`：先 `stop_fighting()`，再移出 `characters`，
     也清掉別人身上指向這個玩家的 `reply`。
 - **`act()`**（`act.py`）：送訊息給別人一律用它。`to` 決定送給誰：`TO_CHAR` 自己、`TO_VICT` 對象、`TO_ROOM` 同房間自己以外、
   `TO_NOTVICT` 同房間自己和對象以外。`ch`、`vch` 都是角色（玩家或 NPC）。全服頻道（chat）不用 `TO_ROOM`，要自己走訪所有玩家。
   代換碼（字母跟 C 版一樣）：`$n`/`$N` 名字（`$n` 送給自己時變「你」）、`$e $m`/`$E $M` 他她它、`$s`/`$S` 他的她的它的、
   `$t`/`$T` 帶進來的文字；小寫是自己、大寫是對象。寫錯的碼原樣保留，並在伺服器視窗印警告。
+  不是哪個角色做的事、而是系統主動送的訊息（例如天氣），用 `notify(ch, text)`：跟 `act()` 送給別人一樣先換行、再補 prompt
+  （`act()` 送給別人時就是呼叫它）。`notify()` 不轉顏色代碼。
 - **指令**（`commands/`）：`__init__.py` 的 `COMMANDS` 是指令表，輸入的字照表的順序找**第一個用它開頭的指令**
   （例如 `c` → chat），表的順序就是縮寫的優先順序。指令依類別分檔：系統類在 `system.py`，技能法術類之後另開檔。
   加新指令：在類別檔寫 `do_xxx(ch, arg)`（`ch` 是下指令的角色，回傳 `False` 代表斷線），再加進 `COMMANDS`。
@@ -93,9 +103,9 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   `look 東西或方向`（照 C 版的順序）：先找房間的 `extra_descriptions`（名字要整個字一樣，英文不分大小寫），
   再當成方向（`n`、`no`、`north` 都算北）顯示出口的 `description`，**不是**隔壁房間的描述。
   沒出口或出口沒描述 →「那裡沒有什麼特別的東西。」；都對不上 →「在這裡找不到你要看的東西。」
-- **區域**（`area.py`、`areas/`）：開機時 `load()` 讀 `areas/*.json`，存成 `rooms`（遊戲號碼 → `Room`）。
+- **區域**（`area.py`、`areas/`）：`area.py` 只管區域檔的格式、檢查和 `build_room()`；開機後真的在跑的區域在 `zones.py`（見下面「區域物件」）。
   **規則只有一份：`check_files()`**，照手冊檢查每一個欄位（欄位要剛好，少了或多了都算錯），把所有問題收集起來。
-  `load()` 先呼叫它，有問題就報第一個（加上總數）並停止開機；沒問題才用 `build_room()` 建房間。
+  `zones.load()` 先呼叫它，有問題就報第一個（加上總數）並停止開機，原本的區域物件不動；沒問題才建房間。
   檢查工具 `mud/areacheck.py` 也是呼叫它，所以伺服器和工具的判斷永遠一樣。
   **區域檔格式的流程（使用者定的）：先改手冊和 `areas/test.json`；使用者全部確認後，才會請你照手冊改系統。**
   在那之前，系統只改到「還讀得懂 test.json」為止：`check_files()` 認得新欄位、檢查寫法，
@@ -104,7 +114,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   區域編輯器（`builder/server.py` 的 `new_area()`、`builder/static/model.js` 的 `newRoom()`、`newExit()` 和畫面）要一起改。
   `Room` 上存了 `name`、`description`、出口（`exits`、`exit_descriptions`）、`extra_descriptions`、`room_flags`、`sector`。
   **手冊的三張數字表在 `area.py` 寫成有名字的定義**（使用者要求程式裡不能只有數字）：`RoomFlag`（room_flags）、
-  `Sector`（sector）、`Locks`（出口的 locks）。名字用手冊的 C 版名稱（locks 的表沒有名稱，照 C 版的門旗標取），
+  `Sector`（sector）、`Locks`（出口的 locks）。另外 `AreaType`（`header.type`：`world`、`dynamic`、`instance`）是字串的定義，
+  手冊「三種區域」的表、編輯器 `model.js` 的 `AREA_TYPES` 都要跟它一樣（有測試比對）。名字用手冊的 C 版名稱（locks 的表沒有名稱，照 C 版的門旗標取），
   中文意思寫在每一行的註解。檢查區域檔只認這些定義；`Room` 存的是 `RoomFlag`、`Sector`，印出來看得到名字
   （例如 `<RoomFlag.DARK|NO_MOB: 5>`）。**改手冊的表時要一起改這些定義**：`tests/test_area.py` 會比對數字和名字，
   註解的中文意思測試看不到，要自己對。**程式裡用名字（例如 `RoomFlag.SAFE`），不要直接寫數字。**
@@ -123,7 +134,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     房間沒有 `area_number`，改成寫在 `area.header`；等級範圍只有一個 `header.levels`（`[最低, 最高]`）；
     沒有 `area.name`，之後遊戲要用 header 的資料自己組出顯示的名稱；
     `room_flags`（數字或字串）、`sector`（整數）不是 `{"value": …, "names": …}` 這種 dict；沒有 `overridden_exits`。
-    `areas/test.json` 是測試區域：`area_number` 100，房間 1（南）、2（北）在遊戲裡是 101、102，南北相連；
+    `areas/test.json` 是測試區域（世界區域，`type` 是 `world`）：`area_number` 100，房間 1（南）、2（北）在遊戲裡是 101、102，南北相連；
     起始房間 `config.START_ROOM` 是 101。之後會照使用者的指示繼續改格式。`area`、每個房間、每隻生物、每個物品和每筆重置的欄位**一個都不能少**，
     巢狀欄位也要有範例值（`extra_descriptions`、`script` 各放一筆；生物 1「測試商人」的每個欄位都有值，生物 2「測試坐騎」示範 null／空的寫法；
     物品 1～4 是藥水、長劍、箱子、麵包（重置用到 1、3、4），物品 2「測試長劍」每個欄位都有值；
@@ -152,6 +163,39 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     **使用者說生物不穿裝備**：舊版的 `E`（穿裝備；`wear_loc` 100 是給坐騎）連同坐騎一起拿掉了，`wear_loc` 表也拿掉，不要加回來。
     `rare` 就是使用者說的「稀有度」，之後拿來算經驗值。
     使用者會再刪改，所以 `check_resets()` 只檢查寫法；號碼指到的東西存不存在、`G` 前面有沒有 `M`、`D` 的出口有沒有門都還沒查。
+- **區域物件**（`zones.py`，使用者定的三種，`header.type` 決定）：
+  - 世界區域（`world`）：開機時把所有 world 檔建進**一個**區域物件 `zones.world`，永遠不釋放。
+  - 動態區域（`dynamic`）：有人走進去才建立（`room_at()`），大家共用一份（`zones.dynamic`，檔名 → Zone）。
+  - 副本區域（`instance`）：`zones.instance(檔名, 擁有者)` 建立，一個擁有者一份（擁有者用名字；之後是隊長的名字）。
+    只能用 enter 進去、recall 出來，所以 `check_files()` 不准出口跨進或跨出副本。enter、recall、傳送門（之後做成物品）、組隊、死亡回 1 號房**還沒做**。
+  - 動態區域和副本沒有玩家超過 `RELEASE_SECONDS`（20 分鐘）就 `release()`：停掉裡面的戰鬥、移走留下的角色、從名單拿掉。
+    在 tick 裡檢查：第一次看到沒人的 tick 才開始算，所以實際上是 20 分鐘再加 0～60 秒（最多晚兩個 tick）。下一個人進去時重新建立，裡面全部重來。
+  - 區域檔開機時就讀好、檢查好（`templates`），建立動態區域和副本時不讀檔。
+  - 每間 Room 有 `zone` 指回它的區域物件。走路用 `room_at(from_room, vnum)`：先找自己所在的區域物件
+    （所以在副本、動態區域裡走會留在同一份），再找世界，最後是動態區域。
+- **tick 和戰鬥的 loop**（使用者定的；C 版是全遊戲一個鐘，我們不照它）：
+  - tick loop：世界和全部動態區域**共用一個**（世界 tick，`zones.start()` 開始），每次先做世界、再做每個動態區域；
+    **副本每份自己一個**（建立時開始，釋放時結束）。間隔 `TICK_SECONDS` 固定 30 秒（使用者選的，不加亂數）。
+    每個區域物件一次 tick 要做的事寫在 `Zone.tick()`：世界做天氣；動態區域、副本檢查要不要釋放。世界的變換（回血、NPC 行動……）之後加在這裡。
+  - **天氣**（`weather.py`，tick 的第一個功能）：**全遊戲一個**（`weather.current`），只由世界 tick 走時間（`weather.tick()`），
+    副本的 tick 不動它。照 C 版的 `weather_update()`：每個 tick 是遊戲裡 1 小時（一天 24 小時、一個月 35 天、一年 17 個月），
+    開機時從現實時間算出來，重開機後接得上。日夜（`Sunlight`）在 6、7、19、20 點改變並通知。
+    天空（`Sky`）用氣壓決定，**一個 tick 最多走一格**（晴天 ⇄ 陰天 ⇄ 下雨 ⇄ 打雷）：使用者要求天氣要漸進，不能從晴天直接跳到下雨，有測試。
+    **使用者要隨機、季節影響小**：氣壓往季節的目標靠的力氣比 C 版小（`PULL` 1，目標乾季 1010、雨季 990；C 版是 2、1015／985，
+    乾季幾乎不下雨）。現在每個季節四種天空都會出現，只是雨季多雨、乾季多晴（有測試）；調這些數字前先模擬看比例。
+    **室內只看房間旗標 `8 INDOORS`**（使用者選的，照 C 版）：地形 `0 室內` 不算，地形只管走路。
+    通知只送給**室外**（房間沒有 `RoomFlag.INDOORS`）、**醒著**（姿勢比 SLEEPING 高）的玩家；同一個 tick 的好幾句合成一段，只補一次 prompt。
+    `weather` 指令（指令表最後，`wea` 起才找得到）：室外顯示幾點、天空、風向；室內「你現在在室內是看不到天氣的。」
+    `update(rng)` 的亂數從參數傳進來，測試用假的亂數控制結果。
+  - 戰鬥 loop（`fight.py`）：**一場戰鬥一個**，一場＝同一間房裡互打的一群人。每 `ROUND_SECONDS`（2 秒）一回合，從開打算起，各跑各的節拍。
+    `start_fight()` 開打：第三個人加入同一場；兩場的人互打就把後開的併進先開的（一個人同時只在一場）；被打的人自動還手。
+    對手離開遊戲或不在同一間房就停手（`stop_fighting()`），沒人在打這場就結束。戰鬥屬於所在的區域物件（`zone.fights`）。
+    對手停了手但還在同一間房、又被打到：拉回這一場（在別場就合併），C 版也是這樣。
+    出手 `hit()` 現在是空的，傷害、HP、kill 指令還沒做。
+  - 定時器共用 `clock.every()`：照 `loop.time()` 排時間不會越跑越慢，超時了從現在重新算、不追趕。
+  - **loop 裡做的事不能卡住**：`Zone.tick()`、`Fight.round()` 都是普通函式，要很快做完，不能 `time.sleep`、不能讀檔。
+    每個 loop 自己接住錯誤：tick 出錯記 log、下次照跑（世界 tick 裡每個區域物件分開接）；一場戰鬥出錯只結束那一場。
+  - task 一定要有人拿著（asyncio 只用弱參照記 task）：`zones.world_task`、副本的 `zone.task`、戰鬥的 `fight.task`。
 - **區域編輯器**（`mud/builder/`）：給區域作者用的網頁，畫面照設計稿（https://claude.ai/artifact/UwgbazUdvQKNEiPLQE8GW5）。
   區域檔存在 `builder_area/`（`config.BUILDER_DIR`），port 1234（`config.BUILDER_PORT`）。只用標準庫，前端不用打包工具。
   - 後端 `server.py`（`ThreadingHTTPServer`）：給網頁檔案，讀、存、檢查區域檔的 JSON API（清單寫在檔案開頭）。
@@ -160,7 +204,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - **檢查只用 `area.check_files()`**：還沒存的內容寫進暫存資料夾的同名檔去檢查，對照 `builder_area/` 裡其他檔名的檔
     （同名的舊檔不對照，不然會全部「重複」）。有問題也照樣存，還沒寫完也要能存。
   - 讀檔時也回傳別的檔的房間名（`elsewhere`）、生物名（`elsewhere_mobiles`）、物品名（`elsewhere_objects`），給號碼旁的名字標籤用。
-  - 前端 `static/`：`model.js` 是純資料操作，`editor.js` 是編輯畫面的外框和房間畫面，`files.js` 選檔畫面，`settings.js` 區域設定，
+  - 前端 `static/`：`model.js` 是純資料操作，`editor.js` 是編輯畫面的外框和房間畫面，`files.js` 選檔畫面，`settings.js` 區域設定（含區域種類 `type` 的下拉選單），
     `ui.js` 小工具，`forms.js` 綁在區域檔物件上的表單欄位（改了直接寫回），`app.js` 用網址的 `#檔名` 換畫面。
     載入的 JSON 直接改，**沒動到的欄位原樣存回去**（例如 `"1|4"`、`script`）。
   - **左欄上方切換四種畫面**（`state.mode`）：房間（中間地圖、右邊分頁，多一個「重置」分頁在 `roomresets.js`）、

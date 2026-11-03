@@ -50,12 +50,13 @@ def make_resets():
     ]
 
 
-def make_area(filename, rooms, area_number=100, mobiles=(), resets=(), objects=()):
+def make_area(filename, rooms, area_number=100, mobiles=(), resets=(), objects=(), kind="world"):
+    """kind 是 header.type：world、dynamic、instance。"""
     return {
         "schema_version": 1,
         "file": filename,
         "area": {
-            "header": {"levels": [1, 5], "author": "Test", "title": "測試", "area_number": area_number},
+            "header": {"levels": [1, 5], "author": "Test", "title": "測試", "area_number": area_number, "type": kind},
             "recall": None, "no_teleport": None, "clan_recall": None, "gem": None,
         },
         "rooms": rooms,
@@ -71,5 +72,5 @@ def write_json(folder, filename, data):
     return path
 
 
-def write_area(folder, filename, rooms, area_number=100, mobiles=(), objects=()):
-    return write_json(folder, filename, make_area(filename, rooms, area_number, mobiles, objects=objects))
+def write_area(folder, filename, rooms, area_number=100, mobiles=(), objects=(), kind="world"):
+    return write_json(folder, filename, make_area(filename, rooms, area_number, mobiles, objects=objects, kind=kind))

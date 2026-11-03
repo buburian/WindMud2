@@ -58,6 +58,10 @@ RULES = [
     pytest.param(lambda d: d.update(helps=[]), "多了不認得的欄位 helps", id="多了最上層欄位"),
     pytest.param(lambda d: d["area"]["header"].update(levels=[5, 1]), "levels", id="levels 反了"),
     pytest.param(lambda d: d["area"]["header"].update(levels="1  5"), "levels", id="levels 是字串"),
+    pytest.param(lambda d: d["area"]["header"].pop("type"), "少了欄位 type", id="少了 type"),
+    pytest.param(lambda d: d["area"]["header"].update(type="town"),
+                 "area.header.type 要寫 world、dynamic、instance 其中一個，不能是 'town'", id="type 寫錯"),
+    pytest.param(lambda d: d["area"]["header"].update(type=[]), "area.header.type 要寫", id="type 是清單"),
     pytest.param(lambda d: d["area"]["header"].update(author=3), "author", id="author"),
     pytest.param(lambda d: d["area"]["header"].update(area_number=0), "保留", id="area_number 0"),
     pytest.param(lambda d: d["area"].update(recall=9), "area.recall 指到不存在的房間 109", id="recall 不存在"),
@@ -176,6 +180,39 @@ def test_cross_file_exit_and_duplicate(tmp_path):
     found = area.check_files([a, b, c], [a, b, c])
     assert found[a] == [] and found[b] == []
     assert found[c] == ["c.json：房間 201 跟 b.json 重複"]
+
+
+def test_exit_into_instance_is_an_error(tmp_path):
+    # 副本只能用 enter 進去：世界區域的出口不能通到副本裡
+    a = write_area(tmp_path, "a.json", [make_room(1, north=201)], area_number=100)
+    b = write_area(tmp_path, "b.json", [make_room(1)], area_number=200, kind="instance")
+    found = area.check_files([a, b], [a, b])
+    assert found[a] == ["a.json：房間 1 往 north 的出口通到副本 b.json 的房間 201，副本不能走進去（要用 enter）"]
+    assert found[b] == []
+
+
+def test_exit_out_of_instance_is_an_error(tmp_path):
+    # 副本只能用 recall 出來：副本的出口不能通到別的區域
+    a = write_area(tmp_path, "a.json", [make_room(1)], area_number=100)
+    b = write_area(tmp_path, "b.json", [make_room(1, south=101)], area_number=200, kind="instance")
+    found = area.check_files([a, b], [a, b])
+    assert found[a] == []
+    assert found[b] == ["b.json：房間 1 往 south 的出口通到 a.json 的房間 101，副本的出口不能通到別的區域（要用 recall 出來）"]
+
+
+def test_exits_inside_instance_and_into_dynamic_are_fine(tmp_path):
+    # 副本裡自己的房間可以互通；動態區域可以從世界走進去、再走回來
+    a = write_area(tmp_path, "a.json", [make_room(1, north=201)], area_number=100)
+    b = write_area(tmp_path, "b.json", [make_room(1, south=101)], area_number=200, kind="dynamic")
+    c = write_area(tmp_path, "c.json", [make_room(1, north=2), make_room(2, south=301)], area_number=300, kind="instance")
+    assert all(found == [] for found in area.check_files([a, b, c], [a, b, c]).values())
+
+
+def test_reference_instance_is_known(tmp_path):
+    # 只檢查 a.json 時，也要從對照的檔案知道 b.json 是副本
+    a = write_area(tmp_path, "a.json", [make_room(1, north=201)], area_number=100)
+    b = write_area(tmp_path, "b.json", [make_room(1)], area_number=200, kind="instance")
+    assert "副本不能走進去" in area.check_files([a], [a, b])[a][0]
 
 
 def test_mobile_parts_can_be_null(tmp_path):

@@ -1,9 +1,11 @@
 import asyncio
 from pathlib import Path
 
-from mud import area
-from mud.characters import characters
+from mud import fight, weather, zones
+from mud.characters import SEX_NEUTRAL, characters
 from mud.config import ENCODING
+from mud.fight import start_fight
+from mud.npcs import Npc
 from mud.players import online_players
 from mud.server import handle
 from mud.telnet import BINARY, DO, DONT, IAC, WILL
@@ -31,7 +33,7 @@ async def quit(reader, writer):
 
 
 async def login_chat_quit():
-    area.load(AREAS)
+    zones.load(AREAS)
     server = await asyncio.start_server(handle, "127.0.0.1", 0)
     port = server.sockets[0].getsockname()[1]
     async with server:
@@ -70,3 +72,43 @@ async def login_chat_quit():
 
 def test_login_chat_quit():
     asyncio.run(asyncio.wait_for(login_chat_quit(), timeout=5))
+
+
+async def look_while_loops_run(hits):
+    zones.load(AREAS)
+    zones.start()
+    # 隔壁 102 號房有三場戰鬥一直在打（NPC 互打），世界 tick 也一直在跑
+    npcs = [Npc(name, SEX_NEUTRAL, zones.world.rooms[102]) for name in "甲乙丙丁戊己"]
+    characters.extend(npcs)
+    for a, b in zip(npcs[::2], npcs[1::2]):
+        start_fight(a, b)
+    server = await asyncio.start_server(handle, "127.0.0.1", 0)
+    port = server.sockets[0].getsockname()[1]
+    async with server:
+        r, w = await asyncio.open_connection("127.0.0.1", port)
+        try:
+            await expect(r, bytes([IAC, DO, BINARY]) + "Login: ".encode(ENCODING))
+            w.write("小明\r\n".encode(ENCODING))
+            await expect(r, f"歡迎，小明。\r\n{ROOM1}HP100> ")
+            before = len(hits)
+            for _ in range(5):
+                await asyncio.sleep(0.02)
+                w.write(b"look\r\n")
+                await asyncio.wait_for(expect(r, f"{ROOM1}HP100> "), timeout=0.5)   # 照樣馬上回應
+            assert len(hits) > before                                                 # 這段時間戰鬥一直在打
+            await quit(r, w)
+        finally:
+            w.close()                       # 坑：同上，不先關掉，測試失敗時會永遠卡住
+    characters.clear()
+    zones.stop()
+
+
+def test_loops_do_not_block_players(monkeypatch):
+    monkeypatch.setattr(zones, "TICK_SECONDS", 0.01)
+    monkeypatch.setattr(fight, "ROUND_SECONDS", 0.01)
+    hits = []
+    monkeypatch.setattr(fight, "hit", lambda ch, victim: hits.append(ch.name))
+    ticks = []
+    monkeypatch.setattr(weather, "tick", lambda: ticks.append(1))   # 天氣訊息會插進 look 的回應，這裡只記次數
+    asyncio.run(asyncio.wait_for(look_while_loops_run(hits), timeout=5))
+    assert ticks                                                     # 世界 tick 也一直在跑

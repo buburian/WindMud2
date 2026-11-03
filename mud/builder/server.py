@@ -43,7 +43,7 @@ def new_area(name, title, area_number):
         "schema_version": 1,
         "file": name,
         "area": {
-            "header": {"levels": [1, 1], "author": "", "title": title, "area_number": area_number},
+            "header": {"levels": [1, 1], "author": "", "title": title, "area_number": area_number, "type": "world"},
             "recall": None, "no_teleport": None, "clan_recall": None, "gem": None,
         },
         "rooms": [{"vnum": 1, "name": "新房間", "description": "", "room_flags": 0, "sector": 0,
