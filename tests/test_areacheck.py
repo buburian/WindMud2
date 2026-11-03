@@ -107,10 +107,31 @@ RULES = [
     pytest.param(lambda d: mob(d).update(act="2|x"), "act 看不懂", id="生物 act"),
     pytest.param(lambda d: mob(d).update(affected_by=-1), "affected_by 不能是負數", id="生物 affected_by"),
     pytest.param(lambda d: mob(d).update(custom=None), "多了不認得的欄位 custom", id="生物舊欄位 custom"),
-    pytest.param(lambda d: mob(d).update(exp=-1), "exp 是經驗值的倍數", id="生物 exp 負數"),
-    pytest.param(lambda d: mob(d).update(exp="1.5"), "exp 是經驗值的倍數", id="生物 exp 字串"),
-    pytest.param(lambda d: mob(d).update(exp=True), "exp 是經驗值的倍數", id="生物 exp true"),
-    pytest.param(lambda d: mob(d)["random_drop"].update(obj_vnum=0), "obj_vnum 要是物品號碼", id="生物 random_drop"),
+    pytest.param(lambda d: mob(d).update(exp=1), "多了不認得的欄位 exp", id="生物舊欄位 exp"),   # 經驗值照設計文件 §4.7 算
+    pytest.param(lambda d: mob(d).pop("tier"), "生物 1 少了欄位 tier", id="生物少 tier"),
+    pytest.param(lambda d: mob(d).update(tier="mob"),
+                 "tier 要寫 trash、normal、elite、boss 其中一個，不能是 'mob'", id="生物 tier 寫錯"),
+    pytest.param(lambda d: mob(d).update(tier=None), "tier 要寫", id="生物 tier 是 null"),   # 種類一定要寫
+    pytest.param(lambda d: mob(d).update(attack="fire"), "attack 要是 null、phys、spell、dragon 其中一個", id="生物 attack 寫錯"),
+    pytest.param(lambda d: mob(d).update(attack="phys/phys"), "不能是 'phys/phys'", id="生物 attack 主次一樣"),
+    pytest.param(lambda d: mob(d).update(attack="phys/spell/dragon"), "attack 要是", id="生物 attack 三種"),
+    pytest.param(lambda d: mob(d).update(defense="both"), "defense 要是 null 或 phys、spell 其中一個", id="生物 defense"),
+    pytest.param(lambda d: mob(d).update(archetype=[]), "archetype 要是 null 或 tank", id="生物 archetype"),
+    pytest.param(lambda d: mob(d).update(random_drop=None), "多了不認得的欄位 random_drop", id="生物舊欄位 random_drop"),  # 改用 drops
+    pytest.param(lambda d: mob(d).update(tier_roll={"elite": 9000, "boss": 2000}),
+                 "tier_roll 加起來是 9000 ＋ 2000 ＝ 11000，不能超過 10000（100%）", id="生物 tier_roll 超過 100%"),
+    pytest.param(lambda d: mob(d).update(tier_roll={"normal": 100}), "tier_roll 不用寫基本種類 normal", id="生物 tier_roll 寫到自己"),
+    pytest.param(lambda d: mob(d).update(tier_roll={"king": 100}), "tier_roll 的種類要是", id="生物 tier_roll 種類寫錯"),
+    pytest.param(lambda d: mob(d).update(tier_roll={"boss": 0.5}), "tier_roll 的 boss 要是 1～10000 的整數", id="生物 tier_roll 小數"),
+    pytest.param(lambda d: mob(d).update(tier_roll=[]), "tier_roll 要是 null 或", id="生物 tier_roll 清單"),
+    pytest.param(lambda d: mob(d).update(drops=None), "drops 要寫成 […]", id="生物 drops 是 null"),
+    pytest.param(lambda d: mob(d)["drops"][0].update(obj_vnum=0), "drops 第 1 行的 obj_vnum 要是物品號碼", id="生物 drops 物品"),
+    pytest.param(lambda d: mob(d)["drops"][0].update(color="gold"), "drops 第 1 行的 color 要是 null", id="生物 drops 顏色"),
+    pytest.param(lambda d: mob(d)["drops"][0].update(chance=0), "drops 第 1 行的 chance 要是 1～10000", id="生物 drops 機率 0"),
+    pytest.param(lambda d: mob(d)["drops"][0].update(chance=10001), "chance 要是 1～10000", id="生物 drops 機率太大"),
+    pytest.param(lambda d: mob(d)["drops"][0].update(tiers=[]), "drops 第 1 行的 tiers 要是 null", id="生物 drops tiers 空的"),
+    pytest.param(lambda d: mob(d)["drops"][0].update(tiers=["boss", "boss"]), "tiers 要是 null", id="生物 drops tiers 重複"),
+    pytest.param(lambda d: mob(d)["drops"][0].pop("tiers"), "drops 第 1 行 少了欄位 tiers", id="生物 drops 少欄位"),
     pytest.param(lambda d: mob(d)["script"].update(function=""), "function 不能是空的", id="生物 script"),
     pytest.param(lambda d: mob(d).update(actions={}), "actions 要寫成 […]", id="生物 actions 不是清單"),
     pytest.param(lambda d: mob(d)["actions"][0].pop("text"), "actions 第 1 項少了欄位 text", id="生物 actions 少欄位"),
@@ -146,6 +167,15 @@ RULES = [
     pytest.param(lambda d: d["resets"].append({"cmd": "E", "rare": 0, "obj_vnum": 2, "limit": 0, "wear_loc": 16, "comment": ""}),
                  "cmd 要是", id="E 拿掉了"),   # 使用者說生物不穿裝備
     pytest.param(lambda d: reset(d, "P").update(container_vnum=-1), "container_vnum 號碼 -1 不對", id="P 容器號碼"),
+    pytest.param(lambda d: reset(d, "G").update(color="gold"), "（G）的 color 要是 null（不是裝備）或 gray", id="G 顏色"),
+    pytest.param(lambda d: reset(d, "O").update(color=3), "（O）的 color 要是 null", id="O 顏色"),
+    pytest.param(lambda d: reset(d, "P").pop("color"), "（P）少了欄位 color", id="P 少顏色"),
+    pytest.param(lambda d: reset(d, "G").update(level="5"),
+                 "（G）的 level 是物品的等級，要是 null（用前面那筆 M 的怪物等級）或整數，不能是 '5'", id="G 等級"),
+    pytest.param(lambda d: reset(d, "O").update(level=None),
+                 "（O）的 level 是物品的等級，要是 整數（O、P 沒有怪物帶著，一定要寫）", id="O 等級沒寫"),
+    pytest.param(lambda d: reset(d, "P").update(level=1.5), "（P）的 level 是物品的等級", id="P 等級小數"),
+    pytest.param(lambda d: reset(d, "O").pop("level"), "（O）少了欄位 level", id="O 少等級"),
     pytest.param(lambda d: reset(d, "D").update(direction="northeast"), "direction 'northeast' 不對", id="D 方向"),
     pytest.param(lambda d: reset(d, "R").update(exit_count="4"), "exit_count 要是整數", id="R exit_count"),
     pytest.param(lambda d: reset(d, "*").update(comment=None), "comment 要是字串", id="註解不是字串"),
@@ -217,15 +247,22 @@ def test_reference_instance_is_known(tmp_path):
 
 def test_mobile_parts_can_be_null(tmp_path):
     data = good_area()
-    mob(data).update(random_drop=None, script=None, shop=None, special=None, actions=[], fight_actions=[])
+    mob(data).update(script=None, shop=None, special=None, actions=[], fight_actions=[], drops=[],
+                     tier_roll=None, attack=None, defense=None, archetype=None)
     assert problems_of(tmp_path, data) == []
 
 
-@pytest.mark.parametrize("exp", [0, 1, 1.5])
-def test_mobile_exp_is_a_multiplier(tmp_path, exp):
-    # 0 不給經驗值、1 正常、1.5 多給 50%
+def test_mobile_drops_color_and_tiers_can_be_null(tmp_path):
+    # 不是裝備的物品不寫顏色；tiers 寫 null 是所有種類都會掉；一隻怪可以有好幾行
     data = good_area()
-    mob(data).update(exp=exp)
+    mob(data)["drops"].append({"obj_vnum": 2, "color": None, "chance": 10000, "tiers": None})
+    assert problems_of(tmp_path, data) == []
+
+
+@pytest.mark.parametrize("attack", ["phys", "spell", "dragon", "dragon/phys", "phys/spell", "spell/dragon"])
+def test_mobile_attack_one_or_main_and_sub(tmp_path, attack):
+    data = good_area()
+    mob(data).update(attack=attack)
     assert problems_of(tmp_path, data) == []
 
 

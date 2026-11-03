@@ -1,15 +1,17 @@
 // 生物畫面：左欄是生物清單，右邊表單佔滿（沒有地圖）。
 // 分頁照使用者的規則：只有一份的欄位全部放「基本資料」，可以一直新增的清單（兩種動作）各自一個分頁。
 import {
-  addButton, areaField, flagsField, numberField, refField, removeButton, scriptRow, selectField, tabBar, textField,
+  addButton, areaField, codeField, colorField, flagsField, numberField, refField, removeButton, scriptRow, selectField, tabBar, textField,
   textOf, vnumField,
 } from "./forms.js";
 import * as M from "./model.js";
 import { placesOf } from "./resets.js";
 import * as T from "./tables.js";
-import { checkbox, confirmDialog, field, h, icon, numberText, selectArrow, toast } from "./ui.js";
+import {
+  checkbox, confirmDialog, field, h, icon, numberText, parseNumber, selectArrow, textInput, toast,
+} from "./ui.js";
 
-const TABS = [["basic", "基本資料"], ["actions", "平常的動作"], ["fight", "戰鬥中的動作"]];
+const TABS = [["basic", "基本資料"], ["actions", "平常的動作"], ["fight", "戰鬥中的動作"], ["drops", "掉落表"]];
 
 export function listItems(ctx) {
   const { state } = ctx;
@@ -51,7 +53,7 @@ export function render(ctx) {
   }
   const number = M.roomNumber(state.data, mob);
   ui.thingTitle = h("h1", { class: "insp-title" }, textOf(mob.short));
-  const tab = { basic: basicTab, actions: actionsTab, fight: fightTab }[state.mobTab] || basicTab;
+  const tab = { basic: basicTab, actions: actionsTab, fight: fightTab, drops: dropsTab }[state.mobTab] || basicTab;
   ui.panel.replaceChildren(
     h("div", { class: "panel-head" },
       h("div", { class: "insp-names" },
@@ -75,9 +77,16 @@ function basicTab(ctx, mob) {
     areaField({ id: "mob-desc", label: "描述", code: "description", obj: mob, key: "description", done }),
     h("div", { class: "row" },
       numberField({ id: "mob-level", label: "等級", code: "level", obj: mob, key: "level", done }),
-      numberField({ id: "mob-align", label: "陣營", code: "alignment", obj: mob, key: "alignment", tip: "-1000（邪惡）～1000（善良）", done }),
-      numberField({ id: "mob-exp", label: "經驗倍數", code: "exp", obj: mob, key: "exp", decimal: true,
-        tip: "1 正常、0 不給、1.5 多給 50%", done })),
+      numberField({ id: "mob-align", label: "陣營", code: "alignment", obj: mob, key: "alignment", tip: "-1000（邪惡）～1000（善良）", done })),
+    h("div", { class: "row" },
+      codeField({ id: "mob-tier", label: "種類", code: "tier", obj: mob, key: "tier", options: T.MOB_TIERS,
+        style: "flex: 0 0 140px", done: () => { dropBaseFromRoll(mob); ctx.rebuild(); } }),
+      codeField({ id: "mob-attack", label: "攻擊類型", code: "attack", obj: mob, key: "attack", options: attackOptions(), done }),
+      codeField({ id: "mob-defense", label: "攻防傾向", code: "defense", obj: mob, key: "defense",
+        options: [[null, "標準"], ...T.DEFENSES], style: "flex: 0 0 140px", done }),
+      codeField({ id: "mob-archetype", label: "原型", code: "archetype", obj: mob, key: "archetype",
+        options: [[null, "標準"], ...T.ARCHETYPES], style: "flex: 0 0 160px", done })),
+    tierRollField(ctx, mob),
     h("div", { class: "row" },
       raceField(mob, done),
       selectField({ id: "mob-sex", label: "性別", code: "sex", obj: mob, key: "sex", options: T.SEXES, style: "flex: 0 0 120px", done }),
@@ -88,8 +97,14 @@ function basicTab(ctx, mob) {
       flagsField({ legend: "身上的效果", code: "affected_by", obj: mob, key: "affected_by", table: T.AFFECTED, done }),
       specialField(mob, done)),
     shopSection(ctx, mob),
-    dropSection(ctx, mob),
     scriptRow(mob.script));
+}
+
+// 攻擊類型的選項：null 純物理、只用一種、「主/次」兩種不一樣的（主 70%、次 30%）
+function attackOptions() {
+  const pairs = T.ATTACK_TYPES.flatMap(([main, mainName]) => T.ATTACK_TYPES.filter(([sub]) => sub !== main)
+    .map(([sub, subName]) => [`${main}/${sub}`, `主${mainName}、次${subName}`]));
+  return [[null, "純物理"], ...T.ATTACK_TYPES, ...pairs];
 }
 
 // 種族：檔案裡寫名稱，C 版比對時不分大小寫，所以 "Human" 也算 human；沒改就照原本的寫法存回去
@@ -144,21 +159,84 @@ function shopSection(ctx, mob) {
 }
 
 const percent = (chance) => (M.isInt(chance) ? `${chance / 100}%` : "");
+const CHANCE_TIP = "萬分之一：100 是 1%、10000 是 100%";
 
-// 掉寶：勾「死掉時可能掉東西」才有內容，取消勾選存成 null
-function dropSection(ctx, mob) {
-  const drop = mob.random_drop;
-  const toggle = checkbox({ label: "死掉時可能掉東西", code: "random_drop", checked: !!drop,
-    onchange: (e) => { mob.random_drop = e.target.checked ? M.newDrop() : null; ctx.rebuild(); } });
-  if (!drop) return h("div", { class: "stack sep" }, toggle);
-  const shown = h("span", { class: "muted" }, percent(drop.chance));
-  return h("div", { class: "stack sep" }, toggle,
-    h("div", { class: "row" },
-      numberField({ id: "drop-chance", label: "機率", code: "chance", obj: drop, key: "chance", style: "flex: 0 0 140px",
-        tip: "以萬分之一為單位：5000 是 50%", done: () => { shown.textContent = percent(drop.chance); ctx.edited(); } }),
-      shown),
-    refField({ id: "drop-obj", label: "物品", code: "obj_vnum", obj: drop, key: "obj_vnum",
-      chipOf: (n) => ctx.chipOf("objects", n), done: ctx.edited }));
+// 重生時骰種類：基本種類以外的每一種一格（萬分之一）；全部空著存成 null，就是固定是基本種類
+function tierRollField(ctx, mob) {
+  const roll = () => (M.isObject(mob.tier_roll) ? mob.tier_roll : {});
+  const base = T.MOB_TIERS.find(([t]) => t === mob.tier);
+  const rest = h("span", { class: "muted" });
+  const showRest = () => {
+    const sum = Object.values(roll()).filter(M.isInt).reduce((a, b) => a + b, 0);
+    rest.textContent = base ? `${base[1]} ${(10000 - sum) / 100}%` : "";
+  };
+  showRest();
+  const inputs = T.MOB_TIERS.filter(([t]) => t !== mob.tier).map(([t, name]) => field({
+    id: `mob-roll-${t}`, label: `變成${name}`, code: t, style: "flex: 0 0 130px", tip: CHANCE_TIP,
+    input: textInput({ id: `mob-roll-${t}`, value: numberText(roll()[t]), oninput: (e) => {
+      const next = { ...roll() };
+      const v = parseNumber(e.target.value);
+      if (v === null) delete next[t]; else next[t] = v;
+      mob.tier_roll = Object.keys(next).length ? next : null;
+      showRest();
+      ctx.edited();
+    } }),
+  }));
+  return h("fieldset", null,
+    h("legend", null, "重生時變成其他種類", h("span", { class: "code" }, "tier_roll")),
+    h("div", { class: "row" }, inputs, rest));
+}
+
+// 換了基本種類：tier_roll 裡不用再寫它（剩下的機率就是它）
+function dropBaseFromRoll(mob) {
+  if (!M.isObject(mob.tier_roll) || !(mob.tier in mob.tier_roll)) return;
+  const next = { ...mob.tier_roll };
+  delete next[mob.tier];
+  mob.tier_roll = Object.keys(next).length ? next : null;
+}
+
+// 掉落表：一行一件，每一行各自骰
+function dropsTab(ctx, mob) {
+  const done = ctx.edited;
+  const list = Array.isArray(mob.drops) ? mob.drops : [];
+  return h("div", { class: "stack", style: "gap: 16px" },
+    listHead("drops", () => addTo(ctx, mob, "drops", M.newDrop(), (i) => `drop-${i}-obj`)),
+    list.map((d, i) => {
+      const shown = h("span", { class: "muted" }, percent(d.chance));
+      return h("div", { class: "card card-form" },
+        h("div", { class: "row" },
+          refField({ id: `drop-${i}-obj`, label: "物品", code: "obj_vnum", obj: d, key: "obj_vnum",
+            chipOf: (n) => ctx.chipOf("objects", n), done }),
+          removeButton(() => { list.splice(i, 1); ctx.rebuild(); })),
+        h("div", { class: "row" },
+          colorField({ id: `drop-${i}-color`, obj: d, done }),
+          numberField({ id: `drop-${i}-chance`, label: "機率", code: "chance", obj: d, key: "chance", style: "flex: 0 0 140px",
+            tip: CHANCE_TIP, done: () => { shown.textContent = percent(d.chance); done(); } }),
+          shown),
+        tiersField(d, i, done));
+    }));
+}
+
+// 限定種類：都沒勾存成 null，就是所有種類都會掉
+function tiersField(d, i, done) {
+  const now = () => (Array.isArray(d.tiers) ? d.tiers : []);
+  const note = h("span", { class: "muted" });
+  const showNote = () => { note.textContent = d.tiers === null ? "null 所有種類都會掉" : ""; };
+  showNote();
+  return h("fieldset", null,
+    h("legend", null, "只有這些種類會掉", h("span", { class: "code" }, "tiers")),
+    h("div", { class: "checks" },
+      T.MOB_TIERS.map(([t, name]) => checkbox({
+        label: name, code: t, checked: now().includes(t),
+        onchange: (e) => {
+          const next = now().filter((x) => x !== t);
+          if (e.target.checked) next.push(t);
+          d.tiers = next.length ? T.MOB_TIERS.map(([x]) => x).filter((x) => next.includes(x)) : null;
+          showNote();
+          done();
+        },
+      })),
+      note));
 }
 
 // 清單分頁的開頭：檔案裡的欄位名，右邊是新增

@@ -1,13 +1,13 @@
 // 重置總覽：左欄依指令篩選｜中間照檔案順序的表格（可以拖曳排順序）｜右邊改選到的那一筆。
 // 也提供生物、物品標題下「放在哪」的小標籤（placesOf）。
 // 重置照順序執行：G 跟著前面最近的 M、P 跟著前面最近的 O（model.js 的 leaderOf、followersOf）。
-import { numberField, refField, removeButton, textField } from "./forms.js";
+import { itemLookRow, numberField, refField, removeButton, textField } from "./forms.js";
 import * as M from "./model.js";
 import * as T from "./tables.js";
 import { field, h, icon, numberText, selectArrow } from "./ui.js";
 
 const CMD_NAMES = Object.fromEntries(T.RESET_CMDS);
-const RARE_TIP = "0～10 一定會出現；大於 10 是稀有，機率大約 (rare − 10) ÷ 10000";
+const RARE_TIP = "0～10 一定會出現；大於 10 不一定會出現，機率大約 (rare − 10) ÷ 10000";
 const UNUSED_TIP = "C 版讀了沒用到";
 
 const isObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
@@ -180,12 +180,12 @@ function fields(ctx, r) {
   const comment = textField({ id: "r-comment", label: "註解", code: "comment", obj: r, key: "comment", done });
   switch (r.cmd) {
     case "M": return [ref("mob_vnum", "mobiles", "生物"), ref("room_vnum", "rooms", "房間"),
-      h("div", { class: "row" }, num("limit", "最多幾隻", "生物待在原地時算這個房間有幾隻，不然算整個遊戲"), num("rare", "稀有度", RARE_TIP)), comment];
-    case "G": return [ref("obj_vnum", "objects", "物品"),
-      h("div", { class: "row" }, num("limit", "最多", UNUSED_TIP), num("rare", "稀有度", RARE_TIP)), comment];
-    case "O": return [ref("obj_vnum", "objects", "物品"), ref("room_vnum", "rooms", "房間"),
+      h("div", { class: "row" }, num("limit", "最多幾隻", "生物待在原地時算這個房間有幾隻，不然算整個遊戲"), num("rare", "出現機率", RARE_TIP)), comment];
+    case "G": return [ref("obj_vnum", "objects", "物品"), itemLookRow(r, "r", done),
+      h("div", { class: "row" }, num("limit", "最多", UNUSED_TIP), num("rare", "出現機率", RARE_TIP)), comment];
+    case "O": return [ref("obj_vnum", "objects", "物品"), itemLookRow(r, "r", done), ref("room_vnum", "rooms", "房間"),
       h("div", { class: "row" }, num("limit", "最多", UNUSED_TIP), num("if_flag", "if_flag", UNUSED_TIP)), comment];
-    case "P": return [ref("obj_vnum", "objects", "物品"), ref("container_vnum", "objects", "放進哪個容器"),
+    case "P": return [ref("obj_vnum", "objects", "物品"), itemLookRow(r, "r", done), ref("container_vnum", "objects", "放進哪個容器"),
       h("div", { class: "row" }, num("limit", "最多", UNUSED_TIP), num("if_flag", "if_flag", UNUSED_TIP)), comment];
     case "D": return [ref("room_vnum", "rooms", "房間"),
       h("div", { class: "row" },

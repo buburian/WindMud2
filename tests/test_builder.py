@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from area_helpers import make_area, make_mobile, make_object, make_room, write_area, write_json
-from mud.area import AreaType, Locks, RoomFlag, Sector
+from mud.area import Archetype, AreaType, AttackType, Defense, ItemColor, Locks, MobTier, RoomFlag, Sector
 from mud.builder.server import make_server
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -233,6 +233,18 @@ def tables_js(name):
 def test_page_tables_match_manual(name, marker):
     # 編輯器的數字表照手冊抄的；改手冊的表時這裡會提醒要一起改 tables.js
     assert tables_js(name) == [int(row[0]) for row in manual_rows(marker)]
+
+
+@pytest.mark.parametrize("name, marker, cls", [
+    ("MOB_TIERS", "### tier（種類）", MobTier),
+    ("ATTACK_TYPES", "### attack（攻擊類型）", AttackType),
+    ("DEFENSES", "### defense（攻防傾向）", Defense),
+    ("ARCHETYPES", "### archetype（原型）", Archetype),
+    ("ITEM_COLORS", "乘上顏色的加成。", ItemColor),                   # drops 那一節最後的顏色表
+])
+def test_page_codes_match_manual_and_area(name, marker, cls):
+    # 生物的代號表：編輯器、手冊、area.py 的定義三邊要一樣
+    assert tables_js(name) == [row[0] for row in manual_rows(marker)] == [c.value for c in cls]
 
 
 def test_page_tables_with_several_columns_match_manual():

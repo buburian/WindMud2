@@ -68,13 +68,6 @@ export function parseNumber(text) {
   return /^-?\d+$/.test(t) ? Number(t) : text;
 }
 
-// 同 parseNumber，但可以有小數（例如生物的 exp 倍數 1.5）
-export function parseDecimal(text) {
-  const t = text.trim();
-  if (t === "") return null;
-  return /^-?\d+(\.\d+)?$/.test(t) ? Number(t) : text;
-}
-
 // 描述類的文字：顯示時拿掉最後一個換行；存回時不是空的才補一個換行（跟現有檔案一樣）
 export function plainText(v) {
   if (typeof v !== "string") return numberText(v);

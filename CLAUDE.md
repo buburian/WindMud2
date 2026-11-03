@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 參考資料（唯讀，不可修改）
 
-- `/Volumes/DevSSD/Projects/claude_project/mud_design`：新遊戲邏輯的設計規劃書（主文件 `設計文件.md`）。
+- `/Volumes/DevSSD/Projects/claude_project/mud_design`：新遊戲邏輯的設計規劃書（主文件 `design/設計文件.md`）。
 - `/Volumes/DevSSD/Projects/claude_project/mud/sourcecode/WindSrc`：原始遊戲的 C 語言版本。
   **只是參考：這是新遊戲，不是把 C 版改寫**，不照它的結構和命名。要看連線通訊和核心程式時參考它，連線通訊在 `comm.c`（`game_loop_unix`、`read_from_descriptor`、`write_to_descriptor`）。
   原始碼是 Big5，搜尋要用 `LC_ALL=C grep -a`，不然會搜不到。
@@ -130,7 +130,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - 所以遊戲號碼 1～99 是保留的（`area_number` 不能是 0）：算出來小於 100 就報錯。`area_number` 不必是 100 的倍數。
     `key` 指到的物品存不存在還沒檢查（物品目前只檢查格式）。
     **區域檔格式是我們自己的**：舊區域的流程是 `.are` → area2json → 我們的區域編輯器處理 → 才給伺服器用。
-    `mud_design/area_convert/out/*.json` 只是拿來打底的參考，伺服器不直接載入它；兩者已經不同：
+    `mud_design/tools/area_convert/out/*.json` 只是拿來打底的參考，伺服器不直接載入它；兩者已經不同：
     房間沒有 `area_number`，改成寫在 `area.header`；等級範圍只有一個 `header.levels`（`[最低, 最高]`）；
     沒有 `area.name`，之後遊戲要用 header 的資料自己組出顯示的名稱；
     `room_flags`（數字或字串）、`sector`（整數）不是 `{"value": …, "names": …}` 這種 dict；沒有 `overridden_exits`。
@@ -144,15 +144,26 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     要同步更新它（開頭的進度總表，以及各欄位「新系統」那一欄）。
   - **生物（`mobiles`）**：最上層的清單，欄位照舊版 `#MOBILES`（含 A、F、P、R 行）加上 `#SHOPS`（`shop`）、`#SPECIALS`（`special`）整理，
     名稱沿用 area2json；`act`、`affected_by` 寫法同 `room_flags`，`sex`、`actions` 的 `when`/`mode` 是整數。
-    使用者刪掉了舊版的 `hitroll`、`ac`、`hit_dice`、`damage_dice`、`gold`、`custom`（K 行）：系統之後也不用，不要加回來。
-    `exp` 是使用者改的：經驗值的**倍數**（預設 1、0 不給、1.5 多給 50%，可以有小數）。實際經驗值之後由等級和稀有度算，
-    稀有度在重置（舊版 `#RESETS`）那邊定義，不放在生物裡。
+    使用者刪掉了舊版的 `hitroll`、`ac`、`hit_dice`、`damage_dice`、`gold`、`custom`（K 行）、`exp`：系統之後也不用，不要加回來。
+    **經驗值只照 `mud_design` 設計文件 §4.7 算**（看怪物種類和等級差；使用者 2026-11-03 決定），生物身上沒有經驗倍數。
+    **怪物的屬性由程式照「等級 ＋ 種類 ＋ 三個開關」算（設計文件 §4.1～§4.3），區域檔不寫數值**。四個欄位放在 `level` 後面，
+    都寫代號（使用者選的），定義在 `area.py`：`tier` 種類（`MobTier`，必填：trash、normal、elite、boss）、
+    `attack` 攻擊類型（`AttackType`：一種 `"phys"` 或主／次 `"dragon/phys"`，主 70%、次 30%）、`defense` 攻防傾向（`Defense`）、
+    `archetype` 原型（`Archetype`）；後三個寫 `null` 是預設。`check_mob_codes()` 檢查代號；
+    手冊的表、編輯器 `tables.js` 的 `MOB_TIERS` 等、`area.py` 的定義三邊要一樣（`test_builder.py` 會比對）。
+    `tier_roll`（設計文件 §4.9）：重生時變成其他種類的機率 `{"boss": 100}`，`null` 是固定 `tier`；不能寫 `tier` 自己、加起來不超過 10000。
+    `drops` 掉落表（§4.10，取代了舊的 `random_drop`，不要加回來）：每一行 `obj_vnum`、`color`（`ItemColor`：gray～orange，
+    不是裝備寫 `null`）、`chance`、`tiers`（`null` 是所有種類都會掉），每一行各自骰。
+    **機率一律用萬分之一**（`CHANCE_MAX` 10000 是 100%，使用者選的，跟 `rare` 一樣）。
     物品種類只有一張表：手冊物品那章的 item_type 表（1 照明用具～26 藥錠），商店 `shop.buy_types` 也用它，不要再寫一份。
     使用者會看過再刪減欄位，所以 `check_mobile()` 現在**只檢查寫法**（欄位剛好、型別、號碼），數字代表什麼還沒檢查，
     也還沒寫成有名字的定義（欄位定案後再照「程式裡不能只有數字」補上）。
   - **物品（`objects`）**：最上層的清單，放在 `mobiles` 後面，欄位照舊版 `#OBJECTS`（含 A、E、P 行）整理，名稱沿用 area2json（不放 `values_raw`）。
     使用者刪掉了舊版的 `action_description`、`cost_per_day`：系統之後也不用，不要加回來。
     `cost`（價格）使用者拿掉後又放回來了，可以是 0；商店的 `profit_buy`、`profit_sell` 是乘在它上面的倍率。
+    `affects.location`（使用者定的）：0～5 主屬性（照 C 版），6～15 是設計文件的 10 種次要屬性（HP、物理傷害…法術抗性，
+    代號同 mud_design 的 STAT_KEYS），16 是龍焰抗性（不算點數，區域作者另外給，設計文件 §5.5）；C 版的 6 性別拿掉了。
+    special 的吐息（`spec_breath_*`）算龍焰傷害、施法（`spec_cast_*`）算法術傷害（使用者定的，設計文件 §4.1）。舊區域的 location 數字意思不同，轉檔工具只沿用文字、不帶屬性過來。
     `item_type`、`affects.location` 寫數字，`extra_flags`、`wear_flags` 寫法同 `room_flags`。`values` 是 4 個整數或字串：
     法術類（卷軸、藥水、藥錠的第 2～4 個，魔杖、魔棒的第 4 個）寫法術名稱；容器旗標這類要相加，`values` 裡不能用 `|`（C 版用 atoi 讀）。
     `check_object()` 只檢查寫法；可以細看的東西跟房間共用 `check_extra_descriptions()`。物品號碼跟房間、生物分開算。
@@ -161,7 +172,11 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - **重置（`resets`）**：最上層的清單，照舊版 `#RESETS` 一串指令照順序執行（`M G O P D R` 和 `*` 註解），`G` 跟著前面最近的 `M`。
     每種 `cmd` 的欄位在 `area.RESET_KEYS`，名稱沿用 area2json。`direction` 寫方向名稱（同出口），`state` 寫數字。
     **使用者說生物不穿裝備**：舊版的 `E`（穿裝備；`wear_loc` 100 是給坐騎）連同坐騎一起拿掉了，`wear_loc` 表也拿掉，不要加回來。
-    `rare` 就是使用者說的「稀有度」，之後拿來算經驗值。
+    `G`、`O`、`P` 有 `color`、`level`（使用者定的，設計文件 §3.3）：顏色寫在放出物品的地方（掉落表、G、O、P），物品本身沒有顏色，
+    同一件物品在不同地方可以不同色；不是裝備寫 `null`，檢查跟掉落表共用 `check_color()`。物品等級：掉落表用怪物的等級；
+    `G` 寫 `null` 也是前面那筆 `M` 的怪物等級（商店要賣低等裝備就自己寫）；`O`、`P` 沒有怪物帶著，一定要寫整數。
+    `rare` 的中文叫「**出現機率**」（使用者改的；不要叫稀有度，設計文件的稀有度是裝備的顏色）：只決定生物或物品多常出現，
+    **不影響經驗值**（設計文件 §4.8）。
     使用者會再刪改，所以 `check_resets()` 只檢查寫法；號碼指到的東西存不存在、`G` 前面有沒有 `M`、`D` 的出口有沒有門都還沒查。
 - **區域物件**（`zones.py`，使用者定的三種，`header.type` 決定）：
   - 世界區域（`world`）：開機時把所有 world 檔建進**一個**區域物件 `zones.world`，永遠不釋放。
@@ -212,7 +227,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     各畫面模組拿 `editor.js` 的 `ctx`（`state`、`edited()`、`rebuild()`、`refresh()`、`goRoom()`、`chipOf()`），不互相 import 成一圈。
     **分頁規則（使用者定的）**：只有一份的欄位放同一個分頁，可以一直新增的清單才各自一個分頁。
   - **號碼一律比算出來的遊戲號碼**（`model.js` 照 `area.resolve()` 寫了一份）：同一區域也可能寫完整號碼（101 指到房間 1）。
-    房間、生物、物品的號碼分開算。改號碼時這個檔裡指到它的地方一起改（出口、recall、重置、random_drop、出口的 key，`renumberThing()`）；
+    房間、生物、物品的號碼分開算。改號碼時這個檔裡指到它的地方一起改（出口、recall、重置、生物掉落表的 obj_vnum、出口的 key，`renumberThing()`）；
     刪除時指到它的重置一起刪，M、O 後面跟著的 G、P 也一起刪（`deleteRoom()`、`deleteThing()`），確認視窗會寫刪幾筆。
   - 重置的分組：緊接在 M 後面的 G、O 後面的 P 算跟著它（`followersOf()`、`leaderOf()`）。房間分頁新增時，M、O、D、R 加在最後，
     G、P 插在它跟著的那筆後面；總覽新增時插在選到的那筆後面。

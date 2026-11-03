@@ -78,7 +78,7 @@ export const AREA_RULES = [
 ];
 
 export const isInt = Number.isInteger;
-const isObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+export const isObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 
 // 清單欄位沒寫或不是 […] 時當成空的（少了欄位交給檢查報出來）；值是 {…} 的清單
 const objectList = (v) => v === undefined || (Array.isArray(v) && v.every(isObject));
@@ -100,8 +100,9 @@ export function shapeProblem(data) {
   for (const m of data.mobiles || []) {
     if (!objectList(m.actions) || !objectList(m.fight_actions)
         || ![undefined, null].includes(m.shop) && !isObject(m.shop)
-        || ![undefined, null].includes(m.random_drop) && !isObject(m.random_drop)) {
-      return "有生物的形狀不對（actions、fight_actions、shop、random_drop）";
+        || ![undefined, null].includes(m.tier_roll) && !isObject(m.tier_roll)
+        || m.drops !== undefined && !objectList(m.drops)) {
+      return "有生物的形狀不對（actions、fight_actions、shop、tier_roll、drops）";
     }
   }
   for (const o of data.objects || []) {
@@ -294,7 +295,7 @@ export function renumber(data, room, vnum) {
 
 // 改房間、生物或物品的號碼，這個檔裡指到它的地方一起改：
 // 房間：出口、recall、重置的 room_vnum；生物：重置的 mob_vnum；
-// 物品：重置的 obj_vnum、container_vnum，生物的 random_drop，出口的 key
+// 物品：重置的 obj_vnum、container_vnum，生物掉落表的 obj_vnum，出口的 key
 export function renumberThing(data, kind, item, vnum) {
   if (vnum === item.vnum) return null;
   if (!isInt(vnum) || vnum < 1 || vnum > 99) return "號碼要是 1～99 的整數";
@@ -314,7 +315,7 @@ export function renumberThing(data, kind, item, vnum) {
       fix(data.area, "recall");
     }
     if (kind === "objects") {
-      for (const m of listOf(data, "mobiles")) fix(m.random_drop, "obj_vnum");
+      for (const m of listOf(data, "mobiles")) for (const d of Array.isArray(m.drops) ? m.drops : []) fix(d, "obj_vnum");
       for (const r of data.rooms) for (const e of Object.values(r.exits)) fix(e, "key");   // -1、0 算不出號碼，不會被改
     }
   }
@@ -326,8 +327,9 @@ export function renumberThing(data, kind, item, vnum) {
 
 export function newMobile(vnum) {
   return {
-    vnum, keywords: "新生物", short: "新生物", long: "", description: "", level: 1, act: 0, affected_by: 0,
-    alignment: 0, race: "human", sex: 0, exp: 1, position: 7, random_drop: null, script: null,
+    vnum, keywords: "新生物", short: "新生物", long: "", description: "", level: 1,
+    tier: "normal", tier_roll: null, attack: null, defense: null, archetype: null, act: 0, affected_by: 0,
+    alignment: 0, race: "human", sex: 0, position: 7, drops: [], script: null,
     actions: [], fight_actions: [], shop: null, special: null,
   };
 }
@@ -339,9 +341,9 @@ export function newObject(vnum) {
   };
 }
 
-// 勾「牠是店主」「死掉時可能掉東西」時先填的值
+// 勾「牠是店主」、掉落表新增一行時先填的值
 export const newShop = () => ({ buy_types: [], profit_buy: 100, profit_sell: 100, open_hour: 0, close_hour: 23 });
-export const newDrop = () => ({ chance: 10000, obj_vnum: 1 });
+export const newDrop = () => ({ obj_vnum: 1, color: null, chance: 10000, tiers: null });
 export const newAction = () => ({ when: 0, mode: 0, text: "" });
 export const newFightAction = () => ({ rate: 10, message: "", command: "" });
 export const newAffect = () => ({ location: 1, modifier: 0 });
@@ -370,9 +372,9 @@ export function resetThing(data, r, key) {
 export function newReset(cmd, fields = {}) {
   const made = {
     M: { cmd, rare: 0, mob_vnum: 1, limit: 1, room_vnum: 1, comment: "" },
-    G: { cmd, rare: 0, obj_vnum: 1, limit: 0, comment: "" },
-    O: { cmd, if_flag: 0, obj_vnum: 1, limit: 0, room_vnum: 1, comment: "" },
-    P: { cmd, if_flag: 0, obj_vnum: 1, limit: 0, container_vnum: 1, comment: "" },
+    G: { cmd, rare: 0, obj_vnum: 1, color: null, level: null, limit: 0, comment: "" },
+    O: { cmd, if_flag: 0, obj_vnum: 1, color: null, level: 1, limit: 0, room_vnum: 1, comment: "" },
+    P: { cmd, if_flag: 0, obj_vnum: 1, color: null, level: 1, limit: 0, container_vnum: 1, comment: "" },
     D: { cmd, if_flag: 0, room_vnum: 1, direction: "north", state: 0, comment: "" },
     R: { cmd, if_flag: 0, room_vnum: 1, exit_count: 2, comment: "" },
     "*": { cmd, comment: "" },

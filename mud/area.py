@@ -12,7 +12,6 @@
 """
 import enum
 import json
-import math
 from pathlib import Path
 
 DIRECTIONS = {"north": "北", "east": "東", "south": "南", "west": "西", "up": "上", "down": "下"}
@@ -86,6 +85,49 @@ class AreaType(enum.StrEnum):
     INSTANCE = "instance"                   # 副本區域：用 enter 進去、recall 出來，一個隊伍一份；沒有玩家一段時間就釋放
 
 
+# 生物的種類、攻擊類型、攻防傾向、原型（mud_design 設計文件 §4.1～§4.3）。值是區域檔裡寫的代號，要跟手冊的表一樣。
+# 怪物的屬性和經驗值由程式照「等級 ＋ 這幾個欄位」算，區域檔不寫數值。
+class MobTier(enum.StrEnum):
+    """生物的種類（tier，必填）。"""
+    TRASH = "trash"                         # 垃圾怪：裝備完整度 ×0，經驗加成 ×0.1
+    NORMAL = "normal"                       # 一般怪：裝備完整度 ×0.5，經驗加成 ×1.2
+    ELITE = "elite"                         # 菁英怪：裝備完整度 ×1，經驗加成 ×1.1
+    BOSS = "boss"                           # Boss 怪：裝備完整度 ×1.1，經驗加成 ×1.0
+
+
+class AttackType(enum.StrEnum):
+    """攻擊類型（attack）。只用一種寫 "phys"；主／次搭配寫 "dragon/phys"（主 70%、次 30%）；null 是純物理。"""
+    PHYS = "phys"                           # 物理
+    SPELL = "spell"                         # 法術
+    DRAGON = "dragon"                       # 龍焰（只有怪物有）
+
+
+class Defense(enum.StrEnum):
+    """攻防傾向（defense）：把抗性點數搬動，總點數不變。null 是標準。"""
+    PHYS = "phys"                           # 物抗 ×2、法抗 ×0.5（怕法術）
+    SPELL = "spell"                         # 法抗 ×2、物抗 ×0.5（怕物理）
+
+
+class Archetype(enum.StrEnum):
+    """原型（archetype）：把可調點數重新分配，總點數不變。null 是標準。"""
+    TANK = "tank"                           # 坦克：HP、抗性、閃躲 ×2；攻擊類 ×0.5
+    BERSERKER = "berserker"                 # 狂戰：傷害、攻速、爆擊 ×2；HP、抗性、閃躲 ×0.5
+    AGILE = "agile"                         # 敏捷：閃躲、命中、攻速 ×2；HP、抗性 ×0.5
+    EXTREME_TANK = "extreme_tank"           # 極端坦克：可調的 25% 全部放 HP
+
+
+class ItemColor(enum.StrEnum):
+    """掉落裝備的顏色（drops 的 color，設計文件 §3.3 的稀有度）。點數上限要乘上它的加成。"""
+    GRAY = "gray"                           # 灰：×0，沒有屬性
+    WHITE = "white"                         # 白：×1，該級最佳裝備
+    BLUE = "blue"                           # 藍：×1.2
+    PURPLE = "purple"                       # 紫：×1.3
+    ORANGE = "orange"                       # 橘：×1.4
+
+
+CHANCE_MAX = 10000                          # 機率以萬分之一為單位（tier_roll、drops 的 chance）：10000 是 100%
+
+
 # 每一層要剛好有這些欄位
 TOP_KEYS = ("schema_version", "file", "area", "rooms", "mobiles", "objects", "resets")
 AREA_KEYS = ("header", "recall", "no_teleport", "clan_recall", "gem")
@@ -95,10 +137,11 @@ EXIT_KEYS = ("description", "keywords", "locks", "key", "to_room")
 EXTRA_KEYS = ("keywords", "description")
 SCRIPT_KEYS = ("trigger", "function")
 TRIGGER_KEYS = ("value", "names")
-MOBILE_KEYS = ("vnum", "keywords", "short", "long", "description", "level", "act", "affected_by", "alignment",
-               "race", "sex", "exp", "position",
-               "random_drop", "script", "actions", "fight_actions", "shop", "special")
-DROP_KEYS = ("chance", "obj_vnum")
+MOBILE_KEYS = ("vnum", "keywords", "short", "long", "description", "level", "tier", "tier_roll",
+               "attack", "defense", "archetype", "act", "affected_by", "alignment",
+               "race", "sex", "position",
+               "drops", "script", "actions", "fight_actions", "shop", "special")
+DROP_KEYS = ("obj_vnum", "color", "chance", "tiers")    # 掉落表的一行
 ACTION_KEYS = ("when", "mode", "text")
 FIGHT_KEYS = ("rate", "message", "command")
 SHOP_KEYS = ("buy_types", "profit_buy", "profit_sell", "open_hour", "close_hour")
@@ -108,9 +151,9 @@ AFFECT_KEYS = ("location", "modifier")
 # 重置：每種指令的欄位（照順序執行，G 跟著前面最近的 M）。舊版的 E（穿裝備、給坐騎）拿掉了：生物不穿裝備
 RESET_KEYS = {
     "M": ("cmd", "rare", "mob_vnum", "limit", "room_vnum", "comment"),             # 把生物放進房間
-    "G": ("cmd", "rare", "obj_vnum", "limit", "comment"),                          # 給生物一件物品
-    "O": ("cmd", "if_flag", "obj_vnum", "limit", "room_vnum", "comment"),          # 把物品放進房間
-    "P": ("cmd", "if_flag", "obj_vnum", "limit", "container_vnum", "comment"),     # 把物品放進容器
+    "G": ("cmd", "rare", "obj_vnum", "color", "level", "limit", "comment"),                      # 給生物一件物品
+    "O": ("cmd", "if_flag", "obj_vnum", "color", "level", "limit", "room_vnum", "comment"),      # 把物品放進房間
+    "P": ("cmd", "if_flag", "obj_vnum", "color", "level", "limit", "container_vnum", "comment"), # 把物品放進容器
     "D": ("cmd", "if_flag", "room_vnum", "direction", "state", "comment"),         # 門一開始的狀態
     "R": ("cmd", "if_flag", "room_vnum", "exit_count", "comment"),                 # 打亂出口
     "*": ("cmd", "comment"),                                                       # 整行註解
@@ -366,7 +409,7 @@ def check_area(name, area, problems):
                 problems.append(f"{name}：area.header.area_number 要是正整數（1～99 是保留的號碼，area_number 不能是 0），"
                                 f"不能是 {header['area_number']!r}")
         if "type" in header:
-            if header["type"] in [t.value for t in AreaType]:    # 用 list 比對：寫成 [] 這種不能雜湊的值也不會出錯
+            if header["type"] in codes(AreaType):
                 kind = AreaType(header["type"])
             else:
                 problems.append(f"{name}：area.header.type 要寫 {'、'.join(t.value for t in AreaType)} 其中一個，"
@@ -539,6 +582,90 @@ def check_resets(name, data, problems):
                 problems.append(f"{w}的 {k} 號碼 {r[k]!r} 不對")
         if "direction" in r and r["direction"] not in DIRECTIONS:
             problems.append(f"{w}的 direction {r['direction']!r} 不對（只能是 {'、'.join(DIRECTIONS)}）")
+        if "color" in r:
+            check_color(w, r["color"], problems)
+        # 物品的等級（設計文件 §3.3）：G 寫 null 是用前面那筆 M 的怪物等級；O、P 沒有怪物帶著，一定要寫
+        if "level" in r and not (is_int(r["level"]) or (cmd == "G" and r["level"] is None)):
+            allowed = "null（用前面那筆 M 的怪物等級）或整數" if cmd == "G" else "整數（O、P 沒有怪物帶著，一定要寫）"
+            problems.append(f"{w}的 level 是物品的等級，要是 {allowed}，不能是 {r['level']!r}")
+
+
+def check_color(where, color, problems):
+    """裝備的顏色（掉落表、重置 G O P 的 color）：null（不是裝備）或 ItemColor 的代號。"""
+    if color is not None and color not in codes(ItemColor):
+        problems.append(f"{where}的 color 要是 null（不是裝備）或 {'、'.join(codes(ItemColor))} 其中一個，不能是 {color!r}")
+
+
+def codes(cls):
+    """一個代號定義（StrEnum）的全部代號。用 list 比對：寫成 [] 這種不能雜湊的值也不會出錯。"""
+    return [c.value for c in cls]
+
+
+def check_mob_codes(where, m, problems):
+    """生物的 tier（必填）和 attack、defense、archetype（null 是預設）：只能寫手冊表裡的代號。"""
+    if "tier" in m and m["tier"] not in codes(MobTier):
+        problems.append(f"{where}的 tier 要寫 {'、'.join(codes(MobTier))} 其中一個，不能是 {m['tier']!r}")
+    if "attack" in m and m["attack"] is not None and not is_attack(m["attack"]):
+        problems.append(f"{where}的 attack 要是 null、{'、'.join(codes(AttackType))} 其中一個，"
+                        f"或「主/次」兩個不一樣的（例如 \"dragon/phys\"），不能是 {m['attack']!r}")
+    for k, cls in (("defense", Defense), ("archetype", Archetype)):
+        if k in m and m[k] is not None and m[k] not in codes(cls):
+            problems.append(f"{where}的 {k} 要是 null 或 {'、'.join(codes(cls))} 其中一個，不能是 {m[k]!r}")
+
+
+def check_tier_roll(where, m, problems):
+    """重生時骰種類（tier_roll，設計文件 §4.9）：null 是固定 tier。
+    寫成 {種類: 機率}：種類不能是 tier 自己（剩下的機率就是它），機率是萬分之一，加起來不能超過 10000。"""
+    roll = m.get("tier_roll")
+    if roll is None:
+        return
+    if not isinstance(roll, dict):
+        problems.append(f"{where}的 tier_roll 要是 null 或 {{種類: 機率}}，例如 {{\"boss\": 100}}，不能是 {roll!r}")
+        return
+    good = []
+    for k, v in roll.items():
+        if k not in codes(MobTier):
+            problems.append(f"{where}的 tier_roll 的種類要是 {'、'.join(codes(MobTier))} 其中一個，不能是 {k!r}")
+        elif k == m.get("tier"):
+            problems.append(f"{where}的 tier_roll 不用寫基本種類 {k}（剩下的機率就是它）")
+        if is_int(v) and 1 <= v <= CHANCE_MAX:
+            good.append(v)
+        else:
+            problems.append(f"{where}的 tier_roll 的 {k} 要是 1～{CHANCE_MAX} 的整數（萬分之一，100 是 1%），不能是 {v!r}")
+    if sum(good) > CHANCE_MAX:
+        problems.append(f"{where}的 tier_roll 加起來是 {' ＋ '.join(map(str, good))} ＝ {sum(good)}，"
+                        f"不能超過 {CHANCE_MAX}（100%）")
+
+
+def check_drops(where, m, problems):
+    """掉落表（drops，設計文件 §4.10）：每一行各自骰。沒有掉落寫 []。"""
+    if "drops" not in m:
+        return
+    if not isinstance(m["drops"], list):
+        problems.append(f"{where}的 drops 要寫成 […]（沒有掉落寫 []），不能是 {m['drops']!r}")
+        return
+    for i, d in enumerate(m["drops"]):
+        w = f"{where}的 drops 第 {i + 1} 行"
+        if not check_keys(d, DROP_KEYS, f"{w} ", problems):
+            continue
+        if "obj_vnum" in d and not (is_int(d["obj_vnum"]) and d["obj_vnum"] >= 1):
+            problems.append(f"{w}的 obj_vnum 要是物品號碼，不能是 {d['obj_vnum']!r}")
+        if "color" in d:
+            check_color(w, d["color"], problems)
+        if "chance" in d and not (is_int(d["chance"]) and 1 <= d["chance"] <= CHANCE_MAX):
+            problems.append(f"{w}的 chance 要是 1～{CHANCE_MAX} 的整數（萬分之一，100 是 1%），不能是 {d['chance']!r}")
+        tiers = d.get("tiers")
+        if "tiers" in d and tiers is not None and not (
+                isinstance(tiers, list) and tiers and all(t in codes(MobTier) for t in tiers) and len(set(tiers)) == len(tiers)):
+            problems.append(f"{w}的 tiers 要是 null（所有種類都會掉）或不重複的種類清單（例如 [\"boss\"]），不能是 {tiers!r}")
+
+
+def is_attack(value):
+    """attack 的寫法：只用一種（"phys"），或主／次兩種不一樣的（"dragon/phys"，主 70%、次 30%）。"""
+    if not isinstance(value, str):
+        return False
+    parts = value.split("/")
+    return len(parts) in (1, 2) and all(p in codes(AttackType) for p in parts) and len(set(parts)) == len(parts)
 
 
 def check_ints(where, obj, keys, problems):
@@ -560,21 +687,15 @@ def check_mobile(where, m, problems):
             problems.append(f"{where}的 {k} 不能是空的")
     check_strs(where, m, ("long", "description", "race"), problems)
     check_ints(where, m, ("level", "alignment", "sex", "position"), problems)
-    # exp 是經驗值的倍數（1 正常、0 不給、1.5 多給 50%），可以有小數；實際的經驗值之後由等級和稀有度算
-    exp = m.get("exp")
-    if "exp" in m and not (isinstance(exp, (int, float)) and not isinstance(exp, bool) and math.isfinite(exp) and exp >= 0):
-        problems.append(f"{where}的 exp 是經驗值的倍數，要是不小於 0 的數字，不能是 {exp!r}")
+    check_mob_codes(where, m, problems)
     for k in ("act", "affected_by"):
         if k in m:
             try:
                 parse_flags(m[k])
             except ValueError as e:
                 problems.append(f"{where}的 {k} {e}")
-    if m.get("random_drop") is not None and check_keys(m["random_drop"], DROP_KEYS, f"{where}的 random_drop ", problems):
-        drop = m["random_drop"]
-        check_ints(f"{where}的 random_drop ", drop, ("chance",), problems)
-        if "obj_vnum" in drop and not (is_int(drop["obj_vnum"]) and drop["obj_vnum"] >= 1):
-            problems.append(f"{where}的 random_drop 的 obj_vnum 要是物品號碼，不能是 {drop['obj_vnum']!r}")
+    check_tier_roll(where, m, problems)
+    check_drops(where, m, problems)
     if m.get("script") is not None:
         check_script(f"{where}的 script ", m["script"], problems)
     for k, keys, ints, strs in (("actions", ACTION_KEYS, ("when", "mode"), ("text",)),

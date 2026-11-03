@@ -39,6 +39,44 @@ export const POSITIONS = [
   [7, "站著"],
 ];
 
+// 生物的種類 tier（必填）
+export const MOB_TIERS = [
+  ["trash", "垃圾怪", "裝備完整度 ×0，經驗加成 ×0.1"],
+  ["normal", "一般怪", "裝備完整度 ×0.5，經驗加成 ×1.2"],
+  ["elite", "菁英怪", "裝備完整度 ×1，經驗加成 ×1.1"],
+  ["boss", "Boss 怪", "裝備完整度 ×1.1，經驗加成 ×1.0"],
+];
+
+// 掉落裝備的顏色 drops 的 color；null 是不是裝備
+export const ITEM_COLORS = [
+  ["gray", "灰", "點數 ×0，沒有屬性"],
+  ["white", "白", "點數 ×1"],
+  ["blue", "藍", "點數 ×1.2"],
+  ["purple", "紫", "點數 ×1.3"],
+  ["orange", "橘", "點數 ×1.4"],
+];
+
+// 攻擊類型 attack：只用一種，或「主/次」兩種（主 70%、次 30%）；null 是純物理
+export const ATTACK_TYPES = [
+  ["phys", "物理"],
+  ["spell", "法術"],
+  ["dragon", "龍焰"],
+];
+
+// 攻防傾向 defense；null 是標準
+export const DEFENSES = [
+  ["phys", "物抗高"],
+  ["spell", "法抗高"],
+];
+
+// 原型 archetype；null 是標準
+export const ARCHETYPES = [
+  ["tank", "坦克"],
+  ["berserker", "狂戰"],
+  ["agile", "敏捷"],
+  ["extreme_tank", "極端坦克"],
+];
+
 // 種族：檔案裡寫名稱（C 版比對開頭，不分大小寫）
 export const RACES = [
   ["human", "人類"],
@@ -217,7 +255,17 @@ export const APPLY = [
   [3, "智慧"],
   [4, "知識"],
   [5, "體質"],
-  [6, "性別"],
+  [6, "HP"],
+  [7, "物理傷害"],
+  [8, "法術傷害"],
+  [9, "命中"],
+  [10, "閃躲"],
+  [11, "爆擊率"],
+  [12, "爆擊傷害"],
+  [13, "攻速"],
+  [14, "物理抗性"],
+  [15, "法術抗性"],
+  [16, "龍焰抗性"],
 ];
 
 // 武器 values 第 4 個：攻擊方式

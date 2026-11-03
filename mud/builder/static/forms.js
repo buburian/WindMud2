@@ -1,8 +1,9 @@
 // 表單的小工具：欄位直接綁在區域檔的物件上，改了就寫回 obj[key] 再呼叫 done()。
 // 生物、物品、重置的畫面和房間的「可以細看的東西」共用。done 通常是 ctx.edited（只重畫不含輸入框的地方）。
 import * as M from "./model.js";
+import * as T from "./tables.js";
 import {
-  checkbox, field, h, icon, numberText, parseDecimal, parseNumber, plainText, selectArrow, selectInput, storedText,
+  checkbox, field, h, icon, numberText, parseNumber, plainText, selectArrow, selectInput, storedText,
   textArea, textInput,
 } from "./ui.js";
 
@@ -22,11 +23,10 @@ export function areaField({ id, label, code, obj, key, rows = 3, done }) {
   }) });
 }
 
-// 數字：打的不是整數就照打的存，讓檢查報錯；decimal 時可以有小數
-export function numberField({ id, label, code, obj, key, style, tip, decimal = false, done }) {
-  const parse = decimal ? parseDecimal : parseNumber;
+// 數字：打的不是整數就照打的存，讓檢查報錯
+export function numberField({ id, label, code, obj, key, style, tip, done }) {
   return field({ id, label, code, style, tip, input: textInput({
-    id, value: numberText(obj[key]), oninput: (e) => { obj[key] = parse(e.target.value); done(); },
+    id, value: numberText(obj[key]), oninput: (e) => { obj[key] = parseNumber(e.target.value); done(); },
   }) });
 }
 
@@ -35,6 +35,28 @@ export function selectField({ id, label, code, obj, key, options, style, done })
   return field({ id, label, code, style, extra: selectArrow(), input: selectInput({
     id, value: obj[key], options, onchange: (e) => { obj[key] = Number(e.target.value); done(); },
   }) });
+}
+
+// 代號的下拉選單：options 是 [[代號或 null, 名字], …]，選了就存回那個代號（null 也照存）
+export function codeField({ id, label, code, obj, key, options, style, done }) {
+  return field({ id, label, code, style, extra: selectArrow(), input: selectInput({
+    id, value: obj[key], options,
+    onchange: (e) => { obj[key] = options.find(([v]) => String(v) === e.target.value)[0]; done(); },
+  }) });
+}
+
+// 裝備的顏色（掉落表、重置 G O P 的 color）：不是裝備存成 null
+export function colorField({ id, obj, done }) {
+  return codeField({ id, label: "顏色", code: "color", obj, key: "color",
+    options: [[null, "不是裝備"], ...T.ITEM_COLORS], style: "flex: 0 0 160px", done });
+}
+
+// 重置放出的物品（G、O、P）：顏色和等級。G 的等級空著（null）是前面那筆 M 的怪物等級；O、P 一定要寫
+export function itemLookRow(r, idPrefix, done) {
+  const tip = r.cmd === "G" ? "空著是前面那筆 M 的怪物等級；商店要賣低等裝備就自己寫" : "O、P 沒有怪物帶著，一定要寫";
+  return h("div", { class: "row" },
+    colorField({ id: `${idPrefix}-color`, obj: r, done }),
+    numberField({ id: `${idPrefix}-level`, label: "等級", code: "level", obj: r, key: "level", tip, style: "flex: 0 0 120px", done }));
 }
 
 // 旗標的勾選：table 是 [[位元, 名字, 說明], …]。勾了才把值改成數字，沒動過的 "2|64" 寫法原樣保留

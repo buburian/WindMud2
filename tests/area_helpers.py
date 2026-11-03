@@ -16,8 +16,8 @@ def make_mobile(vnum):
     """每個欄位都有值的生物（巢狀的也是），各測試再改其中的欄位。"""
     return {
         "vnum": vnum, "keywords": f"mob{vnum}", "short": f"生物{vnum}", "long": "", "description": "",
-        "level": 1, "act": 0, "affected_by": 0, "alignment": 0, "race": "human", "sex": 0, "exp": 1, "position": 0,
-        "random_drop": {"chance": 100, "obj_vnum": 1},
+        "level": 1, "tier": "normal", "tier_roll": {"elite": 2000, "boss": 100}, "attack": "dragon/phys", "defense": "phys", "archetype": "tank", "act": 0, "affected_by": 0, "alignment": 0, "race": "human", "sex": 0, "position": 0,
+        "drops": [{"obj_vnum": 1, "color": "orange", "chance": 100, "tiers": ["boss"]}],
         "script": {"trigger": {"value": 64, "names": ["say"]}, "function": "ms_test"},
         "actions": [{"when": 0, "mode": 0, "text": "say 你好"}],
         "fight_actions": [{"rate": 10, "message": "", "command": "flee"}],
@@ -41,9 +41,9 @@ def make_resets():
     """每種重置指令各一筆，都寫對（號碼只看寫法，指到的東西不必存在）。"""
     return [
         {"cmd": "M", "rare": 0, "mob_vnum": 1, "limit": 1, "room_vnum": 1, "comment": ""},
-        {"cmd": "G", "rare": 0, "obj_vnum": 1, "limit": 0, "comment": ""},
-        {"cmd": "O", "if_flag": 0, "obj_vnum": 3, "limit": 0, "room_vnum": 2, "comment": ""},
-        {"cmd": "P", "if_flag": 0, "obj_vnum": 4, "limit": 0, "container_vnum": 3, "comment": ""},
+        {"cmd": "G", "rare": 0, "obj_vnum": 1, "color": "white", "level": None, "limit": 0, "comment": ""},
+        {"cmd": "O", "if_flag": 0, "obj_vnum": 3, "color": None, "level": 1, "limit": 0, "room_vnum": 2, "comment": ""},
+        {"cmd": "P", "if_flag": 0, "obj_vnum": 4, "color": "orange", "level": 10, "limit": 0, "container_vnum": 3, "comment": ""},
         {"cmd": "D", "if_flag": 0, "room_vnum": 1, "direction": "north", "state": 0, "comment": ""},
         {"cmd": "R", "if_flag": 0, "room_vnum": 2, "exit_count": 4, "comment": ""},
         {"cmd": "*", "comment": "註解"},

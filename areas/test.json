@@ -76,17 +76,36 @@
       "long": "一位測試商人/merchant/站在櫃檯後面。\n",
       "description": "這是測試區域的商人，臉上一直掛著笑容。\n",
       "level": 5,
+      "tier": "elite",
+      "tier_roll": {
+        "normal": 2000,
+        "boss": 100
+      },
+      "attack": "phys/spell",
+      "defense": "phys",
+      "archetype": "tank",
       "act": "2|64",
       "affected_by": 0,
       "alignment": 0,
       "race": "human",
       "sex": 1,
-      "exp": 1,
       "position": 7,
-      "random_drop": {
-        "chance": 5000,
-        "obj_vnum": 1
-      },
+      "drops": [
+        {
+          "obj_vnum": 2,
+          "color": "orange",
+          "chance": 100,
+          "tiers": [
+            "boss"
+          ]
+        },
+        {
+          "obj_vnum": 1,
+          "color": null,
+          "chance": 5000,
+          "tiers": null
+        }
+      ],
       "script": {
         "trigger": {
           "value": 64,
@@ -129,14 +148,18 @@
       "long": "一匹測試坐騎/horse/在這裡低頭吃草。\n",
       "description": "一匹溫馴的馬，背上放著馬鞍。\n",
       "level": 3,
+      "tier": "trash",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
       "act": 0,
       "affected_by": 0,
       "alignment": 0,
       "race": "animal",
       "sex": 0,
-      "exp": 1,
       "position": 7,
-      "random_drop": null,
+      "drops": [],
       "script": null,
       "actions": [],
       "fight_actions": [],
@@ -265,13 +288,26 @@
       "cmd": "G",
       "rare": 0,
       "obj_vnum": 1,
+      "color": null,
+      "level": null,
       "limit": 0,
       "comment": "店裡賣的東西"
+    },
+    {
+      "cmd": "G",
+      "rare": 0,
+      "obj_vnum": 2,
+      "color": "white",
+      "level": 1,
+      "limit": 0,
+      "comment": "店裡賣的 1 級長劍（商店賣低等裝備要自己寫等級）"
     },
     {
       "cmd": "O",
       "if_flag": 0,
       "obj_vnum": 3,
+      "color": null,
+      "level": 1,
       "limit": 0,
       "room_vnum": 2,
       "comment": "北邊房間地上的箱子"
@@ -280,6 +316,8 @@
       "cmd": "P",
       "if_flag": 0,
       "obj_vnum": 4,
+      "color": null,
+      "level": 1,
       "limit": 0,
       "container_vnum": 3,
       "comment": "箱子裡的東西"
