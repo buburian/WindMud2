@@ -12,7 +12,10 @@
 """
 import enum
 import json
+import math
 from pathlib import Path
+
+from . import equipment
 
 DIRECTIONS = {"north": "北", "east": "東", "south": "南", "west": "西", "up": "上", "down": "下"}
 REVERSE = {"north": "south", "east": "west", "south": "north", "west": "east", "up": "down", "down": "up"}
@@ -126,6 +129,70 @@ class ItemColor(enum.StrEnum):
 
 
 CHANCE_MAX = 10000                          # 機率以萬分之一為單位（tier_roll、drops 的 chance）：10000 是 100%
+
+
+class Apply(enum.IntEnum):
+    """物品加成加在哪裡（affects 的 location）。名字是手冊表的代號；6～16 跟 mud_design 的 STAT_KEYS 一樣。"""
+    NONE = 0                                # 無
+    STR = 1                                 # 力量
+    DEX = 2                                 # 敏捷
+    INT = 3                                 # 智慧
+    WIS = 4                                 # 知識
+    CON = 5                                 # 體質
+    HP = 6                                  # HP
+    DMG_PHYS = 7                            # 物理傷害
+    DMG_SPELL = 8                           # 法術傷害
+    HIT = 9                                 # 命中
+    DODGE = 10                              # 閃躲
+    CRIT = 11                               # 爆擊率
+    CRITDMG = 12                            # 爆擊傷害
+    SPEED = 13                              # 攻速
+    RES_PHYS = 14                           # 物理抗性
+    RES_SPELL = 15                          # 法術抗性
+    RES_DRAGON = 16                         # 龍焰抗性（不算點數）
+
+
+class WearFlag(enum.IntFlag):
+    """物品能不能拿起來、穿在哪裡（wear_flags）。名字是手冊的 C 版名稱，位置照設計文件 §3.3 的裝備欄位。"""
+    TAKE = 1                                # 可以拿起來（不是位置）
+    FINGER = 2                              # 戒指
+    NECK = 4                                # 頸
+    BODY = 8                                # 身體
+    HEAD = 16                               # 頭
+    LEGS = 32                               # 腿
+    FEET = 64                               # 腳
+    HANDS = 128                             # 手
+    ARMS = 256                              # 手臂
+    SHIELD = 512                            # 副手：盾牌或副手武器
+    ABOUT = 1024                            # 披風
+    WAIST = 2048                            # 腰
+    WRIST = 4096                            # 手腕
+    WIELD = 8192                            # 主手
+    HOLD = 16384                            # 持握
+
+
+class ExtraFlag(enum.IntFlag):
+    """物品的特性旗標（extra_flags）。1～256 照 C 版，512 是新系統加的。"""
+    GLOW = 1                                # 發亮
+    HUM = 2                                 # 低鳴
+    DARK = 4                                # 黑暗
+    LOCK = 8                                # 鎖
+    EVIL = 16                               # 邪惡
+    INVIS = 32                              # 隱形
+    MAGIC = 64                              # 魔法
+    NODROP = 128                            # 無法丟棄
+    BLESS = 256                             # 祝福
+    TWO_HANDED = 512                        # 雙手：武器同時佔主手和副手，點數上限是兩格加起來
+
+
+# 穿戴位置 → equipment.py 的部位（點數上限用）。TAKE 不是位置。
+WEAR_SLOTS = {
+    WearFlag.FINGER: "finger", WearFlag.NECK: "neck", WearFlag.BODY: "body", WearFlag.HEAD: "head",
+    WearFlag.LEGS: "legs", WearFlag.FEET: "feet", WearFlag.HANDS: "hands", WearFlag.ARMS: "arms",
+    WearFlag.SHIELD: "offhand", WearFlag.ABOUT: "about", WearFlag.WAIST: "waist", WearFlag.WRIST: "wrist",
+    WearFlag.WIELD: "wield", WearFlag.HOLD: "hold",
+}
+LIGHT_ITEM_TYPE = 1                         # 物品種類 1 照明用具：不在 wear_flags 裡，放在光源的位置
 
 
 # 每一層要剛好有這些欄位
@@ -256,7 +323,105 @@ def check_files(paths, reference=()):
             problems[path].append(f"{path.name}：area.recall 指到不存在的房間 {resolve(info.base, info.recall)}")
     owners("mobiles", "生物", lambda info: info.mobiles)
     owners("objects", "物品", lambda info: info.objects)
+    # 固定裝備：物品可能在別的檔（寫完整號碼），所以用全部讀到的檔（含對照用的）去找物品和生物
+    objects, mob_levels = world_items([*paths, *reference])
+    for path, info in found.items():
+        data = read_json(path, [])
+        if info.base is not None and isinstance(data, dict):
+            check_fixed_items(path.name, data, info.base, objects, mob_levels, problems[path])
     return problems
+
+
+def world_items(paths):
+    """全部檔案的物品（遊戲號碼 → 物品）和生物的等級（遊戲號碼 → level）。格式不對的就略過（別的規則會報錯）。"""
+    objects, mob_levels = {}, {}
+    for path in {p.resolve(): p for p in paths}.values():
+        data = read_json(path, [])
+        try:
+            base = data["area"]["header"]["area_number"]
+        except (KeyError, TypeError):
+            continue
+        if not is_int(base):
+            continue
+        for key, out, value in (("objects", objects, lambda o: o), ("mobiles", mob_levels, lambda m: m.get("level"))):
+            for item in data.get(key) if isinstance(data.get(key), list) else []:
+                if isinstance(item, dict) and is_int(item.get("vnum")) and 1 <= item["vnum"] <= 99:
+                    out.setdefault(base + item["vnum"], value(item))
+    return objects, mob_levels
+
+
+def check_fixed_items(name, data, base, objects, mob_levels, problems):
+    """固定裝備（物品寫了 affects）放出來的地方：加成的點數不能超過「等級和部位的上限 × 顏色加成」（設計文件 §3.3）。
+
+    放出來的地方和等級：掉落表 drops 用這隻生物的等級；重置 G 寫 null 用前面最近那筆 M 的生物等級；O、P 寫在 level。
+    顏色 null、gray 的加成是 ×0：只有不算點數的加成（例如龍焰抗性）才放得進去。
+    """
+    def place(where, obj_vnum, level, color):
+        if is_int(obj_vnum) and is_int(level) and obj_vnum >= 1:
+            check_fixed_item(where, resolve(base, obj_vnum), objects, level, color, problems)
+
+    for m in data.get("mobiles") if isinstance(data.get("mobiles"), list) else []:
+        if isinstance(m, dict) and isinstance(m.get("drops"), list):
+            for i, d in enumerate(m["drops"]):
+                if isinstance(d, dict):
+                    place(f"{name}：生物 {m.get('vnum')} 的 drops 第 {i + 1} 行", d.get("obj_vnum"), m.get("level"), d.get("color"))
+    m_level = None                          # 前面最近那筆 M 的生物等級（G 的 level 寫 null 時用）
+    for i, r in enumerate(data.get("resets") if isinstance(data.get("resets"), list) else []):
+        if not isinstance(r, dict):
+            continue
+        if r.get("cmd") == "M":
+            m_level = mob_levels.get(resolve(base, r["mob_vnum"])) if is_int(r.get("mob_vnum")) else None
+        elif r.get("cmd") in ("G", "O", "P"):
+            level = m_level if r.get("cmd") == "G" and r.get("level") is None else r.get("level")
+            place(f"{name}：resets 第 {i + 1} 筆（{r['cmd']}）", r.get("obj_vnum"), level, r.get("color"))
+
+
+def check_fixed_item(where, number, objects, level, color, problems):
+    """一個放出物品的地方：物品 number 是固定裝備的話，點數不能超過上限。寫錯的地方就略過（別的規則會報錯）。"""
+    obj = objects.get(number)
+    affects = obj.get("affects") if isinstance(obj, dict) else None
+    if not (isinstance(affects, list) and affects) or not (color is None or color in codes(ItemColor)):
+        return
+    terms = []                              # [(屬性代號, 加多少, 每 +1 幾點)]
+    for a in affects:
+        if not (isinstance(a, dict) and is_int(a.get("location")) and a["location"] in [x.value for x in Apply]
+                and is_int(a.get("modifier"))):
+            return
+        if a["location"] != Apply.NONE:
+            stat = Apply(a["location"]).name.lower()
+            terms.append((stat, a["modifier"], equipment.price(stat, level)))
+    try:
+        wear = parse_flags(obj.get("wear_flags"))
+        two_handed = bool(parse_flags(obj.get("extra_flags")) & ExtraFlag.TWO_HANDED)
+    except ValueError:
+        return
+    slots = [slot for flag, slot in WEAR_SLOTS.items() if wear & flag]
+    if obj.get("item_type") == LIGHT_ITEM_TYPE:
+        slots.append("light")
+    cap, slot_text = equipment.item_cap(level, slots, two_handed)
+    bonus = 0.0 if color is None else equipment.COLOR_BONUS[color]
+    total = sum(n * p for _, n, p in terms)
+    if total <= cap * bonus + 1e-9:
+        return
+    # 顯示：點數無條件進位、上限無條件捨去到小數 3 位，畫面上一定看得出點數比較大
+    items = " ＋ ".join(f"{equipment.STAT_NAMES[s]} {n:+d} × {decimal_text(p)}" for s, n, p in terms)
+    color_text = equipment.COLOR_NAMES[color] if color else "沒寫顏色（null）"
+    problems.append(f"{where}放出物品 {number}「{obj.get('short')}」：加成點數 {items} ＝ {decimal_text(round_up(total))}，"
+                    f"超過 {level} 級{slot_text}、{color_text}的上限 {decimal_text(round_down(cap))} × {decimal_text(bonus)} ＝ "
+                    f"{decimal_text(round_down(cap * bonus))}（設計文件 §3.3）")
+
+
+def round_up(x):
+    return math.ceil(x * 1000 - 1e-9) / 1000
+
+
+def round_down(x):
+    return math.floor(x * 1000 + 1e-9) / 1000
+
+
+def decimal_text(x):
+    """最多小數 3 位，不要多餘的 0：3.741、20、1.2。"""
+    return f"{x:.3f}".rstrip("0").rstrip(".")
 
 
 class Found:

@@ -7,7 +7,7 @@ import {
 import * as M from "./model.js";
 import { placesOf } from "./resets.js";
 import * as T from "./tables.js";
-import { confirmDialog, h, icon, numberText, toast } from "./ui.js";
+import { confirmDialog, field, h, icon, numberText, textInput, toast } from "./ui.js";
 
 const TABS = [["basic", "基本資料"], ["affects", "加成"], ["extra", "可以細看的東西"]];
 
@@ -98,6 +98,9 @@ function valuesGrid(ctx, obj) {
     if (kind === "spell") return textField({ id, label, code, obj: values, key: i, tip: tip || "法術名稱，例如 cure light；不用的寫空的", done });
     if (kind === "attack") return selectField({ id, label, code, obj: values, key: i, options: T.ATTACKS, done });
     if (kind === "liquid") return selectField({ id, label, code, obj: values, key: i, options: T.LIQUIDS, done });
+    if (kind === "auto") {                  // 由裝備等級算，作者不用寫：照原本的值顯示，不能改
+      return field({ id, label, code, tip, input: textInput({ id, value: numberText(values[i]), disabled: true }) });
+    }
     if (kind === "container") {
       return h("div", { class: "wide" }, flagsField({ legend: label, code, obj: values, key: i, table: T.CONTAINER_FLAGS, columns: 3, done }));
     }

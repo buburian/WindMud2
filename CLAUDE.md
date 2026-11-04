@@ -163,7 +163,19 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `cost`（價格）使用者拿掉後又放回來了，可以是 0；商店的 `profit_buy`、`profit_sell` 是乘在它上面的倍率。
     `affects.location`（使用者定的）：0～5 主屬性（照 C 版），6～15 是設計文件的 10 種次要屬性（HP、物理傷害…法術抗性，
     代號同 mud_design 的 STAT_KEYS），16 是龍焰抗性（不算點數，區域作者另外給，設計文件 §5.5）；C 版的 6 性別拿掉了。
-    special 的吐息（`spec_breath_*`）算龍焰傷害、施法（`spec_cast_*`）算法術傷害（使用者定的，設計文件 §4.1）。舊區域的 location 數字意思不同，轉檔工具只沿用文字、不帶屬性過來。
+    舊區域的 location 數字意思不同，轉檔工具只沿用文字、不帶屬性過來。
+    special 的吐息（`spec_breath_*`）算龍焰傷害、施法（`spec_cast_*`）和 `spec_poison` 算法術傷害；`fight_actions` 的傷害類型照
+    `command` 用的技能本身；兩者都是普通攻擊以外額外多打的（使用者定的，設計文件 §4.1）。
+    生物的 `level` 照寫的值，不隨機加減（不照 C 版的 ±1），想要變化用 `tier_roll`。
+    武器傷害（`values` 第 2、3 格）、護具防護力（第 1、3 格）由裝備等級算（設計文件 §3.3），作者寫 0；檢查不管這幾格，
+    編輯器的 `VALUE_FIELDS` 把它們標成 `auto`（顯示但不能改）。
+    `extra_flags` 1～256 照 C 版，512 是新加的「雙手」（使用者定的）：武器同時佔主手和副手，點數上限是兩格加起來（設計文件 §3.3）。
+    `area.py` 有 `Apply`（location）、`WearFlag`、`ExtraFlag` 三個定義（跟手冊、`tables.js` 比對）。
+    **固定裝備**（使用者定的，設計文件 §3.3）：物品寫了 `affects` 就用固定的、不隨機抽；`[]` 才照等級和顏色抽。
+    `check_files()` 跨檔案檢查每個放出物品的地方（掉落表用生物等級；`G` 的 level 是 null 就用前面 `M` 的生物等級；`O`、`P` 用 level），
+    點數（數值 × 單價）不能超過「部位上限 × 顏色加成」；null、gray 是 ×0，只放得進不算點數的龍焰抗性。
+    上限和單價在 `equipment.py`（照 `mud_design/sim/balance.py`，不 import area）；`tests/test_equipment.py` 直接讀 balance.py 比對
+    （不寫 .pyc、不改 mud_design；找不到 mud_design 才跳過）。設計文件改數字時要一起改 `equipment.py`。
     `item_type`、`affects.location` 寫數字，`extra_flags`、`wear_flags` 寫法同 `room_flags`。`values` 是 4 個整數或字串：
     法術類（卷軸、藥水、藥錠的第 2～4 個，魔杖、魔棒的第 4 個）寫法術名稱；容器旗標這類要相加，`values` 裡不能用 `|`（C 版用 atoi 讀）。
     `check_object()` 只檢查寫法；可以細看的東西跟房間共用 `check_extra_descriptions()`。物品號碼跟房間、生物分開算。

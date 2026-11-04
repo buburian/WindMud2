@@ -312,3 +312,91 @@ def test_cli_all_checks_areas_folder(monkeypatch, capsys):
     monkeypatch.chdir(ROOT)
     assert areacheck.main([]) == 0
     assert "areas/test.json：沒問題" in capsys.readouterr().out
+
+
+# ---- 固定裝備（物品寫了 affects）的點數上限，設計文件 §3.3 ----
+
+def fixed_area(objects, resets=(), mobiles=()):
+    return make_area("a.json", [make_room(1)], mobiles=list(mobiles), objects=list(objects), resets=list(resets))
+
+
+def armed(vnum, affects, wear="1|8192", extra=0):
+    o = make_object(vnum)
+    o.update(wear_flags=wear, extra_flags=extra, affects=affects)
+    return o
+
+
+M1 = {"cmd": "M", "rare": 0, "mob_vnum": 1, "limit": 1, "room_vnum": 1, "comment": ""}
+
+
+def give(obj_vnum, color="white", level=None):
+    return {"cmd": "G", "rare": 0, "obj_vnum": obj_vnum, "color": color, "level": level, "limit": 0, "comment": ""}
+
+
+def test_fixed_item_over_cap_shows_the_math(tmp_path):
+    # 1 級雙手武器：上限是主手＋副手；G 沒寫等級就用 M 那隻生物的等級（make_mobile 是 1 級）
+    sword = armed(1, [{"location": 1, "modifier": 2}, {"location": 13, "modifier": 18}], extra=512)
+    data = fixed_area([sword], [M1, give(1)], [make_mobile(1)])
+    assert problems_of(tmp_path, data) == [
+        "a.json：resets 第 2 筆（G）放出物品 101「物品1」：加成點數 力量 +2 × 3.741 ＋ 攻速 +18 × 1 ＝ 25.482，"
+        "超過 1 級主手＋副手（雙手）、白色的上限 20.058 × 1 ＝ 20.058（設計文件 §3.3）"]
+
+
+def test_fixed_item_level_written_on_g_wins(tmp_path):
+    # 同一把武器，G 寫 50 級：上限大很多，就沒問題
+    sword = armed(1, [{"location": 13, "modifier": 18}])
+    assert problems_of(tmp_path, fixed_area([sword], [M1, give(1, level=50)], [make_mobile(1)])) == []
+    assert problems_of(tmp_path, fixed_area([sword], [M1, give(1)], [make_mobile(1)])) != []
+
+
+def test_fixed_item_color_bonus(tmp_path):
+    # 1 級主手上限 14.33：攻速 +16 白色超過，橘色（×1.4）就夠
+    sword = armed(1, [{"location": 13, "modifier": 16}])
+    assert problems_of(tmp_path, fixed_area([sword], [M1, give(1, "white")], [make_mobile(1)])) != []
+    assert problems_of(tmp_path, fixed_area([sword], [M1, give(1, "orange")], [make_mobile(1)])) == []
+
+
+@pytest.mark.parametrize("color, text", [(None, "沒寫顏色（null）的上限"), ("gray", "灰色的上限")])
+def test_fixed_item_gray_or_null_has_no_points(tmp_path, color, text):
+    sword = armed(1, [{"location": 6, "modifier": 1}])
+    found = problems_of(tmp_path, fixed_area([sword], [M1, give(1, color)], [make_mobile(1)]))
+    assert len(found) == 1 and text in found[0] and "× 0 ＝ 0" in found[0]
+
+
+def test_dragon_resistance_is_free(tmp_path):
+    # 只給龍焰抗性的獎勵（設計文件 §5.5）：不算點數，灰色、null 也可以
+    ring = armed(1, [{"location": 16, "modifier": 500}], wear="1|2")
+    o = {"cmd": "O", "if_flag": 0, "obj_vnum": 1, "color": None, "level": 1, "limit": 0, "room_vnum": 1, "comment": ""}
+    assert problems_of(tmp_path, fixed_area([ring], [o])) == []
+
+
+def test_fixed_item_in_drops_uses_mob_level(tmp_path):
+    helm = armed(1, [{"location": 6, "modifier": 10}], wear="1|16")    # 頭：1 級上限 5.73、20 級 13.9
+    weak, strong = make_mobile(1), make_mobile(2)
+    strong["level"] = 20
+    for m in (weak, strong):
+        m["drops"] = [{"obj_vnum": 1, "color": "white", "chance": 100, "tiers": None}]
+    found = problems_of(tmp_path, fixed_area([helm], mobiles=[weak, strong]))
+    assert len(found) == 1 and found[0].startswith("a.json：生物 1 的 drops 第 1 行放出物品 101")
+
+
+def test_two_handed_needs_wield(tmp_path):
+    # 512 雙手只對有主手位置的物品有用：頭盔勾了也還是頭的上限
+    helm = armed(1, [{"location": 6, "modifier": 10}], wear="1|16", extra=512)
+    o = {"cmd": "O", "if_flag": 0, "obj_vnum": 1, "color": "white", "level": 1, "limit": 0, "room_vnum": 1, "comment": ""}
+    assert "1 級頭、白色的上限 5.73" in problems_of(tmp_path, fixed_area([helm], [o]))[0]
+
+
+def test_unplaced_fixed_item_is_not_checked(tmp_path):
+    # 沒有地方放它，就不知道等級和顏色
+    sword = armed(1, [{"location": 13, "modifier": 999}])
+    assert problems_of(tmp_path, fixed_area([sword])) == []
+
+
+def test_fixed_item_from_another_file(tmp_path):
+    # G 給的是 b.json 的物品（寫完整號碼 201）：用 b.json 的物品算，錯誤報在放它的 a.json
+    sword = armed(1, [{"location": 13, "modifier": 18}])
+    a = write_json(tmp_path, "a.json", fixed_area([], [M1, give(201)], [make_mobile(1)]))
+    b = write_area(tmp_path, "b.json", [make_room(1)], area_number=200, objects=[sword])
+    found = area.check_files([a, b], [a, b])
+    assert found[b] == [] and "放出物品 201「物品1」" in found[a][0]

@@ -194,12 +194,12 @@
       "short": "測試長劍",
       "long": "一把測試長劍插在地上。",
       "item_type": 5,
-      "extra_flags": "1|64",
+      "extra_flags": "1|64|512",
       "wear_flags": "1|8192",
       "values": [
         0,
-        3,
-        8,
+        0,
+        0,
         3
       ],
       "weight": 5,

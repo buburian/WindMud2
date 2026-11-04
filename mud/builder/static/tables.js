@@ -185,7 +185,9 @@ export const ITEM_TYPES = [
 ];
 
 // 物品 values 4 個欄位的名字，看物品種類。每個是 [名字, 寫法, 說明]：
-// 寫法 number 數字、spell 法術名稱（存成文字）、attack 攻擊方式、liquid 液體、container 容器旗標
+// 寫法 number 數字、spell 法術名稱（存成文字）、attack 攻擊方式、liquid 液體、container 容器旗標、
+// auto 由裝備等級算（作者不用寫，寫 0；畫面上不能改）
+const AUTO_TIP = "由裝備等級算，不用寫（寫 0），見設計文件 §3.3";
 const UNUSED = [["沒用到", "number"], ["沒用到", "number"], ["沒用到", "number"], ["沒用到", "number"]];
 const UNKNOWN = [["不確定", "number"], ["不確定", "number"], ["不確定", "number"], ["不確定", "number"]];
 const SPELLS = [["法術等級", "number"], ["法術 1", "spell"], ["法術 2", "spell"], ["法術 3", "spell"]];
@@ -195,10 +197,10 @@ export const VALUE_FIELDS = {
   2: SPELLS,
   3: WAND,
   4: WAND,
-  5: [["武器類別", "number", "6 是弓，其他不確定"], ["傷害下限", "number", "C 版放出時重算"], ["傷害上限", "number", "C 版放出時重算"], ["攻擊方式", "attack"]],
+  5: [["武器類別", "number", "6 是弓，其他不確定"], ["傷害下限", "auto", AUTO_TIP], ["傷害上限", "auto", AUTO_TIP], ["攻擊方式", "attack"]],
   6: UNUSED,
   8: UNUSED,
-  9: [["防護力", "number", "C 版放出時重算"], ["耐久上限", "number", "C 版放出時改成價格"], ["防護上限", "number", "C 版放出時改成跟第 1 個一樣"],
+  9: [["防護力", "auto", AUTO_TIP], ["耐久上限", "number", "C 版放出時改成價格"], ["防護上限", "auto", AUTO_TIP],
     ["特殊能力", "number", "穿在身上或披在身上寫 1 會飛；戴在頭上寫 1、2、3 分別是看得到隱形、看得到躲起來的人、看得出邪惡"]],
   10: SPELLS,
   12: UNUSED,
@@ -226,6 +228,7 @@ export const EXTRA_FLAGS = [
   [64, "魔法"],
   [128, "無法丟棄"],
   [256, "祝福"],
+  [512, "雙手", "武器拿起來同時佔主手和副手；點數上限是兩格加起來"],
 ];
 
 // 能不能拿起來、穿在哪裡 wear_flags（位置照 mud_design 設計文件 §3.3 的裝備欄位）

@@ -9,7 +9,9 @@ from pathlib import Path
 import pytest
 
 from area_helpers import make_area, make_mobile, make_object, make_room, write_area, write_json
-from mud.area import Archetype, AreaType, AttackType, Defense, ItemColor, Locks, MobTier, RoomFlag, Sector
+from mud.area import (
+    Apply, Archetype, AreaType, AttackType, Defense, ExtraFlag, ItemColor, Locks, MobTier, RoomFlag, Sector, WearFlag,
+)
 from mud.builder.server import make_server
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -190,6 +192,13 @@ def test_page_tables_match_area_definitions():
     assert js_table("FLAGS") == [f.value for f in RoomFlag]
     assert js_table("SECTORS") == [s.value for s in Sector]
     assert js_table("LOCKS") == [lock.value for lock in Locks]
+
+
+def test_object_tables_match_area_definitions():
+    # 物品的加成、特性、穿戴位置：編輯器的表跟 area.py 的定義要一樣（點數上限的檢查用 area.py 的）
+    assert tables_js("APPLY") == [a.value for a in Apply]
+    assert tables_js("EXTRA_FLAGS") == [f.value for f in ExtraFlag]
+    assert tables_js("WEAR_FLAGS") == [f.value for f in WearFlag]
 
 
 def test_area_type_options_match_area_definitions():
