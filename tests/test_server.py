@@ -105,9 +105,10 @@ async def look_while_loops_run(hits):
 
 def test_loops_do_not_block_players(monkeypatch):
     monkeypatch.setattr(zones, "TICK_SECONDS", 0.01)
-    monkeypatch.setattr(fight, "ROUND_SECONDS", 0.01)
+    monkeypatch.setattr(zones, "HOUR_TICKS", 1)              # 天氣每個 tick 都走
+    monkeypatch.setattr(fight, "TICK_SECONDS", 0.01)
     hits = []
-    monkeypatch.setattr(fight, "hit", lambda ch, victim: hits.append(ch.name))
+    monkeypatch.setattr(fight, "hit", lambda ch, victim, hand: hits.append(ch.name))
     ticks = []
     monkeypatch.setattr(weather, "tick", lambda: ticks.append(1))   # 天氣訊息會插進 look 的回應，這裡只記次數
     asyncio.run(asyncio.wait_for(look_while_loops_run(hits), timeout=5))

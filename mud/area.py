@@ -106,9 +106,9 @@ class AttackType(enum.StrEnum):
 
 
 class Defense(enum.StrEnum):
-    """攻防傾向（defense）：把抗性點數搬動，總點數不變。null 是標準。"""
-    PHYS = "phys"                           # 物抗 ×2、法抗 ×0.5（怕法術）
-    SPELL = "spell"                         # 法抗 ×2、物抗 ×0.5（怕物理）
+    """攻防傾向（defense）：擅長的抗性 : 不擅長的 ＝ 2 : 0.5，再換算回原本物抗＋法抗的合計，總點數不變。null 是標準。"""
+    PHYS = "phys"                           # 物抗 ×1.6、法抗 ×0.4（原本一樣時；怕法術）
+    SPELL = "spell"                         # 法抗 ×1.6、物抗 ×0.4（原本一樣時；怕物理）
 
 
 class Archetype(enum.StrEnum):
@@ -694,7 +694,8 @@ def check_objects(name, data, base, problems):
 
 
 def check_object(where, o, problems):
-    """檢查一個物品（號碼以外的部分）。只看寫法：數字代表什麼（種類、旗標、values…）還沒檢查。"""
+    """檢查一個物品（號碼以外的部分）。只看寫法：數字代表什麼（種類、旗標、values…）還沒檢查，
+    只有主手、副手不能同時寫。"""
     for k in ("keywords", "short"):
         if k in o and not (isinstance(o[k], str) and o[k].strip()):
             problems.append(f"{where}的 {k} 不能是空的")
@@ -706,6 +707,14 @@ def check_object(where, o, problems):
                 parse_flags(o[k])
             except ValueError as e:
                 problems.append(f"{where}的 {k} {e}")
+    # 主手、副手只能寫一個：兩個都寫會用主手的上限算點數，放到副手就多拿了點數（設計文件 §3.3）
+    try:
+        wear = parse_flags(o.get("wear_flags"))
+    except ValueError:
+        wear = 0
+    if wear & WearFlag.WIELD and wear & WearFlag.SHIELD:
+        problems.append(f"{where}的 wear_flags {o['wear_flags']!r} 同時有 8192 主手和 512 副手：武器只能放做出來的那一手，"
+                        f"主手武器寫 8192，副手武器寫 512")
     # values：4 個，意思看物品種類；法術類物品的部分要寫法術名稱，所以可以是字串
     if "values" in o and not (isinstance(o["values"], list) and len(o["values"]) == 4
                               and all(is_int(v) or isinstance(v, str) for v in o["values"])):

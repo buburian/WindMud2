@@ -24,11 +24,27 @@ PAIRED = ("finger",)                        # 一個欄位兩件：一件的上�
 COLOR_BONUS = {"gray": 0.0, "white": 1.0, "blue": 1.2, "purple": 1.3, "orange": 1.4}
 COLOR_NAMES = {"gray": "灰色", "white": "白色", "blue": "藍色", "purple": "紫色", "orange": "橘色"}
 
-# 每 +1 要幾點。主屬性跟著等級長：係數 × G(L)（例如 1 級 STR +1 是 3.74 點）
-PRIMARY_PRICE = {
-    "str": 0.37406056496587836, "int": 0.37387109926328244, "wis": 0.2714500764554505,
-    "con": 0.4777163022238938, "dex": 0.34944581145989345,
+# 主屬性 +1 要幾點（設計文件 §3.2、§8.1）：每個職業算「K × G(L) ÷ 這個職業 L 級的標準值」，取大的。
+# 標準值 ＝ 創角的標準值 ＋ max(0, L − 1) × 每級給的點數 × 這個主屬性分到的比例。
+# 標準值跟著等級長，每 1 點換到的次要屬性就變少，所以不是固定係數 × G(L)：1 級 STR +1 是 3.74 點、100 級是 138.3 點。
+POINTS_PER_LEVEL = 1.0                      # 每升一級給的主屬性點數（五項合計，玩家角色手冊）
+PRIMARY_PRICE = {                           # 職業 → 主屬性 → (K, 創角的標準值, 升級點數分到的比例)
+    "phys": {
+        "str": (4.48872677959054, 12, 0.2175679957250024),
+        "int": (0.7364532005364692, 8, 0.03569578962001311),
+        "wis": (2.171600611643604, 8, 0.1052571955902352),
+        "con": (7.6434608355823, 16, 0.37047753985861637),
+        "dex": (5.591132983358295, 16, 0.2710014792061328),
+    },
+    "spell": {
+        "str": (0.7387267889676209, 8, 0.03580599015178046),
+        "int": (4.486453191159389, 12, 0.21745779519323505),
+        "wis": (2.171600611643604, 8, 0.1052571955902352),
+        "con": (7.6434608355823, 16, 0.37047753985861637),
+        "dex": (5.591132983358295, 16, 0.2710014792061328),
+    },
 }
+PRIMARY_KEYS = tuple(PRIMARY_PRICE["phys"])
 # 次要屬性的單價和等級無關。龍焰抗性不算裝備點數（設計文件 §5.5），所以是 0（balance.py 裡是 1）
 SECONDARY_PRICE = {
     "hp": 1.0, "dmg_phys": 10.0, "dmg_spell": 10.0, "hit": 1.0, "dodge": 1.0, "crit": 1.0, "critdmg": 1.0,
@@ -67,6 +83,8 @@ def item_cap(level, slots, two_handed=False):
 
 def price(stat, level):
     """stat（屬性代號，例如 "str"、"hp"）每 +1 要幾點。"""
-    if stat in PRIMARY_PRICE:
-        return PRIMARY_PRICE[stat] * G(level)
+    if stat in PRIMARY_KEYS:
+        # 低於 1 級不往下減：玩家從 1 級開始，不然很低等的怪物（大約 −42 級以下）會除以 0 或負數
+        return max(k * G(level) / (std1 + max(0, level - 1) * POINTS_PER_LEVEL * share)
+                   for k, std1, share in (PRIMARY_PRICE[job][stat] for job in PRIMARY_PRICE))
     return SECONDARY_PRICE[stat]

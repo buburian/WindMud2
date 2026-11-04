@@ -2,11 +2,12 @@
 
 area.py 管區域檔的格式和檢查；這裡管執行中的區域。
 - 世界區域：開機時把 type 是 world 的檔全部建進一個區域物件 world，永遠不釋放。
-- 動態區域：有人走進去才建立（room_at），大家共用一份；沒有玩家超過 RELEASE_SECONDS 就釋放，
+- 動態區域：有人走進去才建立（room_at），大家共用一份；連續 RELEASE_TICKS 個 tick 沒有玩家就釋放，
   下一個人走進去會重新建立，裡面全部重來。
-- 副本區域：instance() 建立，一個擁有者一份；沒有玩家超過 RELEASE_SECONDS 就釋放。
+- 副本區域：instance() 建立，一個擁有者一份；連續 RELEASE_TICKS 個 tick 沒有玩家就釋放。
 
-tick loop：世界和全部的動態區域共用一個（世界 tick），副本每份自己一個，各跑各的節拍。
+tick loop：世界和全部的動態區域共用一個（世界 tick），副本每份自己一個，各跑各的節拍，每 TICK_SECONDS（1 秒）一次。
+定時做的事都用「每幾個 tick」定義，寫在 Zone.tick()。
 區域檔在開機時就讀好、檢查好放在記憶體，建立動態區域和副本時不讀檔。
 """
 import asyncio
@@ -18,7 +19,7 @@ from . import area, fight, weather
 from .area import AreaType
 from .characters import characters
 from .clock import cancel, every
-from .config import RELEASE_SECONDS, START_ROOM, TICK_SECONDS
+from .config import HOUR_TICKS, RELEASE_TICKS, START_ROOM, TICK_SECONDS
 from .players import online_players
 
 log = logging.getLogger(__name__)
@@ -34,7 +35,8 @@ class Zone:
         self.fights = set()                 # 這裡正在跑的戰鬥（fight.Fight）
         self.task = None                    # 自己的 tick loop：只有副本有，世界和動態區域由世界 tick 來做
         self.key = None                     # 副本在 instances 裡的 (檔名, 擁有者)
-        self.empty_since = None             # 從什麼時候開始沒有玩家（loop.time()）；有玩家時是 None
+        self.ticks = 0                      # 跑了幾個 tick
+        self.empty_ticks = 0                # 連續幾個 tick 沒有玩家
         self.released = False
 
     def add_rooms(self, base, data):
@@ -45,16 +47,18 @@ class Zone:
             self.rooms[room.vnum] = room
 
     def tick(self):
-        """這個區域物件一次 tick 要做的事。世界：天氣；動態區域、副本：沒有玩家太久就釋放。世界的變換之後加在這裡。"""
+        """這個區域物件一次 tick 要做的事。世界：每 HOUR_TICKS 走一次天氣；動態區域、副本：沒有玩家太久就釋放。
+        世界的變換之後加在這裡，用「每幾個 tick 做一次」（self.ticks % N == 0）。"""
+        self.ticks += 1
         if self.kind == AreaType.WORLD:
-            weather.tick()                  # 全遊戲一個天氣，只由世界 tick 走時間
+            if self.ticks % HOUR_TICKS == 0:
+                weather.tick()              # 全遊戲一個天氣，只由世界 tick 走時間
             return
-        now = asyncio.get_running_loop().time()
         if any(p.room.zone is self for p in online_players()):
-            self.empty_since = None
-        elif self.empty_since is None:
-            self.empty_since = now
-        elif now - self.empty_since >= RELEASE_SECONDS:
+            self.empty_ticks = 0
+            return
+        self.empty_ticks += 1
+        if self.empty_ticks >= RELEASE_TICKS:
             release(self)
 
 

@@ -33,12 +33,13 @@ uv run python -m mud.builder                      # 區域編輯器，瀏覽器�
   要自己做區域檔的測試，用 `tests/area_helpers.py` 做出完整的檔案再改欄位（直接 `from area_helpers import …`）；
   `tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit；另一個測試讓 tick 和幾場戰鬥一直跑，確認玩家打字照樣馬上回應。
   `tests/test_builder.py` 用 port 0 開真的區域編輯器（資料夾是 `tmp_path`），用 urllib 打 API；也比對網頁的數字表跟 `area.py` 的定義、手冊的表。
-  `tests/test_weather.py` 測天氣（時間、日夜、天空一次只走一格、送給誰、weather 指令）；`tests/test_clock.py` 測定時器；`tests/test_zones.py` 測區域物件（動態區域、副本的建立和釋放、tick）；`tests/test_fight.py` 測戰鬥 loop。
+  `tests/test_weather.py` 測天氣（時間、日夜、天空一次只走一格、送給誰、weather 指令）；`tests/test_clock.py` 測定時器；`tests/test_zones.py` 測區域物件（動態區域、副本的建立和釋放、tick）；`tests/test_fight.py` 測戰鬥 loop 和時間軸的出手順序。
   用到房間的測試要自己先 `zones.load(areas 資料夾)`：`zones.world` 是全域的，不要依賴別的測試先載入過。
   角色的 `room` 是 Room 物件：載入之後再把角色放進 `zones.world.rooms[101]` 這種房間（重新載入後舊的 Room 就不是世界裡的了）。
   `characters` 也是全域的：測試加進去的角色（玩家、NPC）要在 fixture 結束時 `characters.clear()`，不然會跑進別的測試的 look 裡。
   會開 loop 的動作（`zones.start()`、`zones.instance()`、`start_fight()`）要在 `asyncio.run()` 裡做，fixture 結束時 `zones.stop()`；
-  要等時間的測試用 monkeypatch 把 `zones.TICK_SECONDS`、`zones.RELEASE_SECONDS`、`fight.ROUND_SECONDS` 改成很小的數字，
+  要等時間的測試用 monkeypatch 把 `zones.TICK_SECONDS`、`fight.TICK_SECONDS` 改成很小的數字（`zones.RELEASE_TICKS`、`zones.HOUR_TICKS` 改小），
+  要一個 tick 一個 tick 看的（例如戰鬥的出手順序）就把 `TICK_SECONDS` 改很大、自己呼叫 `tick()`；其他
   用 `until(條件)` 輪詢等待，不要寫死等多久。
 - `test_server.py` 的 client 連線一定要在 `finally` 關掉：Python 3.12 起，離開 `async with server` 會等所有連線斷掉，
   測試中途失敗時不先關就會永遠卡住。
@@ -74,6 +75,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
 - **`encode()`**（`telnet.py`）：送出的**文字**一律經過它（`\n`→`\r\n`、cp950 編碼、`0xFF` 寫兩次），也就是用 `send()` 寫。
   telnet 控制碼（例如 `START`、`tn.replies`）則要直接 `writer.write(bytes)`，**絕不能**經過 `encode()`——IAC 就是 `0xFF`，會被寫成兩次而失效。
 - **角色**（`characters.py`、`players.py`、`npcs.py`）：玩家和 NPC 都是角色（使用者要求先分好骨架，資料只放現在用得到的）。
+  - **玩家角色的規則寫在 `docs/玩家角色手冊.md`**（mud_design 定的，使用者確認）：等級、主屬性、HP／MP／MV 和回復、負重、武器重量限制、戰鬥的出手順序、雙持、定時做的事。
+    伺服器都還沒做；做了要同步更新手冊開頭的進度表。數字的推導在 mud_design 的設計文件，手冊只寫規則。
   - `Character`：`name`、`sex`、`room`（所在的 **Room 物件**，不是號碼：兩份副本的同號房間是不同的 Room，
     所以 `act()`、`look()` 比 `c.room == ch.room` 時看不到別份的人）、`position`、`fighting`（正在打誰）、`fight`（在哪一場）。
     `send(text)` 送文字給這個角色，預設什麼都不做。
@@ -161,7 +164,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - **物品（`objects`）**：最上層的清單，放在 `mobiles` 後面，欄位照舊版 `#OBJECTS`（含 A、E、P 行）整理，名稱沿用 area2json（不放 `values_raw`）。
     使用者刪掉了舊版的 `action_description`、`cost_per_day`：系統之後也不用，不要加回來。
     `cost`（價格）使用者拿掉後又放回來了，可以是 0；商店的 `profit_buy`、`profit_sell` 是乘在它上面的倍率。
-    `affects.location`（使用者定的）：0～5 主屬性（照 C 版），6～15 是設計文件的 10 種次要屬性（HP、物理傷害…法術抗性，
+    `affects.location`（使用者定的）：0～5 主屬性（照 C 版），6～15 是設計文件 10 種可以用點數買的次要屬性（HP、物理傷害…法術抗性，
     代號同 mud_design 的 STAT_KEYS），16 是龍焰抗性（不算點數，區域作者另外給，設計文件 §5.5）；C 版的 6 性別拿掉了。
     舊區域的 location 數字意思不同，轉檔工具只沿用文字、不帶屬性過來。
     special 的吐息（`spec_breath_*`）算龍焰傷害、施法（`spec_cast_*`）和 `spec_poison` 算法術傷害；`fight_actions` 的傷害類型照
@@ -178,8 +181,9 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     （不寫 .pyc、不改 mud_design；找不到 mud_design 才跳過）。設計文件改數字時要一起改 `equipment.py`。
     `item_type`、`affects.location` 寫數字，`extra_flags`、`wear_flags` 寫法同 `room_flags`。`values` 是 4 個整數或字串：
     法術類（卷軸、藥水、藥錠的第 2～4 個，魔杖、魔棒的第 4 個）寫法術名稱；容器旗標這類要相加，`values` 裡不能用 `|`（C 版用 atoi 讀）。
-    `check_object()` 只檢查寫法；可以細看的東西跟房間共用 `check_extra_descriptions()`。物品號碼跟房間、生物分開算。
-    `wear_flags` 的位置照 `mud_design` 設計文件 §3.3 的裝備欄位（使用者要求）：512 shield 當「副手」（盾牌或副手武器），
+    `check_object()` 只檢查寫法，只有一條例外：主手 8192 和副手 512 同時寫是錯的（使用者定的：武器只能放做出來的那一手，
+    兩個都寫會用主手的上限算點數，放到副手就多拿點數）。可以細看的東西跟房間共用 `check_extra_descriptions()`。物品號碼跟房間、生物分開算。
+    `wear_flags` 的位置照 `mud_design` 設計文件 §3.3 的裝備欄位（使用者要求）：512 shield 當「副手」（盾牌或副手武器，雙持的出手規則在玩家角色手冊），
     1 take（能不能撿起來）留著；光源不在 wear_flags，照明用具自己放光源位置。
   - **重置（`resets`）**：最上層的清單，照舊版 `#RESETS` 一串指令照順序執行（`M G O P D R` 和 `*` 註解），`G` 跟著前面最近的 `M`。
     每種 `cmd` 的欄位在 `area.RESET_KEYS`，名稱沿用 area2json。`direction` 寫方向名稱（同出口），`state` 寫數字。
@@ -195,32 +199,41 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - 動態區域（`dynamic`）：有人走進去才建立（`room_at()`），大家共用一份（`zones.dynamic`，檔名 → Zone）。
   - 副本區域（`instance`）：`zones.instance(檔名, 擁有者)` 建立，一個擁有者一份（擁有者用名字；之後是隊長的名字）。
     只能用 enter 進去、recall 出來，所以 `check_files()` 不准出口跨進或跨出副本。enter、recall、傳送門（之後做成物品）、組隊、死亡回 1 號房**還沒做**。
-  - 動態區域和副本沒有玩家超過 `RELEASE_SECONDS`（20 分鐘）就 `release()`：停掉裡面的戰鬥、移走留下的角色、從名單拿掉。
-    在 tick 裡檢查：第一次看到沒人的 tick 才開始算，所以實際上是 20 分鐘再加 0～60 秒（最多晚兩個 tick）。下一個人進去時重新建立，裡面全部重來。
+  - 動態區域和副本連續 `RELEASE_TICKS`（1200 tick，20 分鐘）沒有玩家就 `release()`：停掉裡面的戰鬥、移走留下的角色、從名單拿掉。
+    在 tick 裡數（`zone.empty_ticks`），有玩家就歸 0，所以實際上是 20 分鐘再加 0～1 秒。下一個人進去時重新建立，裡面全部重來。
   - 區域檔開機時就讀好、檢查好（`templates`），建立動態區域和副本時不讀檔。
   - 每間 Room 有 `zone` 指回它的區域物件。走路用 `room_at(from_room, vnum)`：先找自己所在的區域物件
     （所以在副本、動態區域裡走會留在同一份），再找世界，最後是動態區域。
 - **tick 和戰鬥的 loop**（使用者定的；C 版是全遊戲一個鐘，我們不照它）：
   - tick loop：世界和全部動態區域**共用一個**（世界 tick，`zones.start()` 開始），每次先做世界、再做每個動態區域；
-    **副本每份自己一個**（建立時開始，釋放時結束）。間隔 `TICK_SECONDS` 固定 30 秒（使用者選的，不加亂數）。
-    每個區域物件一次 tick 要做的事寫在 `Zone.tick()`：世界做天氣；動態區域、副本檢查要不要釋放。世界的變換（回血、NPC 行動……）之後加在這裡。
-  - **天氣**（`weather.py`，tick 的第一個功能）：**全遊戲一個**（`weather.current`），只由世界 tick 走時間（`weather.tick()`），
-    副本的 tick 不動它。照 C 版的 `weather_update()`：每個 tick 是遊戲裡 1 小時（一天 24 小時、一個月 35 天、一年 17 個月），
+    **副本每份自己一個**（建立時開始，釋放時結束）。間隔 `TICK_SECONDS` 固定 1 秒（使用者 2026-11-04 從 30 秒改成 1 秒，不加亂數）。
+    **定時做的事都用「每幾個 tick 做一次」定義**（使用者定的）：數字在 `config.py`（`ROUND_TICKS` 2、`HOUR_TICKS` 30、`RELEASE_TICKS` 1200），
+    表在玩家角色手冊「定時做的事」，改數字要一起改表。每個區域物件一次 tick 要做的事寫在 `Zone.tick()`，用 `self.ticks % N == 0`：
+    世界每 `HOUR_TICKS` 走一次天氣；動態區域、副本數要不要釋放。世界的變換（回血每 30 tick、NPC 行動……）之後加在這裡。
+  - **天氣**（`weather.py`，tick 的第一個功能）：**全遊戲一個**（`weather.current`），只由世界 tick 走時間（每 `HOUR_TICKS` 呼叫一次 `weather.tick()`），
+    副本的 tick 不動它。照 C 版的 `weather_update()`：每 30 tick（30 秒）是遊戲裡 1 小時（一天 24 小時、一個月 35 天、一年 17 個月），
     開機時從現實時間算出來，重開機後接得上。日夜（`Sunlight`）在 6、7、19、20 點改變並通知。
-    天空（`Sky`）用氣壓決定，**一個 tick 最多走一格**（晴天 ⇄ 陰天 ⇄ 下雨 ⇄ 打雷）：使用者要求天氣要漸進，不能從晴天直接跳到下雨，有測試。
+    天空（`Sky`）用氣壓決定，**一小時最多走一格**（晴天 ⇄ 陰天 ⇄ 下雨 ⇄ 打雷）：使用者要求天氣要漸進，不能從晴天直接跳到下雨，有測試。
     **使用者要隨機、季節影響小**：氣壓往季節的目標靠的力氣比 C 版小（`PULL` 1，目標乾季 1010、雨季 990；C 版是 2、1015／985，
     乾季幾乎不下雨）。現在每個季節四種天空都會出現，只是雨季多雨、乾季多晴（有測試）；調這些數字前先模擬看比例。
     **室內只看房間旗標 `8 INDOORS`**（使用者選的，照 C 版）：地形 `0 室內` 不算，地形只管走路。
-    通知只送給**室外**（房間沒有 `RoomFlag.INDOORS`）、**醒著**（姿勢比 SLEEPING 高）的玩家；同一個 tick 的好幾句合成一段，只補一次 prompt。
+    通知只送給**室外**（房間沒有 `RoomFlag.INDOORS`）、**醒著**（姿勢比 SLEEPING 高）的玩家；同一小時的好幾句合成一段，只補一次 prompt。
     `weather` 指令（指令表最後，`wea` 起才找得到）：室外顯示幾點、天空、風向；室內「你現在在室內是看不到天氣的。」
     `update(rng)` 的亂數從參數傳進來，測試用假的亂數控制結果。
-  - 戰鬥 loop（`fight.py`）：**一場戰鬥一個**，一場＝同一間房裡互打的一群人。每 `ROUND_SECONDS`（2 秒）一回合，從開打算起，各跑各的節拍。
+  - 戰鬥 loop（`fight.py`）：**一場戰鬥一個**，一場＝同一間房裡互打的一群人。每個 tick（1 秒）跑一次，從開打算起，各跑各的節拍。
+    一回合 ＝ `ROUND_TICKS`（2）tick：每回合的第一個 tick 打一輪、下一個 tick 停（`Fight.tick()`）。
+    **出手照時間軸**（使用者選的，規則在玩家角色手冊「戰鬥的出手順序」，參考 balance.py 的 `simulate_timeline`）：
+    `Fight.queue` 是 heapq，每隻手一筆 `(下一次出手的時間, 加入的順序, 第幾隻手, 角色)`，時間用 tick 算、開打是 0。
+    `join()` 把每隻手的第一下排在現在；`round()` 把這一回合結束前的出手照時間打出來，每打一下加上間隔 `ROUND_TICKS ÷ 每回合次數`。
+    同一時間先加入的先（`start_fight()` 讓先動手的人先加入）、主手先。停手又加入會拿新的順序號碼，舊的排程作廢（`joined`）。
+    坑：時間每次加完要取到小數 9 位，不然浮點誤差會把剛好在回合邊界的出手排錯回合（有測試）。
+    `attacks(ch)` 是每隻手每回合出手幾次：攻速、武器還沒做，現在是 `[1.0]`；`hit(ch, victim, hand)` 的 hand 0 是主手。
     `start_fight()` 開打：第三個人加入同一場；兩場的人互打就把後開的併進先開的（一個人同時只在一場）；被打的人自動還手。
     對手離開遊戲或不在同一間房就停手（`stop_fighting()`），沒人在打這場就結束。戰鬥屬於所在的區域物件（`zone.fights`）。
     對手停了手但還在同一間房、又被打到：拉回這一場（在別場就合併），C 版也是這樣。
     出手 `hit()` 現在是空的，傷害、HP、kill 指令還沒做。
   - 定時器共用 `clock.every()`：照 `loop.time()` 排時間不會越跑越慢，超時了從現在重新算、不追趕。
-  - **loop 裡做的事不能卡住**：`Zone.tick()`、`Fight.round()` 都是普通函式，要很快做完，不能 `time.sleep`、不能讀檔。
+  - **loop 裡做的事不能卡住**：`Zone.tick()`、`Fight.tick()` 都是普通函式，要很快做完，不能 `time.sleep`、不能讀檔。
     每個 loop 自己接住錯誤：tick 出錯記 log、下次照跑（世界 tick 裡每個區域物件分開接）；一場戰鬥出錯只結束那一場。
   - task 一定要有人拿著（asyncio 只用弱參照記 task）：`zones.world_task`、副本的 `zone.task`、戰鬥的 `fight.task`。
 - **區域編輯器**（`mud/builder/`）：給區域作者用的網頁，畫面照設計稿（https://claude.ai/artifact/UwgbazUdvQKNEiPLQE8GW5）。

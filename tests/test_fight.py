@@ -14,11 +14,11 @@ AREAS = Path(__file__).resolve().parent.parent / "areas"
 
 @pytest.fixture
 def hits(monkeypatch):
-    # 一回合 0.01 秒；出手（hit）記下「誰打誰」
+    # 一個 tick 0.01 秒；出手（hit）記下「誰打誰」
     zones.load(AREAS)
-    monkeypatch.setattr(fight, "ROUND_SECONDS", 0.01)
+    monkeypatch.setattr(fight, "TICK_SECONDS", 0.01)
     record = []
-    monkeypatch.setattr(fight, "hit", lambda ch, victim: record.append((ch.name, victim.name)))
+    monkeypatch.setattr(fight, "hit", lambda ch, victim, hand: record.append((ch.name, victim.name)))
     yield record
     characters.clear()
     zones.stop()
@@ -132,7 +132,7 @@ def test_stopped_victim_is_pulled_back(hits):
 
 
 def test_error_in_one_fight_only_ends_that_fight(hits, monkeypatch, caplog):
-    def hit(ch, victim):
+    def hit(ch, victim, hand):
         if ch.name == "甲":
             raise RuntimeError("壞掉了")
         hits.append((ch.name, victim.name))
@@ -152,3 +152,86 @@ def test_error_in_one_fight_only_ends_that_fight(hits, monkeypatch, caplog):
     with caplog.at_level(logging.ERROR):
         asyncio.run(main())
     assert "戰鬥出錯" in caplog.text
+
+
+# ---- 時間軸出手：一個 tick 一個 tick 看（玩家角色手冊「戰鬥的出手順序」） ----
+
+@pytest.fixture
+def manual(monkeypatch):
+    # loop 不會自己跑（一個 tick 100 秒），測試自己呼叫 f.tick()；出手記下名字，副手加「副」
+    zones.load(AREAS)
+    monkeypatch.setattr(fight, "TICK_SECONDS", 100)
+    record = []
+    monkeypatch.setattr(fight, "hit", lambda ch, victim, hand: record.append(ch.name + ("副" if hand else "")))
+    yield record
+    characters.clear()
+    zones.stop()
+
+
+def run_ticks(f, record, n):
+    """跑 n 個 tick，回傳每個 tick 出手的人。"""
+    out = []
+    for _ in range(n):
+        record.clear()
+        f.tick()
+        out.append(list(record))
+    return out
+
+
+def test_one_round_is_hit_then_rest(manual):
+    # 一回合 2 tick：打一輪、停一秒。同一時間開打的人先打
+    async def main():
+        f = start_fight(npc("甲"), npc("乙"))
+        assert run_ticks(f, manual, 4) == [["甲", "乙"], [], ["甲", "乙"], []]
+
+    asyncio.run(main())
+
+
+def test_faster_hand_hits_more_often(manual, monkeypatch):
+    # 甲每回合 1.25 下：間隔 1.6 tick，出手在 0、1.6、3.2…、14.4、16、17.6；乙每回合 1 下：0、2、4…
+    # 四輪打五下；同時在 8、16 時甲先（先動手）。
+    # 坑：1.6 一直加，第 10 下會是 15.999999999999998，沒取整的話會掉進第 8 輪（14～16），第 9 輪少一下
+    monkeypatch.setattr(fight, "attacks", lambda ch: [1.25] if ch.name == "甲" else [1.0])
+
+    async def main():
+        f = start_fight(npc("甲"), npc("乙"))
+        assert run_ticks(f, manual, 18)[::2] == [
+            ["甲", "乙", "甲"], ["乙", "甲"], ["乙", "甲"], ["乙", "甲"],
+            ["甲", "乙", "甲"], ["乙", "甲"], ["乙", "甲"], ["乙", "甲"], ["甲", "乙", "甲"]]
+
+    asyncio.run(main())
+
+
+def test_dual_wield_main_hand_first(manual, monkeypatch):
+    # 甲雙持：主手每回合 1 下、副手 0.5 下（每兩輪一下）。同一時間主手先、副手後
+    monkeypatch.setattr(fight, "attacks", lambda ch: [1.0, 0.5] if ch.name == "甲" else [1.0])
+
+    async def main():
+        f = start_fight(npc("甲"), npc("乙"))
+        assert run_ticks(f, manual, 6)[::2] == [["甲", "甲副", "乙"], ["甲", "乙"], ["甲", "甲副", "乙"]]
+
+    asyncio.run(main())
+
+
+def test_joiner_first_hit_is_when_joining(manual):
+    # 丙在第 1 個 tick 後加入：第一下排在 1，比甲、乙在 2 的那一下先；下一下在 3，同一輪
+    async def main():
+        a, b, c = npc("甲"), npc("乙"), npc("丙")
+        f = start_fight(a, b)
+        assert run_ticks(f, manual, 1) == [["甲", "乙"]]
+        start_fight(c, b)
+        assert run_ticks(f, manual, 2) == [[], ["丙", "甲", "乙", "丙"]]
+
+    asyncio.run(main())
+
+
+def test_rejoining_cancels_old_schedule(manual):
+    # 乙停手後馬上又加入：舊的排程作廢，同一時間不會打兩下
+    async def main():
+        a, b = npc("甲"), npc("乙")
+        f = start_fight(a, b)
+        stop_fighting(b)
+        start_fight(b, a)
+        assert run_ticks(f, manual, 1) == [["甲", "乙"]]
+
+    asyncio.run(main())

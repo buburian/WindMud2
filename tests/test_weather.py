@@ -195,6 +195,7 @@ def test_only_the_world_tick_moves_the_weather(tmp_path, monkeypatch):
     write_area(tmp_path, "dyn.json", [make_room(1, south=101)], area_number=200, kind="dynamic")
     write_area(tmp_path, "inst.json", [make_room(1)], area_number=300, kind="instance")
     zones.load(tmp_path)
+    monkeypatch.setattr(zones, "HOUR_TICKS", 1)     # 每個 tick 都是一小時，一次就看得出來
     ticks = []
     monkeypatch.setattr(weather, "tick", lambda: ticks.append(1))
 

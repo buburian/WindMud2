@@ -37,7 +37,7 @@ def balance():
     return module
 
 
-@pytest.mark.parametrize("level", [1, 50, 100])
+@pytest.mark.parametrize("level", [-100, -50, 0, 1, 10, 50, 100])   # 低於 1 級：很低等的怪物也會掉裝備
 def test_numbers_match_mud_design(balance, level):
     # 設計文件改了數字，這裡會失敗，提醒要一起改 equipment.py
     m = balance.Model()
@@ -55,12 +55,25 @@ def test_numbers_match_mud_design(balance, level):
     assert {COLOR_KEYS[k]: v["points"] for k, v in balance.RARITY.items()} == equipment.COLOR_BONUS
 
 
+def test_primary_standards_match_mud_design(balance):
+    # 主屬性單價用的標準值、升級點數的比例、每級點數，跟 balance.py 一樣
+    m = balance.Model()
+    assert equipment.POINTS_PER_LEVEL == balance.PRIMARY_POINTS_PER_LEVEL
+    for job, stats in equipment.PRIMARY_PRICE.items():
+        for p, (_, std1, share) in stats.items():
+            assert std1 == m.std_primaries[job][p], (job, p)
+            assert share == pytest.approx(m.primary_share[job][p]), (job, p)
+
+
 def test_design_doc_examples():
-    # 設計文件 §3.3：1 級頭盔上限約 5.7、主手約 14.3；§3.2：1 級 STR +1 約 3.7 點、10 級約 5.7 點
+    # 設計文件 §3.3：1 級頭盔上限約 5.7、主手約 14.3；§3.2 的表：STR +1 是 3.7、4.9（10 級）、138.3（100 級）點
     assert equipment.slot_cap(1, "head") == pytest.approx(5.73, abs=0.01)
     assert equipment.slot_cap(1, "wield") == pytest.approx(14.33, abs=0.01)
     assert equipment.price("str", 1) == pytest.approx(3.74, abs=0.01)
-    assert equipment.price("str", 10) == pytest.approx(5.7, abs=0.05)
+    assert equipment.price("str", 10) == pytest.approx(4.9, abs=0.05)
+    assert equipment.price("str", 100) == pytest.approx(138.3, abs=0.05)
+    assert equipment.price("wis", 100) == pytest.approx(121.8, abs=0.05)
+    assert equipment.price("con", 100) == pytest.approx(149.9, abs=0.05)
     assert equipment.price("dmg_phys", 50) == 10
 
 

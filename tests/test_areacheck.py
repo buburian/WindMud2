@@ -356,6 +356,32 @@ def test_fixed_item_color_bonus(tmp_path):
     assert problems_of(tmp_path, fixed_area([sword], [M1, give(1, "orange")], [make_mobile(1)])) == []
 
 
+def test_negative_modifier_gives_points_back(tmp_path):
+    # 負的加成抵掉點數：1 級主手上限 14.33，力量 +4（14.96）超過，再加敏捷 -1（-3.49）就不超過
+    over = armed(1, [{"location": 1, "modifier": 4}])
+    ok = armed(1, [{"location": 1, "modifier": 4}, {"location": 2, "modifier": -1}])
+    assert problems_of(tmp_path, fixed_area([over], [M1, give(1)], [make_mobile(1)])) != []
+    assert problems_of(tmp_path, fixed_area([ok], [M1, give(1)], [make_mobile(1)])) == []
+
+
+def test_offhand_weapon_uses_offhand_cap(tmp_path):
+    # 副手武器（雙持）：點數上限跟盾牌一樣是副手的，1 級 5.73
+    dagger = armed(1, [{"location": 13, "modifier": 6}], wear="1|512")
+    found = problems_of(tmp_path, fixed_area([dagger], [M1, give(1)], [make_mobile(1)]))
+    assert len(found) == 1 and "1 級副手、白色的上限 5.73" in found[0]
+    dagger["affects"] = [{"location": 13, "modifier": 5}]
+    assert problems_of(tmp_path, fixed_area([dagger], [M1, give(1)], [make_mobile(1)])) == []
+
+
+@pytest.mark.parametrize("wear", ["1|512|8192", 8704])
+def test_wield_and_offhand_together_is_an_error(tmp_path, wear):
+    # 武器只能放做出來的那一手：主手、副手都寫的話，會用主手的上限算點數，放到副手就多拿了點數
+    data = fixed_area([armed(1, [], wear=wear)])
+    assert problems_of(tmp_path, data) == [
+        f"a.json：物品 1 的 wear_flags {wear!r} 同時有 8192 主手和 512 副手：武器只能放做出來的那一手，"
+        "主手武器寫 8192，副手武器寫 512"]
+
+
 @pytest.mark.parametrize("color, text", [(None, "沒寫顏色（null）的上限"), ("gray", "灰色的上限")])
 def test_fixed_item_gray_or_null_has_no_points(tmp_path, color, text):
     sword = armed(1, [{"location": 6, "modifier": 1}])

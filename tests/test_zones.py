@@ -4,7 +4,7 @@ import logging
 import pytest
 
 from area_helpers import make_room, write_area
-from mud import fight, zones
+from mud import fight, weather, zones
 from mud.act import TO_ROOM, act
 from mud.area import AreaType
 from mud.characters import Position, characters
@@ -40,9 +40,9 @@ def folder(tmp_path):
 
 @pytest.fixture
 def fast(monkeypatch):
-    # tick 0.01 秒一次，沒有玩家 0.05 秒就釋放
+    # tick 0.01 秒一次，連續 5 個 tick 沒有玩家就釋放
     monkeypatch.setattr(zones, "TICK_SECONDS", 0.01)
-    monkeypatch.setattr(zones, "RELEASE_SECONDS", 0.05)
+    monkeypatch.setattr(zones, "RELEASE_TICKS", 5)
 
 
 def player(name, room):
@@ -121,6 +121,15 @@ def test_world_tick_ticks_world_and_every_dynamic_area(folder, fast, monkeypatch
     assert ticked[:2] == ["世界", "dyn.json"]   # 每次先做世界，再做動態區域
 
 
+def test_weather_moves_every_hour_ticks(folder, monkeypatch):
+    # 世界 tick 每 1 秒一次，天氣每 HOUR_TICKS（30）個 tick 才走一次，也就是遊戲裡 1 小時
+    moved = []
+    monkeypatch.setattr(weather, "tick", lambda: moved.append(zones.world.ticks))
+    for _ in range(60):
+        zones.world.tick()
+    assert moved == [30, 60]
+
+
 def test_tick_error_only_affects_that_zone(folder, fast, monkeypatch, caplog):
     ticked = []
 
@@ -188,7 +197,7 @@ def test_instance_is_released_when_empty(folder, fast):
 
 
 def test_release_stops_fights_and_removes_leftovers(folder, fast, monkeypatch):
-    monkeypatch.setattr(fight, "ROUND_SECONDS", 0.01)
+    monkeypatch.setattr(fight, "TICK_SECONDS", 0.01)
 
     async def main():
         zone = zones.instance("inst.json", "小明")

@@ -1,7 +1,7 @@
 """天氣：全遊戲共用的遊戲時間、日夜和天空（使用者選的：全遊戲一個天氣）。
 
-世界 tick 每次呼叫 tick()，遊戲時間走 1 小時（照 C 版的 weather_update()）。
-天空用氣壓決定，一個 tick 最多走一格：晴天 ⇄ 陰天 ⇄ 下雨 ⇄ 打雷，
+世界每 HOUR_TICKS 個 tick（30 秒）呼叫一次 tick()，遊戲時間走 1 小時（照 C 版的 weather_update()）。
+天空用氣壓決定，一小時最多走一格：晴天 ⇄ 陰天 ⇄ 下雨 ⇄ 打雷，
 不會從晴天直接跳到下雨（使用者要求天氣要漸進）。
 變化的通知只送給室外、醒著的玩家；室內看不到，也不能用 weather 指令。
 """
@@ -12,7 +12,7 @@ import time
 from .act import notify
 from .area import RoomFlag
 from .characters import Position
-from .config import TICK_SECONDS
+from .config import HOUR_TICKS, TICK_SECONDS
 from .players import online_players
 
 EPOCH = 650336715                   # 遊戲時間的起點（現實時間的秒數），跟 C 版一樣
@@ -20,7 +20,7 @@ HOURS_PER_DAY = 24
 DAYS_PER_MONTH = 35
 MONTHS_PER_YEAR = 17
 MMHG_MIN, MMHG_MAX = 960, 1040      # 氣壓的範圍
-CHANGE_LIMIT = 12                   # 每個 tick 氣壓變化量的上限（正負都是）
+CHANGE_LIMIT = 12                   # 每小時氣壓變化量的上限（正負都是）
 # 季節：氣壓往這個季節的目標靠。使用者要季節影響小一點：每個月四種天空都會出現，只是雨季多雨、乾季多晴。
 # （C 版是往 1015／985 靠、拉力 2：乾季幾乎不下雨，雨季幾乎不放晴）
 WET_MONTHS = range(9, 17)           # 雨季：9～16 月，其他月份是乾季
@@ -37,7 +37,7 @@ class Sunlight(enum.IntEnum):
 
 
 class Sky(enum.IntEnum):
-    """天空。數字照 C 版的 SKY_*，一個 tick 最多走一格（數字差 1）。"""
+    """天空。數字照 C 版的 SKY_*，一小時最多走一格（數字差 1）。"""
     CLOUDLESS = 0                           # 晴天
     CLOUDY = 1                              # 陰天
     RAINING = 2                             # 下雨
@@ -89,8 +89,8 @@ class Weather:
 
     @classmethod
     def from_time(cls, seconds, rng=random):
-        """開機時：從現實時間算出遊戲時間（每 TICK_SECONDS 秒是 1 小時），所以重開機後時間接得上。"""
-        hours = int(seconds - EPOCH) // TICK_SECONDS
+        """開機時：從現實時間算出遊戲時間（每 HOUR_TICKS 個 tick，也就是 30 秒，是 1 小時），所以重開機後時間接得上。"""
+        hours = int(seconds - EPOCH) // (HOUR_TICKS * TICK_SECONDS)
         days, hour = divmod(hours, HOURS_PER_DAY)
         months, day = divmod(days, DAYS_PER_MONTH)
         year, month = divmod(months, MONTHS_PER_YEAR)
@@ -136,7 +136,7 @@ class Weather:
         return "\n".join(lines)
 
     def sky_step(self, rng):
-        """天空這個 tick 要不要走一格：回傳 (新的天空, 通知)，不走是 None。一次只會走到旁邊那一格。"""
+        """天空這一小時要不要走一格：回傳 (新的天空, 通知)，不走是 None。一次只會走到旁邊那一格。"""
         p = self.mmhg
         if self.sky == Sky.CLOUDLESS:
             if p < 990 or (p < 1010 and one_in_four(rng)):
@@ -166,7 +166,7 @@ current = Weather.from_time(time.time())   # 全遊戲共用的那一個
 
 
 def tick(rng=random):
-    """世界 tick 呼叫：走一個小時，有變化就通知室外、醒著的玩家（好幾句合成一段，只補一次 prompt）。"""
+    """世界每 HOUR_TICKS 個 tick 呼叫一次：走一個小時，有變化就通知室外、醒著的玩家（好幾句合成一段，只補一次 prompt）。"""
     text = current.update(rng)
     if text:
         for p in online_players():
