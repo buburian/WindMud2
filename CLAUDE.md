@@ -75,7 +75,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
 - **`encode()`**（`telnet.py`）：送出的**文字**一律經過它（`\n`→`\r\n`、cp950 編碼、`0xFF` 寫兩次），也就是用 `send()` 寫。
   telnet 控制碼（例如 `START`、`tn.replies`）則要直接 `writer.write(bytes)`，**絕不能**經過 `encode()`——IAC 就是 `0xFF`，會被寫成兩次而失效。
 - **角色**（`characters.py`、`players.py`、`npcs.py`）：玩家和 NPC 都是角色（使用者要求先分好骨架，資料只放現在用得到的）。
-  - **玩家角色的規則寫在 `docs/玩家角色手冊.md`**（mud_design 定的，使用者確認）：等級、主屬性、HP／MP／MV 和回復、負重、武器重量限制、戰鬥的出手順序、雙持、定時做的事。
+  - **玩家角色的規則寫在 `docs/玩家角色手冊.md`**（mud_design 定的，使用者確認）：等級、主屬性、種族、公會（沒有職業）、HP／MP／MV 和回復、負重、武器重量限制、戰鬥的出手順序、雙持、定時做的事。
     伺服器都還沒做；做了要同步更新手冊開頭的進度表。數字的推導在 mud_design 的設計文件，手冊只寫規則。
   - `Character`：`name`、`sex`、`room`（所在的 **Room 物件**，不是號碼：兩份副本的同號房間是不同的 Room，
     所以 `act()`、`look()` 比 `c.room == ch.room` 時看不到別份的人）、`position`、`fighting`（正在打誰）、`fight`（在哪一場）。
