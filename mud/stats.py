@@ -9,7 +9,7 @@ import random
 
 from .area import MobTier
 from .characters import Position
-from .equipment import G, PRIMARY_KEYS, SECONDARY_PRICE, STAT_NAMES as EQUIPMENT_STAT_NAMES, standard_primary
+from .equipment import G, PRIMARY_KEYS, SECONDARY_PRICE, STAT_NAMES as EQUIPMENT_STAT_NAMES, WPN_PER_G, standard_primary
 
 
 class Race(enum.StrEnum):
@@ -127,7 +127,7 @@ def roll_resources(rng=random):
 
 
 def set_level(player, level, rng=random):
-    """把玩家改成 level 級（imm 的 advance 用）。回傳扣回的主屬性（照順序，可能重複）。
+    """把玩家改成 level 級（imm 的 advance、經驗值滿了升級用）。回傳扣回的主屬性（照順序，可能重複）。
 
     每一級 1 點主屬性點數，永遠成立：還沒分配的 points ＋ Σ trained ＝ 等級 − 1。
     升級：多的級數加到 points。降級：要扣的先從 points 扣；不夠的一點一點隨機挑加過點的屬性扣 1（使用者選的）。
@@ -157,6 +157,59 @@ def train(player, key, n):
     player.trained[key] += n
     player.primaries[key] += n
     recompute(player)
+
+
+# ---- 經驗值（設計文件 §4.7，balance.py 的 exp_base、kill_exp、kills_to_level、exp_to_level）----
+# 打怪經驗 ＝ 基準值(玩家等級) × 怪物難度 × 種類加成；怪物難度 ＝ 種類難度 × 1.30^(怪物等級 − 玩家等級)
+EXP_NORMAL_LV1 = 10.0                       # 1 級打同級一般怪給的經驗
+POWER_PER_LEVEL = 1.30                      # 每差 1 級戰力的倍率（怪物難度用）
+EXP_ZERO_GAP = 10                           # 怪物比玩家低這麼多級以上（含）給 0
+EXP_KILLS = (10.0, 300.0)                   # 升級要打幾隻同級一般怪：1 → 2 是 10 隻，99 → 100 是 300 隻，中間等比成長
+TIER_DIFFICULTY = {                         # 種類難度：同級的這種怪比 ×1 怪物難幾倍（balance.py 解出來的，在 1 級求）
+    MobTier.TRASH: 0.09946423073192671, MobTier.NORMAL: 0.38776032836629704,
+    MobTier.ELITE: 1.0, MobTier.BOSS: 1.1751155564673397,
+}
+TIER_EXP_MULT = {MobTier.TRASH: 0.1, MobTier.NORMAL: 1.2, MobTier.ELITE: 1.1, MobTier.BOSS: 1.0}   # 種類加成（§4.3）
+
+
+def exp_base(level):
+    """基準值：同級 ×1 怪物（難度 1、加成 1）給的經驗，跟著 G(L) 等比成長，讓 1 級一般怪剛好是 EXP_NORMAL_LV1。"""
+    normal = MobTier.NORMAL
+    return EXP_NORMAL_LV1 / (TIER_DIFFICULTY[normal] * TIER_EXP_MULT[normal]) * G(level) / G(1)
+
+
+def kill_exp(player_level, mob_level, tier):
+    """player_level 級的玩家打死 mob_level 級、tier 種類的怪物拿到的經驗（小數）。低 EXP_ZERO_GAP 級以上是 0。"""
+    if player_level - mob_level >= EXP_ZERO_GAP:
+        return 0.0
+    tier = MobTier(tier)
+    difficulty = TIER_DIFFICULTY[tier] * POWER_PER_LEVEL ** (mob_level - player_level)
+    return exp_base(player_level) * difficulty * TIER_EXP_MULT[tier]
+
+
+def exp_to_level(level):
+    """level 級升到下一級要的經驗（1 → 2 是 100）。"""
+    first, last = EXP_KILLS
+    kills = first * (last / first) ** ((level - 1) / max(MAX_LEVEL - 2, 1))
+    return kills * kill_exp(level, level, MobTier.NORMAL)
+
+
+def gain_exp(player, amount):
+    """玩家拿到 amount 經驗：滿了就升一級（set_level：加點數、HP／MP／MV 補滿）、扣掉這一級的需求，可以連升好幾級。
+
+    player.exp 是這一級累積的經驗。滿等不再加。回傳升了幾級。
+    """
+    if player.level >= MAX_LEVEL:
+        return 0
+    player.exp += amount
+    gained = 0
+    while player.level < MAX_LEVEL and player.exp >= exp_to_level(player.level):
+        player.exp -= exp_to_level(player.level)
+        set_level(player, player.level + 1)
+        gained += 1
+    if player.level >= MAX_LEVEL:
+        player.exp = 0.0
+    return gained
 
 
 # 每次回復上限的幾成（玩家角色手冊「回復」）：跟屬性無關，屬性已經透過上限影響回復量。
@@ -191,7 +244,7 @@ MOB_TIER_FILL = {                           # 種類 → 裝備完整度（怪�
 MOB_BONUS_MAX = 0.20                        # 進度加成（§4.6）：滿等的怪物裝備那 25% 再多 20%
 MOB_BONUS_CURVE = 3.0                       # 曲線陡度：前期慢、後期快
 GEAR_SHARE = 1 - NAKED_SHARE                # 裝備負責的比例（25%）
-BASE_PER_G = {"wpn": 0.5, "ac": 5.014570169544317}   # 武器基本傷害、全身 AC ÷ G(L)（不算點數，也乘裝備完整度）
+BASE_PER_G = {"wpn": WPN_PER_G, "ac": 5.014570169544317}   # 武器基本傷害、全身 AC ÷ G(L)（不算點數，也乘裝備完整度）
 ATTACK_MAIN_SHARE = 0.70                    # 主／次攻擊類型：主 70%、次 30%（§4.1）
 ATTACK_TYPES = ("phys", "spell", "dragon")
 DEFENSE_RATIO = (2.0, 0.5)                  # 攻防傾向：擅長的抗性 : 不擅長的，換算回原本合計（§4.2）

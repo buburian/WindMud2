@@ -19,6 +19,23 @@ SLOT_NAMES = {
     "feet": "腳", "about": "披風", "waist": "腰", "neck": "頸", "wrist": "手腕", "finger": "戒指", "hold": "持握", "light": "光源",
 }
 PAIRED = ("finger",)                        # 一個欄位兩件：一件的上限是一半（手腕當作一雙，不算）
+TWO_HANDED = "two_handed"                   # 雙手武器：同時佔主手和副手，上限是兩格加起來
+ARMOR_SLOTS = ("offhand", "body", "head", "legs", "arms", "hands", "feet", "about", "waist", "neck", "wrist")   # 有 AC 的部位
+
+# 裝備基本值（不算點數，設計文件 §3.3）：武器傷害照等級，護具 AC ＝ 那件的點數上限 × ARMOR_AC
+WPN_PER_G = 0.5                             # 武器基本傷害 ÷ G(L)
+ARMOR_AC = 1.0
+TWO_HANDED_WPN_MULT = 1.1215868110020213    # 雙手武器少了副手的 AC，基本傷害乘這個補回（balance.py 解出來的）
+WEAPON_SPREAD = (0.10, 0.20)                # 武器傷害範圍：下限、上限各離平均 10%～20%（做出來時骰）
+
+# 隨機裝備（§3.3）：可以抽到的屬性和它的詞綴，順序要跟 balance.py 一樣（rng.choice 照順序挑，同一個種子才會抽到一樣的）
+AFFIX_WORD = {
+    "str": "蠻力", "int": "睿智", "wis": "賢者", "con": "堅毅", "dex": "靈巧",
+    "hp": "活力", "dmg_phys": "鋒銳", "dmg_spell": "奧術", "hit": "精準", "dodge": "幻影",
+    "crit": "致命", "critdmg": "殘暴", "speed": "疾風", "res_phys": "鐵壁", "res_spell": "抗魔",
+}
+AFFIX_SPLIT = (0.60, 0.20, 0.20)            # 主詞綴、次詞綴、剩下的
+AFFIX_THIRD_CHANCE = 0.5                    # 剩下的有一半機率給第三條，不然給主或次詞綴
 
 # 顏色（稀有度）的點數加成，代號同 area.ItemColor
 COLOR_BONUS = {"gray": 0.0, "white": 1.0, "blue": 1.2, "purple": 1.3, "orange": 1.4}
@@ -68,17 +85,34 @@ def slot_cap(level, slot):
     return GEAR_COEF * G(level) * share / (2 if slot in PAIRED else 1)
 
 
+def best_slot(slots, two_handed=False):
+    """物品算點數用哪個部位：雙手武器（有主手）是 TWO_HANDED；好幾個部位用上限最大的；沒有部位是 None。
+
+    檢查固定裝備的上限（item_cap）和隨機抽屬性（roll_item）都用它，所以兩邊一定是同一個部位。
+    """
+    if two_handed and "wield" in slots:
+        return TWO_HANDED
+    if not slots:
+        return None
+    return max(slots, key=lambda s: slot_cap(1, s))     # 各部位的比例跟等級無關，用 1 級比
+
+
+def cap(level, slot):
+    """slot 部位一件的點數上限（顏色加成前），slot 可以是 TWO_HANDED（主手＋副手）。"""
+    if slot == TWO_HANDED:
+        return slot_cap(level, "wield") + slot_cap(level, "offhand")
+    return slot_cap(level, slot)
+
+
 def item_cap(level, slots, two_handed=False):
     """物品的點數上限（顏色加成前）和部位的說明。
 
     slots 是物品的穿戴部位：雙手武器（有主手）是主手＋副手；好幾個部位用上限最大的；沒有部位是 0。
     """
-    if two_handed and "wield" in slots:
-        return slot_cap(level, "wield") + slot_cap(level, "offhand"), "主手＋副手（雙手）"
-    if not slots:
+    slot = best_slot(slots, two_handed)
+    if slot is None:
         return 0.0, "（沒有穿戴部位）"
-    best = max(slots, key=lambda s: slot_cap(level, s))
-    return slot_cap(level, best), SLOT_NAMES[best]
+    return cap(level, slot), "主手＋副手（雙手）" if slot == TWO_HANDED else SLOT_NAMES[slot]
 
 
 def price(stat, level):
@@ -93,3 +127,58 @@ def standard_primary(guild, stat, level):
     _, std1, share = PRIMARY_PRICE[guild][stat]
     # 低於 1 級不往下減：玩家從 1 級開始，不然很低等的怪物（大約 −42 級以下）會除以 0 或負數
     return std1 + max(0, level - 1) * POINTS_PER_LEVEL * share
+
+
+def base_values(slot, level, rng, offhand_weapon=False):
+    """裝備基本值（不算點數）：武器是傷害範圍 dmg_min～dmg_max（做出來時骰），護具是 AC，其他沒有。
+
+    亂數的順序跟 balance.py 的 roll_item 一樣（先下限、再上限）。
+    """
+    if slot in ("wield", TWO_HANDED) or offhand_weapon:
+        w = WPN_PER_G * G(level) * (TWO_HANDED_WPN_MULT if slot == TWO_HANDED else 1.0)
+        lo, hi = WEAPON_SPREAD
+        low = w * (1 - rng.uniform(lo, hi))
+        return {"dmg_min": low, "dmg_max": w * (1 + rng.uniform(lo, hi))}
+    if slot in ARMOR_SLOTS:
+        return {"ac": cap(level, slot) * ARMOR_AC}
+    return {}
+
+
+def roll_item(slot, level, color, rng, offhand_weapon=False):
+    """隨機產生一件裝備的基本值和屬性（設計文件 §3.3），照 balance.py 的 Model.roll_item 寫，同一個種子結果一樣（有測試）。
+
+    可配點數 ＝ 上限 × 顏色加成（color 是 None 當灰色，×0）。主詞綴拿 60%、次詞綴 20%；剩下 20% 一半機率給第三條，
+    不然給主或次詞綴。每條都從「分到的點數買得起 +1」的屬性裡抽、不重複，取整數；零頭補到 1 點 ＝ 1 單位的屬性。
+    回傳 {"name": "[次]之[主]"（沒有屬性是空字串）, "base": 基本值, "affixes": {屬性代號: 加多少}}。
+    """
+    budget = cap(level, slot) * COLOR_BONUS[color or "gray"]
+    base = base_values(slot, level, rng, offhand_weapon)
+    prices = {k: price(k, level) for k in AFFIX_WORD}
+
+    def pick(points, exclude):
+        options = [k for k in AFFIX_WORD if prices[k] <= points and k not in exclude]
+        return rng.choice(options) if options else None
+
+    p_main, p_sub, p_rest = (budget * s for s in AFFIX_SPLIT)
+    main = pick(p_main, ())
+    sub = pick(p_sub, (main,)) if main else None
+    third = None
+    share = {}
+    if main:
+        share = {main: p_main, sub: p_sub} if sub else {main: p_main + p_sub}
+        if rng.random() < AFFIX_THIRD_CHANCE:
+            third = pick(p_rest, (main, sub))
+        if third:
+            share[third] = p_rest
+        else:
+            share[rng.choice([k for k in (main, sub) if k])] += p_rest
+    affixes = {k: int(v // prices[k]) for k, v in share.items()}
+    if main:                                # 零頭補到 1 點 ＝ 1 單位的屬性：優先主、次、第三條，都不是才另外抽一條
+        used = sum(n * prices[k] for k, n in affixes.items())
+        one = [k for k in AFFIX_WORD if k not in PRIMARY_KEYS and abs(prices[k] - 1.0) < 1e-6]
+        target = next((k for k in (main, sub, third) if k in one), None) or rng.choice([k for k in one if k not in affixes])
+        left = int((budget - used) // prices[target])
+        if left > 0:
+            affixes[target] = affixes.get(target, 0) + left
+    name = f"{AFFIX_WORD[sub]}之{AFFIX_WORD[main]}" if sub else (AFFIX_WORD[main] if main else "")
+    return {"name": name, "base": base, "affixes": affixes}

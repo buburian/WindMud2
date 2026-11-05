@@ -2,10 +2,10 @@
 import logging
 import re
 
-from .. import save, stats, weather, zones
+from .. import objects, save, stats, weather, zones
 from ..act import TO_CHAR, TO_ROOM, TO_VICT, act
-from ..area import DIRECTIONS, REVERSE
-from ..characters import SEX_FEMALE, SEX_MALE, Position, characters
+from ..area import CORPSE_NPC_ITEM_TYPE, DIRECTIONS, REVERSE
+from ..characters import SEX_FEMALE, SEX_MALE, Position, characters, in_room
 from ..color import colorize
 from ..config import ENCODING
 from ..npcs import Npc
@@ -19,7 +19,11 @@ def do_look(ch, arg):
         ch.send(look(ch))
         return
     room = ch.room
-    target = arg.split()[0].lower()
+    words = arg.split()
+    target = words[0].lower()
+    if "in".startswith(target):             # look in 東西（照 C 版：i、in 都算，比細看先找）
+        look_in(ch, words[1] if len(words) > 1 else "")
+        return
     # 照 C 版的順序：先找房間裡可以細看的東西（名字要整個字一樣），再把它當成方向（n、no、north 都算北）
     for keywords, text in room.extra_descriptions:
         if target in keywords:
@@ -36,6 +40,23 @@ def do_look(ch, arg):
         ch.send(f"{door.name}是{'關著' if door.closed else '開著'}的。\n")
 
 
+def look_in(ch, name):
+    """look in 東西：看地上的屍體裡有什麼（照 C 版 act_info.c 的訊息）。容器要等 O、P 做了才有。"""
+    if not name:
+        ch.send("你想看些什麼東西？\n")
+        return
+    obj = objects.find(ch.room.contents, name)
+    if obj is None:
+        ch.send("這裡沒有你想看的東西。\n")
+        return
+    if obj.item_type != CORPSE_NPC_ITEM_TYPE:
+        ch.send("這不是一個容器。\n")
+        return
+    # 每件一行、前面空 5 格（照 C 版；C 版會把一樣的合成「( 2) 」，先不做）
+    inside = "".join(f"     {objects.short(o)}\n" for o in obj.contains) or "     空無一物。\n"
+    ch.send(f"{obj.name}裝著：\n{inside}")
+
+
 def block(text):
     """區域作者寫的一段文字：轉顏色代碼，最後補上換行。"""
     text = colorize(text)
@@ -45,8 +66,8 @@ def block(text):
 def look(ch):
     """ch 所在房間的樣子：名稱、出口、描述，空一行再列房間裡的東西。登入時也用這個。
 
-    順序（使用者定的）：先生物（NPC），再玩家，最後是地上的物品（物品還沒做，做的時候接在玩家後面）。
-    生物和玩家都是亮白。名字不經過 colorize()：玩家名字只有英文字母，之後 NPC 用區域作者寫的描述時再看要不要轉顏色代碼。
+    順序（使用者定的）：先生物（NPC），再玩家，最後是地上的物品（新的在前）。
+    生物、玩家、地上的物品都是亮白。名字不經過 colorize()：玩家名字只有英文字母，之後 NPC 用區域作者寫的描述時再看要不要轉顏色代碼。
     """
     room = ch.room
     # 關著的門是紫色的 *北（照 C 版），其他出口亮青色
@@ -56,10 +77,9 @@ def look(ch):
     text = colorize("{G【{Y" + room.name + "{G】{x\n{G【出口：" + exits + "{G】{x\n" + room.description)
     if not text.endswith("\n"):
         text += "\n"
-    others = [c for c in characters if c is not ch and c.room == ch.room]
-    shown_here = [c for c in others if isinstance(c, Npc)] + [c for c in others if not isinstance(c, Npc)]
-    if shown_here:
-        text += "\n" + "".join(f"{WHITE}{appearance(c)}{RESET}\n" for c in shown_here)
+    lines = [f"{WHITE}{appearance(c)}{RESET}\n" for c in in_room(ch)] + [f"{objects.on_floor(o)}\n" for o in room.contents]
+    if lines:
+        text += "\n" + "".join(lines)
     return text
 
 
@@ -214,7 +234,7 @@ def do_score(ch, arg):
     # 名字只有英文字母（login.py 檢查過），不會有顏色代碼混進來
     lines = [
         " {G【{Y" + ch.name + "{G】{x {W" + stats.RACE_NAMES[ch.race] + "{D｜{C" + stats.GUILD_NAMES[ch.guild]
-        + "{D｜{x等級 {Y" + str(ch.level) + "{D｜{x" + sex + ("{D｜{Mimm{x" if ch.imm else ""),
+        + "{D｜{x等級 {Y" + str(ch.level) + exp_text(ch) + "{D｜{x" + sex + ("{D｜{Mimm{x" if ch.imm else ""),
         None,                               # 框線
         " {C主屬性{x  " + "  ".join(names[k] + " {W" + rpad(str(ch.primaries[k]), 2) + "{x" for k in stats.PRIMARY_KEYS)
         + (f"  {{Y可分配 {ch.points}{{x" if ch.points else ""),
@@ -234,6 +254,13 @@ def do_score(ch, arg):
     rule = "{D" + "=" * max(width(plain(line)) for line in lines if line) + "{x"
     lines[1] = rule
     ch.send(colorize("\n".join([rule, *lines, rule])) + "\n")
+
+
+def exp_text(ch):
+    """score 抬頭等級後面的「｜經驗 35/139」：這一級累積的經驗 / 升級需求（取整）。滿等不顯示。"""
+    if ch.level >= stats.MAX_LEVEL:
+        return ""
+    return "{D｜{x經驗 {W" + str(stats.shown(ch.exp)) + "{x/" + str(stats.shown(stats.exp_to_level(ch.level)))
 
 
 PRIMARY_WORDS = {**{k: k for k in stats.PRIMARY_KEYS}, **{stats.STAT_NAMES[k]: k for k in stats.PRIMARY_KEYS}}

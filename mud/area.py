@@ -211,6 +211,7 @@ WEAR_SLOTS = {
 }
 LIGHT_ITEM_TYPE = 1                         # 物品種類 1 照明用具：不在 wear_flags 裡，放在光源的位置
 WEAPON_ITEM_TYPE = 5                        # 物品種類 5 武器
+CORPSE_NPC_ITEM_TYPE = 23                   # 物品種類 23 怪物屍體：生物死掉時遊戲做出來的（objects.make_corpse），裡面放掉落的物品
 
 
 class WeaponKind(enum.IntEnum):
@@ -312,6 +313,7 @@ class Room:
         self.exit_descriptions = exit_descriptions    # 方向 → 往那個方向看到的樣子（look 方向）
         self.extra_descriptions = extra_descriptions  # [(小寫的名字們, 描述)]：可以細看的東西（look 牌子）
         self.doors = {}                     # 方向 → Door：只有有門（locks 不是 0）的出口才有，build_room() 放
+        self.contents = []                  # 地上的物品（objects.Obj），新的在前面（照 C 版）；區域物件釋放時跟著房間一起不見
         self.zone = None                    # 屬於哪個區域物件（zones.Zone），建進區域物件時設定
 
     def dark(self):
@@ -526,6 +528,19 @@ def check_fixed_items(name, data, base, objects, mob_levels, problems):
             place(f"{name}：resets 第 {i + 1} 筆（{r['cmd']}）", r.get("obj_vnum"), level, r.get("color"))
 
 
+def wear_slots(obj):
+    """區域檔的物品 obj 穿在哪些部位（equipment.py 的代號，照明用具是光源）、是不是雙手武器。旗標寫錯丟 ValueError。
+
+    檢查固定裝備的上限和做出隨機裝備（objects.create）都用它。
+    """
+    wear = parse_flags(obj.get("wear_flags"))
+    two_handed = bool(parse_flags(obj.get("extra_flags")) & ExtraFlag.TWO_HANDED)
+    slots = [slot for flag, slot in WEAR_SLOTS.items() if wear & flag]
+    if obj.get("item_type") == LIGHT_ITEM_TYPE:
+        slots.append("light")
+    return slots, two_handed
+
+
 def check_fixed_item(where, number, objects, level, color, problems):
     """一個放出物品的地方：物品 number 是固定裝備的話，點數不能超過上限。寫錯的地方就略過（別的規則會報錯）。"""
     obj = objects.get(number)
@@ -541,13 +556,9 @@ def check_fixed_item(where, number, objects, level, color, problems):
             stat = Apply(a["location"]).name.lower()
             terms.append((stat, a["modifier"], equipment.price(stat, level)))
     try:
-        wear = parse_flags(obj.get("wear_flags"))
-        two_handed = bool(parse_flags(obj.get("extra_flags")) & ExtraFlag.TWO_HANDED)
+        slots, two_handed = wear_slots(obj)
     except ValueError:
         return
-    slots = [slot for flag, slot in WEAR_SLOTS.items() if wear & flag]
-    if obj.get("item_type") == LIGHT_ITEM_TYPE:
-        slots.append("light")
     cap, slot_text = equipment.item_cap(level, slots, two_handed)
     bonus = 0.0 if color is None else equipment.COLOR_BONUS[color]
     total = sum(n * p for _, n, p in terms)

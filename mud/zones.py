@@ -15,11 +15,11 @@ import json
 import logging
 from pathlib import Path
 
-from . import area, fight, resets, stats, weather
+from . import area, fight, objects, resets, skills, stats, weather
 from .area import AreaType
 from .characters import characters
 from .clock import cancel, every
-from .config import AREA_TICKS, HOUR_TICKS, REGEN_TICKS, RELEASE_TICKS, START_ROOM, TICK_SECONDS
+from .config import AREA_TICKS, HOUR_TICKS, OBJ_TICKS, REGEN_TICKS, RELEASE_TICKS, START_ROOM, TICK_SECONDS
 from .npcs import Npc
 from .players import online_players
 
@@ -51,12 +51,16 @@ class Zone:
             self.rooms[room.vnum] = room
 
     def tick(self):
-        """這個區域物件一次 tick 要做的事。世界：每 HOUR_TICKS 走一次天氣；動態區域、副本：沒有玩家太久就釋放。
+        """這個區域物件一次 tick 要做的事。都要做：重置、地上物品的 timer。世界：每個 tick 數技能冷卻、每 HOUR_TICKS 走一次天氣；動態區域、副本：沒有玩家太久就釋放。
         世界的變換之後加在這裡，用「每幾個 tick 做一次」（self.ticks % N == 0）。"""
         self.ticks += 1
         if self.ticks % AREA_TICKS == 0:
             resets.update(self)             # 照 C 版：沒有玩家約 3 分鐘、有玩家約 15 分鐘重置一次
+        if self.ticks % OBJ_TICKS == 0:
+            # 坑：要放在下面兩個 return 前面，不然世界的屍體、有人站著的副本裡的屍體永遠不會爛
+            objects.update(self)            # 地上有 timer 的物品（屍體）減 1，到了就消失
         if self.kind == AreaType.WORLD:
+            skills.tick()                   # 技能的冷卻：掛在角色身上，跟回復一樣所有在線玩家一起數
             if self.ticks % HOUR_TICKS == 0:
                 weather.tick()              # 全遊戲一個天氣，只由世界 tick 走時間
             if self.ticks % REGEN_TICKS == 0:
@@ -95,13 +99,15 @@ def load(directory):
         more = f"（共 {len(found)} 個問題，用 uv run python -m mud.areacheck 看全部）" if len(found) > 1 else ""
         raise ValueError(found[0] + more)
     new_world = Zone(AreaType.WORLD, "世界")
-    new_templates, new_dynamic_rooms, new_mobiles = {}, {}, {}
+    new_templates, new_dynamic_rooms, new_mobiles, new_objects = {}, {}, {}, {}
     for path in paths:
         data = json.loads(path.read_text(encoding="utf-8"))
         header = data["area"]["header"]
         kind, base = AreaType(header["type"]), header["area_number"]
         for m in data["mobiles"]:           # 生物用遊戲號碼收成一張表：M 可以放別的區域檔的生物
-            new_mobiles[area.resolve(base, m["vnum"])] = m
+            new_mobiles[area.resolve(base, m["vnum"])] = (base, m)   # base：掉落表的 obj_vnum 用牠自己那個檔換算
+        for o in data["objects"]:           # 物品也是：掉落表可以掉別的區域檔的物品
+            new_objects[area.resolve(base, o["vnum"])] = o
         if kind == AreaType.WORLD:
             new_world.add_area(path.name, base, data)
             continue
@@ -111,7 +117,7 @@ def load(directory):
                 new_dynamic_rooms[base + r["vnum"]] = path.name
     stop()
     world, templates, dynamic_rooms = new_world, new_templates, new_dynamic_rooms
-    resets.mobiles = new_mobiles
+    resets.mobiles, objects.protos = new_mobiles, new_objects
     resets.reset_zone(world)                # 世界一開機就放好生物
     counts = {k: sum(1 for t in templates.values() if t[0] == k) for k in (AreaType.DYNAMIC, AreaType.INSTANCE)}
     log.info(f"載入 {len(paths)} 個區域檔：世界 {len(world.rooms)} 間房；"
@@ -206,7 +212,10 @@ def _instance_tick(zone):
 
 
 def release(zone):
-    """釋放一個動態區域或副本：停掉裡面的戰鬥、移走留在裡面的角色（之後的 NPC），從名單拿掉。"""
+    """釋放一個動態區域或副本：停掉裡面的戰鬥、移走留在裡面的角色（之後的 NPC），從名單拿掉。
+
+    地上的物品（屍體）放在房間裡，房間不要了就跟著不見，不用另外清。
+    """
     for f in list(zone.fights):
         fight.end(f)
     characters[:] = [c for c in characters if c.room.zone is not zone]

@@ -22,7 +22,7 @@ RESET_AGE = 15                              # 有玩家時 age 到這個數字�
 FOOTSTEPS = "你聽到一陣腳步聲。"              # 有玩家時，重置前 1 分鐘（age 14）送給區域裡醒著的玩家
 SURE_RARE = 10                              # 出現機率 rare 0～10 一定出現；大於 10 是 (rare − 10) ÷ 10000
 
-mobiles = {}                                # 遊戲號碼 → 區域檔的生物（zones.load 填，跨檔案也找得到）
+mobiles = {}                                # 遊戲號碼 → (那個區域檔的 area_number, 區域檔的生物)（zones.load 填，跨檔案也找得到）
 
 
 class AreaReset:
@@ -58,7 +58,7 @@ def reset_zone(zone, rng=random):
 
 
 def reset_area(zone, area, protos, rng=random):
-    """照順序做區域檔的 resets。現在只做 M、D，其他指令先跳過。protos 是遊戲號碼 → 區域檔的生物。"""
+    """照順序做區域檔的 resets。現在只做 M、D，其他指令先跳過。protos 是 mobiles 這種表：遊戲號碼 → (area_number, 區域檔的生物)。"""
     for r in area.data["resets"]:
         if r["cmd"] == "M":
             reset_mobile(zone, area, r, protos, rng)
@@ -69,7 +69,8 @@ def reset_area(zone, area, protos, rng=random):
 def reset_mobile(zone, area, r, protos, rng):
     """M：生物放進房間。出現機率沒骰到、或已經有 limit 隻就不放。回傳放出來的生物（之後的 G 用），沒放是 None。"""
     vnum, room_vnum = resolve(area.base, r["mob_vnum"]), resolve(area.base, r["room_vnum"])
-    proto, room = protos.get(vnum), zone.rooms.get(room_vnum)
+    base, proto = protos.get(vnum, (None, None))
+    room = zone.rooms.get(room_vnum)
     if proto is None or room is None:       # 號碼存不存在還沒檢查：先記 log 跳過
         log.warning(f"{area.name} 的 M 放不了：生物 {vnum} 或房間 {room_vnum} 不在{zone.name}裡")
         return None
@@ -81,7 +82,7 @@ def reset_mobile(zone, area, r, protos, rng):
                 and (c.room is room if sentinel else c.room.zone is zone))
     if count >= r["limit"]:
         return None
-    return spawn(vnum, proto, room, rng)
+    return spawn(vnum, proto, room, rng, base)
 
 
 def reset_door(zone, area, r):

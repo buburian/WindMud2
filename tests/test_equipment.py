@@ -1,3 +1,5 @@
+import random
+
 import pytest
 
 from balance_loader import load_balance
@@ -67,3 +69,38 @@ def test_item_cap():
     assert equipment.item_cap(5, ["head", "body"]) == (pytest.approx(equipment.slot_cap(5, "body")), "身體")   # 用大的
     assert equipment.item_cap(5, []) == (0.0, "（沒有穿戴部位）")
     assert equipment.slot_cap(5, "finger") == pytest.approx(equipment.slot_cap(5, "wrist") / 2)   # 戒指一件是一半
+
+
+# ---- 隨機裝備（設計文件 §3.3）----
+
+def test_random_item_numbers_match_mud_design(balance):
+    m = balance.Model()
+    assert equipment.WPN_PER_G == m.base_per_G["wpn"]
+    assert equipment.ARMOR_AC == m.cfg.armor_ac
+    assert equipment.TWO_HANDED_WPN_MULT == pytest.approx(m.two_handed_wpn_mult)
+    assert equipment.WEAPON_SPREAD == balance.WEAPON_SPREAD
+    assert list(equipment.AFFIX_WORD.items()) == list(balance.AFFIX_WORD.items())    # 順序也要一樣：rng.choice 照順序挑
+    assert (equipment.AFFIX_SPLIT, equipment.AFFIX_THIRD_CHANCE) == (balance.AFFIX_SPLIT, balance.AFFIX_THIRD_CHANCE)
+    assert equipment.ARMOR_SLOTS == tuple(SLOT_KEYS[s] for s in balance.ARMOR_SLOTS)
+
+
+# 等級只用 test_numbers_match_mud_design 比過單價的：「買得起」和取整卡在邊界上，單價差一點點就會抽到不同的詞綴
+@pytest.mark.parametrize("level", [1, 10, 50, 100])
+def test_roll_item_matches_mud_design(balance, level):
+    # 同一個種子，結果要跟 balance.py 的 roll_item 一模一樣（遊戲直接照它的規則做）
+    m = balance.Model()
+    slots = [(name, slot, False) for name, slot in SLOT_KEYS.items()]
+    slots += [(balance.TWO_HANDED_SLOT, equipment.TWO_HANDED, False), ("副手 offhand", "offhand", True)]
+    for seed in range(40):
+        for name, slot, offhand_weapon in slots:
+            for rarity, color in COLOR_KEYS.items():
+                want = m.roll_item(name, level, rarity, random.Random(seed), offhand_weapon=offhand_weapon)
+                got = equipment.roll_item(slot, level, color, random.Random(seed), offhand_weapon)
+                where = (seed, slot, offhand_weapon, color)
+                assert (got["name"], got["affixes"]) == (want["name"], want["affixes"]), where
+                assert got["base"] == pytest.approx(want["base"], rel=1e-9), where
+
+
+def test_no_color_rolls_like_gray():
+    assert equipment.roll_item("head", 10, None, random.Random(1)) == equipment.roll_item("head", 10, "gray", random.Random(1))
+    assert equipment.roll_item("head", 10, None, random.Random(1))["affixes"] == {}

@@ -3,8 +3,8 @@ import argparse
 import asyncio
 import logging
 
-from . import zones
-from .config import AREA_DIR, ENCODING, START_ROOM
+from . import helps, zones
+from .config import AREA_DIR, ENCODING, HELP_FILE, START_ROOM
 from .log import setup
 from .server import handle
 
@@ -24,6 +24,11 @@ async def main():
         raise SystemExit(1)
     if START_ROOM not in zones.world.rooms:
         log.error(f"起始房間 {START_ROOM} 不在世界區域裡")
+        raise SystemExit(1)
+    try:
+        helps.load(HELP_FILE)
+    except ValueError as e:
+        log.error(f"說明檔載入失敗：{e}")
         raise SystemExit(1)
     zones.start()
     server = await asyncio.start_server(handle, args.host, args.port)

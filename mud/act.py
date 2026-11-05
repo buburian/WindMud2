@@ -22,6 +22,18 @@ def act(fmt, ch, vch=None, t=None, T=None, to=TO_ROOM):
     送給 NPC 等於沒送：NPC 沒有連線，它的 send() 什麼都不做。
     同房間的事（TO_ROOM、TO_NOTVICT）不送給睡著的人（照 C 版）；TO_VICT 照送，chat、tell 睡著也收得到。
     """
+    for reader, text in compose(fmt, ch, vch, t, T, to):
+        if reader is ch:
+            reader.send(text + "\n")            # prompt 由 command() 補
+        else:
+            notify(reader, text)
+
+
+def compose(fmt, ch, vch=None, t=None, T=None, to=TO_ROOM):
+    """跟 act() 一樣算出誰收到什麼，但不送：回傳 [(讀的人, 代換好的文字)]。
+
+    要把好幾句合成一段再送的地方用（戰鬥的一回合：combat.py 的訊息放進 Fight.messages，回合結束才送）。
+    """
     if to == TO_CHAR:
         readers = [ch]
     elif to == TO_VICT:
@@ -30,12 +42,7 @@ def act(fmt, ch, vch=None, t=None, T=None, to=TO_ROOM):
         readers = [c for c in characters
                    if c.room == ch.room and c is not ch and (to == TO_ROOM or c is not vch)
                    and c.position > Position.SLEEPING]
-    for reader in readers:
-        text = fill(fmt, ch, vch, t, T, reader)
-        if reader is ch:
-            reader.send(text + "\n")            # prompt 由 command() 補
-        else:
-            notify(reader, text)
+    return [(reader, fill(fmt, ch, vch, t, T, reader)) for reader in readers]
 
 
 def notify(ch, text):

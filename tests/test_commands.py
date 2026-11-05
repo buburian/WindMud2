@@ -316,7 +316,7 @@ def test_score_layout():
     rule = "=" * 52
     assert re.sub(r"\x1b\[[0-9;]*m", "", text) == "\r\n".join([
         rule,
-        " 【Zzqa】 獸人｜劍之公會｜等級 1｜男",
+        " 【Zzqa】 獸人｜劍之公會｜等級 1｜經驗 0/100｜男",       # 經驗：這一級累積的 / 升級要的
         rule,
         " 主屬性  力量 14  智慧 11  知識 11  體質 12  敏捷 12",
         "",
@@ -334,6 +334,17 @@ def test_score_layout():
     ])
     assert "\x1b[30;1m法術傷害   0\x1b[0m" in text          # 劍之公會用不到法術傷害：整格變暗
     assert "\x1b[31;1m=====\x1b[30;1m---------------\x1b[0m" in text   # HP 條：紅色的滿格、暗灰的空格
+
+
+def test_score_shows_exp_until_max_level():
+    p = stat_player()
+    p.exp = 34.6
+    commands.command(p, "sc")
+    assert "｜等級 1｜經驗 35/100｜男" in re.sub(r"\x1b\[[0-9;]*m", "", p.writer.data.decode(ENCODING))
+    p.writer.data = b""
+    p.level = stats.MAX_LEVEL                       # 滿等不再拿經驗，不顯示
+    commands.command(p, "sc")
+    assert "｜等級 100｜男" in re.sub(r"\x1b\[[0-9;]*m", "", p.writer.data.decode(ENCODING))
 
 
 def test_score_without_stats():

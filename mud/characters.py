@@ -40,5 +40,35 @@ class Character:
         """每次送完訊息後補的提示。玩家（Player）有屬性時改成顯示 HP、MP、MV。"""
         return PROMPT
 
+    def names(self):
+        """別人用來指定這個角色的名字（小寫）：玩家是名字，生物（Npc）是區域檔的 keywords。"""
+        return [self.name.lower()]
+
+
+def in_room(ch):
+    """ch 所在房間裡的其他角色，照 look 畫面的順序：生物在前、玩家在後（各自照 characters 的順序）。
+
+    look 和 find_in_room() 都用它，「畫面上第 n 隻」才對得上。
+    """
+    from .npcs import Npc                   # 坑：npcs 會 import 這個模組，在函式裡才 import
+    others = [c for c in characters if c is not ch and c.room is ch.room]
+    return [c for c in others if isinstance(c, Npc)] + [c for c in others if not isinstance(c, Npc)]
+
+
+def find_in_room(ch, name):
+    """ch 所在房間裡叫做 name 的角色，找不到是 None（使用者定的，**要找生物的指令都用它**：kill、slay、use…）。
+
+    - 名字跟指令一樣只要打開頭：角色的任何一個名字（names()）用 name 開頭就算，英文不分大小寫（do、DOG 都是 dog）。
+    - 同名的用「n.名字」：3.dog 是畫面上第 3 隻對得上 dog 的（照 C 版的 number_argument）；0.dog、3. 找不到。
+    - 順序照 look 畫面（in_room()），自己排最後（look 看不到自己；自己也找得到，照 C 版）。
+    """
+    number, dot, rest = name.partition(".")
+    n, word = (int(number), rest) if dot and number.isdigit() else (1, name)
+    word = word.lower()
+    if n < 1 or not word:
+        return None
+    matches = [c for c in in_room(ch) + [ch] if any(x.startswith(word) for x in c.names())]
+    return matches[n - 1] if n <= len(matches) else None
+
 
 characters = []  # 遊戲裡所有的角色（玩家和 NPC，所有區域物件裡的都在這），找同房間的人都從這裡找

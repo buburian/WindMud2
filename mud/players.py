@@ -17,13 +17,15 @@ class Player(Character):
         self.race = None                     # stats.Race
         self.guild = None                    # stats.Guild
         self.level = 1
-        self.primaries = {}                  # 角色自己的主屬性（不含裝備加的）："str"、"int"、"wis"、"con"、"dex"
+        self.exp = 0.0                       # 這一級累積的經驗（小數，顯示時取整），滿了升級（stats.gain_exp）
+        self.primaries = {}                # 角色自己的主屬性（不含裝備加的）："str"、"int"、"wis"、"con"、"dex"
         self.resource_roll = 1.0             # 創角時骰的 MP、MV 倍率（0.95～1.05）
         self.points = 0                      # 還沒分配的主屬性點數（每升一級 1 點，用 train 分配）
         self.trained = {}                    # 每項主屬性靠升級加了幾點（降級時扣回用）；points ＋ Σ trained ＝ 等級 − 1
         self.imm = False                     # 管理員：找得到 IMM_COMMANDS（存檔的 imm）
         self.panel = {}                      # 全部次要屬性的快取，用 stats.recompute() 從頭算
         self.hp = self.mp = self.mv = 0.0    # 現在的 HP、MP、MV（上限在 panel）
+        self.cooldowns = {}                  # 技能 id → 還要等幾個 tick 才能再用（skills.tick() 數），不存檔
 
     def send(self, text):
         send(self.writer, text)              # 下面那個 send()：寫到連線

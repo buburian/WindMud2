@@ -1,6 +1,7 @@
 """處理玩家輸入的指令：照 COMMANDS 的順序，找第一個用輸入開頭的指令。"""
 from ..characters import Position as P
-from . import doors, imm, system
+from . import combat, doors, imm, skills, system
+from . import help as help_command          # 不叫 help：名字會蓋掉 Python 內建的 help()
 
 # 指令表：(指令, 函式, 最低姿勢)。輸入的字照這個順序比對，第一個用它開頭的指令就是答案（c 會找到 chat）。
 # 要改優先順序，調整這裡的順序就好；新指令加在後面，原本的縮寫才不會變。
@@ -33,11 +34,16 @@ COMMANDS = [
     ("close", doors.do_close, P.RESTING),       # c 還是 chat，cl 才是 close
     ("lock", doors.do_lock, P.RESTING),         # l、lo 還是 look，loc 才是 lock
     ("unlock", doors.do_unlock, P.RESTING),     # u 還是 up，un 才是 unlock
+    ("kill", combat.do_kill, P.FIGHTING),       # k；休息、睡覺不能用（照 C 版）
+    ("skills", skills.do_skills, P.DEAD),       # sk；跟 score 一樣什麼姿勢都能看
+    ("help", help_command.do_help, P.DEAD),     # h；什麼姿勢都能看，說明在 help/help.json
+    ("use", skills.do_use, P.FIGHTING),         # us（u 還是 up、un 是 unlock）；放技能，可以開打；休息、睡覺不能用
 ]
 
 # 管理員（imm）才找得到的指令，接在 COMMANDS 後面找，原本的縮寫都不受影響
 IMM_COMMANDS = [
     ("advance", imm.do_advance, P.DEAD),
+    ("slay", imm.do_slay, P.DEAD),
 ]
 
 # 姿勢不夠時的訊息（照 C 版 interp.c）
@@ -52,12 +58,24 @@ REFUSALS = {
 }
 
 
-def lookup(word, is_imm=False):
-    """找第一個用 word 開頭的指令，回傳 (函式, 最低姿勢)；找不到是 None。is_imm 才會找 IMM_COMMANDS。"""
-    for cmd, func, position in COMMANDS + (IMM_COMMANDS if is_imm else []):
-        if cmd.startswith(word):
-            return func, position
+def _first(word, is_imm):
+    """指令表裡第一個用 word 開頭的那一筆 (指令, 函式, 最低姿勢)；找不到是 None。is_imm 才會找 IMM_COMMANDS。"""
+    for entry in COMMANDS + (IMM_COMMANDS if is_imm else []):
+        if entry[0].startswith(word):
+            return entry
     return None
+
+
+def lookup(word, is_imm=False):
+    """找第一個用 word 開頭的指令，回傳 (函式, 最低姿勢)；找不到是 None。"""
+    entry = _first(word, is_imm)
+    return entry[1:] if entry else None
+
+
+def command_name(word, is_imm=False):
+    """找第一個用 word 開頭的指令，回傳它的名稱（help 用）；找不到是 None。"""
+    entry = _first(word, is_imm)
+    return entry[0] if entry else None
 
 
 def find(word, is_imm=False):

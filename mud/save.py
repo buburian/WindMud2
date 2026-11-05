@@ -43,7 +43,7 @@ def save_player(player):
     """把玩家寫進存檔。先寫暫存檔再換名字，存到一半斷掉也不會把舊檔弄壞。"""
     data = {
         "name": player.name, "password": player.password, "sex": player.sex,
-        "race": player.race, "guild": player.guild, "level": player.level,
+        "race": player.race, "guild": player.guild, "level": player.level, "exp": player.exp,
         "primaries": player.primaries, "resource_roll": player.resource_roll,
         "points": player.points, "trained": player.trained, "imm": player.imm,
         "hp": player.hp, "mp": player.mp, "mv": player.mv,
@@ -77,6 +77,7 @@ def player_from(data, writer):
     player.level, player.primaries = data["level"], data["primaries"]
     player.resource_roll = data["resource_roll"]
     # 後來才加的欄位：舊存檔沒有，當作 0 和不是 imm
+    player.exp = data.get("exp", 0.0)
     player.points = data.get("points", 0)
     player.trained = {k: data.get("trained", {}).get(k, 0) for k in stats.PRIMARY_KEYS}
     player.imm = data.get("imm", False)

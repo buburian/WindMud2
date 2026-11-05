@@ -5,8 +5,10 @@
 import logging
 from collections import Counter
 
-from .. import stats
-from ..act import notify
+from .. import death, stats
+from ..act import TO_CHAR, TO_NOTVICT, act, notify
+from ..characters import find_in_room
+from ..npcs import Npc
 from ..players import online_players
 
 log = logging.getLogger(__name__)
@@ -34,6 +36,7 @@ def do_advance(ch, arg):
         ch.send(f"{victim.name} 已經是 {level} 級了。\n")
         return
     taken = Counter(stats.set_level(victim, level))
+    victim.exp = 0.0                        # 這一級的經驗從 0 開始（不然降級後可能已經超過需求）
     log.info(f"{ch.name} 把 {victim.name} 從 {old} 級改成 {level} 級")
     if level > old:
         msg = f"你升到 {level} 級了！多了 {level - old} 點主屬性點數，用 train 分配。"
@@ -47,3 +50,25 @@ def do_advance(ch, arg):
         return
     ch.send(f"{victim.name} {'升' if level > old else '降'}到 {level} 級了。\n")
     notify(victim, msg)
+
+
+def do_slay(ch, arg):
+    """slay <名字>：直接殺死同房間的生物（照 C 版），原地留下屍體。玩家的死亡還沒做，不能殺玩家。"""
+    words = arg.split()
+    if not words:
+        ch.send("你想要屠殺(Slay)誰？\n")
+        return
+    victim = find_in_room(ch, words[0])
+    if victim is None:
+        ch.send("找不到你想要屠殺的人。\n")
+        return
+    if victim is ch:
+        ch.send("屠殺(Slay)無法對自己使用。\n")
+        return
+    if not isinstance(victim, Npc):
+        ch.send("玩家的死亡還沒做，現在只能屠殺生物。\n")
+        return
+    act("你相當殘酷地屠殺(Slay)$N，$E變成一堆的肉塊與血水!!", ch, victim, to=TO_CHAR)
+    act("$n相當殘酷地屠殺(Slay)$N，$E變成一堆的肉塊與血水!!", ch, victim, to=TO_NOTVICT)
+    log.info(f"{ch.name} 屠殺了 {victim.name}（房間 {victim.room.vnum}）")
+    death.die(victim)

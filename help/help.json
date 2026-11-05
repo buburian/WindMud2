@@ -1,0 +1,276 @@
+{
+  "categories": [
+    {"name": "移動", "imm": false},
+    {"name": "資訊", "imm": false},
+    {"name": "溝通", "imm": false},
+    {"name": "角色", "imm": false},
+    {"name": "戰鬥", "imm": false},
+    {"name": "門", "imm": false},
+    {"name": "管理員", "imm": true}
+  ],
+  "entries": [
+    {
+      "category": "移動",
+      "commands": ["north", "east", "south", "west", "up", "down"],
+      "usage": "north east south west up down",
+      "summary": "往六個方向走",
+      "text": [
+        "往那個方向走到隔壁的房間。",
+        "門關著就過不去，要先 open。",
+        "休息、睡覺時不能走，要先 stand。",
+        "戰鬥中也可以走，走掉了對方就停手（還沒有 flee）。"
+      ]
+    },
+    {
+      "category": "資訊",
+      "commands": ["look"],
+      "usage": "look [東西或方向]",
+      "summary": "看房間、出口、細節",
+      "text": [
+        "只打 look：看你所在的房間，有誰在這裡、地上有什麼。",
+        "look 方向（例如 look n）：看那個出口的樣子。",
+        "look 東西：看房間裡可以細看的東西。",
+        "look in 屍體：看屍體裡裝了什麼。",
+        "睡著時不能用。"
+      ]
+    },
+    {
+      "category": "資訊",
+      "commands": ["score"],
+      "usage": "score",
+      "summary": "看自己的全部屬性",
+      "text": [
+        "看等級、經驗、HP、MP、MV、主屬性和次要屬性。",
+        "有還沒分配的點數，會寫「可分配」，用 train 分配。"
+      ]
+    },
+    {
+      "category": "資訊",
+      "commands": ["who"],
+      "usage": "who",
+      "summary": "看誰在線上",
+      "text": [
+        "列出在線上的玩家，等級高的在前面。"
+      ]
+    },
+    {
+      "category": "資訊",
+      "commands": ["weather"],
+      "usage": "weather",
+      "summary": "看時間和天氣",
+      "text": [
+        "在室外才看得到：現在幾點、天空、風向。",
+        "睡著時不能用。"
+      ]
+    },
+    {
+      "category": "資訊",
+      "commands": ["skills"],
+      "usage": "skills",
+      "summary": "看你會的技能",
+      "text": [
+        "列出你會的技能：傷害、消耗、冷卻。冷卻中的會寫還要等幾秒。",
+        "傷害是還沒被抗性擋、不含爆擊的數字。"
+      ]
+    },
+    {
+      "category": "資訊",
+      "commands": ["help"],
+      "usage": "help [分類或指令]",
+      "summary": "看說明",
+      "text": [
+        "只打 help：看分類和每一類有哪些指令。",
+        "help 分類（例如 help 戰鬥）：看這一類的指令。",
+        "help 指令（例如 help kill）：看這個指令的說明。指令可以縮寫，例如 help k。"
+      ]
+    },
+    {
+      "category": "溝通",
+      "commands": ["chat"],
+      "usage": "chat <訊息>",
+      "summary": "全服頻道",
+      "text": [
+        "說給所有在線上的玩家聽。",
+        "睡著也能說、也聽得到。"
+      ]
+    },
+    {
+      "category": "溝通",
+      "commands": ["tell"],
+      "usage": "tell <名字> <訊息>",
+      "summary": "密語",
+      "text": [
+        "只說給一個在線上的玩家聽。",
+        "對方可以用 reply 回你。睡著也能說、也聽得到。"
+      ]
+    },
+    {
+      "category": "溝通",
+      "commands": ["reply"],
+      "usage": "reply <訊息>",
+      "summary": "回覆密語",
+      "text": [
+        "回給最後一個 tell 你的玩家。"
+      ]
+    },
+    {
+      "category": "溝通",
+      "commands": ["say"],
+      "usage": "say <訊息>",
+      "summary": "對同房間的人說話",
+      "text": [
+        "同房間醒著的人聽得到。",
+        "睡著時不能說話。"
+      ]
+    },
+    {
+      "category": "角色",
+      "commands": ["train"],
+      "usage": "train <屬性> [點數]",
+      "summary": "分配升級的點數",
+      "text": [
+        "每升一級得到 1 點，加在主屬性上。",
+        "屬性寫 str、int、wis、con、dex，或力量、智慧、知識、體質、敏捷。",
+        "點數不寫就是 1 點，例如 train str 5。每項最多 55。",
+        "只打 train：看現在的主屬性和還沒分配的點數。"
+      ]
+    },
+    {
+      "category": "角色",
+      "commands": ["rest"],
+      "usage": "rest",
+      "summary": "坐下休息",
+      "text": [
+        "坐著回復得比站著快。",
+        "睡覺時打 rest，是醒過來坐著休息。",
+        "戰鬥中不能用。"
+      ]
+    },
+    {
+      "category": "角色",
+      "commands": ["sleep"],
+      "usage": "sleep",
+      "summary": "睡覺",
+      "text": [
+        "睡覺回復得最快，可是看不到、聽不到同房間的事。",
+        "用 stand 或 rest 醒過來。",
+        "戰鬥中不能用。"
+      ]
+    },
+    {
+      "category": "角色",
+      "commands": ["stand"],
+      "usage": "stand",
+      "summary": "站起來",
+      "text": [
+        "休息、睡覺之後，要站起來才能走路、打架。",
+        "戰鬥中不能用。"
+      ]
+    },
+    {
+      "category": "角色",
+      "commands": ["save"],
+      "usage": "save",
+      "summary": "存檔",
+      "text": [
+        "把你的角色存起來。",
+        "離開遊戲、斷線時也會自動存檔。"
+      ]
+    },
+    {
+      "category": "角色",
+      "commands": ["quit"],
+      "usage": "quit",
+      "summary": "離開遊戲",
+      "text": [
+        "離開遊戲，會自動存檔。"
+      ]
+    },
+    {
+      "category": "戰鬥",
+      "commands": ["kill"],
+      "usage": "kill <名字>",
+      "summary": "開打同房間的生物",
+      "text": [
+        "打同房間的生物，牠會自動還手。",
+        "名字只要打開頭，例如 kill do。同名的用 2.dog 指定畫面上第 2 隻。",
+        "不可以打玩家，自己也不行。",
+        "休息、睡覺時不能用，要先 stand。"
+      ]
+    },
+    {
+      "category": "戰鬥",
+      "commands": ["use"],
+      "usage": "use <技能> [名字]",
+      "summary": "放技能",
+      "text": [
+        "放你會的技能，例如 use fireball 3.dog：用火球打畫面上第 3 隻狗。",
+        "技能名稱可以縮寫，例如 use f dog。名字只要打開頭，同名的用 2.dog。",
+        "沒在打架時，打名字就跟 kill 一樣開打。",
+        "打架中不打名字，是打現在的對手；打旁邊沒在打的生物，牠會加進來打你，你平砍還是打原本的對手。",
+        "會的技能和傷害、消耗、冷卻用 skills 看。休息、睡覺時不能用。"
+      ]
+    },
+    {
+      "category": "門",
+      "commands": ["open"],
+      "usage": "open <門或方向>",
+      "summary": "開門",
+      "text": [
+        "打開關著的門。可以寫門的名字，或方向（例如 open n）。",
+        "鎖著的門要先 unlock。對面房間的人會看到門打開。",
+        "睡著時不能用。"
+      ]
+    },
+    {
+      "category": "門",
+      "commands": ["close"],
+      "usage": "close <門或方向>",
+      "summary": "關門",
+      "text": [
+        "關上開著的門。可以寫門的名字，或方向。",
+        "對面房間的人會看到門關上。睡著時不能用。"
+      ]
+    },
+    {
+      "category": "門",
+      "commands": ["lock"],
+      "usage": "lock <門或方向>",
+      "summary": "鎖門",
+      "text": [
+        "把關著的門鎖起來，要有那扇門的鑰匙。",
+        "有些門沒辦法上鎖。睡著時不能用。"
+      ]
+    },
+    {
+      "category": "門",
+      "commands": ["unlock"],
+      "usage": "unlock <門或方向>",
+      "summary": "開鎖",
+      "text": [
+        "打開門上的鎖，要有那扇門的鑰匙。",
+        "開了鎖還要 open 才會打開。睡著時不能用。"
+      ]
+    },
+    {
+      "category": "管理員",
+      "commands": ["advance"],
+      "usage": "advance <名字> <等級>",
+      "summary": "改玩家的等級",
+      "text": [
+        "把在線上的玩家升到（或降到）那個等級，1 到 100。",
+        "這一級的經驗值歸 0。"
+      ]
+    },
+    {
+      "category": "管理員",
+      "commands": ["slay"],
+      "usage": "slay <名字>",
+      "summary": "直接殺死生物",
+      "text": [
+        "直接殺死同房間的生物，原地留下屍體，不給經驗。",
+        "名字只要打開頭，同名的用 2.dog。不能殺玩家。"
+      ]
+    }
+  ]
+}
