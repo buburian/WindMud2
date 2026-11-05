@@ -81,6 +81,13 @@ class Locks(enum.IntEnum):
     PICKPROOF_BASHPROOF_PASSPROOF = 8       # 門，撬不開、撞不開、法術穿不過去
 
 
+class DoorState(enum.IntEnum):
+    """門的狀態（重置 D 的 state），要跟手冊的 state 表一樣。"""
+    OPEN = 0                                # 開著
+    CLOSED = 1                              # 關著
+    LOCKED = 2                              # 關著而且鎖著
+
+
 class AreaType(enum.StrEnum):
     """區域的種類（area.header.type）。值就是區域檔裡寫的字串，要跟手冊「三種區域」的表一樣。"""
     WORLD = "world"                         # 世界區域：開機就建好，沒人也不釋放
@@ -109,6 +116,16 @@ class Defense(enum.StrEnum):
     """攻防傾向（defense）：擅長的抗性 : 不擅長的 ＝ 2 : 0.5，再換算回原本物抗＋法抗的合計，總點數不變。null 是標準。"""
     PHYS = "phys"                           # 物抗 ×1.6、法抗 ×0.4（原本一樣時；怕法術）
     SPELL = "spell"                         # 法抗 ×1.6、物抗 ×0.4（原本一樣時；怕物理）
+
+
+class ActFlag(enum.IntFlag):
+    """生物的行為旗標（act）。名字是手冊的 C 版名稱；現在只用到 SENTINEL（重置的 limit 怎麼算）。"""
+    IS_NPC = 1                              # C 版載入時自動加上，不用寫
+    SENTINEL = 2                            # 待在原地，不會走動
+    SCAVENGER = 4                           # 會撿地上的東西
+    AGGRESSIVE = 32                         # 主動攻擊玩家
+    STAY_AREA = 64                          # 不會走出這個區域
+    WIMPY = 128                             # 受傷會逃跑
 
 
 class Archetype(enum.StrEnum):
@@ -193,6 +210,60 @@ WEAR_SLOTS = {
     WearFlag.WIELD: "wield", WearFlag.HOLD: "hold",
 }
 LIGHT_ITEM_TYPE = 1                         # 物品種類 1 照明用具：不在 wear_flags 裡，放在光源的位置
+WEAPON_ITEM_TYPE = 5                        # 物品種類 5 武器
+
+
+class WeaponKind(enum.IntEnum):
+    """武器種類（武器 values 的第 1 個，設計文件 §3.3）。名字是手冊武器種類表的名稱，全部是物理類。"""
+    DAGGER = 1                              # 匕首：單手，預設戳刺；背刺只能用它
+    LONGSWORD = 2                           # 長劍：單手，預設橫切
+    SCIMITAR = 3                            # 彎刀：單手，預設削割
+    HANDAXE = 4                             # 單手斧：單手，預設重砍
+    MACE = 5                                # 釘頭鎚：單手，預設鎚擊
+    WHIP = 6                                # 鞭：單手，預設鞭打
+    CLAW = 7                                # 拳爪：單手，預設利爪
+    GREATSWORD = 8                          # 大劍：雙手，預設橫劈
+    BATTLEAXE = 9                           # 戰斧：雙手，預設重砍
+    WARHAMMER = 10                          # 戰鎚：雙手，預設轟擊
+    SPEAR = 11                              # 長槍：雙手，預設突刺
+
+
+class Attack(enum.IntEnum):
+    """攻擊方式（武器 values 的第 4 個），只是顯示的字。名字用 Merc 的 attack_table（WindSrc 的表只有中文）。"""
+    HIT = 0                                 # 重擊（只給怪物）
+    SLICE = 1                               # 橫切
+    STAB = 2                                # 戳刺
+    SLASH = 3                               # 重砍
+    WHIP = 4                                # 鞭打
+    CLAW = 5                                # 利爪
+    BLAST = 6                               # 鎚擊
+    POUND = 7                               # 敲擊
+    CRUSH = 8                               # 轟擊
+    GREP = 9                                # 削割
+    BITE = 10                               # 利牙（只給怪物）
+    PIERCE = 11                             # 突刺
+    SUCTION = 12                            # 吸取（只給怪物）
+    CHOP = 13                               # 橫劈
+
+
+WEAPON_KIND_NAMES = {
+    WeaponKind.DAGGER: "匕首", WeaponKind.LONGSWORD: "長劍", WeaponKind.SCIMITAR: "彎刀", WeaponKind.HANDAXE: "單手斧",
+    WeaponKind.MACE: "釘頭鎚", WeaponKind.WHIP: "鞭", WeaponKind.CLAW: "拳爪", WeaponKind.GREATSWORD: "大劍",
+    WeaponKind.BATTLEAXE: "戰斧", WeaponKind.WARHAMMER: "戰鎚", WeaponKind.SPEAR: "長槍",
+}
+TWO_HANDED_KINDS = {WeaponKind.GREATSWORD, WeaponKind.BATTLEAXE, WeaponKind.WARHAMMER, WeaponKind.SPEAR}
+DEFAULT_ATTACK = {                          # 每種武器預設的攻擊方式；作者可以改成別的武器攻擊方式
+    WeaponKind.DAGGER: Attack.STAB, WeaponKind.LONGSWORD: Attack.SLICE, WeaponKind.SCIMITAR: Attack.GREP,
+    WeaponKind.HANDAXE: Attack.SLASH, WeaponKind.MACE: Attack.BLAST, WeaponKind.WHIP: Attack.WHIP,
+    WeaponKind.CLAW: Attack.CLAW, WeaponKind.GREATSWORD: Attack.CHOP, WeaponKind.BATTLEAXE: Attack.SLASH,
+    WeaponKind.WARHAMMER: Attack.CRUSH, WeaponKind.SPEAR: Attack.PIERCE,
+}
+ATTACK_NAMES = {
+    Attack.HIT: "重擊", Attack.SLICE: "橫切", Attack.STAB: "戳刺", Attack.SLASH: "重砍", Attack.WHIP: "鞭打",
+    Attack.CLAW: "利爪", Attack.BLAST: "鎚擊", Attack.POUND: "敲擊", Attack.CRUSH: "轟擊", Attack.GREP: "削割",
+    Attack.BITE: "利牙", Attack.PIERCE: "突刺", Attack.SUCTION: "吸取", Attack.CHOP: "橫劈",
+}
+MOB_ONLY_ATTACKS = {Attack.HIT, Attack.BITE, Attack.SUCTION}   # 只給怪物用，武器不能用
 
 
 # 每一層要剛好有這些欄位
@@ -240,7 +311,36 @@ class Room:
         self.sector = sector                # 地形（Sector）
         self.exit_descriptions = exit_descriptions    # 方向 → 往那個方向看到的樣子（look 方向）
         self.extra_descriptions = extra_descriptions  # [(小寫的名字們, 描述)]：可以細看的東西（look 牌子）
+        self.doors = {}                     # 方向 → Door：只有有門（locks 不是 0）的出口才有，build_room() 放
         self.zone = None                    # 屬於哪個區域物件（zones.Zone），建進區域物件時設定
+
+    def dark(self):
+        """很暗、看不到東西：有 RoomFlag.DARK，而且沒有光源。光源是物品，還沒做，現在很暗的房間一律看不到。"""
+        return RoomFlag.DARK in self.room_flags
+
+
+class Door:
+    """出口上的門。名字、種類、鑰匙照區域檔；開著、關著、鎖著是現在的狀態（重置 D 設定，沒有 D 就開著）。
+
+    兩邊的門各是一個 Door（兩邊都要寫），開、關、鎖的時候 doors.other_side() 讓兩邊一起變。
+    """
+
+    def __init__(self, keywords, locks, key):
+        self.keywords = keywords            # 名字（區域檔的 keywords 用空白切開）
+        self.locks = locks                  # 門的種類（Locks）
+        self.key = key                      # 鑰匙的遊戲號碼；None 是不用鑰匙（區域檔寫 -1 或 0），這種門鎖不起來
+        self.closed = False
+        self.locked = False
+
+    @property
+    def name(self):
+        """訊息裡的名字：第一個名字，沒寫就叫「門」。"""
+        return self.keywords[0] if self.keywords else "門"
+
+    def set(self, state):
+        """照 DoorState 設定開著、關著、鎖著。"""
+        self.closed = state != DoorState.OPEN
+        self.locked = state == DoorState.LOCKED
 
 
 def parse_flags(value):
@@ -325,11 +425,61 @@ def check_files(paths, reference=()):
     owners("objects", "物品", lambda info: info.objects)
     # 固定裝備：物品可能在別的檔（寫完整號碼），所以用全部讀到的檔（含對照用的）去找物品和生物
     objects, mob_levels = world_items([*paths, *reference])
+    # 門兩邊都要寫：對面的房間可能在別的檔，一樣用全部讀到的檔去找
+    rooms = world_exits([*paths, *reference])
     for path, info in found.items():
         data = read_json(path, [])
         if info.base is not None and isinstance(data, dict):
             check_fixed_items(path.name, data, info.base, objects, mob_levels, problems[path])
+            check_doors(path.name, data, info.base, rooms, problems[path])
     return problems
+
+
+def world_exits(paths):
+    """全部檔案的出口：房間的遊戲號碼 → (檔名, {方向: (通到的遊戲號碼, locks)})。格式不對的就略過（別的規則會報錯）。"""
+    rooms = {}
+    for path in {p.resolve(): p for p in paths}.values():
+        data = read_json(path, [])
+        try:
+            base = data["area"]["header"]["area_number"]
+        except (KeyError, TypeError):
+            continue
+        if not is_int(base):
+            continue
+        for r in data.get("rooms") if isinstance(data.get("rooms"), list) else []:
+            if not (isinstance(r, dict) and is_int(r.get("vnum")) and 1 <= r["vnum"] <= 99 and isinstance(r.get("exits"), dict)):
+                continue
+            exits = {d: (resolve(base, e["to_room"]), e["locks"]) for d, e in r["exits"].items()
+                     if isinstance(e, dict) and is_int(e.get("to_room")) and e["to_room"] >= 1 and is_int(e.get("locks"))}
+            rooms.setdefault(base + r["vnum"], (path.name, exits))
+    return rooms
+
+
+def check_doors(name, data, base, rooms, problems):
+    """門兩邊都要寫：有門的出口通到的房間，往回的出口（反方向）指回這間房的話，那個出口也要有門。
+
+    往回沒有出口（單向出口）、或往回的出口指到別間，不算同一扇門。rooms 是 world_exits() 的結果。寫錯的地方就略過（別的規則會報錯）。
+    算在有門的那一邊；門在別的檔時，沒寫門的這一邊也報（編輯器只檢查一個檔，作者才看得到）。
+    """
+    for r in data.get("rooms") if isinstance(data.get("rooms"), list) else []:
+        if not (isinstance(r, dict) and is_int(r.get("vnum")) and isinstance(r.get("exits"), dict)):
+            continue
+        me = base + r["vnum"]
+        for d, e in r["exits"].items():
+            if not (d in DIRECTIONS and isinstance(e, dict) and is_int(e.get("locks")) and e["locks"] in Locks
+                    and is_int(e.get("to_room")) and e["to_room"] >= 1):
+                continue
+            target = resolve(base, e["to_room"])
+            other, exits = rooms.get(target, (None, {}))
+            back = exits.get(REVERSE[d])
+            if back is None or back[0] != me:
+                continue
+            if e["locks"] != Locks.NO_DOOR and back[1] == Locks.NO_DOOR:
+                problems.append(f"{name}：房間 {me} 往 {d} 的出口有門（locks {e['locks']}），"
+                                f"房間 {target} 往 {REVERSE[d]} 的出口指回來，也要有門（現在 locks 是 0）：門兩邊都要寫")
+            elif e["locks"] == Locks.NO_DOOR and back[1] != Locks.NO_DOOR and other != name:
+                problems.append(f"{name}：房間 {me} 往 {d} 的出口沒有門（locks 0），但 {other} 的房間 {target} "
+                                f"往 {REVERSE[d]} 的出口有門（locks {back[1]}）指到這裡：門兩邊都要寫")
 
 
 def world_items(paths):
@@ -694,8 +844,8 @@ def check_objects(name, data, base, problems):
 
 
 def check_object(where, o, problems):
-    """檢查一個物品（號碼以外的部分）。只看寫法：數字代表什麼（種類、旗標、values…）還沒檢查，
-    只有主手、副手不能同時寫。"""
+    """檢查一個物品（號碼以外的部分）。大多只看寫法：數字代表什麼（種類、旗標、values…）還沒檢查，
+    例外是主手、副手不能同時寫，和武器的種類、拿法、攻擊方式（check_weapon）。"""
     for k in ("keywords", "short"):
         if k in o and not (isinstance(o[k], str) and o[k].strip()):
             problems.append(f"{where}的 {k} 不能是空的")
@@ -719,6 +869,8 @@ def check_object(where, o, problems):
     if "values" in o and not (isinstance(o["values"], list) and len(o["values"]) == 4
                               and all(is_int(v) or isinstance(v, str) for v in o["values"])):
         problems.append(f"{where}的 values 要寫 4 個數字或字串，不能是 {o['values']!r}")
+    elif o.get("item_type") == WEAPON_ITEM_TYPE and "values" in o:
+        check_weapon(where, o, problems)
     if "affects" in o:
         if not isinstance(o["affects"], list):
             problems.append(f"{where}的 affects 要寫成 […]，不能是 {o['affects']!r}")
@@ -731,6 +883,29 @@ def check_object(where, o, problems):
         check_extra_descriptions(where, o["extra_descriptions"], problems)
     if o.get("script") is not None:
         check_script(f"{where}的 script ", o["script"], problems)
+
+
+
+def check_weapon(where, o, problems):
+    """武器（設計文件 §3.3）：種類要是 WeaponKind；雙手的種類一定要勾 512 雙手、單手的不能勾；
+    攻擊方式要是 Attack，而且不能是怪物專用的。"""
+    kind, attack = o["values"][0], o["values"][3]
+    if not (is_int(kind) and kind in [k.value for k in WeaponKind]):
+        problems.append(f"{where}的武器種類（values 第 1 個）要是 1～11，不能是 {kind!r}（見手冊的武器種類表）")
+    else:
+        try:
+            two_handed = bool(parse_flags(o.get("extra_flags")) & ExtraFlag.TWO_HANDED)
+        except ValueError:                  # extra_flags 寫錯，上面已經報過
+            two_handed = None
+        kind = WeaponKind(kind)
+        if two_handed is not None and two_handed != (kind in TWO_HANDED_KINDS):
+            hands, need = ("雙手", "要有") if kind in TWO_HANDED_KINDS else ("單手", "不能有")
+            problems.append(f"{where}是 {kind.value} {WEAPON_KIND_NAMES[kind]}（{hands}），"
+                            f"extra_flags {o.get('extra_flags')!r} {need} 512 雙手")
+    if not (is_int(attack) and attack in [a.value for a in Attack]):
+        problems.append(f"{where}的攻擊方式（values 第 4 個）要是 0～13，不能是 {attack!r}（見手冊的攻擊方式表）")
+    elif attack in MOB_ONLY_ATTACKS:
+        problems.append(f"{where}的攻擊方式 {attack}（{ATTACK_NAMES[Attack(attack)]}）只給怪物用，武器不能用")
 
 
 def check_resets(name, data, problems):
@@ -756,6 +931,8 @@ def check_resets(name, data, problems):
                 problems.append(f"{w}的 {k} 號碼 {r[k]!r} 不對")
         if "direction" in r and r["direction"] not in DIRECTIONS:
             problems.append(f"{w}的 direction {r['direction']!r} 不對（只能是 {'、'.join(DIRECTIONS)}）")
+        if "state" in r and is_int(r["state"]) and r["state"] not in DoorState:
+            problems.append(f"{w}的 state 要是 {min(DoorState)}～{max(DoorState)}（0 開著、1 關著、2 關著而且鎖著），不能是 {r['state']}")
         if "color" in r:
             check_color(w, r["color"], problems)
         # 物品的等級（設計文件 §3.3）：G 寫 null 是用前面那筆 M 的怪物等級；O、P 沒有怪物帶著，一定要寫
@@ -900,5 +1077,9 @@ def build_room(base, r):
     # 名字用空白隔開（例如 "牌子 sign"），存成小寫，英文比對時不分大小寫
     extra_descriptions = [([k.lower() for k in ed["keywords"].split()], ed["description"])
                           for ed in r["extra_descriptions"]]
-    return Room(base + r["vnum"], r["name"], r["description"], exits,
+    room = Room(base + r["vnum"], r["name"], r["description"], exits,
                 RoomFlag(parse_flags(r["room_flags"])), Sector(r["sector"]), exit_descriptions, extra_descriptions)
+    # 有門的出口：鑰匙照號碼規則換算，-1、0 是不用鑰匙
+    room.doors = {d: Door(e["keywords"].split(), Locks(e["locks"]), resolve(base, e["key"]) if e["key"] > 0 else None)
+                  for d, e in r["exits"].items() if e["locks"] != Locks.NO_DOOR}
+    return room

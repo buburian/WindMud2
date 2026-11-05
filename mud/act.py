@@ -2,9 +2,8 @@
 import logging
 import re
 
-from .characters import characters
+from .characters import Position, characters
 from .color import colorize
-from .config import PROMPT
 
 log = logging.getLogger(__name__)
 
@@ -21,6 +20,7 @@ def act(fmt, ch, vch=None, t=None, T=None, to=TO_ROOM):
 
     to：TO_CHAR 自己、TO_VICT 對象、TO_ROOM 同房間自己以外的人、TO_NOTVICT 同房間自己和對象以外的人。
     送給 NPC 等於沒送：NPC 沒有連線，它的 send() 什麼都不做。
+    同房間的事（TO_ROOM、TO_NOTVICT）不送給睡著的人（照 C 版）；TO_VICT 照送，chat、tell 睡著也收得到。
     """
     if to == TO_CHAR:
         readers = [ch]
@@ -28,7 +28,8 @@ def act(fmt, ch, vch=None, t=None, T=None, to=TO_ROOM):
         readers = [vch] if vch is not None and vch is not ch else []
     else:
         readers = [c for c in characters
-                   if c.room == ch.room and c is not ch and (to == TO_ROOM or c is not vch)]
+                   if c.room == ch.room and c is not ch and (to == TO_ROOM or c is not vch)
+                   and c.position > Position.SLEEPING]
     for reader in readers:
         text = fill(fmt, ch, vch, t, T, reader)
         if reader is ch:
@@ -40,10 +41,10 @@ def act(fmt, ch, vch=None, t=None, T=None, to=TO_ROOM):
 def notify(ch, text):
     """主動送給 ch 的訊息（不是 ch 自己下指令引起的，例如別人說話、天氣變化）。
 
-    先換行，才不會接在 ch 的 prompt 後面；說完再補回 prompt。
+    先換行，才不會接在 ch 的 prompt 後面；說完空一行再補回 prompt（跟指令的訊息一樣）。
     text 不轉顏色代碼：act() 傳進來的已經轉過，再轉一次會讓玩家打的 {R 變成顏色。
     """
-    ch.send(f"\n{text}\n{PROMPT}")
+    ch.send(f"\n{text}\n\n{ch.prompt()}")      # 有訊息：prompt 前空一行
 
 
 def fill(fmt, ch, vch, t, T, reader):

@@ -30,7 +30,7 @@ def make_object(vnum):
     """每個欄位都有值的物品（巢狀的也是），各測試再改其中的欄位。"""
     return {
         "vnum": vnum, "keywords": f"obj{vnum}", "short": f"物品{vnum}", "long": "",
-        "item_type": 5, "extra_flags": 0, "wear_flags": "1|8192", "values": [0, 1, 4, 3], "weight": 1, "cost": 0,
+        "item_type": 5, "extra_flags": 0, "wear_flags": "1|8192", "values": [2, 1, 4, 3], "weight": 1, "cost": 0,
         "affects": [{"location": 1, "modifier": 1}],
         "extra_descriptions": [{"keywords": "劍 sword", "description": ""}],
         "script": {"trigger": {"value": 64, "names": ["say"]}, "function": "os_test"},

@@ -31,8 +31,8 @@ export function numberField({ id, label, code, obj, key, style, tip, done }) {
 }
 
 // 下拉選單：options 是 [[數字, 名字], …]
-export function selectField({ id, label, code, obj, key, options, style, done }) {
-  return field({ id, label, code, style, extra: selectArrow(), input: selectInput({
+export function selectField({ id, label, code, obj, key, options, style, tip, done }) {
+  return field({ id, label, code, style, tip, extra: selectArrow(), input: selectInput({
     id, value: obj[key], options, onchange: (e) => { obj[key] = Number(e.target.value); done(); },
   }) });
 }

@@ -1,4 +1,4 @@
-"""最小的 MUD telnet 原型：Big5、Login:、HP100> prompt、chat 廣播。
+"""最小的 MUD telnet 原型：Big5、登入和建立角色、顯示 HP／MP／MV 的 prompt、chat 廣播。
 
 用法：uv run python -m mud [--port 4000] [--host 0.0.0.0]
 指令：chat <話>、quit

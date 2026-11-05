@@ -84,7 +84,12 @@ def item_cap(level, slots, two_handed=False):
 def price(stat, level):
     """stat（屬性代號，例如 "str"、"hp"）每 +1 要幾點。"""
     if stat in PRIMARY_KEYS:
-        # 低於 1 級不往下減：玩家從 1 級開始，不然很低等的怪物（大約 −42 級以下）會除以 0 或負數
-        return max(k * G(level) / (std1 + max(0, level - 1) * POINTS_PER_LEVEL * share)
-                   for k, std1, share in (PRIMARY_PRICE[job][stat] for job in PRIMARY_PRICE))
+        return max(PRIMARY_PRICE[guild][stat][0] * G(level) / standard_primary(guild, stat, level) for guild in PRIMARY_PRICE)
     return SECONDARY_PRICE[stat]
+
+
+def standard_primary(guild, stat, level):
+    """公會 guild（"phys"、"spell"）在 level 級的標準主屬性 stat：創角的標準值 ＋ 升級加的（照這個主屬性分到的比例）。"""
+    _, std1, share = PRIMARY_PRICE[guild][stat]
+    # 低於 1 級不往下減：玩家從 1 級開始，不然很低等的怪物（大約 −42 級以下）會除以 0 或負數
+    return std1 + max(0, level - 1) * POINTS_PER_LEVEL * share

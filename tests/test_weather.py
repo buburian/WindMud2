@@ -162,7 +162,7 @@ def test_only_awake_players_outside_are_told(world, monkeypatch):
     sleeping = player("小美", world.rooms[101], Position.SLEEPING)
     inside = player("Bob", world.rooms[102])
     weather.tick(FakeRng())
-    want = "\r\n太陽緩緩地從東邊升起，照亮了整塊世界。\r\n天空上面累積著雲層。\r\nHP100> ".encode(ENCODING)
+    want = "\r\n太陽緩緩地從東邊升起，照亮了整塊世界。\r\n天空上面累積著雲層。\r\n\r\n> ".encode(ENCODING)
     assert out.writer.data == want and resting.writer.data == want
     assert sleeping.writer.data == b"" and inside.writer.data == b""
 
@@ -171,17 +171,17 @@ def test_weather_command_outside(world, monkeypatch):
     ming = player("小明", world.rooms[101])
     monkeypatch.setattr(weather, "current", Weather(hour=14, sky=Sky.CLOUDLESS, change=3))
     commands.command(ming, "weather")
-    assert ming.writer.data == "現在是 14 點，天氣晴朗無雲，還有暖暖的南風徐徐的吹來。\r\nHP100> ".encode(ENCODING)
+    assert ming.writer.data == "現在是 14 點，天氣晴朗無雲，還有暖暖的南風徐徐的吹來。\r\n\r\n> ".encode(ENCODING)
     ming.writer.data = b""
     monkeypatch.setattr(weather, "current", Weather(hour=2, sky=Sky.RAINING, change=-1))
     commands.command(ming, "wea")
-    assert ming.writer.data == "現在是 2 點，天氣下著大雨，還有冷冷的北風颼颼的吹來。\r\nHP100> ".encode(ENCODING)
+    assert ming.writer.data == "現在是 2 點，天氣下著大雨，還有冷冷的北風颼颼的吹來。\r\n\r\n> ".encode(ENCODING)
 
 
 def test_weather_command_inside(world):
     bob = player("Bob", world.rooms[102])
     commands.command(bob, "weather")
-    assert bob.writer.data == "你現在在室內是看不到天氣的。\r\nHP100> ".encode(ENCODING)
+    assert bob.writer.data == "你現在在室內是看不到天氣的。\r\n\r\n> ".encode(ENCODING)
 
 
 def test_w_is_still_west():

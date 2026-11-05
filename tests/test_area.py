@@ -79,11 +79,26 @@ def manual_table(marker):
     pytest.param("### affects（加成）", area.Apply, id="affects"),
     pytest.param("### wear_flags（拿起來、穿在哪裡）", area.WearFlag, id="wear_flags"),
     pytest.param("### extra_flags（特性旗標）", area.ExtraFlag, id="extra_flags"),
+    pytest.param("### act（行為旗標）", area.ActFlag, id="act"),
 ])
 def test_definitions_match_manual(marker, cls):
     # 手冊表格的「數字、C 版名稱」跟程式裡的定義要一模一樣（中文意思寫在註解，測試看不到）
     want = [(int(number), name.upper()) for number, name, _ in manual_table(marker)]
     assert [(m.value, m.name) for m in cls] == want
+
+
+def test_weapon_kinds_match_manual():
+    # 手冊「武器種類」的表：數字、名稱、種類、拿法、預設攻擊方式（數字和中文）
+    want = [[str(k.value), k.name.lower(), area.WEAPON_KIND_NAMES[k], "雙手" if k in area.TWO_HANDED_KINDS else "單手",
+             f"{area.DEFAULT_ATTACK[k].value} {area.ATTACK_NAMES[area.DEFAULT_ATTACK[k]]}"] for k in area.WeaponKind]
+    assert manual_table("### 武器種類") == want
+
+
+def test_attacks_match_manual():
+    # 手冊的攻擊方式表一列放兩組（數字、意思、數字、意思）；名字是 Merc 的，手冊沒有，只比數字和中文
+    rows = manual_table("### 武器的攻擊方式")
+    pairs = sorted((int(row[i]), row[i + 1]) for row in rows for i in (0, 2) if row[i])
+    assert pairs == [(a.value, area.ATTACK_NAMES[a]) for a in area.Attack]
 
 
 def test_area_types_match_manual():

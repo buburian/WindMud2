@@ -4,7 +4,7 @@ import logging
 import pytest
 
 from area_helpers import make_room, write_area
-from mud import fight, weather, zones
+from mud import fight, stats, weather, zones
 from mud.act import TO_ROOM, act
 from mud.area import AreaType
 from mud.characters import Position, characters
@@ -128,6 +128,19 @@ def test_weather_moves_every_hour_ticks(folder, monkeypatch):
     for _ in range(60):
         zones.world.tick()
     assert moved == [30, 60]
+
+
+def test_world_tick_regens_every_player_every_30_ticks(folder):
+    # 每 REGEN_TICKS（30）個世界 tick 回復一次；動態區域、副本裡的玩家也是世界 tick 一起回
+    ming = player("Ming", zones.world.rooms[101])
+    ming.race, ming.guild, ming.primaries = stats.Race.HUMAN, stats.Guild.SWORD, dict(stats.RACE_PRIMARIES[stats.Race.HUMAN])
+    stats.recompute(ming)
+    ming.hp = 1.0
+    for _ in range(29):
+        zones.world.tick()
+    assert ming.hp == 1.0
+    zones.world.tick()
+    assert ming.hp == pytest.approx(1 + ming.panel["hp"] * 0.10)      # 站著回 10%
 
 
 def test_tick_error_only_affects_that_zone(folder, fast, monkeypatch, caplog):

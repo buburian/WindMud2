@@ -50,8 +50,8 @@
       "exits": {
         "south": {
           "description": "往南看，是測試區域南邊的房間。\n",
-          "keywords": "",
-          "locks": 0,
+          "keywords": "木門 door",
+          "locks": 1,
           "key": -1,
           "to_room": 1
         }
@@ -194,10 +194,10 @@
       "short": "測試長劍",
       "long": "一把測試長劍插在地上。",
       "item_type": 5,
-      "extra_flags": "1|64|512",
+      "extra_flags": "1|64",
       "wear_flags": "1|8192",
       "values": [
-        0,
+        2,
         0,
         0,
         3

@@ -1,11 +1,17 @@
 """系統類指令。每個指令都長 do_xxx(ch, arg)：ch 是下指令的角色，回傳 False 代表要斷線。"""
-from .. import weather, zones
+import logging
+import re
+
+from .. import save, stats, weather, zones
 from ..act import TO_CHAR, TO_ROOM, TO_VICT, act
 from ..area import DIRECTIONS, REVERSE
-from ..characters import characters
+from ..characters import SEX_FEMALE, SEX_MALE, Position, characters
 from ..color import colorize
+from ..config import ENCODING
+from ..npcs import Npc
 from ..players import online_players
-from ..save import save_player
+
+log = logging.getLogger(__name__)
 
 
 def do_look(ch, arg):
@@ -22,10 +28,12 @@ def do_look(ch, arg):
     direction = next((d for d in DIRECTIONS if d.startswith(target)), None)
     if direction is None:
         ch.send("在這裡找不到你要看的東西。\n")
-    elif room.exit_descriptions.get(direction):
-        ch.send(block(room.exit_descriptions[direction]))
-    else:                                   # 那個方向沒有出口，或出口沒寫描述
-        ch.send("那裡沒有什麼特別的東西。\n")
+        return
+    text = room.exit_descriptions.get(direction)
+    ch.send(block(text) if text else "那裡沒有什麼特別的東西。\n")    # 沒寫描述，或那個方向沒有出口
+    door = room.doors.get(direction)
+    if door is not None:                    # 照 C 版接著說門的狀態；C 版沒寫名字就不說，我們叫它「門」
+        ch.send(f"{door.name}是{'關著' if door.closed else '開著'}的。\n")
 
 
 def block(text):
@@ -35,21 +43,49 @@ def block(text):
 
 
 def look(ch):
-    """ch 所在房間的樣子：名稱、出口、描述、同房間的其他角色。登入時也用這個。"""
+    """ch 所在房間的樣子：名稱、出口、描述，空一行再列房間裡的東西。登入時也用這個。
+
+    順序（使用者定的）：先生物（NPC），再玩家，最後是地上的物品（物品還沒做，做的時候接在玩家後面）。
+    生物和玩家都是亮白。名字不經過 colorize()：玩家名字只有英文字母，之後 NPC 用區域作者寫的描述時再看要不要轉顏色代碼。
+    """
     room = ch.room
-    exits ="".join(" {C" + DIRECTIONS[d] for d in DIRECTIONS if d in room.exits) or " 沒有"
+    # 關著的門是紫色的 *北（照 C 版），其他出口亮青色
+    exits = "".join((" {M*" if d in room.doors and room.doors[d].closed else " {C") + DIRECTIONS[d]
+                    for d in DIRECTIONS if d in room.exits) or " 沒有"
     # 房間的文字是區域作者寫的，可以用顏色代碼；角色名字是後面才接上去的，不會被轉
     text = colorize("{G【{Y" + room.name + "{G】{x\n{G【出口：" + exits + "{G】{x\n" + room.description)
     if not text.endswith("\n"):
         text += "\n"
-    for c in characters:                    # 同房間的其他角色，玩家和 NPC 都算
-        if c is not ch and c.room == ch.room:
-            text += f"{c.name}站在這裡。\n"
+    others = [c for c in characters if c is not ch and c.room == ch.room]
+    shown_here = [c for c in others if isinstance(c, Npc)] + [c for c in others if not isinstance(c, Npc)]
+    if shown_here:
+        text += "\n" + "".join(f"{WHITE}{appearance(c)}{RESET}\n" for c in shown_here)
     return text
+
+
+def appearance(c):
+    """房間裡看到 c 的那一行：站著的生物有 long 就顯示 long（照 C 版），其他照姿勢寫「名字站在這裡。」…"""
+    if isinstance(c, Npc) and c.position == Position.STANDING and c.long:
+        return c.long.rstrip("\n")
+    return f"{c.name}{LOOK_POSITIONS.get(c.position, '在這裡')}。"
+
+
+WHITE, RESET = colorize("{W"), colorize("{x")
+
+
+LOOK_POSITIONS = {
+    Position.STANDING: "站在這裡", Position.RESTING: "坐在這裡休息",
+    Position.SLEEPING: "躺在這裡睡覺", Position.FIGHTING: "正在這裡戰鬥",
+}
 
 
 def move(ch, direction):
     vnum = ch.room.exits.get(direction)
+    door = ch.room.doors.get(direction)
+    if door is not None and door.closed:
+        # 手冊定的：有名字是「【木門】關起來了。」，沒寫名字用方向「北方關起來了。」
+        ch.send(f"【{door.keywords[0]}】關起來了。\n" if door.keywords else f"{DIRECTIONS[direction]}方關起來了。\n")
+        return
     # 在副本、動態區域裡走會留在同一份；走進還沒建立的動態區域時，room_at 會建立它
     to = zones.room_at(ch.room, vnum) if vnum is not None else None
     if to is None:
@@ -127,7 +163,194 @@ def do_weather(ch, arg):
 
 
 def do_quit(ch, arg):
-    save_player(ch.name)
     ch.send("再見。\n")
-    # 移出角色名單、關連線都在 server.handle() 的 finally，這裡不重複做
+    # 存檔、移出角色名單、關連線都在 server.handle() 的 finally（直接斷線也走那裡），這裡不重複做
     return False
+
+
+SCORE_BAR = 20                              # score 的 HP／MP／MV 條有幾格
+SCORE_ROWS = [                              # score 下半部：(標題, 一列裡的屬性)，一列最多三格
+    ("攻擊", ("dmg_phys", "dmg_spell", "hit")),
+    ("", ("crit", "critdmg", "speed")),
+    ("防禦", ("dodge", "res_phys", "res_spell")),
+    ("", ("res_dragon", "ac")),
+]
+BAR_COLORS = {"hp": "{R", "mp": "{B", "mv": "{G"}
+
+
+def width(text):
+    """畫面上佔幾格：Big5 中文字 2 bytes 也佔 2 格，所以就是 cp950 的 byte 數。text 不能有顏色代碼。"""
+    return len(text.encode(ENCODING))
+
+
+def pad(text, n):
+    return text + " " * max(0, n - width(text))
+
+
+def rpad(text, n):
+    """靠右：數字用。"""
+    return " " * max(0, n - width(text)) + text
+
+
+def plain(text):
+    """拿掉顏色代碼，算寬度用。"""
+    return re.sub(r"\{.", "", text)
+
+
+def bar(now, top, color):
+    full = min(SCORE_BAR, stats.shown(now / top * SCORE_BAR)) if top > 0 else 0
+    return "[" + color + "=" * full + "{D" + "-" * (SCORE_BAR - full) + "{x]"
+
+
+def do_score(ch, arg):
+    """看自己的全部屬性（有框、有 HP／MP／MV 條，使用者選的樣子）。公會用不到的傷害變暗。"""
+    panel = getattr(ch, "panel", None)
+    if not panel:                           # NPC、還沒有屬性的角色
+        ch.send("你沒有屬性可以看。\n")
+        return
+    names = stats.STAT_NAMES
+    sex = {SEX_MALE: "男", SEX_FEMALE: "女"}.get(ch.sex, "無")
+    unused = stats.GUILD_DAMAGE[stats.Guild.STAFF if ch.guild == stats.Guild.SWORD else stats.Guild.SWORD]
+    # 名字只有英文字母（login.py 檢查過），不會有顏色代碼混進來
+    lines = [
+        " {G【{Y" + ch.name + "{G】{x {W" + stats.RACE_NAMES[ch.race] + "{D｜{C" + stats.GUILD_NAMES[ch.guild]
+        + "{D｜{x等級 {Y" + str(ch.level) + "{D｜{x" + sex + ("{D｜{Mimm{x" if ch.imm else ""),
+        None,                               # 框線
+        " {C主屬性{x  " + "  ".join(names[k] + " {W" + rpad(str(ch.primaries[k]), 2) + "{x" for k in stats.PRIMARY_KEYS)
+        + (f"  {{Y可分配 {ch.points}{{x" if ch.points else ""),
+        "",
+    ]
+    for k in ("hp", "mp", "mv"):
+        now, top = getattr(ch, k), panel[k]
+        lines.append(" " + pad(names[k], 4) + bar(now, top, BAR_COLORS[k])
+                     + "  {W" + rpad(str(stats.shown(now)), 5) + "{x / " + str(stats.shown(top)))   # 100 級穿裝備的 HP 會到 5 位數
+    lines.append("")
+    for title, keys in SCORE_ROWS:
+        cells = []
+        for k in keys:
+            name, value = pad(names[k], 8), rpad(str(stats.shown(panel[k])), 4)
+            cells.append("{D" + name + value + "{x" if k == unused else name + "{W" + value + "{x")
+        lines.append(" " + ("{C" + pad(title, 4) + "{x" if title else "    ") + "  " + "   ".join(cells))
+    rule = "{D" + "=" * max(width(plain(line)) for line in lines if line) + "{x"
+    lines[1] = rule
+    ch.send(colorize("\n".join([rule, *lines, rule])) + "\n")
+
+
+PRIMARY_WORDS = {**{k: k for k in stats.PRIMARY_KEYS}, **{stats.STAT_NAMES[k]: k for k in stats.PRIMARY_KEYS}}
+
+
+def do_train(ch, arg):
+    """train <屬性> [點數]：把升級得到的主屬性點數加上去（每項最高 PRIMARY_CAP）。只打 train 是看點數和用法。"""
+    if not getattr(ch, "panel", None):      # NPC、還沒有屬性的角色
+        ch.send("你沒有屬性可以分配。\n")
+        return
+    names = stats.STAT_NAMES
+    if not arg:
+        ch.send("  ".join(f"{names[k]} {ch.primaries[k]}" for k in stats.PRIMARY_KEYS)
+                + f"\n還沒分配的點數：{ch.points}\n用法：train <屬性> [點數]，例如 train str 5\n")
+        return
+    if not ch.points:
+        ch.send("你沒有可以分配的點數。\n")
+        return
+    word, _, amount = arg.partition(" ")
+    key = PRIMARY_WORDS.get(word.lower())
+    if key is None:
+        ch.send("要加哪一項？str int wis con dex（或力量、智慧、知識、體質、敏捷）\n")
+        return
+    amount = amount.strip() or "1"
+    if not amount.isdigit() or int(amount) < 1:
+        ch.send("點數要寫 1 以上的整數。\n")
+        return
+    n, room = int(amount), stats.PRIMARY_CAP - ch.primaries[key]
+    if n > ch.points:
+        ch.send(f"你只有 {ch.points} 點。\n")
+        return
+    if room <= 0:
+        ch.send(f"{names[key]}已經是最高的 {stats.PRIMARY_CAP} 了。\n")
+        return
+    if n > room:
+        ch.send(f"{names[key]}最多 {stats.PRIMARY_CAP}，現在 {ch.primaries[key]}，最多再加 {room} 點。\n")
+        return
+    stats.train(ch, key, n)
+    ch.send(f"你把 {n} 點加到{names[key]}，現在{names[key]} {ch.primaries[key]}，還剩 {ch.points} 點。\n")
+
+
+# ---- 姿勢：rest、sleep、stand（訊息照 C 版 act_move.c）----
+
+def do_rest(ch, arg):
+    if ch.position == Position.FIGHTING:
+        ch.send("你正處於戰鬥狀態之中了!!\n")
+    elif ch.position == Position.RESTING:
+        ch.send("你已經在休息了啊。\n")
+    elif ch.position == Position.SLEEPING:   # C 版沒有這條路：醒過來坐著休息
+        ch.position = Position.RESTING
+        ch.send("你醒過來，坐著休息。\n")
+        act("$n醒過來，坐著休息。", ch, to=TO_ROOM)
+    else:
+        ch.position = Position.RESTING
+        ch.send("你坐下來休息。\n")
+        act("$n坐下來休息。", ch, to=TO_ROOM)
+
+
+def do_sleep(ch, arg):
+    if ch.position == Position.FIGHTING:
+        ch.send("你正處於戰鬥狀態之中了!!\n")
+    elif ch.position == Position.SLEEPING:
+        ch.send("你已經睡得很熟了。\n")
+    else:
+        ch.position = Position.SLEEPING
+        ch.send("你一躺下就睡著了。\n")
+        act("$n一躺下就睡著了。", ch, to=TO_ROOM)
+
+
+def do_stand(ch, arg):
+    if ch.position == Position.FIGHTING:
+        ch.send("你正處於戰鬥狀態之中了!!\n")
+    elif ch.position == Position.STANDING:
+        ch.send("你不是已經站起來了嗎？\n")
+    elif ch.position == Position.SLEEPING:
+        ch.position = Position.STANDING
+        ch.send("你醒過來，站了起來。\n")
+        act("$n醒過來，站了起來。", ch, to=TO_ROOM)
+    else:
+        ch.position = Position.STANDING
+        ch.send("你站了起來。\n")
+        act("$n站了起來。", ch, to=TO_ROOM)
+
+
+def do_say(ch, arg):
+    """說話：同房間醒著的人聽得到（亮白色，照 C 版）。玩家打的字用 $t 帶進去，不會被當成顏色代碼。"""
+    if not arg:
+        ch.send("你想說些什麼呢？\n")
+        return
+    act("{W你說：『$t』{x", ch, t=arg, to=TO_CHAR)
+    act("{W$n說：『$t』{x", ch, t=arg, to=TO_ROOM)
+
+
+def do_who(ch, arg):
+    """線上玩家：等級高的在前面。顏色跟 score 一致；名字只有英文字母（login.py 檢查過），不會混進顏色代碼。"""
+    players = sorted(online_players(), key=lambda p: (-p.level, p.name))
+    lines = ["{G【{Y線上玩家{G】{x"]
+    for p in players:
+        if p.panel:
+            info = ("{Y" + rpad(str(p.level), 3) + "{x " + pad(stats.RACE_NAMES[p.race], 6)
+                    + " " + pad(stats.GUILD_NAMES[p.guild], 8))
+        else:                               # 沒有屬性（只有測試直接建的玩家）
+            info = pad("－", 3 + 1 + 6 + 1 + 8)
+        lines.append(" [" + info + "] {W" + p.name + "{x" + ("{M（imm）{x" if p.imm else ""))
+    lines.append(f"共 {len(players)} 人。")
+    ch.send(colorize("\n".join(lines)) + "\n")
+
+
+def do_save(ch, arg):
+    """手動存檔（離線時也會自動存）。什麼姿勢都能用（照 C 版）。"""
+    if not getattr(ch, "panel", None):      # NPC、還沒有屬性的角色
+        ch.send("你沒有可以存的資料。\n")
+        return
+    try:
+        save.save_player(ch)
+    except OSError:
+        log.exception(f"{ch.name} 存檔失敗")
+        ch.send("存檔失敗了，請告訴管理員。\n")
+        return
+    ch.send("存檔好了。\n")

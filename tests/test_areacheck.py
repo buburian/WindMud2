@@ -177,6 +177,7 @@ RULES = [
     pytest.param(lambda d: reset(d, "P").update(level=1.5), "（P）的 level 是物品的等級", id="P 等級小數"),
     pytest.param(lambda d: reset(d, "O").pop("level"), "（O）少了欄位 level", id="O 少等級"),
     pytest.param(lambda d: reset(d, "D").update(direction="northeast"), "direction 'northeast' 不對", id="D 方向"),
+    pytest.param(lambda d: reset(d, "D").update(state=3), "state 要是 0～2", id="D 的 state"),
     pytest.param(lambda d: reset(d, "R").update(exit_count="4"), "exit_count 要是整數", id="R exit_count"),
     pytest.param(lambda d: reset(d, "*").update(comment=None), "comment 要是字串", id="註解不是字串"),
 ]
@@ -323,6 +324,8 @@ def fixed_area(objects, resets=(), mobiles=()):
 def armed(vnum, affects, wear="1|8192", extra=0):
     o = make_object(vnum)
     o.update(wear_flags=wear, extra_flags=extra, affects=affects)
+    if extra & 512:
+        o["values"][0] = 8                  # 雙手要用雙手的武器種類（8 大劍）
     return o
 
 
@@ -409,6 +412,7 @@ def test_fixed_item_in_drops_uses_mob_level(tmp_path):
 def test_two_handed_needs_wield(tmp_path):
     # 512 雙手只對有主手位置的物品有用：頭盔勾了也還是頭的上限
     helm = armed(1, [{"location": 6, "modifier": 10}], wear="1|16", extra=512)
+    helm["item_type"] = 9                   # 護具（不是武器，武器種類的檢查不管它）
     o = {"cmd": "O", "if_flag": 0, "obj_vnum": 1, "color": "white", "level": 1, "limit": 0, "room_vnum": 1, "comment": ""}
     assert "1 級頭、白色的上限 5.73" in problems_of(tmp_path, fixed_area([helm], [o]))[0]
 
@@ -426,3 +430,51 @@ def test_fixed_item_from_another_file(tmp_path):
     b = write_area(tmp_path, "b.json", [make_room(1)], area_number=200, objects=[sword])
     found = area.check_files([a, b], [a, b])
     assert found[b] == [] and "放出物品 201「物品1」" in found[a][0]
+
+
+# ---- 武器：種類、拿法、攻擊方式（設計文件 §3.3，手冊「武器種類」） ----
+
+def weapon(values, extra=0, item_type=5):
+    o = make_object(1)
+    o.update(values=values, extra_flags=extra, item_type=item_type, affects=[])
+    return fixed_area([o])
+
+
+@pytest.mark.parametrize("values, extra", [
+    ([1, 0, 0, 2], 0),          # 匕首、預設戳刺
+    ([7, 0, 0, 5], "1|64"),     # 拳爪
+    ([8, 0, 0, 13], 512),       # 大劍要勾雙手
+    ([11, 0, 0, 3], "1|512"),   # 長槍：攻擊方式可以改成別的武器攻擊方式
+])
+def test_good_weapons(tmp_path, values, extra):
+    assert problems_of(tmp_path, weapon(values, extra)) == []
+
+
+@pytest.mark.parametrize("kind", [0, 12, -1, "長劍"])
+def test_weapon_kind_must_be_1_to_11(tmp_path, kind):
+    assert problems_of(tmp_path, weapon([kind, 0, 0, 1])) == [
+        f"a.json：物品 1 的武器種類（values 第 1 個）要是 1～11，不能是 {kind!r}（見手冊的武器種類表）"]
+
+
+def test_two_handed_kind_needs_512_and_one_handed_must_not(tmp_path):
+    assert problems_of(tmp_path, weapon([9, 0, 0, 3], "1|64")) == [
+        "a.json：物品 1 是 9 戰斧（雙手），extra_flags '1|64' 要有 512 雙手"]
+    assert problems_of(tmp_path, weapon([2, 0, 0, 1], 512)) == [
+        "a.json：物品 1 是 2 長劍（單手），extra_flags 512 不能有 512 雙手"]
+
+
+@pytest.mark.parametrize("attack, name", [(0, "重擊"), (10, "利牙"), (12, "吸取")])
+def test_mob_only_attacks(tmp_path, attack, name):
+    assert problems_of(tmp_path, weapon([1, 0, 0, attack])) == [
+        f"a.json：物品 1 的攻擊方式 {attack}（{name}）只給怪物用，武器不能用"]
+
+
+@pytest.mark.parametrize("attack", [14, -1, "stab"])
+def test_attack_must_be_0_to_13(tmp_path, attack):
+    assert problems_of(tmp_path, weapon([1, 0, 0, attack])) == [
+        f"a.json：物品 1 的攻擊方式（values 第 4 個）要是 0～13，不能是 {attack!r}（見手冊的攻擊方式表）"]
+
+
+def test_only_weapons_are_checked(tmp_path):
+    # 護具的 values 第 1、4 個意思不一樣，武器的規則不管它
+    assert problems_of(tmp_path, weapon([0, 0, 0, 12], item_type=9)) == []

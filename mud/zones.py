@@ -15,11 +15,12 @@ import json
 import logging
 from pathlib import Path
 
-from . import area, fight, weather
+from . import area, fight, resets, stats, weather
 from .area import AreaType
 from .characters import characters
 from .clock import cancel, every
-from .config import HOUR_TICKS, RELEASE_TICKS, START_ROOM, TICK_SECONDS
+from .config import AREA_TICKS, HOUR_TICKS, REGEN_TICKS, RELEASE_TICKS, START_ROOM, TICK_SECONDS
+from .npcs import Npc
 from .players import online_players
 
 log = logging.getLogger(__name__)
@@ -32,6 +33,7 @@ class Zone:
         self.kind = kind                    # AreaType
         self.name = name                    # 給 log 看的名字：世界是「世界」，其他是檔名
         self.rooms = {}                     # 遊戲號碼 → Room（room.zone 指回這裡）
+        self.areas = []                     # 這裡有哪些區域檔（resets.AreaReset，各自算重置的時間）；room.area 指到其中一個
         self.fights = set()                 # 這裡正在跑的戰鬥（fight.Fight）
         self.task = None                    # 自己的 tick loop：只有副本有，世界和動態區域由世界 tick 來做
         self.key = None                     # 副本在 instances 裡的 (檔名, 擁有者)
@@ -39,20 +41,29 @@ class Zone:
         self.empty_ticks = 0                # 連續幾個 tick 沒有玩家
         self.released = False
 
-    def add_rooms(self, base, data):
-        """把一個區域檔（已經檢查過）的房間建進這個區域物件。"""
+    def add_area(self, name, base, data):
+        """把一個區域檔（已經檢查過）建進這個區域物件：房間，和重置要用的資料。"""
+        reset = resets.AreaReset(name, base, data)
+        self.areas.append(reset)
         for r in data["rooms"]:
             room = area.build_room(base, r)
-            room.zone = self
+            room.zone, room.area = self, reset
             self.rooms[room.vnum] = room
 
     def tick(self):
         """這個區域物件一次 tick 要做的事。世界：每 HOUR_TICKS 走一次天氣；動態區域、副本：沒有玩家太久就釋放。
         世界的變換之後加在這裡，用「每幾個 tick 做一次」（self.ticks % N == 0）。"""
         self.ticks += 1
+        if self.ticks % AREA_TICKS == 0:
+            resets.update(self)             # 照 C 版：沒有玩家約 3 分鐘、有玩家約 15 分鐘重置一次
         if self.kind == AreaType.WORLD:
             if self.ticks % HOUR_TICKS == 0:
                 weather.tick()              # 全遊戲一個天氣，只由世界 tick 走時間
+            if self.ticks % REGEN_TICKS == 0:
+                # 回復掛在角色身上，所有在線玩家一起回（副本裡的也是）：放在各區域的 tick 會因為節拍不同步，走來走去多回或少回
+                for p in online_players():
+                    if p.panel:
+                        stats.regen(p)
             return
         if any(p.room.zone is self for p in online_players()):
             self.empty_ticks = 0
@@ -84,13 +95,15 @@ def load(directory):
         more = f"（共 {len(found)} 個問題，用 uv run python -m mud.areacheck 看全部）" if len(found) > 1 else ""
         raise ValueError(found[0] + more)
     new_world = Zone(AreaType.WORLD, "世界")
-    new_templates, new_dynamic_rooms = {}, {}
+    new_templates, new_dynamic_rooms, new_mobiles = {}, {}, {}
     for path in paths:
         data = json.loads(path.read_text(encoding="utf-8"))
         header = data["area"]["header"]
         kind, base = AreaType(header["type"]), header["area_number"]
+        for m in data["mobiles"]:           # 生物用遊戲號碼收成一張表：M 可以放別的區域檔的生物
+            new_mobiles[area.resolve(base, m["vnum"])] = m
         if kind == AreaType.WORLD:
-            new_world.add_rooms(base, data)
+            new_world.add_area(path.name, base, data)
             continue
         new_templates[path.name] = (kind, base, data)
         if kind == AreaType.DYNAMIC:
@@ -98,13 +111,15 @@ def load(directory):
                 new_dynamic_rooms[base + r["vnum"]] = path.name
     stop()
     world, templates, dynamic_rooms = new_world, new_templates, new_dynamic_rooms
+    resets.mobiles = new_mobiles
+    resets.reset_zone(world)                # 世界一開機就放好生物
     counts = {k: sum(1 for t in templates.values() if t[0] == k) for k in (AreaType.DYNAMIC, AreaType.INSTANCE)}
     log.info(f"載入 {len(paths)} 個區域檔：世界 {len(world.rooms)} 間房；"
              f"動態區域 {counts[AreaType.DYNAMIC]} 個、副本區域 {counts[AreaType.INSTANCE]} 個，要用時才建立")
 
 
 def stop():
-    """停掉全部的區域物件：世界 tick、副本的 tick、所有戰鬥，清空名單。"""
+    """停掉全部的區域物件：世界 tick、副本的 tick、所有戰鬥，清空名單，拿掉所有生物（重新載入時重新放）。"""
     global world_task
     cancel(world_task)
     world_task = None
@@ -115,6 +130,7 @@ def stop():
             cancel(zone.task)
     dynamic.clear()
     instances.clear()
+    characters[:] = [c for c in characters if not isinstance(c, Npc)]
 
 
 def start():
@@ -149,17 +165,24 @@ def room_at(from_room, vnum):
     先找自己所在的區域物件，所以在副本、動態區域裡走，會留在同一份。
     再找世界，最後看是不是動態區域的房間：那個動態區域還沒建立就建立一份。
     """
+    room = find_room(from_room, vnum)
+    name = dynamic_rooms.get(vnum)
+    if room is None and name is not None:
+        dynamic[name] = _build(name)
+        resets.reset_zone(dynamic[name])
+        log.info(f"建立動態區域 {name}")
+        room = dynamic[name].rooms[vnum]
+    return room
+
+
+def find_room(from_room, vnum):
+    """跟 room_at() 一樣的順序找房間，但不會建立動態區域：還沒建立就是 None（例如門的對面還沒有人去過）。"""
     if vnum in from_room.zone.rooms:
         return from_room.zone.rooms[vnum]
     if vnum in world.rooms:
         return world.rooms[vnum]
     name = dynamic_rooms.get(vnum)
-    if name is None:
-        return None
-    if name not in dynamic:
-        dynamic[name] = _build(name)
-        log.info(f"建立動態區域 {name}")
-    return dynamic[name].rooms[vnum]
+    return dynamic[name].rooms[vnum] if name in dynamic else None
 
 
 def instance(name, owner):
@@ -171,6 +194,7 @@ def instance(name, owner):
         raise ValueError(f"{name} 不是副本區域")
     zone = instances[key] = _build(name)
     zone.key = key
+    resets.reset_zone(zone)
     zone.task = asyncio.create_task(every(TICK_SECONDS, lambda: _instance_tick(zone)), name=f"副本 {name} 的 tick")
     log.info(f"建立副本 {name}（擁有者 {owner}）")
     return zone
@@ -199,5 +223,5 @@ def release(zone):
 def _build(name):
     kind, base, data = templates[name]
     zone = Zone(kind, name)
-    zone.add_rooms(base, data)
+    zone.add_area(name, base, data)
     return zone

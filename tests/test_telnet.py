@@ -1,5 +1,5 @@
 from mud.config import ENCODING, MAX_LINE
-from mud.telnet import BINARY, DO, DONT, IAC, SB, SE, START, WILL, WONT, Telnet, encode
+from mud.telnet import BINARY, DO, DONT, ECHO, IAC, SB, SE, START, WILL, WONT, Telnet, encode
 
 
 def test_newlines_each_count_once():
@@ -43,6 +43,23 @@ def test_start_asks_for_binary_and_accepts_will():
     assert tn.replies == b""
     tn.feed(bytes([IAC, DO, BINARY]))
     assert tn.replies == bytes([IAC, WONT, BINARY])
+
+
+def test_echo_off_accepts_do_echo():
+    # 打密碼：我們說 WILL ECHO，對方回 DO ECHO 是答應，不能再回 WONT（那樣又把回顯打開了）
+    tn = Telnet()
+    assert tn.echo_off() == bytes([IAC, WILL, ECHO])
+    assert tn.feed(bytes([IAC, DO, ECHO]) + b"secret\r\n") == ["secret"]
+    assert tn.replies == b""
+    assert tn.echo_on() == bytes([IAC, WONT, ECHO])
+    tn.feed(bytes([IAC, DONT, ECHO]))       # 對方答應恢復回顯，不用回
+    assert tn.replies == b""
+
+
+def test_do_echo_without_asking_is_refused():
+    tn = Telnet()
+    tn.feed(bytes([IAC, DO, ECHO]))
+    assert tn.replies == bytes([IAC, WONT, ECHO])
 
 
 def test_subnegotiation_dropped():

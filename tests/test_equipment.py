@@ -1,12 +1,7 @@
-import importlib.util
-import sys
-from pathlib import Path
-
 import pytest
 
+from balance_loader import load_balance
 from mud import equipment
-
-BALANCE = Path(__file__).resolve().parents[2] / "mud_design" / "sim" / "balance.py"
 
 # balance.py 的部位名稱 → 我們的部位代號
 SLOT_KEYS = {
@@ -19,21 +14,9 @@ COLOR_KEYS = {"灰": "gray", "白": "white", "藍": "blue", "紫": "purple", "�
 
 @pytest.fixture(scope="module")
 def balance():
-    """直接讀 mud_design 的 balance.py（唯讀：不寫 .pyc，也不把 sim/ 加進 sys.path）。
-
-    只有找不到 mud_design 才跳過；讀得到卻載入失敗要讓測試失敗，不然數字不同步也看不出來。
-    """
-    if not BALANCE.exists():
+    module = load_balance()
+    if module is None:
         pytest.skip("找不到 mud_design/sim/balance.py")
-    old = sys.dont_write_bytecode
-    sys.dont_write_bytecode = True
-    try:
-        spec = importlib.util.spec_from_file_location("mud_design_balance", BALANCE)
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[spec.name] = module             # dataclass 要從 sys.modules 找到自己的模組
-        spec.loader.exec_module(module)
-    finally:
-        sys.dont_write_bytecode = old
     return module
 
 

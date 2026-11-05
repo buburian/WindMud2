@@ -45,7 +45,7 @@ def dog(online):
 
 def to_other(text):
     # 送給別人：前面換行、後面補對方的 prompt
-    return f"\r\n{text}\r\nHP100> "
+    return f"\r\n{text}\r\n\r\n> "
 
 
 def test_n_is_you_for_self_and_name_for_others(online):

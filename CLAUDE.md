@@ -32,6 +32,10 @@ uv run python -m mud.builder                      # 區域編輯器，瀏覽器�
   `tests/test_log.py` 測紀錄檔的編號、換檔和刪舊檔；`tests/test_area.py` 測區域載入，也比對手冊的數字表跟程式的定義；`tests/test_areacheck.py` 測區域檔檢查的每條規則；
   要自己做區域檔的測試，用 `tests/area_helpers.py` 做出完整的檔案再改欄位（直接 `from area_helpers import …`）；
   `tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit；另一個測試讓 tick 和幾場戰鬥一直跑，確認玩家打字照樣馬上回應。
+  `tests/test_login.py` 也開真的伺服器，測建立角色、密碼、名字規則、存檔、斷線存檔、重複登入接手。`tests/test_imm.py` 測 imm 指令、advance、train；`tests/test_position.py` 測姿勢、rest／sleep／stand、睡覺時能用的指令、say、who、save。`tests/test_resets.py` 測生物的重置（M、limit、rare、tier_roll、時機、look）。`tests/test_doors.py` 測門（兩邊都要寫的檢查、走路、open／close／lock／unlock、對面看得到、look、重置 D、副本各自的門）。
+  要登入的測試先用 `tests/player_helpers.py` 的 `make_player_file()` 存好角色（密碼 `PASSWORD`），存檔資料夾用 monkeypatch 把 `save.PLAYER_DIR` 指到 `tmp_path`。
+  `tests/test_stats.py` 比對種族、公會、裸裝屬性、MP／MV 跟玩家角色手冊、balance.py；`test_equipment.py`、`test_stats.py` 讀 balance.py 用 `tests/balance_loader.py`
+  （唯讀：不寫 .pyc、不改 mud_design；找不到 mud_design 才跳過）。
   `tests/test_builder.py` 用 port 0 開真的區域編輯器（資料夾是 `tmp_path`），用 urllib 打 API；也比對網頁的數字表跟 `area.py` 的定義、手冊的表。
   `tests/test_weather.py` 測天氣（時間、日夜、天空一次只走一格、送給誰、weather 指令）；`tests/test_clock.py` 測定時器；`tests/test_zones.py` 測區域物件（動態區域、副本的建立和釋放、tick）；`tests/test_fight.py` 測戰鬥 loop 和時間軸的出手順序。
   用到房間的測試要自己先 `zones.load(areas 資料夾)`：`zones.world` 是全域的，不要依賴別的測試先載入過。
@@ -54,6 +58,8 @@ uv run python -m mud                            # 視窗 1：開伺服器
 cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
 ```
 
+- 第一次連線要建立角色：英文名字、密碼（打的時候畫面不顯示字）、性別、種族、公會。存檔在 `players/`（不進 git）。
+
 - 直接用 UTF-8 終端機 telnet，中文會是亂碼。
 - **不要把終端機切成 Big5**：在 macOS 26 上，Big5 視窗用輸入法打中文會整個卡死（iTerm2、Terminal.app 都會），跟伺服器無關。
 - telnet 是 line mode，由本機終端機自己處理倒退鍵，一次只刪一個 byte。所以刪一個 Big5 中文字要按兩次倒退鍵，只按一次會送出半個字。
@@ -67,16 +73,19 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
 核心程式要模組化開發（使用者要求）：`mud/` 依職責分檔，新功能放進對應模組或開新模組，不要塞回單一檔案。
 `config.py` 放共用常數，`__main__.py` 解析參數、開伺服器。
 
-一條連線的資料流：`server.py` 的 `handle()` 讀 bytes → `Telnet.feed()` 切成整行字串 → 未登入時當名字，登入後交給 `command()`。
+一條連線的資料流：`server.py` 的 `handle()` 用 `login.Connection` 讀 bytes → `Telnet.feed()` 切成整行字串，一次給一行（`readline()`）
+→ 先 `login()`（問名字、密碼，或建立角色）→ 登入後每一行交給 `command()`。
 
 - **`Telnet`**（`telnet.py`）：每條連線一個實例，逐 byte 跑的狀態機（`data / iac / opt / sb / sb_iac`），
   狀態跨 `read()` 保留。負責去掉 telnet 協商、處理換行與退格，並把要回給客戶端的拒絕協商
-  累積在 `replies`，由 `handle()` 寫出。
+  累積在 `replies`，由 `Connection.readline()` 寫出。
+  打密碼時 `echo_off()`／`echo_on()` 送 `WILL ECHO`／`WONT ECHO`（客戶端就不顯示打的字）：`echo_off()` 會把 `(DO, ECHO)` 記成回過，
+  對方回 `DO ECHO` 是答應，不能再回 `WONT`；沒問過就收到 `DO ECHO` 照舊拒絕。
 - **`encode()`**（`telnet.py`）：送出的**文字**一律經過它（`\n`→`\r\n`、cp950 編碼、`0xFF` 寫兩次），也就是用 `send()` 寫。
   telnet 控制碼（例如 `START`、`tn.replies`）則要直接 `writer.write(bytes)`，**絕不能**經過 `encode()`——IAC 就是 `0xFF`，會被寫成兩次而失效。
 - **角色**（`characters.py`、`players.py`、`npcs.py`）：玩家和 NPC 都是角色（使用者要求先分好骨架，資料只放現在用得到的）。
   - **玩家角色的規則寫在 `docs/玩家角色手冊.md`**（mud_design 定的，使用者確認）：等級、主屬性、種族、公會（沒有職業）、HP／MP／MV 和回復、負重、武器重量限制、戰鬥的出手順序、雙持、定時做的事。
-    伺服器都還沒做；做了要同步更新手冊開頭的進度表。數字的推導在 mud_design 的設計文件，手冊只寫規則。
+    做了要同步更新手冊開頭的進度表。數字的推導在 mud_design 的設計文件，手冊只寫規則。
   - `Character`：`name`、`sex`、`room`（所在的 **Room 物件**，不是號碼：兩份副本的同號房間是不同的 Room，
     所以 `act()`、`look()` 比 `c.room == ch.room` 時看不到別份的人）、`position`、`fighting`（正在打誰）、`fight`（在哪一場）。
     `send(text)` 送文字給這個角色，預設什麼都不做。
@@ -84,14 +93,41 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     也是角色（玩家和生物）現在狀態的定義，遊戲用它判斷角色是在休息、站著走動還是在戰鬥；不要另外發明一套。
     改手冊的表要一起改它（`tests/test_area.py` 會比對）。現在只有戰鬥會切換 FIGHTING／STANDING。
     全域的 `characters` 是遊戲裡所有的角色（玩家和 NPC，所有區域物件裡的），找同房間的人都從這裡找。
-  - `Player(name, writer, room)`：多了 `writer`（連線）和 `reply`（最後一個 tell 我的玩家），`send()` 寫到連線。性別還沒有地方選，
-    先都預設男 `SEX_MALE`；登入時站在 `zones.start_room()`（世界區域的 `config.START_ROOM`）。`online_players()` 是在線的玩家（chat、tell 只找他們）。
-    模組的 `send(writer, text)` 給還沒登入時用（例如 `Login:`）。
-  - `Npc`：還沒有自己的欄位，`send()` 什麼都不做，所以送給 NPC 的訊息等於沒送。區域檔的 `mobiles` 還只檢查格式，`zones.load()` 不會把它們變成 NPC，遊戲裡還不會出現 NPC。
-  - `handle()` 登入時建立 `Player` 加進 `characters`；斷線清理在 `handle()` 的 `finally`：先 `stop_fighting()`，再移出 `characters`，
-    也清掉別人身上指向這個玩家的 `reply`。
+  - `Player(name, writer, room, sex)`：多了 `writer`（連線）和 `reply`（最後一個 tell 我的玩家），`send()` 寫到連線。
+    建立角色或讀檔時才填的屬性：`password`（雜湊）、`race`、`guild`、`level`、`primaries`（角色自己的主屬性）、`resource_roll`、
+    `hp`／`mp`／`mv`（現在的值）、`panel`（全部次要屬性的快取）。直接 `Player(...)` 建出來的（測試）沒有屬性，`score` 會說看不到。
+    升級點數：`points`（還沒分配的）、`trained`（每項主屬性靠升級加了幾點，降級扣回用），**永遠成立 `points ＋ Σ trained ＝ 等級 − 1`**、
+    主屬性 ＝ 種族的數字 ＋ `trained`（有測試）。`stats.set_level()` 改等級（升級加 `points`；降級先扣 `points`，不夠再隨機扣加過點的屬性，使用者選的；
+    改完從頭算、HP／MP／MV 補滿），`stats.train()` 加點（每項最高 `PRIMARY_CAP` 55）。
+    `imm`：管理員（存檔的 `imm`），找得到 `IMM_COMMANDS`。舊存檔沒有 `imm`、`points`、`trained`，讀檔時當作 False、0、0。
+    **第一個 imm 要直接改存檔加 `"imm": true`**，改之前伺服器要先關（不然那個角色離線或伺服器關掉時會存檔，把改的蓋掉）。
+    **prompt 每個角色自己的**（`ch.prompt()`，使用者選的樣子）：玩家是 `<HP 62/62 MP 25/25 MV 38/38> `，
+    現在的值照剩多少變色（超過 2/3 綠、超過 1/3 黃、其他紅，`level_color()`），上限一般顏色；
+    沒有屬性的角色（`Character.prompt()`，例如測試直接建的）是 `config.PROMPT` 的 `> `。
+    `online_players()` 是在線的玩家（chat、tell 只找他們）。模組的 `send(writer, text)` 給還沒登入時用。
+  - **屬性**（`stats.py`，玩家角色手冊、設計文件 §2.6、§3.6、§8）：`Race`（6 個，存檔寫代號 human…spirit）、`Guild`（`SWORD = "phys"` 劍之公會、
+    `STAFF = "spell"` 杖之公會，代號跟 balance.py 一樣）、`RACE_PRIMARIES`（手冊的種族表）。
+    `naked()` 是裸裝次要屬性（0.75 × 參考值 × G(L) × Σ 主屬性 ÷ 公會標準 × 切片；公會用不到的傷害、龍焰抗性是 0），
+    `resources()` 是 MP／MV 上限（兩個公會都有，創角骰一次 0.95～1.05 的倍率，MP、MV 同一個），公會標準用 `equipment.standard_primary()`。
+    `recompute(player)` 從頭算 `panel`（設計文件 §8.2：升級、改主屬性、穿脫裝備都從頭算，不要加加減減）；AC 來自裝備，現在是 0。
+    數字抄 balance.py，`tests/test_stats.py` 直接比對，設計文件改數字時要一起改。初始主屬性先用種族的數字（公會怎麼套上去還沒決定）。
+  - **登入和建立角色**（`login.py`，一問一答照順序寫）：名字 3～12 個英文字母（照 C 版，保留字不行），存成第一個字大寫。
+    有存檔就問密碼（錯了就斷線）；沒有就建立：密碼兩次（至少 5 個字）、性別、種族、公會，選完就建好、存檔。
+    存檔前再看一次檔案在不在（兩條連線同時建同一個名字，後面的不能蓋掉前面的）。密碼雜湊用 `asyncio.to_thread` 做，不卡住別人。
+    **重複登入**（使用者選的，照 C 版）：已經在線上又用對的密碼登入，舊連線收到訊息並斷線，新連線接手同一個 Player（換 `writer`），站在原地。
+  - `Npc`（生物）：`send()` 什麼都不做，所以送給 NPC 的訊息等於沒送。區域檔的生物由 `npcs.spawn()` 做出來（重置的 `M`）：
+    `name` 是區域檔的 `short`，另外存 `vnum`（遊戲號碼）、`keywords`、`long`、`description`、`level`、`tier`（骰過 `tier_roll`，`roll_tier()`）、
+    `attack`／`defense`／`archetype`（代號，算屬性用）、`act`（`area.ActFlag`）。姿勢照區域檔的 `position`（C 版讀了就丟，我們用它），寫錯就站著。
+    **出現時就算好全部屬性**：`stats.mob_stats(level, tier, attack, defense, archetype)` 照 balance.py 的 `Model.area_mob()`
+    （等級 ＋ 種類的裝備完整度和進度加成 → 攻擊類型 → 原型 → 攻防傾向），存在 `npc.panel`（SECONDARY_KEYS、dmg_dragon、mp、mv、wpn、ac）、
+    `npc.mix`（攻擊類型比例），HP 補滿；怪物 MP、MV 是 0。常數（`MOB_TIER_FILL`、`ARCHETYPE_TILT`、`BASE_PER_G`…）抄 balance.py，
+    `tests/test_stats.py` 比對常數，也把 4 等級 × 4 種類 × 7 攻擊 × 3 攻防 × 5 原型全部跟 `area_mob()` 比。`Npc(name, sex, room)` 直接建的（測試）沒有區域檔的資料。
+    look 裡站著、有 `long` 的生物顯示 `long`（照 C 版），其他照姿勢寫「名字站在這裡。」…（`system.appearance()`）。
+  - 登入成功的 `Player` 由 `login()` 加進 `characters`；斷線清理在 `handle()` 的 `finally`：先 `stop_fighting()`、存檔，再移出 `characters`，
+    也清掉別人身上指向這個玩家的 `reply`。**只在 `me.writer` 還是自己的連線時才做**：被新連線接手的舊連線只關掉，不然會把角色移出遊戲（有測試）。
 - **`act()`**（`act.py`）：送訊息給別人一律用它。`to` 決定送給誰：`TO_CHAR` 自己、`TO_VICT` 對象、`TO_ROOM` 同房間自己以外、
   `TO_NOTVICT` 同房間自己和對象以外。`ch`、`vch` 都是角色（玩家或 NPC）。全服頻道（chat）不用 `TO_ROOM`，要自己走訪所有玩家。
+  **`TO_ROOM`、`TO_NOTVICT` 不送給睡著的人**（照 C 版）；`TO_VICT` 照送，所以 chat、tell 睡著也收得到。
   代換碼（字母跟 C 版一樣）：`$n`/`$N` 名字（`$n` 送給自己時變「你」）、`$e $m`/`$E $M` 他她它、`$s`/`$S` 他的她的它的、
   `$t`/`$T` 帶進來的文字；小寫是自己、大寫是對象。寫錯的碼原樣保留，並在伺服器視窗印警告。
   不是哪個角色做的事、而是系統主動送的訊息（例如天氣），用 `notify(ch, text)`：跟 `act()` 送給別人一樣先換行、再補 prompt
@@ -99,10 +135,27 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
 - **指令**（`commands/`）：`__init__.py` 的 `COMMANDS` 是指令表，輸入的字照表的順序找**第一個用它開頭的指令**
   （例如 `c` → chat），表的順序就是縮寫的優先順序。指令依類別分檔：系統類在 `system.py`，技能法術類之後另開檔。
   加新指令：在類別檔寫 `do_xxx(ch, arg)`（`ch` 是下指令的角色，回傳 `False` 代表斷線），再加進 `COMMANDS`。
+  **指令表每一筆是 `(指令, 函式, 最低姿勢)`**（照 C 版）：`command()` 先比 `ch.position`，不夠就送 `REFUSALS` 的訊息（照 C 版 interp.c）。
+  睡覺、休息時能用哪些是使用者確認過的判斷，表在玩家角色手冊「姿勢和指令」：系統類（chat、tell、reply、who、score、train、quit、
+  rest、sleep、stand、imm 指令）睡著也能用；look、say、weather、門的指令要醒著（RESTING）；走路是 FIGHTING——休息、睡覺不能走，
+  **戰鬥中照舊可以走，因為還沒有 flee**（C 版是 STANDING，做 flee 時改）。新指令加在表的後面，原本的縮寫才不會變
+  （所以 rest 要打 res，r、re 還是 reply）。`find()` 回傳函式，`lookup()` 回傳 (函式, 最低姿勢)。
+  rest、sleep、stand、say、who 在 `system.py`，訊息照 C 版 act_move.c；睡覺時 rest 是醒過來坐著休息（C 版沒有）；戰鬥中不能改姿勢。
+  say 亮白色（照 C 版）；who 照等級排、顏色跟 score 一致。
+  **imm 指令**放 `imm.py`，加進 `IMM_COMMANDS`：`find(word, is_imm)` 先找 `COMMANDS`，是 imm 才接著找 `IMM_COMMANDS`，所以原本的縮寫不受影響；
+  不是 imm 打 imm 指令，跟打不存在的指令一樣是「什麼？」（照 C 版）。現在有 `advance <名字> <等級>`（在線上的玩家，可以升也可以降，1～100）。
+  `train <屬性> [點數]` 分配升級點數（`tr` 起才找得到，`t` 還是 tell），屬性可以寫 str 或中文。
   走路、look 這類指令 NPC 也能用（`command(npc, line)`）；reply、quit 只給玩家用（NPC 沒有 `reply`，quit 對它沒意義）。
-  `command()` 會在指令跑完後補送 `PROMPT`（斷線時不送）。
+  `command()` 會在指令跑完後補送 `ch.prompt()`（斷線時不送）。**這個指令有送出訊息就先空一行再補 prompt**，只按 Enter 就直接補（使用者要的）：
+  `Player.send()` 會把 `ch.sent` 設成 True，`command()` 開始時歸零。登入的歡迎畫面、`notify()` 也一樣空一行。
   `COMMANDS` 最前面是六個方向（`n e s w u d` 都是走路），接著 `look`。方向指令用 `walk(方向)` 做出來，共用 `move()`。
-  `look()` 回傳房間畫面的字串（同房間的其他角色都列「X站在這裡。」，玩家和 NPC 都算），登入時 `server.py` 也用它。
+  `look()` 回傳房間畫面的字串，登入時 `login.py` 也用它。房間描述後**空一行**，再照順序列房間裡的東西（使用者定的）：
+  先生物（NPC），再玩家，最後是地上的物品（物品還沒做，做的時候接在玩家後面）；生物和玩家都是**亮白**。
+  每個角色照姿勢寫「X站在這裡。」「X躺在這裡睡覺。」…（`LOOK_POSITIONS`）；房間沒有別人就不空行。
+  `score` 看自己的全部屬性（指令表最後，`sc` 起才找得到），使用者選的樣子：暗灰框線、名字用房間標題的綠框黃字、
+  HP／MP／MV 有條（紅、藍、綠，20 格）、下半部三欄對齊，公會用不到的傷害整格變暗；imm 在抬頭加「｜imm」，有沒分配的點數就在主屬性後面加「可分配 N」。數字四捨五入成整數（`stats.shown()`，不用 `round()`）。
+  對齊用 `width()`：Big5 中文字 2 bytes 也佔 2 格，所以寬度就是 cp950 的 byte 數。
+  坑：框線、條、分隔只用 ASCII 和全形字（`=`、`-`、`｜`），不要用 ─ ■ ‧ 這種「寬度不一定」的符號，UTF-8 終端機可能只佔 1 格，會對不齊。
   `look 東西或方向`（照 C 版的順序）：先找房間的 `extra_descriptions`（名字要整個字一樣，英文不分大小寫），
   再當成方向（`n`、`no`、`north` 都算北）顯示出口的 `description`，**不是**隔壁房間的描述。
   沒出口或出口沒描述 →「那裡沒有什麼特別的東西。」；都對不上 →「在這裡找不到你要看的東西。」
@@ -115,7 +168,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   `tests/area_helpers.py` 和編輯器的 `new_area()` 補上欄位，讓伺服器開得了機、測試會過；遊戲裡的效果不做。
   照手冊改系統時，`check_files()`、`tests/area_helpers.py`、
   區域編輯器（`builder/server.py` 的 `new_area()`、`builder/static/model.js` 的 `newRoom()`、`newExit()` 和畫面）要一起改。
-  `Room` 上存了 `name`、`description`、出口（`exits`、`exit_descriptions`）、`extra_descriptions`、`room_flags`、`sector`。
+  `Room` 上存了 `name`、`description`、出口（`exits`、`exit_descriptions`）、`doors`（見下面「門」）、`extra_descriptions`、`room_flags`、`sector`。
   **手冊的三張數字表在 `area.py` 寫成有名字的定義**（使用者要求程式裡不能只有數字）：`RoomFlag`（room_flags）、
   `Sector`（sector）、`Locks`（出口的 locks）。另外 `AreaType`（`header.type`：`world`、`dynamic`、`instance`）是字串的定義，
   手冊「三種區域」的表、編輯器 `model.js` 的 `AREA_TYPES` 都要跟它一樣（有測試比對）。名字用手冊的 C 版名稱（locks 的表沒有名稱，照 C 版的門旗標取），
@@ -141,7 +194,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     起始房間 `config.START_ROOM` 是 101。之後會照使用者的指示繼續改格式。`area`、每個房間、每隻生物、每個物品和每筆重置的欄位**一個都不能少**，
     巢狀欄位也要有範例值（`extra_descriptions`、`script` 各放一筆；生物 1「測試商人」的每個欄位都有值，生物 2「測試坐騎」示範 null／空的寫法；
     物品 1～4 是藥水、長劍、箱子、麵包（重置用到 1、3、4），物品 2「測試長劍」每個欄位都有值；
-    `resets` 每種指令各一筆；房間 1 往北的出口有木門，給 `D` 的範例用）：使用者靠它看系統還缺哪些功能。
+    `resets` 每種指令各一筆；房間 1 往北、房間 2 往南的出口是同一扇木門（門兩邊都要寫），給 `D` 的範例用）：使用者靠它看系統還缺哪些功能。
     房間的文字可以用顏色代碼。
     **每個欄位的意思和新系統的實作進度寫在 `docs/區域製作手冊.md`**：改區域檔格式、或做了新的區域功能時，
     要同步更新它（開頭的進度總表，以及各欄位「新系統」那一欄）。
@@ -174,6 +227,10 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     編輯器的 `VALUE_FIELDS` 把它們標成 `auto`（顯示但不能改）。
     `extra_flags` 1～256 照 C 版，512 是新加的「雙手」（使用者定的）：武器同時佔主手和副手，點數上限是兩格加起來（設計文件 §3.3）。
     `area.py` 有 `Apply`（location）、`WearFlag`、`ExtraFlag` 三個定義（跟手冊、`tables.js` 比對）。
+    **武器種類**（設計文件 §3.3，2026-11-04 使用者定的）寫在武器 `values` 的第 1 個：`WeaponKind` 1～11（匕首…長槍，全部物理類，沒有弓、法術武器），
+    `TWO_HANDED_KINDS`（大劍、戰斧、戰鎚、長槍）一定要勾 512 雙手、單手的不能勾；`DEFAULT_ATTACK` 是每種預設的攻擊方式。
+    `Attack` 是 `values` 第 4 個的攻擊方式 0～13（名字用 Merc 的 attack_table，手冊只有中文），`MOB_ONLY_ATTACKS`（重擊、利牙、吸取）武器不能用。
+    數值不分種類；背刺只能用匕首（技能還沒做）。手冊的武器種類表、攻擊方式表跟這些定義比對（`test_area.py`），編輯器的 `WEAPON_KINDS` 也比對（`test_builder.py`）。
     **固定裝備**（使用者定的，設計文件 §3.3）：物品寫了 `affects` 就用固定的、不隨機抽；`[]` 才照等級和顏色抽。
     `check_files()` 跨檔案檢查每個放出物品的地方（掉落表用生物等級；`G` 的 level 是 null 就用前面 `M` 的生物等級；`O`、`P` 用 level），
     點數（數值 × 單價）不能超過「部位上限 × 顏色加成」；null、gray 是 ×0，只放得進不算點數的龍焰抗性。
@@ -181,8 +238,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     （不寫 .pyc、不改 mud_design；找不到 mud_design 才跳過）。設計文件改數字時要一起改 `equipment.py`。
     `item_type`、`affects.location` 寫數字，`extra_flags`、`wear_flags` 寫法同 `room_flags`。`values` 是 4 個整數或字串：
     法術類（卷軸、藥水、藥錠的第 2～4 個，魔杖、魔棒的第 4 個）寫法術名稱；容器旗標這類要相加，`values` 裡不能用 `|`（C 版用 atoi 讀）。
-    `check_object()` 只檢查寫法，只有一條例外：主手 8192 和副手 512 同時寫是錯的（使用者定的：武器只能放做出來的那一手，
-    兩個都寫會用主手的上限算點數，放到副手就多拿點數）。可以細看的東西跟房間共用 `check_extra_descriptions()`。物品號碼跟房間、生物分開算。
+    `check_object()` 大多只檢查寫法，例外有兩個：主手 8192 和副手 512 同時寫是錯的（使用者定的：武器只能放做出來的那一手，
+    兩個都寫會用主手的上限算點數，放到副手就多拿點數）；武器（`item_type` 5）用 `check_weapon()` 查種類、雙手、攻擊方式。可以細看的東西跟房間共用 `check_extra_descriptions()`。物品號碼跟房間、生物分開算。
     `wear_flags` 的位置照 `mud_design` 設計文件 §3.3 的裝備欄位（使用者要求）：512 shield 當「副手」（盾牌或副手武器，雙持的出手規則在玩家角色手冊），
     1 take（能不能撿起來）留著；光源不在 wear_flags，照明用具自己放光源位置。
   - **重置（`resets`）**：最上層的清單，照舊版 `#RESETS` 一串指令照順序執行（`M G O P D R` 和 `*` 註解），`G` 跟著前面最近的 `M`。
@@ -194,6 +251,10 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `rare` 的中文叫「**出現機率**」（使用者改的；不要叫稀有度，設計文件的稀有度是裝備的顏色）：只決定生物或物品多常出現，
     **不影響經驗值**（設計文件 §4.8）。
     使用者會再刪改，所以 `check_resets()` 只檢查寫法；號碼指到的東西存不存在、`G` 前面有沒有 `M`、`D` 的出口有沒有門都還沒查。
+    **重置做了 `M` 和 `D`**（`resets.py`，照 C 版 `reset_area`、`area_update`）：`rare` 骰萬分之一；`limit` 數同號碼的生物，
+    sentinel 數同房間、其他數**同一個區域物件**（手冊寫整個遊戲，但每份副本要各自有生物，使用者確認過）；`tier_roll` 骰種類。
+    生物可以是別的區域檔的（`resets.mobiles` 是全部檔案的生物表，遊戲號碼 → 區域檔資料）；房間不在這個區域物件就記 log 跳過。
+    `D` 用 `doors.set_state()`，一筆同時設兩邊（C 版一筆只設一邊）；房間或方向沒有門就記 log 跳過。G、O、P、R 等物品做了再做。
 - **區域物件**（`zones.py`，使用者定的三種，`header.type` 決定）：
   - 世界區域（`world`）：開機時把所有 world 檔建進**一個**區域物件 `zones.world`，永遠不釋放。
   - 動態區域（`dynamic`）：有人走進去才建立（`room_at()`），大家共用一份（`zones.dynamic`，檔名 → Zone）。
@@ -202,14 +263,22 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - 動態區域和副本連續 `RELEASE_TICKS`（1200 tick，20 分鐘）沒有玩家就 `release()`：停掉裡面的戰鬥、移走留下的角色、從名單拿掉。
     在 tick 裡數（`zone.empty_ticks`），有玩家就歸 0，所以實際上是 20 分鐘再加 0～1 秒。下一個人進去時重新建立，裡面全部重來。
   - 區域檔開機時就讀好、檢查好（`templates`），建立動態區域和副本時不讀檔。
+  - 每個區域物件記住它有哪些區域檔（`zone.areas`，`resets.AreaReset`，世界有很多個），每間 Room 的 `room.area` 指到它的那個。
+    **重置時機照 C 版**（使用者選的）：建立時 `resets.reset_zone()` 一次（世界在 `load()`、動態區域在 `room_at()`、副本在 `instance()`）；
+    `Zone.tick()` 每 `AREA_TICKS`（60）呼叫 `resets.update()`：每個區域檔 `age` 加 1，到 3 以後沒有玩家就重置，有玩家到 15 才重置，
+    14 時那個區域檔房間裡醒著的玩家收到「你聽到一陣腳步聲。」；重置後 `age` 骰 0～3。
+    重新載入（`load()` → `stop()`）會把所有生物從 `characters` 拿掉再重放；釋放區域物件本來就會移走留下的角色。
   - 每間 Room 有 `zone` 指回它的區域物件。走路用 `room_at(from_room, vnum)`：先找自己所在的區域物件
     （所以在副本、動態區域裡走會留在同一份），再找世界，最後是動態區域。
+    `find_room()` 順序一樣，但**不會建立**還沒建的動態區域（找門的對面用：關門不能把動態區域建起來）。
 - **tick 和戰鬥的 loop**（使用者定的；C 版是全遊戲一個鐘，我們不照它）：
   - tick loop：世界和全部動態區域**共用一個**（世界 tick，`zones.start()` 開始），每次先做世界、再做每個動態區域；
     **副本每份自己一個**（建立時開始，釋放時結束）。間隔 `TICK_SECONDS` 固定 1 秒（使用者 2026-11-04 從 30 秒改成 1 秒，不加亂數）。
-    **定時做的事都用「每幾個 tick 做一次」定義**（使用者定的）：數字在 `config.py`（`ROUND_TICKS` 2、`HOUR_TICKS` 30、`RELEASE_TICKS` 1200），
+    **定時做的事都用「每幾個 tick 做一次」定義**（使用者定的）：數字在 `config.py`（`ROUND_TICKS` 2、`HOUR_TICKS` 30、`REGEN_TICKS` 30、`AREA_TICKS` 60、`RELEASE_TICKS` 1200），
     表在玩家角色手冊「定時做的事」，改數字要一起改表。每個區域物件一次 tick 要做的事寫在 `Zone.tick()`，用 `self.ticks % N == 0`：
-    世界每 `HOUR_TICKS` 走一次天氣；動態區域、副本數要不要釋放。世界的變換（回血每 30 tick、NPC 行動……）之後加在這裡。
+    世界每 `HOUR_TICKS` 走一次天氣、每 `REGEN_TICKS`（30）所有在線玩家回復一次（`stats.regen()`，照姿勢：站 10%、休息 20%、睡 30%，
+    戰鬥中不回）；動態區域、副本數要不要釋放。世界的變換（NPC 行動……）之後加在這裡。
+    **掛在角色身上的定時事情（回復、之後的 buff）放世界 tick、全部角色一起做**：副本的 loop 跟世界節拍不同步，放各區域的 tick 會走來走去多做或少做。
   - **天氣**（`weather.py`，tick 的第一個功能）：**全遊戲一個**（`weather.current`），只由世界 tick 走時間（每 `HOUR_TICKS` 呼叫一次 `weather.tick()`），
     副本的 tick 不動它。照 C 版的 `weather_update()`：每 30 tick（30 秒）是遊戲裡 1 小時（一天 24 小時、一個月 35 天、一年 17 個月），
     開機時從現實時間算出來，重開機後接得上。日夜（`Sunlight`）在 6、7、19、20 點改變並通知。
@@ -218,7 +287,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     乾季幾乎不下雨）。現在每個季節四種天空都會出現，只是雨季多雨、乾季多晴（有測試）；調這些數字前先模擬看比例。
     **室內只看房間旗標 `8 INDOORS`**（使用者選的，照 C 版）：地形 `0 室內` 不算，地形只管走路。
     通知只送給**室外**（房間沒有 `RoomFlag.INDOORS`）、**醒著**（姿勢比 SLEEPING 高）的玩家；同一小時的好幾句合成一段，只補一次 prompt。
-    `weather` 指令（指令表最後，`wea` 起才找得到）：室外顯示幾點、天空、風向；室內「你現在在室內是看不到天氣的。」
+    `weather` 指令（指令表後面，`wea` 起才找得到）：室外顯示幾點、天空、風向；室內「你現在在室內是看不到天氣的。」
     `update(rng)` 的亂數從參數傳進來，測試用假的亂數控制結果。
   - 戰鬥 loop（`fight.py`）：**一場戰鬥一個**，一場＝同一間房裡互打的一群人。每個 tick（1 秒）跑一次，從開打算起，各跑各的節拍。
     一回合 ＝ `ROUND_TICKS`（2）tick：每回合的第一個 tick 打一輪、下一個 tick 停（`Fight.tick()`）。
@@ -259,16 +328,31 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - 區域檔的文字一律當純文字放進畫面（`h()` 的子元素字串是 textNode），不用 `innerHTML`。
   - `model.js` 有旗標、地形、門的數字表，`tables.js` 有生物、物品、重置用的數字表（畫面用的短名字）。**改手冊的表時要一起改**：
     `test_builder.py` 會比對 `model.js` 跟 `area.py` 的定義、`tables.js` 跟手冊的表。
-- **門（還沒做，使用者定的規則）**：出口的 `keywords` 是門的名字，只有 `locks` 不是 0（有門）的出口才用到。
+- **門**（規則在區域製作手冊「門」）：出口的 `keywords` 是門的名字，只有 `locks` 不是 0（有門）的出口才用到。
   門的種類只看 `locks`（0 沒有門，1～8 是門加上撬不開、撞不開、法術穿不過的組合，對照表在手冊，程式裡是 `area.Locks`），區域檔沒有 `door_flags`。
-  - 玩家用它指定要動哪扇門：open、close、lock、unlock、pick、bash 先找名字對得上的門，找不到才把輸入當方向（同 C 版 `find_door`）。
+  - `area.Door`：`build_room()` 放進 `room.doors`（方向 → Door，只有有門的出口）。名字清單、`locks`、`key`（遊戲號碼；-1、0 是 `None`，鎖不起來），
+    現在的狀態 `closed`、`locked`（一開始開著，重置 D 設定，`Door.set(DoorState)`）。`name` 是第一個名字，沒寫是「門」。每份副本自己的 Room，門各自分開。
+  - **門兩邊都要寫**（使用者選的）：`check_doors()` 查有門的出口通到的房間，往回的出口（反方向、指回來）也要有門；單向出口不算。
+    算在有門的那一邊；門在別的檔時沒寫門的那一邊也報（編輯器只檢查一個檔）。兩邊一起變靠 `doors.other_side()`、`doors.set_state()`（`mud/doors.py`，指令和 D 共用）。
+    坑：`zones` → `resets` → `doors`，所以 `doors.other_side()` 在函式裡才 import `zones`。
+  - 指令在 `commands/doors.py`：open、close、lock、unlock（RESTING，照 C 版），檢查順序照 C 版 act_move.c。撬 pick、撞 bash **等技能做好再做**（使用者選的）。
+    `find_door()` 先找名字對得上的門（整個字一樣，英文不分大小寫），找不到才把輸入當方向（使用者定的；C 版 `find_door` 其實是先方向再名字）。
+    `has_key()` 物品還沒做，一律 False（測試用 monkeypatch 測成功的路）。
   - 門關著還要走過去：有 `keywords` → 「【鐵門】關起來了。」（取 `keywords` 的第一個字）；
     **沒寫 `keywords` → 用方向，例如「北方關起來了。」**（C 版沒寫時是顯示 door，我們不照它）。
+  - **對面看得到**（使用者要的）：打開、關上（之後的撞開也是）時，對面房間醒著的人收到「南方的木門被打開了。」（`doors.tell_room()`）；
+    對面很暗（`Room.dark()`：`RoomFlag.DARK` 而且沒有光源，光源是物品，還沒做）就看不到。上鎖、開鎖對面不知道（照 C 版）。
+  - look 的出口：關著的門是紫色 `*北`（照 C 版）；`look 方向` 描述後面加「木門是關著的。」／「是開著的。」。
 - **顏色**（`color.py`）：字串裡寫代碼，`colorize()` 換成 C 版 `merc.h` 的色碼：`{r{R{g{G{y{Y{b{B{m{M{c{C{w{W{D`
   （小寫暗、大寫亮），`{x` 回到原本顏色，`{{` 印出 `{`，不認得的代碼原樣留著。不能巢狀：`{x` 是全部回到原本顏色。
   `act()` 會先對 fmt 做 `colorize()` 再代換 `$` 碼，所以玩家打的代碼會原樣顯示。`send()` 不轉代碼，要顏色就自己包 `colorize()`。
   目前 chat 用 `{M`（亮紫），tell／reply 用 `{G`（亮綠），跟 C 版一樣。
-- **存檔**（`save.py`）：`save_player()` 還沒實作，只是留好位置；`quit` 會呼叫它。直接斷線（沒打 quit）不會存檔。
+- **存檔**（`save.py`）：一個角色一個 JSON 檔 `players/名字小寫.json`（`config.PLAYER_DIR`，不進 git），先寫暫存檔再 `os.replace`。
+  存主屬性、等級、種族、公會、`resource_roll`、HP／MP／MV、房間號碼，**也寫一份全部次要屬性 `panel`**（使用者要的：打開檔案就看得到全屬性）。
+  讀檔（`player_from()`）時次要屬性一律從頭算、蓋掉檔案那份，HP／MP／MV 夾在新上限以內；房間不在世界區域（動態、副本）就站起始房間。
+  密碼只存 `hashlib.scrypt` 的雜湊（每個角色自己的鹽），比對用 `hmac.compare_digest`。
+  離線時存：quit 和直接斷線都在 `handle()` 的 `finally` 存，`do_quit` 不另外存。建好角色時也存。
+  `save` 指令（`sav` 起才找得到，`sa` 還是 say）手動存，什麼姿勢都能用（照 C 版）；存檔失敗記 log、告訴玩家找管理員。
 - **紀錄**（`log.py`）：`__main__` 啟動時呼叫 `setup()`。畫面用 rich 的 `RichHandler`，同時用 `DailyFileHandler` 存到
   `logs/日期_編號.log`（例如 `2026-10-30_001.log`）：換日從 001 重新編號，超過 5MB 換下一個編號，只留最新 30 個檔。
   檔名格式不符的檔案不會被刪。
@@ -280,8 +364,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
 - **收進來的一律當 bytes，收滿一行才 decode**。不要在 `Telnet` 裡提早 decode，也不要改成用文字模式讀。
   用 byte 切行之所以安全，是因為 Big5 第二碼不會是 `\r` `\n` `\0`。
 - Big5 一個中文字 2 bytes（第一碼 ≥ `0x81`）。任何截斷、退格都要以「整個字」為單位（參考 `_backspace()`）。
-- 送給別人的訊息用 `act()`，不要自己 `send()`：`act()` 會包成 `"\n...\n" + PROMPT`（先換行避免接在對方 prompt 後面，
-  說完再補回對方的 prompt）；送給自己只加換行，prompt 由 `command()` 補。
+- 送給別人的訊息用 `act()`，不要自己 `send()`：`act()` 會包成 `"\n...\n\n" + 對方的 prompt()`（先換行避免接在對方 prompt 後面，
+  說完空一行再補回對方的 prompt）；送給自己只加換行，prompt 由 `command()` 補。
   已知限制：一個指令對同一個別人送兩次 `act()`，對方會看到兩個 prompt。要送多行，就放在同一段文字裡。
 - 協商：一連上就送 `START`（`IAC DO BINARY`）請客戶端用 8-bit 傳。坑：沒談好 BINARY，macOS 的 telnet 會把每個 byte 的
   第 8 bit 拿掉，中文全壞（加 `-8` 也一樣）。對方回 `WILL BINARY` 是答應，不再回覆。

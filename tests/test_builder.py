@@ -12,6 +12,7 @@ from area_helpers import make_area, make_mobile, make_object, make_room, write_a
 from mud.area import (
     Apply, Archetype, AreaType, AttackType, Defense, ExtraFlag, ItemColor, Locks, MobTier, RoomFlag, Sector, WearFlag,
 )
+from mud import area
 from mud.builder.server import make_server
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -254,6 +255,24 @@ def test_page_tables_match_manual(name, marker):
 def test_page_codes_match_manual_and_area(name, marker, cls):
     # 生物的代號表：編輯器、手冊、area.py 的定義三邊要一樣
     assert tables_js(name) == [row[0] for row in manual_rows(marker)] == [c.value for c in cls]
+
+
+def test_door_states_match_manual_and_area():
+    # 重置 D 的門狀態：編輯器的選單、手冊的 state 表、area.DoorState 三邊要一樣
+    rows = manual_rows("`D` 的 `state`：")
+    assert tables_js("DOOR_STATES") == [int(row[0]) for row in rows] == [s.value for s in area.DoorState]
+    text = (STATIC / "tables.js").read_text(encoding="utf-8")
+    block = re.search(r"export const DOOR_STATES = \[(.*?)\n\];", text, re.S)[1]
+    assert re.findall(r'\[\d+, "([^"]*)"\]', block) == [row[1] for row in rows]     # 中文意思也一樣
+
+
+def test_weapon_kinds_match_area():
+    # 編輯器的武器種類選單跟 area.WeaponKind 一樣，名字後面的（單手）（雙手）跟拿法一樣
+    text = (STATIC / "tables.js").read_text(encoding="utf-8")
+    block = re.search(r"export const WEAPON_KINDS = \[(.*?)\n\];", text, re.S)[1]
+    rows = [(int(n), name) for n, name in re.findall(r'\[(\d+), "([^"]*)"\]', block)]
+    assert rows == [(k.value, f"{area.WEAPON_KIND_NAMES[k]}（{'雙手' if k in area.TWO_HANDED_KINDS else '單手'}）")
+                    for k in area.WeaponKind]
 
 
 def test_page_tables_with_several_columns_match_manual():

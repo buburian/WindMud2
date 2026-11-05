@@ -4,6 +4,7 @@ from .config import ENCODING, MAX_LINE
 # telnet 控制碼
 IAC, DONT, DO, WONT, WILL, SB, SE = 255, 254, 253, 252, 251, 250, 240
 BINARY = 0                          # telnet 選項：用 8-bit 傳
+ECHO = 1                            # telnet 選項：由伺服器回顯（我們說 WILL ECHO，客戶端就不顯示打的字，打密碼用）
 
 # 坑：沒談好 BINARY，有些客戶端（例如 macOS 的 telnet）會把每個 byte 的第 8 bit 拿掉，
 # Big5 中文就全壞了。所以一連上就送這個，請對方用 8-bit 傳。
@@ -86,6 +87,16 @@ class Telnet:
         if verb in (WILL, DO) and (verb, opt) not in self.answered:
             self.answered.add((verb, opt))
             self.replies += bytes((IAC, DONT if verb == WILL else WONT, opt))
+
+    def echo_off(self):
+        """打密碼前送的控制碼：我們說 WILL ECHO，客戶端就不顯示打的字。要直接 writer.write，不能經過 encode()。"""
+        # 對方回 DO ECHO 是答應我們，不能再回 WONT（那樣又把回顯打開了）：記成回過，_refuse() 就不會回它
+        self.answered.add((DO, ECHO))
+        return bytes((IAC, WILL, ECHO))
+
+    def echo_on(self):
+        """打完密碼送的控制碼：WONT ECHO，客戶端恢復顯示打的字。對方會回 DONT ECHO，不用回它。"""
+        return bytes((IAC, WONT, ECHO))
 
 
 def encode(text):
