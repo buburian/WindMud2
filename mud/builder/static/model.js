@@ -98,11 +98,10 @@ export function shapeProblem(data) {
     return "mobiles、objects 或 resets 的形狀不對";
   }
   for (const m of data.mobiles || []) {
-    if (!objectList(m.actions) || !objectList(m.fight_actions)
-        || ![undefined, null].includes(m.shop) && !isObject(m.shop)
+    if (![undefined, null].includes(m.shop) && !isObject(m.shop)
         || ![undefined, null].includes(m.tier_roll) && !isObject(m.tier_roll)
         || m.drops !== undefined && !objectList(m.drops)) {
-      return "有生物的形狀不對（actions、fight_actions、shop、tier_roll、drops）";
+      return "有生物的形狀不對（shop、tier_roll、drops）";
     }
   }
   for (const o of data.objects || []) {
@@ -330,7 +329,7 @@ export function newMobile(vnum) {
     vnum, keywords: "新生物", short: "新生物", long: "", description: "", level: 1,
     tier: "normal", tier_roll: null, attack: null, defense: null, archetype: null, act: 0, affected_by: 0,
     alignment: 0, race: "human", sex: 0, position: 7, drops: [], script: null,
-    actions: [], fight_actions: [], shop: null, special: null,
+    shop: null, special: null,
   };
 }
 
@@ -344,8 +343,6 @@ export function newObject(vnum) {
 // 勾「牠是店主」、掉落表新增一行時先填的值
 export const newShop = () => ({ buy_types: [], profit_buy: 100, profit_sell: 100, open_hour: 0, close_hour: 23 });
 export const newDrop = () => ({ obj_vnum: 1, color: null, chance: 10000, tiers: null });
-export const newAction = () => ({ when: 0, mode: 0, text: "" });
-export const newFightAction = () => ({ rate: 10, message: "", command: "" });
 export const newAffect = () => ({ location: 1, modifier: 0 });
 
 // 加一隻生物或一個物品（號碼用最小沒用過的）；號碼用完了回傳 null

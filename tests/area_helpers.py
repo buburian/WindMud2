@@ -18,9 +18,7 @@ def make_mobile(vnum):
         "vnum": vnum, "keywords": f"mob{vnum}", "short": f"生物{vnum}", "long": "", "description": "",
         "level": 1, "tier": "normal", "tier_roll": {"elite": 2000, "boss": 100}, "attack": "dragon/phys", "defense": "phys", "archetype": "tank", "act": 0, "affected_by": 0, "alignment": 0, "race": "human", "sex": 0, "position": 0,
         "drops": [{"obj_vnum": 1, "color": "orange", "chance": 100, "tiers": ["boss"]}],
-        "script": {"trigger": {"value": 64, "names": ["say"]}, "function": "ms_test"},
-        "actions": [{"when": 0, "mode": 0, "text": "say 你好"}],
-        "fight_actions": [{"rate": 10, "message": "", "command": "flee"}],
+        "script": None,                     # 腳本要另外寫 .lua 檔（write_lua），所以預設沒有
         "shop": {"buy_types": [8], "profit_buy": 100, "profit_sell": 100, "open_hour": 0, "close_hour": 23},
         "special": "spec_guard",
     }
@@ -74,3 +72,11 @@ def write_json(folder, filename, data):
 
 def write_area(folder, filename, rooms, area_number=100, mobiles=(), objects=(), kind="world"):
     return write_json(folder, filename, make_area(filename, rooms, area_number, mobiles, objects=objects, kind=kind))
+
+
+def write_lua(folder, area_file, file, code):
+    """寫一個腳本檔：區域檔 area_file（例如 "a.json"）的腳本放在同名的資料夾（folder/a/file）。"""
+    target = folder / area_file.removesuffix(".json") / file
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(code, encoding="utf-8")
+    return target

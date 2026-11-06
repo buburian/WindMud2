@@ -1,4 +1,5 @@
 """處理玩家輸入的指令：照 COMMANDS 的順序，找第一個用輸入開頭的指令。"""
+from .. import scripts
 from ..characters import Position as P
 from . import combat, doors, imm, items, skills, system
 from . import help as help_command          # 不叫 help：名字會蓋掉 Python 內建的 help()
@@ -46,6 +47,7 @@ COMMANDS = [
     ("equipment", items.do_equipment, P.DEAD),  # e 還是 east，eq 才是 equipment
     ("examine", items.do_examine, P.RESTING),   # ex；只看背包和身上的（照 C 版要醒著）
     ("flee", combat.do_flee, P.FIGHTING),       # f；戰鬥中逃跑（照 C 版的最低姿勢）
+    ("give", items.do_give, P.RESTING),         # g 還是 get，gi 才是 give（照 C 版的最低姿勢）
 ]
 
 # 管理員（imm）才找得到的指令，接在 COMMANDS 後面找，原本的縮寫都不受影響
@@ -102,15 +104,22 @@ def command(ch, line):
     """處理角色 ch 下的一行指令（玩家或 NPC 都可以）。回傳 False 代表要斷線。"""
     verb, _, arg = line.partition(" ")
     verb, arg = verb.lower(), arg.strip()
-    ch.sent = False
+    ch.sent = ch.notified = False
     if line:
-        found = lookup(verb, getattr(ch, "imm", False))
-        if found is None:
-            ch.send("什麼？\n")
-        elif ch.position < found[1]:            # 姿勢不夠，例如睡著時 look
-            ch.send(REFUSALS[ch.position] + "\n")
-        elif found[0](ch, arg) is False:
-            return False
+        name = command_name(verb, getattr(ch, "imm", False))
+        scripts.commanding.append(ch)       # 腳本給他的訊息當作這個指令的回覆（prompt 由下面補）
+        try:
+            # 腳本的 on_command：遊戲處理之前，房間先、再房間裡的生物；有一個擋住就不照平常處理（quit 擋不住，使用者選的）
+            if name == "quit" or not scripts.fire(ch.room, "on_command", ch, ch, name or verb, arg):
+                found = lookup(verb, getattr(ch, "imm", False))
+                if found is None:
+                    ch.send("什麼？\n")
+                elif ch.position < found[1]:    # 姿勢不夠，例如睡著時 look
+                    ch.send(REFUSALS[ch.position] + "\n")
+                elif found[0](ch, arg) is False:
+                    return False
+        finally:
+            scripts.commanding.pop()
     # 有送出訊息就先空一行再補 prompt；只按 Enter（沒有訊息）就直接補（使用者要的）
     ch.send(("\n" if ch.sent else "") + ch.prompt())
     return True

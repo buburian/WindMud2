@@ -7,7 +7,7 @@ import pytest
 
 from mud import save, stats, zones
 from mud.characters import characters
-from mud.config import ENCODING
+from mud.config import ACADEMY_START, ENCODING
 from mud.players import online_players
 from mud.server import handle
 from mud.stats import Race
@@ -126,7 +126,7 @@ def test_create_character_and_save(folder):
         await create_until_guild(c, "vCX")
         c.say("2")
         got = await c.until("> ")
-        assert "角色建立好了。".encode(ENCODING) in got and SOUTH.encode(ENCODING) in got
+        assert "角色建立好了。".encode(ENCODING) in got and "學院大門".encode(ENCODING) in got      # 新角色先進教學學院
         c.say("sc")
         text = re.sub(r"\x1b\[[0-9;]*m", "", (await c.until("> ")).decode(ENCODING))     # 拿掉顏色
         assert " 【Vcx】 精靈｜杖之公會｜女\r\n" in text and " 等級 1      經驗 0 / 100" in text
@@ -144,7 +144,8 @@ def test_create_character_and_save(folder):
     assert save.check_password("secret1", data["password"])
     assert set(data["panel"]) == {*stats.SECONDARY_KEYS, "mp", "mv", "ac"}             # 存檔也有全部次要屬性
     assert data["hp"] == data["panel"]["hp"] and data["mp"] == data["panel"]["mp"] > 0   # 建好時補滿
-    assert 0.95 <= data["resource_roll"] <= 1.05 and data["room"] == 101
+    assert 0.95 <= data["resource_roll"] <= 1.05 and data["room"] == ACADEMY_START
+    assert data["vars"] == {"academy": {"student": True}}                              # 還沒畢業的記號
     assert data["exp"] == 0.0
     assert data["skills"] == ["fireball"]                                               # 杖之公會一開始就會的技能存進存檔
 

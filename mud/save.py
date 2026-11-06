@@ -47,6 +47,7 @@ def save_player(player):
         "primaries": player.primaries, "resource_roll": player.resource_roll,
         "points": player.points, "trained": player.trained, "imm": player.imm, "gold": player.gold,
         "skills": player.skills,
+        "vars": player.vars,                # 腳本的變數：{區域檔名: {名字: 值}}
         "hp": player.hp, "mp": player.mp, "mv": player.mv,
         "room": player.room.vnum,
         "panel": player.panel,
@@ -74,10 +75,10 @@ def load_data(name):
 def player_from(data, writer):
     """用存檔的資料做出 Player：次要屬性從頭算，HP、MP、MV 夾在新的上限以內。
 
-    存的房間在世界區域裡就站那裡；動態區域、副本離線就重來，站在起始房間。
+    存的房間在世界區域裡就站那裡；動態區域、副本離線就重來，回「家」（zones.home：起始房間）。
+    還沒從教學學院畢業的學生一律回家（自己那一份學院的第一間，使用者選的：中途離開再登入就重來）。
     """
-    room = zones.world.rooms.get(data["room"]) or zones.start_room()
-    player = Player(data["name"], writer, room, data["sex"])
+    player = Player(data["name"], writer, None, data["sex"])
     player.password = data["password"]
     player.race, player.guild = stats.Race(data["race"]), stats.Guild(data["guild"])
     player.level, player.primaries = data["level"], data["primaries"]
@@ -88,7 +89,10 @@ def player_from(data, writer):
     player.trained = {k: data.get("trained", {}).get(k, 0) for k in stats.PRIMARY_KEYS}
     player.imm = data.get("imm", False)
     player.gold = data.get("gold", 0)
-    player.skills = data["skills"] if "skills" in data else skills.starter(player.guild)   # 舊存檔沒有：補上公會一開始就會的
+    player.skills = data["skills"] if "skills" in data else skills.starter(player.guild)
+    player.vars = data.get("vars", {})
+    room = zones.world.rooms.get(data["room"])
+    player.room = zones.home(player) if room is None or zones.is_student(player) else room   # vars 讀好才知道是不是學生
     player.carrying = [objects.from_data(d) for d in data.get("carrying", [])]
     player.equipment = {pos: objects.from_data(d) for pos, d in data.get("equipment", {}).items()}
     player.affects = [affects.from_data(d) for d in data.get("affects", [])]

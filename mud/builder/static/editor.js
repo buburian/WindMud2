@@ -5,7 +5,7 @@
 // 載入的 JSON 直接改，沒動到的欄位原樣存回去。改了內容就停手半秒自動檢查（不存檔），
 // 檢查一律交給後端的 check_files()，這裡不另外寫規則。
 import * as api from "./api.js";
-import { extraList, scriptRow } from "./forms.js";
+import { extraList, scriptFields } from "./forms.js";
 import * as M from "./model.js";
 import * as MOB from "./mobiles.js";
 import * as OBJ from "./objects.js";
@@ -692,7 +692,7 @@ function basicTab(room) {
       id: "room-desc", rows: 5, value: plainText(room.description),
       oninput: (e) => { room.description = storedText(e.target.value); edited(); },
     }) }),
-    scriptRow(room.script));
+    scriptFields({ id: "room-script", owner: room, done: edited }));
 }
 
 // 「通到」「回城房間」旁邊的房間名：找得到是綠色，找不到是紅色

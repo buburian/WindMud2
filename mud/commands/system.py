@@ -2,10 +2,10 @@
 import logging
 import re
 
-from .. import affects, objects, save, stats, weather, zones
+from .. import affects, objects, save, scripts, stats, weather, zones
 from ..act import TO_CHAR, TO_ROOM, TO_VICT, act
 from ..area import DIRECTIONS, REVERSE, MobTier
-from ..characters import SEX_FEMALE, SEX_MALE, Position, characters, in_room
+from ..characters import SEX_FEMALE, SEX_MALE, Position, arrive, characters, find_in_room, in_room
 from ..color import colorize
 from ..config import ENCODING
 from ..npcs import Npc
@@ -134,8 +134,10 @@ def move(ch, direction, leave="$n朝$t離開。"):
         return
     act(leave, ch, t=DIRECTIONS[direction], to=TO_ROOM)
     ch.room = to
+    arrive(ch)
     act("$n從$t邊走了過來。", ch, t=DIRECTIONS[REVERSE[direction]], to=TO_ROOM)
     ch.send(look(ch))
+    scripts.fire(to, "on_enter", ch, ch, REVERSE[direction])   # 腳本的 on_enter(actor, from)：from 是從哪個方向進來
 
 
 def walk(direction):
@@ -173,6 +175,12 @@ def do_tell(ch, arg):
         return
     victim = next((p for p in online_players() if p.name.lower() == target.lower()), None)
     if victim is None:
+        # 線上的玩家找不到，才找同房間的生物（使用者選的）：tell 生物會觸發牠的 on_tell
+        npc = find_in_room(ch, target)
+        if isinstance(npc, Npc):
+            act("{G你告訴$N：$t{x", ch, vch=npc, t=msg, to=TO_CHAR)
+            scripts.fire_owner(npc, "on_tell", ch, ch, msg)
+            return
         ch.send("沒有找到你想說話的對象。\n")
         return
     tell(ch, victim, msg)
@@ -418,6 +426,8 @@ def do_say(ch, arg):
         return
     act("{W你說：『$t』{x", ch, t=arg, to=TO_CHAR)
     act("{W$n說：『$t』{x", ch, t=arg, to=TO_ROOM)
+    if not isinstance(ch, Npc):             # 腳本的 on_say(actor, text)：只有玩家說的會觸發（使用者選的，生物之間對話用 tell）
+        scripts.fire(ch.room, "on_say", ch, ch, arg)
 
 
 def do_who(ch, arg):

@@ -45,12 +45,19 @@ def compose(fmt, ch, vch=None, t=None, T=None, to=TO_ROOM):
     return [(reader, fill(fmt, ch, vch, t, T, reader)) for reader in readers]
 
 
-def notify(ch, text):
+def notify(ch, text, apart=False):
     """主動送給 ch 的訊息（不是 ch 自己下指令引起的，例如別人說話、天氣變化）。
 
     先換行，才不會接在 ch 的 prompt 後面；說完空一行再補回 prompt（跟指令的訊息一樣）。
     text 不轉顏色代碼：act() 傳進來的已經轉過，再轉一次會讓玩家打的 {R 變成顏色。
+    ch 自己的指令還沒跑完（例如他說話，生物的腳本馬上回話）：當作那個指令的回覆、不補 prompt，指令跑完 command() 會補，才不會有兩個 prompt。
+    這時好幾句連在一起送（使用者要的）：跟指令自己的訊息之間空一行，句子之間不空行；apart 是另起一段、前面一定空一行（例如傳送到新房間的畫面）。
     """
+    from . import scripts                   # 坑：scripts 會用到這裡，在函式裡才 import
+    if ch in scripts.commanding:
+        ch.send(("\n" if ch.sent and (apart or not ch.notified) else "") + text + "\n")
+        ch.notified = True
+        return
     ch.send(f"\n{text}\n\n{ch.prompt()}")      # 有訊息：prompt 前空一行
 
 

@@ -182,6 +182,8 @@ async def create(conn, name):
     player.trained = {k: 0 for k in stats.PRIMARY_KEYS}
     player.resource_roll = stats.roll_resources()
     player.skills = skills.starter(guild)   # 建立角色就會的技能（存進存檔，之後新增的不會自動補）
+    zones.enroll(player)                    # 有教學學院就記成學生，站在自己那一份學院的第一間（使用者要的）
+    player.room = zones.home(player)
     stats.recompute(player)
     player.hp, player.mp, player.mv = player.panel["hp"], player.panel["mp"], player.panel["mv"]
     save.save_player(player)

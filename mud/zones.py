@@ -15,11 +15,12 @@ import json
 import logging
 from pathlib import Path
 
-from . import affects, area, fight, objects, resets, skills, stats, weather
+from . import affects, area, fight, objects, resets, scripts, skills, stats, weather
 from .area import AreaType
 from .characters import characters
 from .clock import cancel, every
-from .config import AREA_TICKS, HOUR_TICKS, OBJ_TICKS, REGEN_TICKS, RELEASE_TICKS, START_ROOM, TICK_SECONDS
+from .config import (ACADEMY_FILE, ACADEMY_START, ACADEMY_STUDENT, AREA_TICKS, HOUR_TICKS, OBJ_TICKS, REGEN_TICKS,
+                     RELEASE_TICKS, START_ROOM, TICK_SECONDS)
 from .npcs import Npc
 from .players import online_players
 
@@ -48,12 +49,14 @@ class Zone:
         for r in data["rooms"]:
             room = area.build_room(base, r)
             room.zone, room.area = self, reset
+            scripts.attach_room(room, name, r)
             self.rooms[room.vnum] = room
 
     def tick(self):
         """這個區域物件一次 tick 要做的事。都要做：重置、地上物品的 timer。世界：每個 tick 數技能冷卻、走身上的效果，每 HOUR_TICKS 走一次天氣；動態區域、副本：沒有玩家太久就釋放。
         世界的變換之後加在這裡，用「每幾個 tick 做一次」（self.ticks % N == 0）。"""
         self.ticks += 1
+        scripts.tick(self)                  # 腳本的 on_timer（坑：跟 objects.update 一樣要在下面兩個 return 前面）
         if self.ticks % AREA_TICKS == 0:
             resets.update(self)             # 照 C 版：沒有玩家約 3 分鐘、有玩家約 15 分鐘重置一次
         if self.ticks % OBJ_TICKS == 0:
@@ -101,8 +104,9 @@ def load(directory):
         raise ValueError(found[0] + more)
     new_world = Zone(AreaType.WORLD, "世界")
     new_templates, new_dynamic_rooms, new_mobiles, new_objects = {}, {}, {}, {}
-    for path in paths:
-        data = json.loads(path.read_text(encoding="utf-8"))
+    entries = [(path, json.loads(path.read_text(encoding="utf-8"))) for path in paths]
+    scripts.load(entries)                   # 建房間之前先讀好腳本（建房間、放生物時要接上）
+    for path, data in entries:
         header = data["area"]["header"]
         kind, base = AreaType(header["type"]), header["area_number"]
         for m in data["mobiles"]:           # 生物用遊戲號碼收成一張表：M 可以放別的區域檔的生物
@@ -130,6 +134,7 @@ def stop():
     global world_task
     cancel(world_task)
     world_task = None
+    scripts.cancel_all()
     for zone in [world, *dynamic.values(), *instances.values()]:
         if zone is not None:
             for f in list(zone.fights):
@@ -164,6 +169,27 @@ def safe_tick(zone):
 def start_room():
     """登入後站的房間（世界區域的 START_ROOM）。"""
     return world.rooms[START_ROOM]
+
+
+ACADEMY_AREA = ACADEMY_FILE.removesuffix(".json")   # 腳本變數用的區域名（區域檔名去掉 .json）
+
+
+def enroll(player):
+    """新角色：有學院的區域檔就記成學生（使用者要的：建立角色後先進學院）。"""
+    if ACADEMY_FILE in templates:
+        player.vars.setdefault(ACADEMY_AREA, {})[ACADEMY_STUDENT] = True
+
+
+def is_student(player):
+    """還沒從教學學院畢業：有學院的區域檔，而且他的腳本變數有 student（enroll() 設、院長的腳本拿掉）。"""
+    return ACADEMY_FILE in templates and bool(player.vars.get(ACADEMY_AREA, {}).get(ACADEMY_STUDENT))
+
+
+def home(player):
+    """玩家的「家」：建立角色、副本裡離線再登入、死掉都回這裡。學生是自己那一份學院的第一間，其他人是起始房間。要在 asyncio 裡呼叫。"""
+    if is_student(player):
+        return instance(ACADEMY_FILE, player.name).rooms[ACADEMY_START]
+    return start_room()
 
 
 def room_at(from_room, vnum):

@@ -25,13 +25,14 @@ class Player(Character):
         self.imm = False                     # 管理員：找得到 IMM_COMMANDS（存檔的 imm）
         self.panel = {}                      # 全部次要屬性的快取，用 stats.recompute() 從頭算
         self.hp = self.mp = self.mv = 0.0    # 現在的 HP、MP、MV（上限在 panel）
-        self.gold = 0                        # 金幣（還沒有拿到金幣的地方，先是 0；score 的位置留了很多位數）
+        self.vars = {}                       # 腳本的變數（存檔）：{區域檔名（不含 .json）: {名字: 值}}
         self.skills = []                     # 會的技能 id（學會的順序，存檔）：建立角色時是公會一開始就會的（skills.starter）
         self.cooldowns = {}                  # 技能 id（還有 flee 失敗的等待 "flee"）→ 還要等幾個 tick 才能再用（skills.tick() 數），不存檔
 
     def send(self, text):
         send(self.writer, text)              # 下面那個 send()：寫到連線
         self.sent = True
+        self.notified = False                # notify() 送完會再設回 True
 
     def prompt(self):
         """<HP 62/62 MP 25/25 MV 38/38>：現在的值照剩多少變色（多綠、一半左右黃、很少紅），上限是一般顏色。"""

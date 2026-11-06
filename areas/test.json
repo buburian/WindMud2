@@ -58,13 +58,8 @@
       },
       "extra_descriptions": [],
       "script": {
-        "trigger": {
-          "value": 64,
-          "names": [
-            "say"
-          ]
-        },
-        "function": "rs_test_say"
+        "file": "鐘聲.lua",
+        "timer": 60
       }
     }
   ],
@@ -104,28 +99,9 @@
         }
       ],
       "script": {
-        "trigger": {
-          "value": 64,
-          "names": [
-            "say"
-          ]
-        },
-        "function": "ms_test_merchant"
+        "file": "商人.lua",
+        "timer": null
       },
-      "actions": [
-        {
-          "when": 1,
-          "mode": 0,
-          "text": "say 歡迎光臨！"
-        }
-      ],
-      "fight_actions": [
-        {
-          "rate": 10,
-          "message": "$n大喊：救命啊！",
-          "command": "flee"
-        }
-      ],
       "shop": {
         "buy_types": [
           8,
@@ -158,8 +134,6 @@
       "position": 7,
       "drops": [],
       "script": null,
-      "actions": [],
-      "fight_actions": [],
       "shop": null,
       "special": null
     },
@@ -183,8 +157,6 @@
       "position": 7,
       "drops": [],
       "script": null,
-      "actions": [],
-      "fight_actions": [],
       "shop": null,
       "special": null
     }

@@ -16,6 +16,7 @@ import math
 from pathlib import Path
 
 from . import equipment
+from .config import ENCODING
 
 DIRECTIONS = {"north": "北", "east": "東", "south": "南", "west": "西", "up": "上", "down": "下"}
 REVERSE = {"north": "south", "east": "west", "south": "north", "west": "east", "up": "down", "down": "up"}
@@ -319,15 +320,18 @@ HEADER_KEYS = ("levels", "author", "title", "area_number", "type")
 ROOM_KEYS = ("vnum", "name", "description", "room_flags", "sector", "exits", "extra_descriptions", "script")
 EXIT_KEYS = ("description", "keywords", "locks", "key", "to_room")
 EXTRA_KEYS = ("keywords", "description")
-SCRIPT_KEYS = ("trigger", "function")
+SCRIPT_KEYS = ("file", "timer")            # 房間、生物的腳本（區域製作手冊「腳本」）
+OBJECT_SCRIPT_KEYS = ("trigger", "function")    # 物品的腳本：先保留舊的寫法（物品腳本還沒做）
 TRIGGER_KEYS = ("value", "names")
+# 腳本的觸發時機（使用者定的 10 種）：房間只有這 5 種，生物全部都有
+ROOM_TRIGGERS = ("on_command", "on_timer", "on_say", "on_enter", "on_reset")
+MOB_TRIGGERS = ("on_command", "on_timer", "on_give", "on_say", "on_death", "on_enter", "on_fight", "on_born", "on_reset", "on_tell")
+TIMER_MAX = 3600                            # on_timer 最多每幾秒（timer 是 1～3600）
 MOBILE_KEYS = ("vnum", "keywords", "short", "long", "description", "level", "tier", "tier_roll",
                "attack", "defense", "archetype", "act", "affected_by", "alignment",
                "race", "sex", "position",
-               "drops", "script", "actions", "fight_actions", "shop", "special")
+               "drops", "script", "shop", "special")
 DROP_KEYS = ("obj_vnum", "color", "chance", "tiers")    # 掉落表的一行
-ACTION_KEYS = ("when", "mode", "text")
-FIGHT_KEYS = ("rate", "message", "command")
 SHOP_KEYS = ("buy_types", "profit_buy", "profit_sell", "open_hour", "close_hour")
 OBJECT_KEYS = ("vnum", "keywords", "short", "long", "item_type", "extra_flags", "wear_flags",
                "values", "weight", "cost", "affects", "extra_descriptions", "script")
@@ -360,6 +364,8 @@ class Room:
         self.doors = {}                     # 方向 → Door：只有有門（locks 不是 0）的出口才有，build_room() 放
         self.contents = []                  # 地上的物品（objects.Obj），新的在前面（照 C 版）；區域物件釋放時跟著房間一起不見
         self.zone = None                    # 屬於哪個區域物件（zones.Zone），建進區域物件時設定
+        # 腳本（scripts.py）：script 是 scripts.Script；vars 是房間身上的變數（這個區域檔重置時清掉）
+        self.script, self.timer, self.timer_left, self.waiting, self.vars = None, None, 0, 0, {}
 
     def dark(self):
         """很暗、看不到東西：有 RoomFlag.DARK，而且沒有光源。光源是物品，還沒做，現在很暗的房間一律看不到。"""
@@ -419,19 +425,22 @@ def is_int(value):
     return isinstance(value, int) and not isinstance(value, bool)   # JSON 的 true 在 Python 也算 int，要排除
 
 
-def check_files(paths, reference=()):
+def check_files(paths, reference=(), script_root=None):
     """照手冊檢查區域檔，回傳 {檔案: [問題, …]}，沒問題就是空清單。
 
     reference 是其他拿來對照的檔案：只查一個檔時，靠它知道別的區域有哪些房間，
     才能檢查通到別的區域的出口、跨檔案的號碼重複。它們自己的問題不會報出來。
+    腳本的 .lua 放在「script_root（沒給就是區域檔所在的資料夾）／區域檔名」裡：編輯器檢查暫存檔時給它真的資料夾。
     """
     checked = {p.resolve() for p in paths}
-    problems, found = {}, {}
+    problems, found, lua_cache = {}, {}, {}
     for path in paths:
         problems[path] = []
         data = read_json(path, problems[path])
         if data is not None:
             found[path] = check_structure(path.name, data, problems[path])
+            folder = Path(script_root if script_root is not None else path.parent) / path.stem
+            check_lua(path.name, data, folder, problems[path], lua_cache)
 
     # 跨檔案：遊戲號碼不能重複。先登記對照用的檔案，重複時算在要檢查的檔案頭上。
     # 房間和生物的號碼分開算（房間 101 和生物 101 可以同時存在）
@@ -684,6 +693,72 @@ def check_keys(obj, keys, where, problems):
     return True
 
 
+def script_owners(data):
+    """區域檔裡寫了腳本的房間和生物：[(「房間 2」這種名字, script, 能用的觸發時機)]。形狀不對的跳過（check_script 會報）。"""
+    out = []
+    for key, label, allowed in (("rooms", "房間", ROOM_TRIGGERS), ("mobiles", "生物", MOB_TRIGGERS)):
+        for x in data.get(key) if isinstance(data.get(key), list) else []:
+            s = x.get("script") if isinstance(x, dict) else None
+            if isinstance(s, dict) and isinstance(s.get("file"), str) and s["file"].endswith(".lua"):
+                out.append((f"{label} {x.get('vnum')}", s, allowed))
+    return out
+
+
+def read_lua(folder, file):
+    """讀腳本檔：回傳 (程式, 問題)。檔名不能跑出 folder（例如 ../），要存在、是 UTF-8。"""
+    base = folder.resolve()
+    target = (folder / file).resolve()
+    if not target.is_relative_to(base):
+        return None, f"file {file!r} 跑出 {folder.name}/ 資料夾了"
+    if not target.is_file():
+        return None, f"file：找不到 {folder.name}/{file}"
+    try:
+        return target.read_text(encoding="utf-8"), None
+    except UnicodeDecodeError:
+        return None, f"{folder.name}/{file} 不是 UTF-8"
+
+
+def lua_functions(code, display, cache):
+    """一個腳本檔定義了哪些 on_ 函式：(集合, 問題)。同一個檔只檢查一次（cache）。"""
+    from . import lua                       # 用到才載入 Lua
+    if display in cache:
+        return cache[display]
+    result = None, None
+    for n, line in enumerate(code.splitlines(), 1):
+        try:
+            line.encode(ENCODING)
+        except UnicodeEncodeError as e:
+            result = None, f"{display}:{n}: 有轉不成 Big5 的字 {line[e.start]!r}"
+            break
+    else:
+        result = lua.functions(code, display, lua.check_env())
+    cache[display] = result
+    return result
+
+
+def check_lua(name, data, folder, problems, cache):
+    """開機檢查腳本（區域製作手冊「腳本」）：檔案、Big5、語法、最外層跑得過、認得的 on_ 函式、on_timer 和 timer 成對。"""
+    for owner, s, allowed in script_owners(data):
+        where = f"{name}：{owner}的 script "
+        code, problem = read_lua(folder, s["file"])
+        if problem:
+            problems.append(where + "的 " + problem if problem.startswith("file") else where + problem)
+            continue
+        display = f"{folder.name}/{s['file']}"
+        found, problem = lua_functions(code, display, cache)
+        if problem:
+            problems.append(f"{name}：{owner}的腳本 {problem}")
+            continue
+        for f in sorted(found - set(allowed)):
+            kind = "房間" if allowed == ROOM_TRIGGERS else "生物"
+            problems.append(f"{name}：{owner}的腳本 {display} 有不認得的函式 {f}（{kind}能用的是 {'、'.join(allowed)}）")
+        timer = s.get("timer")
+        if "on_timer" in found and timer is None:
+            problems.append(f"{name}：{owner}的腳本 {display} 有 on_timer，script 的 timer 卻是 null")
+        if "on_timer" not in found and timer is not None:
+            problems.append(f"{name}：{owner}的 script 寫了 timer {timer!r}，腳本 {display} 卻沒有 on_timer")
+
+
 def check_structure(name, data, problems):
     """檢查一個檔案自己的結構，問題加進 problems。回傳 Found，給跨檔案檢查用。"""
     found = Found()
@@ -867,8 +942,18 @@ def check_exit(where, e, problems):
 
 
 def check_script(where, s, problems):
-    """script 先保留，只檢查形狀：{"trigger": {"value": 整數, "names": [字串…]}, "function": 字串}。"""
+    """房間、生物的 script：{"file": "x.lua", "timer": 秒數或 null}。檔案本身（存不存在、語法…）在 check_lua() 看。"""
     if not check_keys(s, SCRIPT_KEYS, where, problems):
+        return
+    if "file" in s and not (isinstance(s["file"], str) and s["file"].endswith(".lua") and s["file"][:-4].strip()):
+        problems.append(f"{where}的 file 要寫 .lua 的檔名，不能是 {s['file']!r}")
+    if "timer" in s and s["timer"] is not None and not (is_int(s["timer"]) and 1 <= s["timer"] <= TIMER_MAX):
+        problems.append(f"{where}的 timer 要是 null 或 1～{TIMER_MAX} 的整數，不能是 {s['timer']!r}")
+
+
+def check_object_script(where, s, problems):
+    """物品的 script 先保留，只檢查形狀：{"trigger": {"value": 整數, "names": [字串…]}, "function": 字串}。"""
+    if not check_keys(s, OBJECT_SCRIPT_KEYS, where, problems):
         return
     if "trigger" in s and check_keys(s["trigger"], TRIGGER_KEYS, f"{where}的 trigger ", problems):
         t = s["trigger"]
@@ -938,7 +1023,7 @@ def check_object(where, o, problems):
     if "extra_descriptions" in o:
         check_extra_descriptions(where, o["extra_descriptions"], problems)
     if o.get("script") is not None:
-        check_script(f"{where}的 script ", o["script"], problems)
+        check_object_script(f"{where}的 script ", o["script"], problems)
 
 
 
@@ -1105,18 +1190,6 @@ def check_mobile(where, m, problems):
     check_drops(where, m, problems)
     if m.get("script") is not None:
         check_script(f"{where}的 script ", m["script"], problems)
-    for k, keys, ints, strs in (("actions", ACTION_KEYS, ("when", "mode"), ("text",)),
-                                ("fight_actions", FIGHT_KEYS, ("rate",), ("message", "command"))):
-        if k not in m:
-            continue
-        if not isinstance(m[k], list):
-            problems.append(f"{where}的 {k} 要寫成 […]，不能是 {m[k]!r}")
-            continue
-        for j, item in enumerate(m[k]):
-            w = f"{where}的 {k} 第 {j + 1} 項"
-            if check_keys(item, keys, w, problems):
-                check_ints(w, item, ints, problems)
-                check_strs(w, item, strs, problems)
     if m.get("shop") is not None and check_keys(m["shop"], SHOP_KEYS, f"{where}的 shop ", problems):
         shop = m["shop"]
         if "buy_types" in shop and not (isinstance(shop["buy_types"], list) and all(is_int(t) for t in shop["buy_types"])):

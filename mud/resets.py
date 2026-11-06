@@ -8,7 +8,7 @@ M（把生物放進房間）、G（給生物物品）、O（物品放進房間�
 import logging
 import random
 
-from . import doors, objects
+from . import doors, objects, scripts
 from .act import notify
 from .area import CHANCE_MAX, DIRECTIONS, ActFlag, DoorState, parse_flags, resolve
 from .characters import Position, characters
@@ -77,6 +77,14 @@ def reset_area(zone, area, protos, rng=random):
             reset_door(zone, area, r)
         elif cmd == "R":
             reset_exits(zone, area, r, rng)
+    # 腳本：這個區域檔的房間的變數清掉，再跑房間和房間裡生物的 on_reset（區域建立時的第一次重置也是）
+    rooms = [room for room in zone.rooms.values() if room.area is area]
+    for room in rooms:
+        room.vars.clear()
+    for room in rooms:
+        scripts.fire_owner(room, "on_reset")
+        for npc in scripts.mobs_in(room):
+            scripts.fire_owner(npc, "on_reset")
 
 
 def appears(r, rng):

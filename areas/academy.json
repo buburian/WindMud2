@@ -1,0 +1,371 @@
+{
+  "schema_version": 1,
+  "file": "academy.json",
+  "area": {
+    "header": {
+      "levels": [
+        1,
+        1
+      ],
+      "author": "WindMud2",
+      "title": "教學學院",
+      "area_number": 200,
+      "type": "instance"
+    },
+    "recall": 101,
+    "no_teleport": null,
+    "clan_recall": null,
+    "gem": null
+  },
+  "rooms": [
+    {
+      "vnum": 1,
+      "name": "學院大門",
+      "description": "你站在教學學院的大門口，石砌的拱門上刻著「學而時習之」。\n往北是學院的走廊。\n{Y【教學】{x打 look（或 l）可以再看一次四周。\n{Y【教學】{x打 north（或 n）往北走。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北看，是一條安靜的走廊。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 2
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 2,
+      "name": "走廊",
+      "description": "一條安靜的走廊，牆上掛著歷屆畢業生的名牌。\n北邊是一扇鐵門，東邊是儲藏室的木門，往南回到大門。\n{Y【教學】{x北邊的鐵門鎖著，鑰匙放在東邊的儲藏室。\n{Y【教學】{x打 open east 打開木門，再打 east（或 e）走進去。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "一扇厚重的鐵門，門上有個銅色的鑰匙孔。\n",
+          "keywords": "鐵門 iron",
+          "locks": 1,
+          "key": 1,
+          "to_room": 4
+        },
+        "east": {
+          "description": "儲藏室的木門，門縫裡飄出灰塵的味道。\n",
+          "keywords": "木門 wooden",
+          "locks": 1,
+          "key": -1,
+          "to_room": 3
+        },
+        "south": {
+          "description": "往南看，是學院的大門。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 1
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 3,
+      "name": "儲藏室",
+      "description": "堆滿木箱和舊掃帚的小房間，空氣裡有灰塵的味道。\n往西回到走廊。\n{Y【教學】{x打 get 鑰匙 把地上的鑰匙撿起來，打 inventory（或 i）看背包。\n{Y【教學】{x回到走廊（west 或 w）以後，打 unlock north 開鎖，再打 open north 開門。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "west": {
+          "description": "往西看，是走廊。\n",
+          "keywords": "木門 wooden",
+          "locks": 1,
+          "key": -1,
+          "to_room": 2
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 4,
+      "name": "教官室",
+      "description": "寬敞的房間，牆上掛滿了木劍和盾牌。\n往北是訓練場，往南回到走廊。\n{Y【教學】{x教官送你的「餽贈」會慢慢補血、讓你變強。打 score 看最下面，就看得到身上的效果。\n{Y【教學】{x打 wear 長劍 把教官給的長劍拿在手上，打 equipment（或 eq）看身上穿了什麼。\n{Y【教學】{x準備好了就往北走進訓練場。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北看，是鋪著沙土的訓練場。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 5
+        },
+        "south": {
+          "description": "往南看，是走廊的鐵門。\n",
+          "keywords": "鐵門 iron",
+          "locks": 1,
+          "key": 1,
+          "to_room": 2
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 5,
+      "name": "訓練場",
+      "description": "鋪著沙土的訓練場，中間插著一個稻草人。\n北邊是一扇沉重的石門，往南回到教官室。\n{Y【教學】{x打 kill 稻草人（或 k 稻草人）開始打。打倒它，北邊的石門就會打開。\n{Y【教學】{x打的時候看最下面的 HP，打不過可以打 flee 逃跑。\n{Y【教學】{x打倒以後打 get 護甲 屍體 把它掉的護甲拿出來，再打 wear 護甲 穿上。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "一扇沉重的石門，上面沒有鑰匙孔。\n",
+          "keywords": "石門 stone",
+          "locks": 4,
+          "key": -1,
+          "to_room": 6
+        },
+        "south": {
+          "description": "往南看，是教官室。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 4
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 6,
+      "name": "畢業廳",
+      "description": "掛著紅色布幔的大廳，院長站在講台後面微笑。\n往南回到訓練場。\n{Y【教學】{x學會了就對院長說：say 畢業，院長會送你到外面的世界。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "south": {
+          "description": "往南看，是訓練場的石門。\n",
+          "keywords": "石門 stone",
+          "locks": 4,
+          "key": -1,
+          "to_room": 5
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    }
+  ],
+  "mobiles": [
+    {
+      "vnum": 1,
+      "keywords": "instructor 教官",
+      "short": "教官",
+      "long": "教官/instructor/雙手抱胸站在這裡。\n",
+      "description": "一位曬得黝黑的教官，眼神很銳利，但說話很和氣。\n",
+      "level": 30,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 2,
+      "affected_by": 0,
+      "alignment": 0,
+      "race": "human",
+      "sex": 1,
+      "position": 7,
+      "drops": [],
+      "script": {
+        "file": "教官.lua",
+        "timer": null
+      },
+      "shop": null,
+      "special": null
+    },
+    {
+      "vnum": 2,
+      "keywords": "dummy 稻草人",
+      "short": "稻草人",
+      "long": "一個稻草人/dummy/插在沙地上。\n",
+      "description": "用稻草紮成的人偶，身上套著破舊的布衣，被打過很多次了。\n",
+      "level": 1,
+      "tier": "trash",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 2,
+      "affected_by": 0,
+      "alignment": 0,
+      "race": "plant",
+      "sex": 0,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 3,
+          "color": "purple",
+          "chance": 10000,
+          "tiers": null
+        }
+      ],
+      "script": {
+        "file": "稻草人.lua",
+        "timer": null
+      },
+      "shop": null,
+      "special": null
+    },
+    {
+      "vnum": 3,
+      "keywords": "dean 院長",
+      "short": "院長",
+      "long": "院長/dean/站在講台後面。\n",
+      "description": "頭髮花白的院長，看著每一個學生畢業是他最開心的事。\n",
+      "level": 30,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 2,
+      "affected_by": 0,
+      "alignment": 0,
+      "race": "human",
+      "sex": 1,
+      "position": 7,
+      "drops": [],
+      "script": {
+        "file": "院長.lua",
+        "timer": null
+      },
+      "shop": null,
+      "special": null
+    }
+  ],
+  "objects": [
+    {
+      "vnum": 1,
+      "keywords": "key 鑰匙 銅鑰匙",
+      "short": "銅鑰匙",
+      "long": "一把銅鑰匙掉在地上。",
+      "item_type": 18,
+      "extra_flags": 0,
+      "wear_flags": 1,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 2,
+      "keywords": "sword 長劍",
+      "short": "長劍",
+      "long": "一把長劍插在地上。",
+      "item_type": 5,
+      "extra_flags": 0,
+      "wear_flags": "1|8192",
+      "values": [
+        2,
+        0,
+        0,
+        1
+      ],
+      "weight": 5,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 3,
+      "keywords": "armor 護甲 衣服",
+      "short": "護甲",
+      "long": "一件護甲丟在地上。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": "1|8",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 8,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    }
+  ],
+  "resets": [
+    {
+      "cmd": "*",
+      "comment": "走廊：東邊儲藏室的木門關著、北邊的鐵門鎖著（鑰匙在儲藏室）"
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 2,
+      "direction": "east",
+      "state": 1,
+      "comment": "儲藏室的木門關著"
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 2,
+      "direction": "north",
+      "state": 2,
+      "comment": "往教官室的鐵門鎖著"
+    },
+    {
+      "cmd": "O",
+      "if_flag": 0,
+      "obj_vnum": 1,
+      "color": null,
+      "level": 1,
+      "limit": 0,
+      "room_vnum": 3,
+      "comment": "儲藏室地上的銅鑰匙"
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 1,
+      "limit": 1,
+      "room_vnum": 4,
+      "comment": "教官：走進來就放餽贈"
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 2,
+      "limit": 1,
+      "room_vnum": 5,
+      "comment": "稻草人：打倒它石門就打開"
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 5,
+      "direction": "north",
+      "state": 2,
+      "comment": "往畢業廳的石門鎖著"
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 3,
+      "limit": 1,
+      "room_vnum": 6,
+      "comment": "院長：說「畢業」送回 101"
+    }
+  ]
+}

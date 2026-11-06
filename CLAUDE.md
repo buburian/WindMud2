@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 專案概況
 
 最小的 MUD telnet 伺服器原型，程式碼在 `mud/` 套件，網路用標準庫 asyncio。
-執行期依賴只有 rich（畫面上的紀錄顯示）；開發依賴是 pytest（`pyproject.toml` 的 dev group）。
+執行期依賴是 rich（畫面上的紀錄顯示）和 lupa（Lua 腳本，`uv add` 加的）；開發依賴是 pytest（`pyproject.toml` 的 dev group）。
 
 ## 參考資料（唯讀，不可修改）
 
@@ -43,6 +43,10 @@ uv run python -m mud.builder                      # 區域編輯器，瀏覽器�
   `tests/test_gear.py` 測裝備的屬性（跟 balance.py 的 `primary_bundle`、`apply_points` 比對）、手冊的負重／武器重量／攻擊方式表、武器傷害、雙持、打架中換武器、技能的武器。
   `tests/test_object_resets.py` 測重置 G、O、P、R、生物身上的東西進屍體（店主的消失）、test.json 載入後商人身上的東西和箱子裡的麵包；
   `tests/test_containers.py` 測容器的 open、close、lock、unlock、找的順序、鑰匙、關著不能拿、封印、存檔帶容器狀態、門用真的鑰匙。
+  `tests/test_give.py` 測 give（給東西、給金幣、店主不收、放不下、1 級不能給金幣、給完存檔、log）。
+  `tests/test_scripts.py` 測 Lua 腳本：沙箱（拿不到的名字、碰不到 Python、指令數上限、記憶體）、開機檢查的每一條、10 個觸發時機、每個函式、vars、wait、出錯的提醒
+  （wait 用假的 `scripts.schedule`，自己呼叫 `later.run()`；區域檔和 .lua 用 `build()` 寫進 `tmp_path`）。
+  `tests/test_academy.py` 用真的 `areas/` 測教學學院：一人一份、一路走到畢業（掉落、穿上、`say 畢業`）、學生重新登入和死掉回學院、沒有學院的區域檔時。
   `tests/test_flee.py` 測 flee（DEX 的機率、戰鬥中不能走、成功、失敗要等、關著的門、沒有出口）。
   `tests/test_affects.py` 測身上的效果（覆蓋和疊加、暫時加減屬性、每 3 tick 跳、矮人的堅韌、扣死給誰經驗、時間到、死掉、存檔、score 最下面那段、affect、mstat），自己呼叫 `affects.tick()`。
   `tests/test_examine.py` 測 exam 的每一行、ostat、mstat、物品種類和武器種類的名稱表（跟手冊比對）、地上那一行接英文名字。
@@ -109,7 +113,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     全域的 `characters` 是遊戲裡所有的角色（玩家和 NPC，所有區域物件裡的），找同房間的人都從這裡找。
   - `Player(name, writer, room, sex)`：多了 `writer`（連線）和 `reply`（最後一個 tell 我的玩家），`send()` 寫到連線。
     建立角色或讀檔時才填的屬性：`password`（雜湊）、`race`、`guild`、`level`、`primaries`（角色自己的主屬性）、`resource_roll`、`skills`（會的技能，見下面「技能」）、
-    `hp`／`mp`／`mv`（現在的值）、`panel`（全部次要屬性的快取）、`gold`（金幣，還沒有拿到的地方，先是 0；存檔有）。直接 `Player(...)` 建出來的（測試）沒有屬性，`score` 會說看不到。
+    `hp`／`mp`／`mv`（現在的值）、`panel`（全部次要屬性的快取）、`gold`（金幣，放在 `Character`：玩家存檔，生物只有別人 give 給牠的；還沒有拿到金幣的地方）。直接 `Player(...)` 建出來的（測試）沒有屬性，`score` 會說看不到。
     升級點數：`points`（還沒分配的）、`trained`（每項主屬性靠升級加了幾點，降級扣回用），**永遠成立 `points ＋ Σ trained ＝ 等級 − 1`**、
     主屬性 ＝ 種族的數字 ＋ `trained`（有測試）。`stats.set_level()` 改等級（升級加 `points`；降級先扣 `points`，不夠再隨機扣加過點的屬性，使用者選的；
     改完從頭算、HP／MP／MV 補滿），`stats.train()` 加點（每項最高 `PRIMARY_CAP` 55）。
@@ -124,7 +128,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     **prompt 每個角色自己的**（`ch.prompt()`，使用者選的樣子）：玩家是 `<HP 62/62 MP 25/25 MV 38/38> `，
     現在的值照剩多少變色（超過 2/3 綠、超過 1/3 黃、其他紅，`level_color()`），上限一般顏色；
     沒有屬性的角色（`Character.prompt()`，例如測試直接建的）是 `config.PROMPT` 的 `> `。
-    `online_players()` 是在線的玩家（chat、tell 只找他們）。模組的 `send(writer, text)` 給還沒登入時用。
+    `online_players()` 是在線的玩家（chat 只找他們；tell 先找他們，找不到才找同房間的生物）。模組的 `send(writer, text)` 給還沒登入時用。
   - **屬性**（`stats.py`，玩家角色手冊、設計文件 §2.6、§3.6、§8）：`Race`（6 個，存檔寫代號 human…spirit）、`Guild`（`SWORD = "phys"` 劍之公會、
     `STAFF = "spell"` 杖之公會，代號跟 balance.py 一樣）、`RACE_PRIMARIES`（手冊的種族表）。
     `naked()` 是裸裝次要屬性（0.75 × 參考值 × G(L) × Σ 主屬性 ÷ 公會標準 × 切片；公會用不到的傷害、龍焰抗性是 0），
@@ -132,7 +136,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `recompute(player)` 從頭算 `panel`（設計文件 §8.2：升級、改主屬性、穿脫裝備都從頭算，不要加加減減）；AC 全部來自裝備（護具的基本值）。裝備怎麼加見下面「背包和裝備」。
     數字抄 balance.py，`tests/test_stats.py` 直接比對，設計文件改數字時要一起改。初始主屬性先用種族的數字（公會怎麼套上去還沒決定）。
   - **登入和建立角色**（`login.py`，一問一答照順序寫）：名字 3～12 個英文字母（照 C 版，保留字不行），存成第一個字大寫。
-    有存檔就問密碼（錯了就斷線）；沒有就建立：密碼兩次（至少 5 個字）、性別、種族、公會，選完就建好、存檔。
+    有存檔就問密碼（錯了就斷線）；沒有就建立：密碼兩次（至少 5 個字）、性別、種族、公會，選完就建好、`zones.enroll()`、站在 `zones.home()`、存檔。
     存檔前再看一次檔案在不在（兩條連線同時建同一個名字，後面的不能蓋掉前面的）。密碼雜湊用 `asyncio.to_thread` 做，不卡住別人。
     **重複登入**（使用者選的，照 C 版）：已經在線上又用對的密碼登入，舊連線收到訊息並斷線，新連線接手同一個 Player（換 `writer`），站在原地。
   - `Npc`（生物）：`send()` 什麼都不做，所以送給 NPC 的訊息等於沒送。區域檔的生物由 `npcs.spawn()` 做出來（重置的 `M`）：
@@ -145,7 +149,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `tests/test_stats.py` 比對常數，也把 4 等級 × 4 種類 × 7 攻擊 × 3 攻防 × 5 原型全部跟 `area_mob()` 比。`Npc(name, sex, room)` 直接建的（測試）沒有區域檔的資料。
     `spawn(vnum, proto, room, rng, base)` 也存 `npc.drops`（掉落表，`obj_vnum` 用**牠自己那個檔**的 `base` 換算：M 可以放別的檔的生物），
     所以 `resets.mobiles` 的值是 `(area_number, 生物)`。`names()` 是別人指定牠用的名字（keywords；玩家是名字），`characters.find_in_room()` 用它。
-    **死掉**（`death.die()`，照 C 版 raw_kill）：打牠的人和牠停手 → `objects.make_corpse()` → 移出 `characters`（重置的 limit 數不到牠，下次重置再放）。
+    **死掉**（`death.die(npc, killer=)`，照 C 版 raw_kill）：先跑牠的 on_death（腳本，牠被 destroy 了就到此為止）→ 打牠的人和牠停手 → `objects.make_corpse()` → 移出 `characters`（重置的 limit 數不到牠，下次重置再放）。
     imm 的 slay、戰鬥打到 HP 0（`combat.py`）都呼叫它。死亡慘叫（C 版 death_cry）還沒做。
     **玩家死掉**（`death.player_dies()`，使用者選的簡單做法）：打他的人和他停手、`affects.on_death()`、回 `zones.start_room()`、HP 1、站著；不掉東西、不留屍體、不扣經驗。
     look 裡站著、有 `long` 的生物顯示 `long`（照 C 版），其他照姿勢寫「名字站在這裡。」…（`system.appearance()`）。
@@ -158,7 +162,9 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   `$t`/`$T` 帶進來的文字；小寫是自己、大寫是對象。寫錯的碼原樣保留，並在伺服器視窗印警告。
   `compose()` 跟 `act()` 一樣算出「誰收到什麼」但不送（`act()` 就是用它）：要把好幾句合成一段再送的地方用（戰鬥的一回合）。
   不是哪個角色做的事、而是系統主動送的訊息（例如天氣），用 `notify(ch, text)`：跟 `act()` 送給別人一樣先換行、再補 prompt
-  （`act()` 送給別人時就是呼叫它）。`notify()` 不轉顏色代碼。
+  （`act()` 送給別人時就是呼叫它）。`notify()` 不轉顏色代碼。對方自己的指令還沒跑完（在 `scripts.commanding` 裡）就不補 prompt，見下面「腳本」；
+  這時好幾句連在一起不空行（使用者要的，`ch.notified`：上一個送的是 notify；`Player.send()` 設回 False），跟指令自己的訊息之間空一行，
+  `apart=True` 是另起一段、前面一定空一行（腳本的 `transfer` 送新房間的畫面）。
 - **指令**（`commands/`）：`__init__.py` 的 `COMMANDS` 是指令表，輸入的字照表的順序找**第一個用它開頭的指令**
   （例如 `c` → chat），表的順序就是縮寫的優先順序。指令依類別分檔：系統類在 `system.py`，戰鬥在 `combat.py`，技能在 `skills.py`。
   加新指令：在類別檔寫 `do_xxx(ch, arg)`（`ch` 是下指令的角色，回傳 `False` 代表斷線），再加進 `COMMANDS`。
@@ -256,14 +262,14 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `room_flags`（數字或字串）、`sector`（整數）不是 `{"value": …, "names": …}` 這種 dict；沒有 `overridden_exits`。
     `areas/test.json` 是測試區域（世界區域，`type` 是 `world`）：`area_number` 100，房間 1（南）、2（北）在遊戲裡是 101、102，南北相連；
     起始房間 `config.START_ROOM` 是 101。之後會照使用者的指示繼續改格式。`area`、每個房間、每隻生物、每個物品和每筆重置的欄位**一個都不能少**，
-    巢狀欄位也要有範例值（`extra_descriptions`、`script` 各放一筆；生物 1「測試商人」的每個欄位都有值，生物 2「測試坐騎」示範 null／空的寫法；生物 3「野兔」是練功用的 1 級一般怪，重置放 3 隻在房間 2（使用者要的）；
+    巢狀欄位也要有範例值（`extra_descriptions` 放一筆；`script`：房間 2 用 `areas/test/鐘聲.lua`、生物 1 用 `商人.lua`、物品 2 是物品的舊格式；生物 1「測試商人」的每個欄位都有值，生物 2「測試坐騎」示範 null／空的寫法；生物 3「野兔」是練功用的 1 級一般怪，重置放 3 隻在房間 2（使用者要的）；
     物品 1～4 是藥水、長劍、箱子、麵包（重置用到 1、3、4），物品 2「測試長劍」每個欄位都有值；物品 5～9 是給 `oload` 試裝備用的（盾牌、匕首（副手）、大劍（雙手）、戒指、皮甲，都沒寫 affects，給顏色就抽隨機屬性；不在重置裡，使用者同意加的）；
     `resets` 每種指令各一筆；房間 1 往北、房間 2 往南的出口是同一扇木門（門兩邊都要寫），給 `D` 的範例用）：使用者靠它看系統還缺哪些功能。
     房間的文字可以用顏色代碼。
     **每個欄位的意思和新系統的實作進度寫在 `docs/區域製作手冊.md`**：改區域檔格式、或做了新的區域功能時，
     要同步更新它（開頭的進度總表，以及各欄位「新系統」那一欄）。
   - **生物（`mobiles`）**：最上層的清單，欄位照舊版 `#MOBILES`（含 A、F、P、R 行）加上 `#SHOPS`（`shop`）、`#SPECIALS`（`special`）整理，
-    名稱沿用 area2json；`act`、`affected_by` 寫法同 `room_flags`，`sex`、`actions` 的 `when`/`mode` 是整數。
+    名稱沿用 area2json；`act`、`affected_by` 寫法同 `room_flags`，`sex` 是整數。
     使用者刪掉了舊版的 `hitroll`、`ac`、`hit_dice`、`damage_dice`、`gold`、`custom`（K 行）、`exp`：系統之後也不用，不要加回來。
     **經驗值只照 `mud_design` 設計文件 §4.7 算**（看怪物種類、等級差和玩家等級的前期經驗加成；使用者 2026-11-03 決定），生物身上沒有經驗倍數。
     **怪物的屬性由程式照「等級 ＋ 種類 ＋ 三個開關」算（設計文件 §4.1～§4.3），區域檔不寫數值**。四個欄位放在 `level` 後面，
@@ -284,8 +290,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `affects.location`（使用者定的）：0～5 主屬性（照 C 版），6～15 是設計文件 10 種可以用點數買的次要屬性（HP、物理傷害…法術抗性，
     代號同 mud_design 的 STAT_KEYS），16 是龍焰抗性（不算點數，區域作者另外給，設計文件 §5.5）；C 版的 6 性別拿掉了。
     舊區域的 location 數字意思不同，轉檔工具只沿用文字、不帶屬性過來。
-    special 的吐息（`spec_breath_*`）算龍焰傷害、施法（`spec_cast_*`）和 `spec_poison` 算法術傷害；`fight_actions` 的傷害類型照
-    `command` 用的技能本身；兩者都是普通攻擊以外額外多打的（使用者定的，設計文件 §4.1）。
+    special 的吐息（`spec_breath_*`）算龍焰傷害、施法（`spec_cast_*`）和 `spec_poison` 算法術傷害，是普通攻擊以外額外多打的（使用者定的，設計文件 §4.1）。
+    **生物做事只留 special 和腳本**（使用者定的）：舊版的 `actions`、`fight_actions` 拿掉了，寫了是不認得的欄位，不要加回來；舊區域重寫時用腳本寫。
     生物的 `level` 照寫的值，不隨機加減（不照 C 版的 ±1），想要變化用 `tier_roll`。
     武器傷害（`values` 第 2、3 格）、護具防護力（第 1、3 格）由裝備等級算（設計文件 §3.3），作者寫 0；檢查不管這幾格，
     編輯器的 `VALUE_FIELDS` 把它們標成 `auto`（顯示但不能改）。
@@ -338,6 +344,12 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - 每間 Room 有 `zone` 指回它的區域物件。走路用 `room_at(from_room, vnum)`：先找自己所在的區域物件
     （所以在副本、動態區域裡走會留在同一份），再找世界，最後是動態區域。
     `find_room()` 順序一樣，但**不會建立**還沒建的動態區域（找門的對面用：關門不能把動態區域建起來）。
+- **教學學院**（規則在玩家角色手冊「教學學院」，使用者 2026-11-06 定的）：`areas/academy.json`（副本，`area_number` 200）＋ `areas/academy/` 的三個腳本；
+  `builder_area/` 也放了一樣的一份給編輯器。新角色建好就進自己那一份（`zones.instance(ACADEMY_FILE, 名字)`）。
+  - 「家」是 `zones.home(player)`：學生（`zones.is_student()`：有學院的區域檔，而且 `player.vars["academy"]["student"]`）是學院的第一間 `ACADEMY_START`，其他人是 `start_room()`。
+    建角（`login.create()` 先 `enroll()`）、讀檔（`save.player_from()`：學生一律回家，其他人房間不在世界才回家）、玩家死掉（`death.player_dies()`）都用它。
+  - 畢業是院長的腳本拿掉 `student`（`config.ACADEMY_STUDENT`，名字兩邊要一樣），再 `transfer(101)`。程式裡沒有別的畢業判斷。
+  - 房間的描述就是教學（`{Y【教學】{x` 那幾行），改教學內容改區域檔就好。
 - **tick 和戰鬥的 loop**（使用者定的；C 版是全遊戲一個鐘，我們不照它）：
   - tick loop：世界和全部動態區域**共用一個**（世界 tick，`zones.start()` 開始），每次先做世界、再做每個動態區域；
     **副本每份自己一個**（建立時開始，釋放時結束）。間隔 `TICK_SECONDS` 固定 1 秒（使用者 2026-11-04 從 30 秒改成 1 秒，不加亂數）。
@@ -432,7 +444,9 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - 讀檔時也回傳別的檔的房間名（`elsewhere`）、生物名（`elsewhere_mobiles`）、物品名（`elsewhere_objects`），給號碼旁的名字標籤用。
   - 前端 `static/`：`model.js` 是純資料操作，`editor.js` 是編輯畫面的外框和房間畫面，`files.js` 選檔畫面，`settings.js` 區域設定（含區域種類 `type` 的下拉選單），
     `ui.js` 小工具，`forms.js` 綁在區域檔物件上的表單欄位（改了直接寫回），`app.js` 用網址的 `#檔名` 換畫面。
-    載入的 JSON 直接改，**沒動到的欄位原樣存回去**（例如 `"1|4"`、`script`）。
+    載入的 JSON 直接改，**沒動到的欄位原樣存回去**（例如 `"1|4"`、物品的 `script`）。
+    房間、生物的 `script` 是兩格（`forms.js` 的 `scriptFields()`：`file`、`timer`，兩格都空著存成 null）；物品的只顯示（`scriptRow()`）。
+    檢查腳本用 `check_files(..., script_root=編輯器的資料夾)`，所以 `.lua` 放在 `builder_area/區域檔名/`。
   - **左欄上方切換四種畫面**（`state.mode`）：房間（中間地圖、右邊分頁，多一個「重置」分頁在 `roomresets.js`）、
     生物（`mobiles.js`）、物品（`objects.js`）：沒有地圖，右邊表單佔滿；重置總覽（`resets.js`）：照檔案順序的表格，可拖曳排順序。
     各畫面模組拿 `editor.js` 的 `ctx`（`state`、`edited()`、`rebuild()`、`refresh()`、`goRoom()`、`chipOf()`），不互相 import 成一圈。
@@ -484,7 +498,9 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
 - **背包和裝備**（`inventory.py`、指令在 `commands/items.py`，規則在玩家角色手冊「物品和裝備」，訊息照 C 版 act_obj.c）：
   - `ch.carrying`（新的在前）、`ch.equipment`（部位 → Obj；部位、eq 的名稱和順序是 `inventory.SLOTS`，照 C 版 where_name；戒指 `finger_l`／`finger_r`，
     雙手武器只放在 `wield`，`blocker()` 把副手當成被它佔住）。**生物不穿裝備**（使用者說的）：wear、remove 對生物是「你沒有辦法使用這項物品。」
-  - get（地上、`get x 屍體`；`get all` 跳過撿不起來的，拿不動說一次就停，照 C 版）、drop、wear（`wear x` 換下原本的；`wear all` 只穿空的部位，副手武器排最後）、
+  - get（地上、`get x 屍體`；`get all` 跳過撿不起來的，拿不動說一次就停，照 C 版）、drop、
+    give（照 C 版：給同房間的人、`give N coins 名字` 給金幣、1 級不能給金幣、店主不收、對方是玩家要 `over_limit()` 放得下，給完 `keep()` 幫給的人存檔）、
+    wear（`wear x` 換下原本的；`wear all` 只穿空的部位，副手武器排最後）、
     remove（`remove all` 照 SLOTS 的順序，副手在主手前）、inventory（最後一行件數和負重，使用者選的）、equipment。最低姿勢照 C 版：前四個 RESTING（打架中可以），後兩個 DEAD。
   - 限制：裝備等級（角色等級 < 裝備等級不能穿，設計文件 §3.4）、件數 `stats.CARRY_COUNT` 35、負重 `stats.carry_limit()`（STR 表、獸人 ×1.25，身上穿的也算）、
     武器重量 `stats.wield_limit()`（每一把武器自己比）；兩張表抄手冊（`test_gear.py` 比對）。生物不檢查件數、負重。
@@ -499,12 +515,38 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - `examine`（`ex`，`commands/items.py` 的 `identify()`）：**只看背包和身上的**（使用者要的），句型照 C 版 identify，每種東西只列有的行。
     imm 的 `ostat <名字>`（`os`：背包、身上、地上、地上屍體裡，照這個順序）／`ostat <號碼>`（區域檔的寫法）、`mstat <名字>`（`m`：同房間的生物或玩家）：
     全部資料，數字留小數。名稱用 `area.ITEM_TYPE_NAMES`、`WEAPON_KIND_NAMES`、`ATTACK_NAMES`（手冊的表，有測試）、`equipment.STAT_NAMES`、`SLOT_NAMES`、`COLOR_NAMES`。
+- **腳本**（Lua，規則在區域製作手冊「腳本」，使用者 2026-11-06 定的）：房間、生物的 `script` 是 `{"file": "x.lua", "timer": 秒數或 null}`，
+  `.lua` 放在跟區域檔同名的資料夾（`areas/test/`）。物品的腳本還沒做（物品的 `script` 還是舊格式 `{"trigger", "function"}`，`check_object_script()`）。
+  - 開機檢查在 `area.check_lua()`（`check_files()` 呼叫，所以伺服器、`areacheck`、編輯器一樣）：檔案、資料夾、UTF-8、Big5、語法、最外層跑得過、不認得的 `on_` 函式、timer 和 on_timer 成對、timer 1～3600。
+    觸發時機的表是 `area.ROOM_TRIGGERS`（5 種）、`MOB_TRIGGERS`（10 種）。最外層用 `lua.check_env()` 跑（`me`、`room` 是假的替身）。
+  - `lua.py`：沙箱（全遊戲一個 lupa 的 Lua 5.4）。每次觸發重新 `load()`（新的 env）、`spawn()` 回傳 coroutine、`step()` 跑一段（`done`／`wait`／`error`）。
+    每一段 `BUDGET` 10 萬個指令（count hook）；超過、或 Python 判定出錯（`wrap()` 包的函式丟錯）就 `kill`：腳本裡每個指令都丟錯誤，pcall 接不住。
+    腳本沒有 coroutine、os、io、load、debug…；字串的方法只留 `byte char len lower upper sub format rep reverse`。
+    給 Lua 的角色、房間是 handle（Lua 的表，方法是綁好的 Python 函式），`obj_of()` 用腳本拿不到的弱參照表換回來。
+  - `scripts.py`：讀好每個 .lua（`library`）、接上主人（`attach_room()`、`attach_mob()`）、`fire(房間, 時機, actor, 參數…)`（先房間、再生物照 `arrived`）、
+    `fire_owner()`（只跑一個主人）、wait（`schedule()`，測試換掉）、出錯 `report()`（記 log、線上 imm 一行，同一個錯 `REPORT_EVERY` 60 秒一次）、`tick()` 數 timer。
+    **一串裡每個主人只跑一次**（使用者選的，`chain`；`one_chain()` 最外面那次清掉：`fire()`、`fire_owner()`、wait 完的 `later()`）：
+    只擋「繞回自己」的話，好幾隻生物互相觸發每一條路都跑一次（10 隻 3 萬多次、伺服器卡 5 秒）。
+    `running` 是正在跑的堆疊，最多 `MAX_DEPTH` 5 層；actor 是主人自己也不跑。**錯誤都在這裡接住**，不往外丟。
+    `commanding` 是正在打指令的人的堆疊（`command()` 推進來）：`act.notify()` 送給還在裡面的人時當作指令的回覆、不補 prompt
+    （生物的腳本在他說話的當下回話，才不會有兩個 prompt；指令跑完 `command()` 補一個）。
+  - `script_api.py`：給腳本的名字和函式（`me`、`room`、`actor` 的欄位和方法、`random`、`hour`、vars、號碼換算、`transfer`、`load_mob`、`mob:use`…）。
+    判定「算腳本出錯」就丟 `ScriptError`。玩家的 vars 在 `player.vars[區域檔名][名字]`（存檔），生物、房間的在自己的 `vars`。
+  - 觸發的地方：`commands.command()`（on_command，`quit` 不觸發）、`system.move()`（on_enter）、`do_say()`（**只有玩家說的**，使用者選的：生物之間對話用 tell）、`do_tell()`（找不到線上玩家才找同房間的生物，on_tell）、
+    `items.do_give()`／`give_gold()`、`death.die(npc, killer=)`（on_death，倒下之前）、`Fight.tick()`（on_fight）、`npcs.spawn()`（on_born）、
+    `resets.reset_area()`（先清那個區域檔房間的 vars，再 on_reset）、`Zone.tick()`（on_timer，放在提早的 return 前面）。`zones.stop()` 取消全部在等的。
+  - 坑：coroutine 一定要用 lupa 的 `函式.coroutine()` 建、Python `send()` 接著跑。在 Lua 裡 `coroutine.resume` 的話，腳本呼叫 Python、Python 再回頭讀 Lua
+    （handle 換回角色、腳本觸發別的腳本）時，lupa 會讀錯，拿到 `(thread, function)` 這種 tuple。所以 hook 由 coroutine 自己掛（開始時、每次 wait 回來時）。
+  - 坑：Python 的錯不能穿過 Lua（lupa 釋放上一個錯的 traceback 時會讓整個程式當掉，整套測試跑才碰得到）：`lua.wrap()` 在 Python 這邊接住，回傳 `(成功了沒, 值或錯)`。
+  - 坑：`LuaError` 要從 `lupa.lua54` import（`lupa.LuaError` 是另一個類別，接不到）；從 coroutine 丟出來的 `LuaMemoryError` 沒有訊息。
+  - 坑：Run 結束時一定要 `finish()`（放掉 handle）：handle 的方法抓著 Run、Run 抓著 handle，Python 和 Lua 互相抓著，兩邊的垃圾回收都收不掉，
+    每次觸發漏約 10 KB，Lua 記憶體用完整個程式當掉（PANIC，不是 Python 的錯誤）。`test_finished_runs_free_their_memory` 看著它。
 - **顏色**（`color.py`）：字串裡寫代碼，`colorize()` 換成 C 版 `merc.h` 的色碼：`{r{R{g{G{y{Y{b{B{m{M{c{C{w{W{D`
   （小寫暗、大寫亮），`{x` 回到原本顏色，`{{` 印出 `{`，不認得的代碼原樣留著。不能巢狀：`{x` 是全部回到原本顏色。
   `act()` 會先對 fmt 做 `colorize()` 再代換 `$` 碼，所以玩家打的代碼會原樣顯示。`send()` 不轉代碼，要顏色就自己包 `colorize()`。
   目前 chat 用 `{M`（亮紫），tell／reply 用 `{G`（亮綠），跟 C 版一樣。
 - **存檔**（`save.py`）：一個角色一個 JSON 檔 `players/名字小寫.json`（`config.PLAYER_DIR`，不進 git），先寫暫存檔再 `os.replace`。
-  存主屬性、等級、經驗值 `exp`、種族、公會、`resource_roll`、HP／MP／MV、房間號碼、身上的效果 `affects`，**也寫一份全部次要屬性 `panel`**（使用者要的：打開檔案就看得到全屬性）。
+  存主屬性、等級、經驗值 `exp`、種族、公會、`resource_roll`、HP／MP／MV、房間號碼、身上的效果 `affects`、腳本的變數 `vars`，**也寫一份全部次要屬性 `panel`**（使用者要的：打開檔案就看得到全屬性）。
   讀檔（`player_from()`）時次要屬性一律從頭算、蓋掉檔案那份，HP／MP／MV 夾在新上限以內；房間不在世界區域（動態、副本）就站起始房間。
   密碼只存 `hashlib.scrypt` 的雜湊（每個角色自己的鹽），比對用 `hmac.compare_digest`。
   離線時存：quit 和直接斷線都在 `handle()` 的 `finally` 存，`do_quit` 不另外存。建好角色時也存。

@@ -6,7 +6,7 @@
 """
 import random
 
-from . import affects, fight, objects, zones   # 坑：fight → combat → death → fight 繞一圈，所以用 fight.stop_fighting，不 from import
+from . import affects, fight, objects, scripts, zones   # 坑：fight → combat → death → fight 繞一圈，所以用 fight.stop_fighting，不 from import
 from .characters import Position, characters
 
 
@@ -18,20 +18,24 @@ def stop_all(ch):
     fight.stop_fighting(ch)
 
 
-def die(npc, rng=random):
+def die(npc, rng=random, killer=None):
     """npc 死掉：打牠的人和牠自己停手，原地留下屍體（掉落表骰到的物品放在裡面），從遊戲裡拿掉。
 
     拿掉以後重置的 limit 數不到牠，下次重置會再放一隻（照 C 版）。
+    倒下之前先跑牠腳本的 on_death(killer)（使用者定的：還在房間裡，留遺言做得到）；腳本讓牠消失了（destroy）就不留屍體。
     """
+    scripts.fire_owner(npc, "on_death", None, killer)
+    if npc not in characters:
+        return
     stop_all(npc)
     objects.make_corpse(npc, rng)
     characters.remove(npc)
 
 
 def player_dies(player):
-    """玩家死掉：打他的人和他停手，「死掉後不在」的效果拿掉，回到起始房間，HP 剩 1、站著（使用者選的）。"""
+    """玩家死掉：打他的人和他停手，「死掉後不在」的效果拿掉，回「家」（zones.home：起始房間，學生是學院的第一間），HP 剩 1、站著（使用者選的）。"""
     stop_all(player)
     affects.on_death(player)
-    player.room = zones.start_room()
+    player.room = zones.home(player)
     player.hp = 1.0
     player.position = Position.STANDING

@@ -47,8 +47,8 @@ class Lines:
     def __init__(self, ch):
         self.ch, self.by = ch, {}
 
-    def add(self, fmt, to=TO_CHAR, t=None, T=None):
-        for reader, text in compose(fmt, self.ch, t=t, T=T, to=to):
+    def add(self, fmt, to=TO_CHAR, t=None, T=None, vch=None):
+        for reader, text in compose(fmt, self.ch, vch, t=t, T=T, to=to):
             self.by.setdefault(reader, []).append(text)
 
     def send(self):
@@ -75,17 +75,23 @@ def carry_weight(ch):
     return sum(objects.weight(o) for o in ch.carrying + worn(ch))
 
 
+def over_limit(ch, obj):
+    """ch 再拿 obj 會超過哪一個：件數是 "count"、負重是 "weight"，都沒超過是 None。生物不檢查。"""
+    if not is_player(ch):
+        return None
+    if len(ch.carrying) + 1 > stats.CARRY_COUNT:
+        return "count"
+    if carry_weight(ch) + objects.weight(obj) > stats.carry_limit(ch):
+        return "weight"
+    return None
+
+
 def room_for(ch, obj, out):
     """ch 能不能再拿 obj（件數、負重）：不能就把訊息放進 out，回傳 False。生物不檢查。"""
-    if not is_player(ch):
-        return True
-    if len(ch.carrying) + 1 > stats.CARRY_COUNT:
-        out.add(TOO_MANY, t=objects.short(obj))
-        return False
-    if carry_weight(ch) + objects.weight(obj) > stats.carry_limit(ch):
-        out.add(TOO_HEAVY, t=objects.short(obj))
-        return False
-    return True
+    reason = over_limit(ch, obj)
+    if reason is not None:
+        out.add(TOO_MANY if reason == "count" else TOO_HEAVY, t=objects.short(obj))
+    return reason is None
 
 
 def where(ch, obj):

@@ -1,5 +1,6 @@
 """角色：玩家和 NPC 共同的部分，以及遊戲裡所有角色的名單。"""
 import enum
+import itertools
 
 from . import names
 from .config import PROMPT
@@ -33,9 +34,12 @@ class Character:
         self.fighting = None                # 正在打誰（角色）
         self.fight = None                   # 在哪一場戰鬥裡（fight.Fight）
         self.sent = False                   # 這個指令有沒有送出訊息：有的話 prompt 前空一行（使用者要的，command() 用）
+        self.notified = False               # 這個指令上一個送出的是別人的訊息（act.notify）：接著的別人的訊息不空行（使用者要的）
         self.carrying = []                  # 背包裡的物品（objects.Obj），新的在前（照 C 版）；身上穿的不在這裡
         self.equipment = {}                 # 穿在身上的：部位（inventory.SLOTS 的代號）→ Obj。生物不穿裝備（使用者說的）
         self.affects = []                   # 身上的效果（affects.Affect），放上去的順序
+        self.gold = 0                       # 金幣：玩家存進存檔；生物只有別人 give 給牠的（不存，死掉還沒放進屍體）
+        self.arrived = 0                    # 進現在這個房間的先後（arrive()）：好幾個生物的腳本照這個順序跑
 
     def send(self, text):
         """送文字給這個角色看。NPC 沒有連線，所以什麼都不做；玩家（Player）會改成寫到連線。"""
@@ -65,6 +69,14 @@ def find_in_room(ch, name):
     名字的規則在 names.py（開頭就行、3.dog 是第 3 隻）。順序照 look 畫面（in_room()），自己排最後（look 看不到自己；自己也找得到，照 C 版）。
     """
     return names.pick(in_room(ch) + [ch], name, lambda c: c.names())
+
+
+_arrivals = itertools.count(1)
+
+
+def arrive(ch):
+    """ch 剛進到一個房間（出現、走進來、被送過來）：記下先後。"""
+    ch.arrived = next(_arrivals)
 
 
 characters = []  # 遊戲裡所有的角色（玩家和 NPC，所有區域物件裡的都在這），找同房間的人都從這裡找

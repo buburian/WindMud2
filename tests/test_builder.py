@@ -1,6 +1,7 @@
 """區域編輯器的網頁伺服器：用 port 0 開真的伺服器（資料夾是暫存的），用 urllib 打 API。"""
 import json
 import re
+import shutil
 import threading
 import urllib.error
 import urllib.request
@@ -69,6 +70,7 @@ def test_create_existing_file_is_refused(builder):
 
 def test_save_keeps_test_json_byte_for_byte(builder):
     base, folder = builder
+    shutil.copytree(ROOT / "areas" / "test", folder / "test")       # 腳本的 .lua 也在編輯器的資料夾裡找
     raw = (ROOT / "areas" / "test.json").read_bytes()
     status, result, _ = call(f"{base}/api/areas/test.json", "PUT", json.loads(raw))
     assert status == 200 and result["problems"] == []

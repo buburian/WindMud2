@@ -122,18 +122,6 @@ export const RACES = [
   ["lizard", "蜥蜴"],
 ];
 
-// 平常的動作：什麼時候、怎麼做
-export const ACTION_WHEN = [
-  [0, "每個 tick"],
-  [1, "有人走進房間"],
-];
-
-export const ACTION_MODE = [
-  [0, "當成指令執行"],
-  [1, "對整個房間顯示"],
-  [2, "對走進來的人顯示"],
-];
-
 // 寫在程式裡的行為 special：[名稱, 畫面上的名字, "平常" 或 "戰鬥"]
 export const SPECIALS = [
   ["spec_guard", "守衛", "平常"],

@@ -1,7 +1,7 @@
 """NPC（生物）：沒有連線的角色。區域檔的生物由 spawn() 做出來（resets.py 的 M）。"""
-from . import stats
+from . import scripts, stats
 from .area import CHANCE_MAX, ActFlag, MobTier, parse_flags, resolve
-from .characters import Character, Position, characters
+from .characters import Character, Position, arrive, characters
 
 
 class Npc(Character):
@@ -23,6 +23,8 @@ class Npc(Character):
         self.mix = {}                       # 攻擊類型比例，例如 {"dragon": 0.7, "phys": 0.3}
         self.hp = self.mp = self.mv = 0.0   # 現在的 HP、MP、MV（出現時補滿；怪物的 MP、MV 是 0）
         self.drops = []                     # 掉落表（區域檔的 drops，obj_vnum 換成遊戲號碼）：死掉時 objects.make_corpse() 照它骰
+        # 腳本（scripts.py）：script 是 scripts.Script；vars 是牠身上的變數（死掉就沒了）
+        self.script, self.timer, self.timer_left, self.waiting, self.vars = None, None, 0, 0, {}
 
     def names(self):
         """玩家用來指定牠的名字：區域檔的 keywords；直接建的（測試）沒有就用名字。"""
@@ -66,4 +68,7 @@ def spawn(vnum, proto, room, rng, base):
     position = proto["position"]
     npc.position = Position(position) if position in {p.value for p in Position} else Position.STANDING
     characters.append(npc)
+    arrive(npc)
+    scripts.attach_mob(npc)
+    scripts.fire_owner(npc, "on_born")
     return npc

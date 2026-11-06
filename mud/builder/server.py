@@ -80,11 +80,12 @@ class Builder:
         """用 check_files 檢查還沒存的內容：寫進暫存資料夾的同名檔，對照這個資料夾裡其他檔名的檔。
 
         同名的舊檔不拿來對照，不然每間房都會被當成跟舊檔重複。
+        腳本的 .lua 照樣在這個資料夾裡找（例如 builder_area/test/），不是暫存資料夾。
         """
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / name
             path.write_text(dump(data), encoding="utf-8")
-            return area.check_files([path], self.others(name))[path]
+            return area.check_files([path], self.others(name), script_root=self.folder)[path]
 
     def listing(self):
         result = []

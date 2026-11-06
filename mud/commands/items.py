@@ -1,14 +1,23 @@
-"""物品類指令：get、drop、wear、remove、inventory、equipment（玩家角色手冊「物品和裝備」，訊息照 C 版 act_obj.c）。
+"""物品類指令：get、drop、give、wear、remove、inventory、equipment（玩家角色手冊「物品和裝備」，訊息照 C 版 act_obj.c）。
 
 名字照 objects.find()（開頭就行、2.sword 是第 2 件），all 是全部（all 不分大小寫）。
 一個指令的訊息合成一段送（inventory.Lines）：get all 撿好幾件，旁邊的人也只看到一個 prompt。
 """
-from .. import inventory, objects, stats
-from ..act import TO_ROOM
+import logging
+import re
+
+from .. import inventory, objects, save, scripts, stats
+from ..act import TO_NOTVICT, TO_ROOM, TO_VICT
+from ..characters import find_in_room
+from ..npcs import Npc
+from ..script_api import Vnum
 from ..area import ATTACK_NAMES, CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE, ITEM_TYPE_NAMES, WEAPON_KIND_NAMES, ContainerFlag
 from ..equipment import COLOR_NAMES, SLOT_NAMES, STAT_NAMES, TWO_HANDED
 
 CONTAINERS = (CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE)     # get 東西 容器：可以從裡面拿的物品種類
+GOLD_LOG = 1_000_000                        # give 這麼多金幣以上記 log（照 C 版）
+
+log = logging.getLogger(__name__)
 
 
 def is_all(word):
@@ -127,6 +136,93 @@ def put_down(ch, obj, out):
     ch.room.contents.insert(0, obj)
     out.add("你丟下了【$t】。", t=objects.short(obj))
     out.add("$n丟下了【$t】。", TO_ROOM, t=objects.short(obj))
+
+
+def do_give(ch, arg):
+    """give <東西> <名字>：把背包裡的東西給同房間的人（玩家或生物）。give <數量> coins <名字>：給金幣。
+
+    照 C 版 act_obj.c 的 do_give（使用者定的）：店主不收東西；對方是玩家要放得下（件數、負重）；給完幫給的人存檔
+    （C 版是 do_save，防止當機時東西變兩份；我們不印 do_save 的「Ok.」）。無法丟棄、看不看得到、任務物品還沒做。
+    """
+    words = arg.split()
+    if len(words) < 2:
+        ch.send("你想把什麼物品給誰？\n")
+        return
+    if re.fullmatch(r"[+-]?\d+", words[0]):  # C 版的 is_number：give 100 coins ming
+        give_gold(ch, words)
+        return
+    obj = objects.find(ch.carrying, words[0])
+    if obj is None:
+        ch.send("你沒有這樣東西。\n")
+        return
+    victim = find_in_room(ch, words[1])
+    if victim is None:
+        ch.send("他們不在這裡。\n")
+        return
+    out, name = inventory.Lines(ch), objects.short(obj)
+    if getattr(victim, "shopkeeper", False):          # 店主不收（C 版：沒有腳本的店主）
+        out.add("$N拒絕拿【$t】。", t=name, vch=victim)
+        out.add("$n想要拿【$t】給$N，但是$E拒絕了。", TO_NOTVICT, t=name, vch=victim)
+        out.add("你拒絕拿$n的【$t】。", TO_VICT, t=name, vch=victim)
+        out.send()
+        return
+    reason = inventory.over_limit(victim, obj)
+    if reason is not None:
+        out.add("$N沒辦法攜帶這麼多的物品。" if reason == "count" else "$N沒辦法攜帶這麼重的物品。", vch=victim)
+        out.send()
+        return
+    ch.carrying.remove(obj)
+    victim.carrying.insert(0, obj)
+    out.add("$n將【$t】拿給$N。", TO_NOTVICT, t=name, vch=victim)
+    out.add("$n把【$t】拿給你。", TO_VICT, t=name, vch=victim)
+    out.add("你把【$t】拿給$N。", t=name, vch=victim)
+    out.send()
+    keep(ch)
+    if isinstance(victim, Npc):             # 腳本的 on_give(actor, item, gold)：給完以後
+        scripts.fire_owner(victim, "on_give", ch, ch, Vnum(obj.vnum), 0)
+
+
+def give_gold(ch, words):
+    """give <數量> coins <名字>（照 C 版）：1 級不能給；給這麼多以上記 log。"""
+    amount = int(words[0])
+    if amount <= 0 or not "coins".startswith(words[1].lower()):
+        ch.send("抱歉，你不能這樣做。\n")
+        return
+    if len(words) < 3:
+        ch.send("你想把什麼物品給誰？\n")
+        return
+    victim = find_in_room(ch, words[2])
+    if victim is None:
+        ch.send("他們不在這裡。\n")
+        return
+    if ch.gold < amount:
+        ch.send("你沒有這麼多金幣。\n")
+        return
+    if getattr(ch, "level", 1) <= 1:
+        ch.send("你的等級不足以給人金幣。\n")
+        return
+    if amount >= GOLD_LOG:
+        log.info(f"{ch.name} 給了 {victim.name} {amount} 枚金幣")
+    ch.gold -= amount
+    victim.gold += amount
+    out = inventory.Lines(ch)
+    out.add("你給$N一些金幣。", vch=victim)
+    out.add("$n給你【$t】枚金幣。", TO_VICT, t=str(amount), vch=victim)
+    out.add("$n給$N一些金幣。", TO_NOTVICT, vch=victim)
+    out.send()
+    keep(ch)
+    if isinstance(victim, Npc):
+        scripts.fire_owner(victim, "on_give", ch, ch, None, amount)
+
+
+def keep(ch):
+    """給完幫給的人存檔（照 C 版）：生物、沒有屬性的角色不存；存檔失敗記 log。"""
+    if not inventory.is_player(ch):
+        return
+    try:
+        save.save_player(ch)
+    except OSError:
+        log.exception(f"{ch.name} 給完東西存檔失敗")
 
 
 def do_wear(ch, arg):

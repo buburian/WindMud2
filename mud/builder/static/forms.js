@@ -126,7 +126,28 @@ export function removeButton(onclick, label = "移除") {
   return h("button", { type: "button", class: "btn btn-text btn-danger", onclick }, label);
 }
 
-// 觸發程式：只顯示，不能改
+// 房間、生物的腳本：.lua 檔名和 timer（區域製作手冊「腳本」）。兩格都空著就存成 null；
+// 原本是表就只改 file、timer 兩格（其他欄位原樣留著，讓檢查報錯）
+export function scriptFields({ id, owner, done }) {
+  const save = () => {
+    const file = document.getElementById(`${id}-file`).value;
+    const timer = parseNumber(document.getElementById(`${id}-timer`).value);
+    if (file === "" && timer === null) owner.script = null;
+    else if (owner.script && typeof owner.script === "object" && !Array.isArray(owner.script)) {
+      owner.script.file = file;
+      owner.script.timer = timer;
+    } else owner.script = { file, timer };
+    done();
+  };
+  const s = owner.script && typeof owner.script === "object" ? owner.script : {};
+  return h("div", { class: "row" },
+    field({ id: `${id}-file`, label: "腳本", code: "script.file", tip: "跟區域檔同名的資料夾裡的 .lua",
+      input: textInput({ id: `${id}-file`, value: textOf(s.file), oninput: save }) }),
+    field({ id: `${id}-timer`, label: "每幾秒", code: "script.timer", style: "flex: 0 0 140px", tip: "有 on_timer 才寫，1～3600；空著是 null",
+      input: textInput({ id: `${id}-timer`, value: numberText(s.timer), oninput: save }) }));
+}
+
+// 物品的觸發程式：只顯示，不能改（物品腳本還沒做）
 export function scriptRow(script) {
   let text = "有";
   if (script === null || script === undefined) text = "沒有";

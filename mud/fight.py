@@ -14,7 +14,7 @@ import heapq
 import itertools
 import logging
 
-from . import combat, damage                # 坑：combat 會 import 回來，要用「模組.名字」，不能 from .combat import hit
+from . import combat, damage, scripts       # 坑：combat 會 import 回來，要用「模組.名字」，不能 from .combat import hit
 from .act import notify
 from .characters import Position, characters
 from .clock import cancel, every
@@ -55,6 +55,9 @@ class Fight:
             except Exception:
                 log.exception("戰鬥出錯，結束這一場")
                 return False
+            for ch in list(self.members):   # 腳本的 on_fight(target)：每回合打完以後，還在打的生物（出錯 scripts 自己接住）
+                if ch.fight is self and ch.fighting is not None and scripts.has(ch, "on_fight"):
+                    scripts.fire_owner(ch, "on_fight", ch.fighting, ch.fighting)
         return bool(self.members)
 
     def join(self, ch):

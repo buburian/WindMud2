@@ -89,9 +89,13 @@ RULES = [
     pytest.param(lambda d: room(d).update(extra_descriptions=[{"keywords": "牌子"}]),
                  "少了欄位 description", id="extra 少欄位"),
     pytest.param(lambda d: room(d).update(script={"trigger": {"value": 64}, "function": "rs_x"}),
-                 "少了欄位 names", id="script trigger"),
-    pytest.param(lambda d: room(d).update(script={"trigger": {"value": 64, "names": ["say"]}, "function": ""}),
-                 "function 不能是空的", id="script function"),
+                 "script 多了不認得的欄位 trigger", id="script 舊的寫法"),
+    pytest.param(lambda d: room(d).update(script={"file": "x.txt", "timer": None}),
+                 "file 要寫 .lua 的檔名，不能是 'x.txt'", id="script 不是 .lua"),
+    pytest.param(lambda d: room(d).update(script={"file": "x.lua", "timer": 0}),
+                 "timer 要是 null 或 1～3600 的整數，不能是 0", id="script timer 0"),
+    pytest.param(lambda d: room(d).update(script={"file": "x.lua", "timer": 3601}),
+                 "timer 要是 null 或 1～3600 的整數", id="script timer 太大"),
     # 生物：這次只檢查寫法，數字代表什麼還不檢查
     pytest.param(lambda d: d.pop("mobiles"), "少了欄位 mobiles", id="少了 mobiles"),
     pytest.param(lambda d: d.update(mobiles={}), "mobiles 要寫成 […]", id="mobiles 不是清單"),
@@ -107,6 +111,9 @@ RULES = [
     pytest.param(lambda d: mob(d).update(act="2|x"), "act 看不懂", id="生物 act"),
     pytest.param(lambda d: mob(d).update(affected_by=-1), "affected_by 不能是負數", id="生物 affected_by"),
     pytest.param(lambda d: mob(d).update(custom=None), "多了不認得的欄位 custom", id="生物舊欄位 custom"),
+    # 使用者拿掉的：生物做事只留 special 和 Lua 腳本
+    pytest.param(lambda d: mob(d).update(actions=[]), "多了不認得的欄位 actions", id="生物舊欄位 actions"),
+    pytest.param(lambda d: mob(d).update(fight_actions=[]), "多了不認得的欄位 fight_actions", id="生物舊欄位 fight_actions"),
     pytest.param(lambda d: mob(d).update(exp=1), "多了不認得的欄位 exp", id="生物舊欄位 exp"),   # 經驗值照設計文件 §4.7 算
     pytest.param(lambda d: mob(d).pop("tier"), "生物 1 少了欄位 tier", id="生物少 tier"),
     pytest.param(lambda d: mob(d).update(tier="mob"),
@@ -132,10 +139,7 @@ RULES = [
     pytest.param(lambda d: mob(d)["drops"][0].update(tiers=[]), "drops 第 1 行的 tiers 要是 null", id="生物 drops tiers 空的"),
     pytest.param(lambda d: mob(d)["drops"][0].update(tiers=["boss", "boss"]), "tiers 要是 null", id="生物 drops tiers 重複"),
     pytest.param(lambda d: mob(d)["drops"][0].pop("tiers"), "drops 第 1 行 少了欄位 tiers", id="生物 drops 少欄位"),
-    pytest.param(lambda d: mob(d)["script"].update(function=""), "function 不能是空的", id="生物 script"),
-    pytest.param(lambda d: mob(d).update(actions={}), "actions 要寫成 […]", id="生物 actions 不是清單"),
-    pytest.param(lambda d: mob(d)["actions"][0].pop("text"), "actions 第 1 項少了欄位 text", id="生物 actions 少欄位"),
-    pytest.param(lambda d: mob(d)["fight_actions"][0].update(rate="10"), "rate 要是整數", id="生物 fight_actions"),
+    pytest.param(lambda d: mob(d).update(script={"file": "", "timer": None}), "file 要寫 .lua 的檔名", id="生物 script"),
     pytest.param(lambda d: mob(d)["shop"].update(buy_types="8"), "buy_types 要是整數的清單", id="生物 shop buy_types"),
     pytest.param(lambda d: mob(d)["shop"].update(open_hour=None), "open_hour 要是整數", id="生物 shop 時間"),
     pytest.param(lambda d: mob(d).update(special=""), "special 要是 null 或函式名稱", id="生物 special"),
@@ -248,7 +252,7 @@ def test_reference_instance_is_known(tmp_path):
 
 def test_mobile_parts_can_be_null(tmp_path):
     data = good_area()
-    mob(data).update(script=None, shop=None, special=None, actions=[], fight_actions=[], drops=[],
+    mob(data).update(script=None, shop=None, special=None, drops=[],
                      tier_roll=None, attack=None, defense=None, archetype=None)
     assert problems_of(tmp_path, data) == []
 

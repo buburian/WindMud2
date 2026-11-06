@@ -78,7 +78,7 @@ def slain(out, killer, victim):
     if isinstance(victim, Npc):
         if isinstance(killer, Player):
             reward(out, killer, victim)
-        death.die(victim)
+        death.die(victim, killer=killer)
     else:
         out.tell(compose(DEAD_SELF, victim, to=TO_CHAR))
         death.player_dies(victim)

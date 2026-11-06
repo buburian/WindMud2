@@ -174,7 +174,7 @@ SUMMARY = [
     "  溝通  chat tell reply say",
     "  角色  train rest sleep stand save quit",
     "  戰鬥  kill use flee",
-    "  物品  get drop wear remove inventory equipment examine",
+    "  物品  get drop give wear remove inventory equipment examine",
     "  門    open close lock unlock",
 ]
 
@@ -192,7 +192,7 @@ def test_imm_sees_the_imm_category():
         "  溝通    chat tell reply say",
         "  角色    train rest sleep stand save quit",
         "  戰鬥    kill use flee",
-        "  物品    get drop wear remove inventory equipment examine",
+        "  物品    get drop give wear remove inventory equipment examine",
         "  門      open close lock unlock",
         "  管理員  advance slay oload ostat mstat restore affect sset",
     ]

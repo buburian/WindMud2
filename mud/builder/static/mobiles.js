@@ -1,7 +1,7 @@
 // 生物畫面：左欄是生物清單，右邊表單佔滿（沒有地圖）。
 // 分頁照使用者的規則：只有一份的欄位全部放「基本資料」，可以一直新增的清單（兩種動作）各自一個分頁。
 import {
-  addButton, areaField, codeField, colorField, flagsField, numberField, refField, removeButton, scriptRow, selectField, tabBar, textField,
+  addButton, areaField, codeField, colorField, flagsField, numberField, refField, removeButton, scriptFields, selectField, tabBar, textField,
   textOf, vnumField,
 } from "./forms.js";
 import * as M from "./model.js";
@@ -11,7 +11,7 @@ import {
   checkbox, confirmDialog, field, h, icon, numberText, parseNumber, selectArrow, textInput, toast,
 } from "./ui.js";
 
-const TABS = [["basic", "基本資料"], ["actions", "平常的動作"], ["fight", "戰鬥中的動作"], ["drops", "掉落表"]];
+const TABS = [["basic", "基本資料"], ["drops", "掉落表"]];
 
 export function listItems(ctx) {
   const { state } = ctx;
@@ -53,7 +53,7 @@ export function render(ctx) {
   }
   const number = M.roomNumber(state.data, mob);
   ui.thingTitle = h("h1", { class: "insp-title" }, textOf(mob.short));
-  const tab = { basic: basicTab, actions: actionsTab, fight: fightTab, drops: dropsTab }[state.mobTab] || basicTab;
+  const tab = { basic: basicTab, drops: dropsTab }[state.mobTab] || basicTab;
   ui.panel.replaceChildren(
     h("div", { class: "panel-head" },
       h("div", { class: "insp-names" },
@@ -97,7 +97,7 @@ function basicTab(ctx, mob) {
       flagsField({ legend: "身上的效果", code: "affected_by", obj: mob, key: "affected_by", table: T.AFFECTED, done }),
       specialField(mob, done)),
     shopSection(ctx, mob),
-    scriptRow(mob.script));
+    scriptFields({ id: "mob-script", owner: mob, done }));
 }
 
 // 攻擊類型的選項：null 純物理、只用一種、「主/次」兩種不一樣的（主 70%、次 30%）
@@ -253,29 +253,3 @@ function addTo(ctx, mob, key, item, focusId) {
   document.getElementById(focusId(mob[key].length - 1)).focus();
 }
 
-function actionsTab(ctx, mob) {
-  const done = ctx.edited;
-  const list = Array.isArray(mob.actions) ? mob.actions : [];
-  return h("div", { class: "stack", style: "gap: 16px" },
-    listHead("actions", () => addTo(ctx, mob, "actions", M.newAction(), (i) => `act-${i}-text`)),
-    list.map((a, i) => h("div", { class: "card card-form" },
-      h("div", { class: "row" },
-        selectField({ id: `act-${i}-when`, label: "什麼時候", code: "when", obj: a, key: "when", options: T.ACTION_WHEN, done }),
-        selectField({ id: `act-${i}-mode`, label: "怎麼做", code: "mode", obj: a, key: "mode", options: T.ACTION_MODE, done }),
-        removeButton(() => { list.splice(i, 1); ctx.rebuild(); })),
-      textField({ id: `act-${i}-text`, label: "指令或文字", code: "text", obj: a, key: "text", done }))));
-}
-
-function fightTab(ctx, mob) {
-  const done = ctx.edited;
-  const list = Array.isArray(mob.fight_actions) ? mob.fight_actions : [];
-  return h("div", { class: "stack", style: "gap: 16px" },
-    listHead("fight_actions", () => addTo(ctx, mob, "fight_actions", M.newFightAction(), (i) => `fa-${i}-command`)),
-    list.map((a, i) => h("div", { class: "card card-form" },
-      h("div", { class: "row" },
-        numberField({ id: `fa-${i}-rate`, label: "機率 %", code: "rate", obj: a, key: "rate", style: "flex: 0 0 120px",
-          tip: "寫負數時，對象改成自己或主人", done }),
-        textField({ id: `fa-${i}-command`, label: "指令", code: "command", obj: a, key: "command", tip: "%s 會換成對象", done }),
-        removeButton(() => { list.splice(i, 1); ctx.rebuild(); })),
-      textField({ id: `fa-${i}-message`, label: "顯示的文字", code: "message", obj: a, key: "message", tip: "%s 會換成對象的名字", done }))));
-}
