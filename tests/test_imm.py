@@ -62,7 +62,8 @@ def balanced(p):
 def test_only_imm_finds_imm_commands():
     assert commands.find("advance") is None
     assert commands.find("advance", is_imm=True) is imm.do_advance
-    assert commands.find("a", is_imm=True) is imm.do_advance
+    assert commands.find("ad", is_imm=True) is imm.do_advance
+    assert commands.find("a", is_imm=True) is system.do_affects          # 玩家的指令先找：a 是 affects
     # 原本的縮寫不受影響
     assert commands.find("t", is_imm=True) is system.do_tell
     assert commands.find("tr") is system.do_train

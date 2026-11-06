@@ -128,6 +128,21 @@ class ActFlag(enum.IntFlag):
     WIMPY = 128                             # 受傷會逃跑
 
 
+class AffectFlag(enum.IntFlag):
+    """身上的效果的旗標（生物的 affected_by、身上的效果的 flags，affects.py）。名字是手冊的 C 版名稱；現在只是記號，還沒有作用。"""
+    BLIND = 1                               # 失明
+    INVISIBLE = 2                           # 隱形
+    DETECT_EVIL = 4                         # 看得出邪惡
+    DETECT_INVIS = 8                        # 看得到隱形
+    DETECT_MAGIC = 16                       # 看得出魔法
+
+
+AFFECT_FLAG_NAMES = {                       # 顯示用的中文（手冊 affected_by 表的「意思」，有測試比對）
+    AffectFlag.BLIND: "失明", AffectFlag.INVISIBLE: "隱形", AffectFlag.DETECT_EVIL: "看得出邪惡",
+    AffectFlag.DETECT_INVIS: "看得到隱形", AffectFlag.DETECT_MAGIC: "看得出魔法",
+}
+
+
 class Archetype(enum.StrEnum):
     """原型（archetype）：把可調點數重新分配，總點數不變。null 是標準。"""
     TANK = "tank"                           # 坦克：HP、抗性、閃躲 ×2；攻擊類 ×0.5
@@ -212,6 +227,16 @@ WEAR_SLOTS = {
 LIGHT_ITEM_TYPE = 1                         # 物品種類 1 照明用具：不在 wear_flags 裡，放在光源的位置
 WEAPON_ITEM_TYPE = 5                        # 物品種類 5 武器
 CONTAINER_ITEM_TYPE = 15                    # 物品種類 15 容器：get 東西 容器 可以從裡面拿
+
+
+class ContainerFlag(enum.IntFlag):
+    """容器旗標（容器 values 的第 2 個）。名字是手冊的 C 版名稱（有測試比對）。"""
+    CLOSEABLE = 1                           # 可以關起來
+    PICKPROOF = 2                           # 撬不開
+    CLOSED = 4                              # 關著
+    LOCKED = 8                              # 鎖著
+    SEALABLE = 16                           # 可以封印
+    SEALED = 32                             # 封印著
 # 物品種類的中文（手冊的 item_type 表，有測試比對）：exam、ostat 顯示用。區域檢查還沒限制只能寫表裡的數字
 ITEM_TYPE_NAMES = {
     1: "照明用具", 2: "卷軸", 3: "魔杖", 4: "魔棒", 5: "武器", 6: "弓", 8: "寶藏", 9: "護具", 10: "藥水", 12: "家具",

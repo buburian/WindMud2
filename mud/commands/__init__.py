@@ -6,16 +6,15 @@ from . import help as help_command          # 不叫 help：名字會蓋掉 Pyth
 # 指令表：(指令, 函式, 最低姿勢)。輸入的字照這個順序比對，第一個用它開頭的指令就是答案（c 會找到 chat）。
 # 要改優先順序，調整這裡的順序就好；新指令加在後面，原本的縮寫才不會變。
 # 最低姿勢照 C 版的指令表（睡覺時哪些能用是使用者確認過的判斷，表在玩家角色手冊「姿勢和指令」）：
-# 系統類（chat、tell、who、score、train、quit…）睡著也能用；look、say、weather、門的指令要醒著；走路要站起來。
+# 系統類（chat、tell、who、score、train、quit…）睡著也能用；look、say、weather、門的指令要醒著；走路要站著、沒在打架。
 COMMANDS = [
-    # 方向放最前面：n、e、s、w、u、d 都是走路。休息、睡覺不能走；
-    # 戰鬥中照舊可以走：C 版戰鬥中不能走（要用 flee），但還沒有 flee，做 flee 時改成 STANDING
-    ("north", system.do_north, P.FIGHTING),
-    ("east", system.do_east, P.FIGHTING),
-    ("south", system.do_south, P.FIGHTING),
-    ("west", system.do_west, P.FIGHTING),
-    ("up", system.do_up, P.FIGHTING),
-    ("down", system.do_down, P.FIGHTING),
+    # 方向放最前面：n、e、s、w、u、d 都是走路。休息、睡覺、戰鬥中都不能走（照 C 版；戰鬥中要用 flee）
+    ("north", system.do_north, P.STANDING),
+    ("east", system.do_east, P.STANDING),
+    ("south", system.do_south, P.STANDING),
+    ("west", system.do_west, P.STANDING),
+    ("up", system.do_up, P.STANDING),
+    ("down", system.do_down, P.STANDING),
     ("look", system.do_look, P.RESTING),
     ("chat", system.do_chat, P.SLEEPING),
     ("tell", system.do_tell, P.SLEEPING),
@@ -46,6 +45,8 @@ COMMANDS = [
     ("inventory", items.do_inventory, P.DEAD),  # i、inv
     ("equipment", items.do_equipment, P.DEAD),  # e 還是 east，eq 才是 equipment
     ("examine", items.do_examine, P.RESTING),   # ex；只看背包和身上的（照 C 版要醒著）
+    ("affects", system.do_affects, P.DEAD),     # a；看自己身上的效果，什麼姿勢都能看（imm 的 a 也變成它，ad 才是 advance）
+    ("flee", combat.do_flee, P.FIGHTING),       # f；戰鬥中逃跑（照 C 版的最低姿勢）
 ]
 
 # 管理員（imm）才找得到的指令，接在 COMMANDS 後面找，原本的縮寫都不受影響
@@ -56,6 +57,7 @@ IMM_COMMANDS = [
     ("ostat", imm.do_ostat, P.DEAD),            # os
     ("mstat", imm.do_mstat, P.DEAD),            # m
     ("restore", imm.do_restore, P.DEAD),        # res 還是 rest，resto 才是 restore
+    ("effect", imm.do_effect, P.DEAD),          # e 還是 east，ef 才是 effect（叫 affect 會被 affects 先找到）
 ]
 
 # 姿勢不夠時的訊息（照 C 版 interp.c）

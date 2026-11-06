@@ -170,10 +170,10 @@ def test_load_problems(tmp_path):
 SUMMARY = [
     "說明的分類（help 分類 或 help 指令 看細節）：",
     "  移動  north east south west up down",
-    "  資訊  look score who weather skills help",
+    "  資訊  look score who weather skills affects help",
     "  溝通  chat tell reply say",
     "  角色  train rest sleep stand save quit",
-    "  戰鬥  kill use",
+    "  戰鬥  kill use flee",
     "  物品  get drop wear remove inventory equipment examine",
     "  門    open close lock unlock",
 ]
@@ -188,19 +188,19 @@ def test_imm_sees_the_imm_category():
     want = [
         "說明的分類（help 分類 或 help 指令 看細節）：",
         "  移動    north east south west up down",
-        "  資訊    look score who weather skills help",
+        "  資訊    look score who weather skills affects help",
         "  溝通    chat tell reply say",
         "  角色    train rest sleep stand save quit",
-        "  戰鬥    kill use",
+        "  戰鬥    kill use flee",
         "  物品    get drop wear remove inventory equipment examine",
         "  門      open close lock unlock",
-        "  管理員  advance slay oload ostat mstat restore",
+        "  管理員  advance slay oload ostat mstat restore effect",
     ]
     assert say("help", imm=True) == "\r\n".join(want) + "\r\n\r\n> "
 
 
 def test_help_category():
-    assert say("help 戰鬥") == "【戰鬥】\r\n  kill  開打同房間的生物\r\n  use   放技能\r\n\r\n> "
+    assert say("help 戰鬥") == "【戰鬥】\r\n  kill  開打同房間的生物\r\n  use   放技能\r\n  flee  從戰鬥中逃跑\r\n\r\n> "
     assert say("help 戰鬥 kill").startswith("【戰鬥】")          # 只看第一個字
 
 

@@ -35,6 +35,7 @@ class Character:
         self.sent = False                   # 這個指令有沒有送出訊息：有的話 prompt 前空一行（使用者要的，command() 用）
         self.carrying = []                  # 背包裡的物品（objects.Obj），新的在前（照 C 版）；身上穿的不在這裡
         self.equipment = {}                 # 穿在身上的：部位（inventory.SLOTS 的代號）→ Obj。生物不穿裝備（使用者說的）
+        self.affects = []                   # 身上的效果（affects.Affect），放上去的順序
 
     def send(self, text):
         """送文字給這個角色看。NPC 沒有連線，所以什麼都不做；玩家（Player）會改成寫到連線。"""

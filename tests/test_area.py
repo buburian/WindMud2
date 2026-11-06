@@ -80,6 +80,7 @@ def manual_table(marker):
     pytest.param("### wear_flags（拿起來、穿在哪裡）", area.WearFlag, id="wear_flags"),
     pytest.param("### extra_flags（特性旗標）", area.ExtraFlag, id="extra_flags"),
     pytest.param("### act（行為旗標）", area.ActFlag, id="act"),
+    pytest.param("### affected_by（身上的效果）", area.AffectFlag, id="affected_by"),
 ])
 def test_definitions_match_manual(marker, cls):
     # 手冊表格的「數字、C 版名稱」跟程式裡的定義要一模一樣（中文意思寫在註解，測試看不到）

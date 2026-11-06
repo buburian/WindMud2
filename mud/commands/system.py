@@ -2,9 +2,9 @@
 import logging
 import re
 
-from .. import objects, save, stats, weather, zones
+from .. import affects, objects, save, stats, weather, zones
 from ..act import TO_CHAR, TO_ROOM, TO_VICT, act
-from ..area import CORPSE_NPC_ITEM_TYPE, DIRECTIONS, REVERSE, MobTier
+from ..area import DIRECTIONS, REVERSE, MobTier
 from ..characters import SEX_FEMALE, SEX_MALE, Position, characters, in_room
 from ..color import colorize
 from ..config import ENCODING
@@ -41,16 +41,19 @@ def do_look(ch, arg):
 
 
 def look_in(ch, name):
-    """look in 東西：看地上的屍體裡有什麼（照 C 版 act_info.c 的訊息）。容器要等 O、P 做了才有。"""
+    """look in 東西：看地上或背包裡的容器、屍體裡有什麼（照 C 版 act_info.c 的訊息）。"""
     if not name:
         ch.send("你想看些什麼東西？\n")
         return
-    obj = objects.find(ch.room.contents, name)
+    obj = objects.find(ch.room.contents + ch.carrying, name)
     if obj is None:
         ch.send("這裡沒有你想看的東西。\n")
         return
-    if obj.item_type != CORPSE_NPC_ITEM_TYPE:
+    if not obj.is_container():
         ch.send("這不是一個容器。\n")
+        return
+    if obj.closed():
+        ch.send("它是蓋起來的。\n")             # 照 C 版
         return
     # 每件一行、前面空 5 格（照 C 版；C 版會把一樣的合成「( 2) 」，先不做）
     inside = "".join(f"     {objects.short(o)}\n" for o in obj.contains) or "     空無一物。\n"
@@ -116,7 +119,8 @@ LOOK_POSITIONS = {
 }
 
 
-def move(ch, direction):
+def move(ch, direction, leave="$n朝$t離開。"):
+    """往 direction 走。leave 是原本房間的人看到的那句（flee 換成「逃竄了」）。"""
     vnum = ch.room.exits.get(direction)
     door = ch.room.doors.get(direction)
     if door is not None and door.closed:
@@ -128,7 +132,7 @@ def move(ch, direction):
     if to is None:
         ch.send("那裡不能走。\n")
         return
-    act("$n朝$t離開。", ch, t=DIRECTIONS[direction], to=TO_ROOM)
+    act(leave, ch, t=DIRECTIONS[direction], to=TO_ROOM)
     ch.room = to
     act("$n從$t邊走了過來。", ch, t=DIRECTIONS[REVERSE[direction]], to=TO_ROOM)
     ch.send(look(ch))
@@ -399,3 +403,11 @@ def do_save(ch, arg):
         ch.send("存檔失敗了，請告訴管理員。\n")
         return
     ch.send("存檔好了。\n")
+
+
+def do_affects(ch, arg):
+    """看自己身上的效果：每個一行，名字、還有幾秒、作用。什麼姿勢都能看。"""
+    if not ch.affects:
+        ch.send("你身上沒有任何效果。\n")
+        return
+    ch.send("你身上的效果：\n" + "\n".join(affects.describe(ch, a) for a in ch.affects) + "\n")

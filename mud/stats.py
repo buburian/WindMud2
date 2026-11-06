@@ -286,6 +286,15 @@ def wield_limit(player):
     return s if s <= 16 else WIELD_BY_STR[min(s, max(WIELD_BY_STR))]
 
 
+FLEE_MIN, FLEE_MAX = 0.10, 0.80              # flee 成功的機率：DEX 0 是 10%，直線到 DEX 55（PRIMARY_CAP）是 80%（使用者定的）
+
+
+def flee_chance(ch):
+    """flee 成功的機率：10% ＋ 70% × DEX ÷ 55，最多 80%。DEX 是自己的 ＋ 裝備加的（超過 55 還是 80%）；生物沒有主屬性，當作 0。"""
+    dex = getattr(ch, "primaries", {}).get("dex", 0) + gear_primaries(ch)["dex"]
+    return min(FLEE_MAX, FLEE_MIN + (FLEE_MAX - FLEE_MIN) * dex / PRIMARY_CAP)
+
+
 # 每次回復上限的幾成（玩家角色手冊「回復」）：跟屬性無關，屬性已經透過上限影響回復量。
 # 戰鬥中不回（戰鬥公式的 1:1 沒有算回血）；昏迷、快死了這些手冊沒寫，也不回
 REGEN_RATE = {Position.STANDING: 0.10, Position.RESTING: 0.20, Position.SLEEPING: 0.30}
@@ -299,9 +308,9 @@ def regen(player):
 
 
 def recompute(player):
-    """從頭算玩家的全部次要屬性（player.panel）：裸裝 ＋ MP、MV 上限 ＋ 每件裝備（gear_bonus）；AC 全部來自裝備。
+    """從頭算玩家的全部次要屬性（player.panel）：裸裝 ＋ MP、MV 上限 ＋ 每件裝備（gear_bonus）＋ 身上的效果；AC 全部來自裝備。
 
-    設計文件 §8.2：升級、改主屬性、穿脫裝備時都從頭算一次（不要穿上加、脫下減），戰鬥只讀這份快取。
+    設計文件 §8.2：升級、改主屬性、穿脫裝備、效果變了都從頭算一次（不要穿上加、脫下減），戰鬥只讀這份快取。
     """
     panel = naked(player.level, player.primaries, player.guild)
     panel.update(resources(player.level, player.primaries, player.guild, player.resource_roll))
@@ -309,14 +318,27 @@ def recompute(player):
     for obj in player.equipment.values():
         for key, n in gear_bonus(player.guild, obj).items():
             panel[key] += n
+    add_affects(panel, player)
     player.panel = panel
+
+
+def add_affects(panel, ch):
+    """ch 身上的效果的暫時加減屬性（affects.Affect.applies）加進 panel：玩家、生物共用。"""
+    for a in ch.affects:
+        for key, n in a.applies.items():
+            panel[key] += n
 
 
 def refresh(player):
     """穿脫裝備之後：從頭算，現在的 HP、MP、MV 夾在新上限以內（不補滿）。"""
     recompute(player)
+    clamp(player)
+
+
+def clamp(ch):
+    """現在的 HP、MP、MV 夾在上限以內（上限變高不補，變低夾住；穿脫裝備、身上的效果變了都一樣）。"""
     for key in ("hp", "mp", "mv"):
-        setattr(player, key, min(getattr(player, key), player.panel[key]))
+        setattr(ch, key, min(getattr(ch, key), ch.panel[key]))
 
 
 # ---- 怪物（區域檔的生物）：設計文件 §4.1～§4.3、§4.6，balance.py 的 Model.area_mob() ----

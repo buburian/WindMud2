@@ -355,7 +355,7 @@ def test_use_the_nth_one(world):
 
 
 def test_opponent_who_walked_away(world):
-    # 戰鬥中可以走路：對手走到隔壁，下一回合才會停手。這中間用技能，現在的對手也不在這間房了
+    # 對手被直接搬到隔壁（flee 會馬上停手，這裡不是），下一回合才會停手。這中間用技能，現在的對手也不在這間房了
     shabu = fighter("Shabu")
     dog = mobile("野狗")
 

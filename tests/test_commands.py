@@ -17,6 +17,7 @@ ANY = Position.DEAD                 # 指令表的最低姿勢：什麼姿勢都
 W, X = "\x1b[37;1m", "\x1b[0m"     # 亮白、回到原本顏色
 MERCHANT = "一位測試商人/merchant/站在櫃檯後面。"   # areas/test.json 的生物 1 的 long
 RABBIT = "一隻野兔/rabbit/在草叢裡跳來跳去。"          # areas/test.json 的生物 3（練功用，北邊房間 3 隻）
+BOX = "一個木頭做的測試箱子放在角落。/\x1b[36;1mbox"   # areas/test.json 的物品 3（重置 O 放在北邊房間），英文名字亮青
 
 # 站在房間 101 用 look 看到的樣子（不含其他角色）
 ROOM1 = (
@@ -189,12 +190,12 @@ def test_walk_north_then_follow(world):
     assert ming.room.vnum == 102
     assert hua.writer.data == "\r\n小明朝北離開。\r\n\r\n> ".encode(ENCODING)
     assert bob.writer.data == "\r\n小明朝北離開。\r\n\r\n> ".encode(ENCODING)
-    # 自己走過去之後自動 look：新房間有三隻練功用的野兔（沒有別的玩家），出口只有南
+    # 自己走過去之後自動 look：新房間有三隻練功用的野兔（沒有別的玩家）、地上一個箱子，出口只有南
     assert ming.writer.data == (
         "\x1b[32;1m【\x1b[33;1m測試房間（北）\x1b[32;1m】\x1b[0m\r\n"
         "\x1b[32;1m【出口： \x1b[36;1m南\x1b[32;1m】\x1b[0m\r\n"
         "這是測試區域北邊的房間。\r\n往南可以回到剛才的房間。\r\n"
-        "\r\n" + (W + RABBIT + X + "\r\n") * 3 +
+        "\r\n" + (W + RABBIT + X + "\r\n") * 3 + W + BOX + X + "\r\n" +
         "\r\n> "                                  # 有訊息：prompt 前空一行
     ).encode(ENCODING)
 

@@ -6,10 +6,11 @@ import json
 import logging
 from collections import Counter
 
-from .. import death, equipment, inventory, names, objects, stats
+from .. import affects, death, equipment, inventory, names, objects, stats
 from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act, notify
-from ..area import ATTACK_NAMES, ITEM_TYPE_NAMES, WEAPON_KIND_NAMES, Apply, ItemColor
+from ..area import ATTACK_NAMES, ITEM_TYPE_NAMES, WEAPON_KIND_NAMES, AffectFlag, Apply, ItemColor
 from ..characters import Position, find_in_room
+from ..config import TICK_SECONDS
 from ..equipment import SLOT_NAMES, TWO_HANDED
 from . import items
 from ..npcs import Npc
@@ -194,6 +195,7 @@ def do_mstat(ch, arg):
         ch.send("找不到這個角色。\n")
         return
     lines = npc_lines(victim) if isinstance(victim, Npc) else player_lines(victim)
+    lines.append("效果 " + ("；".join(affects.describe(victim, a) for a in victim.affects) or "無"))
     ch.send("\n".join(lines) + "\n")
 
 
@@ -268,3 +270,48 @@ def refill(c):
         c.mp, c.mv = c.panel.get("mp", 0.0), c.panel.get("mv", 0.0)
     if hasattr(c, "cooldowns"):
         c.cooldowns.clear()
+
+
+# effect 指令的測試效果（數字只是測試用，不是設計；真的效果之後由技能放）：名稱 → Affect 的欄位
+TEST_EFFECTS = {
+    "poison": dict(source="test_poison", name="測試毒", duration=60, periodic={"hp": -10.0},
+                   off_message="你身上的【測試毒】退了。"),
+    "regen": dict(source="test_regen", name="測試回復", duration=60, periodic={"hp": 10.0},
+                  off_message="你身上的【測試回復】沒了。"),
+    "bless": dict(source="test_bless", name="測試祝福", duration=60, applies={"hit": 10.0}, keep_on_death=True,
+                  off_message="你身上的【測試祝福】沒了。"),
+    "blind": dict(source="test_blind", name="測試失明", duration=30, flags=AffectFlag.BLIND,
+                  off_message="你又看得見了。"),
+}
+EFFECT_USAGE = f"用法：effect <名字> <{'、'.join([*TEST_EFFECTS, 'clear'])}>"
+
+
+def do_effect(ch, arg):
+    """effect <名字> <測試效果>：給角色放一個測試用的效果（poison、regen、bless、blind），clear 清掉全部的效果。
+
+    名字跟 restore 一樣：先找同房間的（生物也可以），找不到再找線上的玩家。
+    """
+    words = arg.split()
+    if len(words) < 2 or (words[1].lower() not in TEST_EFFECTS and words[1].lower() != "clear"):
+        ch.send(EFFECT_USAGE + "\n")
+        return
+    victim = find_in_room(ch, words[0]) or names.pick(online_players(), words[0], lambda c: c.names())
+    if victim is None:
+        ch.send("他們不在這兒。\n")
+        return
+    which = words[1].lower()
+    if which == "clear":
+        affects.clear(victim)
+        mine, theirs, own = "你清掉了$N身上全部的效果。", "$n清掉了你身上全部的效果。", "你清掉了身上全部的效果。"
+        log.info(f"{ch.name} 清掉了 {victim.name} 身上全部的效果")
+    else:
+        a = affects.Affect(**TEST_EFFECTS[which])
+        affects.add(victim, a)
+        how_long = f"【{a.name}】（{a.duration * TICK_SECONDS:g} 秒）"
+        mine, theirs, own = "你讓$N身上多了" + how_long + "。", "$n讓你身上多了" + how_long + "。", "你身上多了" + how_long + "。"
+        log.info(f"{ch.name} 讓 {victim.name} 身上多了 {a.name}")
+    if victim is ch:
+        ch.send(own + "\n")
+        return
+    act(theirs, ch, victim, to=TO_VICT)
+    act(mine, ch, victim, to=TO_CHAR)

@@ -6,7 +6,7 @@
 """
 import random
 
-from . import fight, objects, zones         # 坑：fight → combat → death → fight 繞一圈，所以用 fight.stop_fighting，不 from import
+from . import affects, fight, objects, zones   # 坑：fight → combat → death → fight 繞一圈，所以用 fight.stop_fighting，不 from import
 from .characters import Position, characters
 
 
@@ -29,8 +29,9 @@ def die(npc, rng=random):
 
 
 def player_dies(player):
-    """玩家死掉：打他的人和他停手，回到起始房間，HP 剩 1、站著（使用者選的）。"""
+    """玩家死掉：打他的人和他停手，「死掉後不在」的效果拿掉，回到起始房間，HP 剩 1、站著（使用者選的）。"""
     stop_all(player)
+    affects.on_death(player)
     player.room = zones.start_room()
     player.hp = 1.0
     player.position = Position.STANDING

@@ -65,15 +65,23 @@ def land(battle, ch, victim, dmg, crit, attack=BARE_HAND):
         battle.tell(compose(fmt, ch, victim, to=to))
     if victim.hp > 0:
         return False
-    battle.tell(compose(DEAD_ROOM, victim, to=TO_ROOM))
+    slain(battle, ch, victim)
+    return True
+
+
+def slain(out, killer, victim):
+    """victim 的 HP 到 0 了：死亡訊息放進 out（有 tell() 的：這一場的 Fight，或身上的效果那個 tick 的訊息），處理死掉和經驗值。
+
+    killer 是打死他的人：打出最後一下的；被持續扣血扣死的是他正在打的對手，沒在打架是 None（誰都不給經驗）。
+    """
+    out.tell(compose(DEAD_ROOM, victim, to=TO_ROOM))
     if isinstance(victim, Npc):
-        if isinstance(ch, Player):
-            reward(battle, ch, victim)
+        if isinstance(killer, Player):
+            reward(out, killer, victim)
         death.die(victim)
     else:
-        battle.tell(compose(DEAD_SELF, victim, to=TO_CHAR))
+        out.tell(compose(DEAD_SELF, victim, to=TO_CHAR))
         death.player_dies(victim)
-    return True
 
 
 def messages(ch, victim, dmg, crit, attack=BARE_HAND):
@@ -98,7 +106,7 @@ def messages(ch, victim, dmg, crit, attack=BARE_HAND):
 
 
 def reward(battle, player, npc):
-    """打出最後一下的玩家拿經驗值（還沒有組隊，只給他）：照設計文件 §4.7，滿了升級。滿等不加、不說。"""
+    """打死牠的玩家（slain 的 killer）拿經驗值（還沒有組隊，只給他）：照設計文件 §4.7，滿了升級。滿等不加、不說。"""
     if player.level >= stats.MAX_LEVEL:
         return
     amount = stats.kill_exp(player.level, npc.level, npc.tier)

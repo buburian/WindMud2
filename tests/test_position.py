@@ -104,11 +104,11 @@ def test_resting_must_stand_up_to_walk():
     assert ming.writer.text().startswith("你說：『嗨』")
 
 
-def test_fighting_can_still_walk():
-    # 還沒有 flee：戰鬥中照舊可以走（做 flee 時改）
+def test_fighting_cannot_walk():
+    # 戰鬥中不能走，要用 flee（照 C 版）
     ming = player("Ming", P.FIGHTING)
     commands.command(ming, "n")
-    assert ming.room.vnum == 102
+    assert ming.writer.text() == "不行!!你還在戰鬥狀態中!!\r\n\r\n> " and ming.room.vnum == 101
 
 
 def test_sleepers_do_not_hear_the_room_but_get_chat_and_tell():

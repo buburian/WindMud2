@@ -5,7 +5,7 @@
 """
 from .. import inventory, objects, stats
 from ..act import TO_ROOM
-from ..area import ATTACK_NAMES, CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE, ITEM_TYPE_NAMES, WEAPON_KIND_NAMES
+from ..area import ATTACK_NAMES, CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE, ITEM_TYPE_NAMES, WEAPON_KIND_NAMES, ContainerFlag
 from ..equipment import COLOR_NAMES, SLOT_NAMES, STAT_NAMES, TWO_HANDED
 
 CONTAINERS = (CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE)     # get 東西 容器：可以從裡面拿的物品種類
@@ -13,6 +13,11 @@ CONTAINERS = (CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE)     # get 東西 容器
 
 def is_all(word):
     return word.lower() == "all"
+
+
+def sealed(obj):
+    """封印著的容器撿不起來（照 C 版）。"""
+    return obj.container is not None and ContainerFlag.SEALED in obj.container
 
 
 def do_get(ch, arg):
@@ -39,6 +44,8 @@ def get_from_floor(ch, name, out):
         out.add("這裡找不到【$t】。", t=name)
     elif not obj.take:
         out.add("你不能拿起這樣東西。")
+    elif sealed(obj):
+        out.add("你無法拿起被封印的東西...")
     elif inventory.room_for(ch, obj, out):
         pick_up(ch, obj, floor, None, out)
 
@@ -54,6 +61,9 @@ def get_from_container(ch, name, where, out):
     if container.item_type not in CONTAINERS:
         out.add("這不是個容器。")
         return
+    if container.closed():
+        out.add("【$t】關起來了。", t=objects.short(container))       # 照 C 版
+        return
     if is_all(name):
         take_all(ch, container.contains, container, out, "在【$t】裡面沒有東西。")
         return
@@ -67,10 +77,10 @@ def get_from_container(ch, name, where, out):
 
 
 def take_all(ch, source, container, out, nothing):
-    """全部拿：撿不起來的（屍體）靜靜跳過；拿不動了說一次就停（照 C 版，不然訊息一直重複）。"""
+    """全部拿：撿不起來的（屍體、封印著的容器）靜靜跳過；拿不動了說一次就停（照 C 版，不然訊息一直重複）。"""
     found = False
     for obj in list(source):
-        if not obj.take:
+        if not obj.take or sealed(obj):
             continue
         found = True
         if not inventory.room_for(ch, obj, out):
