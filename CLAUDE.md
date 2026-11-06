@@ -44,7 +44,7 @@ uv run python -m mud.builder                      # 區域編輯器，瀏覽器�
   `tests/test_object_resets.py` 測重置 G、O、P、R、生物身上的東西進屍體（店主的消失）、test.json 載入後商人身上的東西和箱子裡的麵包；
   `tests/test_containers.py` 測容器的 open、close、lock、unlock、找的順序、鑰匙、關著不能拿、封印、存檔帶容器狀態、門用真的鑰匙。
   `tests/test_flee.py` 測 flee（DEX 的機率、戰鬥中不能走、成功、失敗要等、關著的門、沒有出口）。
-  `tests/test_affects.py` 測身上的效果（覆蓋和疊加、暫時加減屬性、每 3 tick 跳、矮人的堅韌、扣死給誰經驗、時間到、死掉、存檔、affects、effect、mstat），自己呼叫 `affects.tick()`。
+  `tests/test_affects.py` 測身上的效果（覆蓋和疊加、暫時加減屬性、每 3 tick 跳、矮人的堅韌、扣死給誰經驗、時間到、死掉、存檔、score 最下面那段、affect、mstat），自己呼叫 `affects.tick()`。
   `tests/test_examine.py` 測 exam 的每一行、ostat、mstat、物品種類和武器種類的名稱表（跟手冊比對）、地上那一行接英文名字。
   `tests/test_help.py` 檢查真的 `help/help.json`（每個指令都有說明）、`helps.check()` 的每條規則、help 的三種畫面、縮寫、imm 的分類。
   要登入的測試先用 `tests/player_helpers.py` 的 `make_player_file()` 存好角色（密碼 `PASSWORD`），存檔資料夾用 monkeypatch 把 `save.PLAYER_DIR` 指到 `tmp_path`。
@@ -108,8 +108,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     改手冊的表要一起改它（`tests/test_area.py` 會比對）。現在只有戰鬥會切換 FIGHTING／STANDING。
     全域的 `characters` 是遊戲裡所有的角色（玩家和 NPC，所有區域物件裡的），找同房間的人都從這裡找。
   - `Player(name, writer, room, sex)`：多了 `writer`（連線）和 `reply`（最後一個 tell 我的玩家），`send()` 寫到連線。
-    建立角色或讀檔時才填的屬性：`password`（雜湊）、`race`、`guild`、`level`、`primaries`（角色自己的主屬性）、`resource_roll`、
-    `hp`／`mp`／`mv`（現在的值）、`panel`（全部次要屬性的快取）。直接 `Player(...)` 建出來的（測試）沒有屬性，`score` 會說看不到。
+    建立角色或讀檔時才填的屬性：`password`（雜湊）、`race`、`guild`、`level`、`primaries`（角色自己的主屬性）、`resource_roll`、`skills`（會的技能，見下面「技能」）、
+    `hp`／`mp`／`mv`（現在的值）、`panel`（全部次要屬性的快取）、`gold`（金幣，還沒有拿到的地方，先是 0；存檔有）。直接 `Player(...)` 建出來的（測試）沒有屬性，`score` 會說看不到。
     升級點數：`points`（還沒分配的）、`trained`（每項主屬性靠升級加了幾點，降級扣回用），**永遠成立 `points ＋ Σ trained ＝ 等級 − 1`**、
     主屬性 ＝ 種族的數字 ＋ `trained`（有測試）。`stats.set_level()` 改等級（升級加 `points`；降級先扣 `points`，不夠再隨機扣加過點的屬性，使用者選的；
     改完從頭算、HP／MP／MV 補滿），`stats.train()` 加點（每項最高 `PRIMARY_CAP` 55）。
@@ -117,7 +117,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     （常數 `TIER_DIFFICULTY`、`TIER_EXP_MULT`… 有測試比對）；`gain_exp()` 滿了就 `set_level(等級 ＋ 1)`、扣掉需求，可以連升，滿等不加。
     **前期經驗加成**（`exp_early()`，2026-11-05 使用者定）：打怪的 `kill_exp()` 乘（1 ＋ 加成），1 級 ＋50%、到 99 級 0（`EXP_EARLY_BONUS`、`EXP_EARLY_CURVE`）；
     升級需求 `exp_to_level()` 用 `kill_exp(..., early=False)`，不乘加成。跟種類的經驗加成（`TIER_EXP_MULT`）是兩回事。
-    `advance` 改等級時 `exp` 歸 0。`score` 抬頭寫「經驗 35/139」。
+    `advance` 改等級時 `exp` 歸 0。`score` 的等級那行寫「經驗 35 / 139」。
     `cooldowns`：技能 id → 還要等幾個 tick（見下面「技能」），不存檔。
     `imm`：管理員（存檔的 `imm`），找得到 `IMM_COMMANDS`。舊存檔沒有 `imm`、`points`、`trained`、`exp`，讀檔時當作 False、0、0、0。
     **第一個 imm 要直接改存檔加 `"imm": true`**，改之前伺服器要先關（不然那個角色離線或伺服器關掉時會存檔，把改的蓋掉）。
@@ -173,8 +173,9 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   不是 imm 打 imm 指令，跟打不存在的指令一樣是「什麼？」（照 C 版）。現在有 `advance <名字> <等級>`（在線上的玩家，可以升也可以降，1～100）、
   `slay <名字>`（`sla` 起，直接殺死同房間的生物，訊息照 C 版，不給經驗；不能殺玩家）、`oload`、`ostat`、`mstat`（見下面「背包和裝備」）、
   `restore <名字或 all>`（`resto`，照 C 版補滿 HP／MP／MV，另外清技能冷卻；名字先找同房間、再找線上玩家）、
-  `effect <名字> <poison|regen|bless|blind|clear>`（`ef`，測試用的效果 `TEST_EFFECTS`，見下面「身上的效果」；叫 affect 會被玩家的 affects 先找到）。
-  **玩家的指令排在 imm 指令前面**：`affects` 加進來後，imm 打 `a` 是 affects，`ad` 才是 advance。
+  `affect <名字> <poison|regen|bless|blind|clear>`（`af`，測試用的效果 `TEST_EFFECTS`，見下面「身上的效果」）、
+  `sset <名字> <技能> [off]`（`ss`，照 C 版的名字，讓線上的玩家學會／忘掉技能，imm_only 的不能給）。
+  **玩家的指令排在 imm 指令前面**：同字首的玩家指令會搶走 imm 指令的縮寫（之前加了 affects，imm 打 `a` 就變成 affects）。
   **`kill <名字>`**（`commands/combat.py`，`k`，最低姿勢 FIGHTING 照 C 版）：開打同房間的生物，牠自動還手；**不可以打玩家**（使用者要的，自己也不行）。
   **`flee`**（`f`，最低姿勢 FIGHTING，規則在玩家角色手冊「戰鬥」）：機率 `stats.flee_chance()` ＝ min(80%, 10% ＋ 70% × DEX ÷ 55)，DEX 是自己的 ＋ 裝備加的（使用者定的）。
   檢查：沒在打架 → 還在等（`cooldowns["flee"]`，失敗設 `FLEE_WAIT_TICKS` 2，`skills.tick()` 減）→ 開著的出口（關著的門不算）→ 骰 `rng.random()`。
@@ -210,8 +211,11 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   每個角色照姿勢寫「X站在這裡。」「X躺在這裡睡覺。」…（`LOOK_POSITIONS`）；房間沒有別人就不空行。
   **名字前面的標記**（`tags()`、`tagged()`，使用者要的，照 C 版 show_char_to_char）：生物的種類「(菁英)」亮綠、「(首領)」亮紅（`TIER_TAGS`，一般、雜魚沒有）。
   之後做 buff／debuff：重要效果的光圈（C 版的 (聖光)、(火燄)…）也從 `tags()` 回傳，就會接在那一行前面。
-  `score` 看自己的全部屬性（指令表最後，`sc` 起才找得到），使用者選的樣子：暗灰框線、名字用房間標題的綠框黃字、
-  HP／MP／MV 有條（紅、藍、綠，20 格）、下半部三欄對齊，公會用不到的傷害整格變暗；imm 在抬頭加「｜imm」，有沒分配的點數就在主屬性後面加「可分配 N」。數字四捨五入成整數（`stats.shown()`，不用 `round()`）。
+  `score` 看自己的全部屬性（`sc` 起才找得到），使用者選的樣子：**寬 `SCORE_WIDTH` 79 格（跟 C 版一樣），每個數字的位置固定**
+  （不照內容算寬度：經驗留 7 位數、HP／MP／MV 7 位數、次要屬性 8 位數，金幣 `gold` 放在等級那行的最後，再長也只往右）。
+  暗灰框線、名字用房間標題的綠框黃字、HP／MP／MV 有條（紅、藍、綠，20 格）、下半部三欄對齊，公會用不到的傷害整格變暗；
+  imm 在抬頭加「｜imm」，有沒分配的點數就在主屬性後面加「可分配 N」；身上有效果時最下面加一段（見「身上的效果」）。
+  有顏色代碼的字補空白用 `cell()`（顏色代碼不佔格）。數字四捨五入成整數（`stats.shown()`，不用 `round()`）。
   對齊用 `width()`：Big5 中文字 2 bytes 也佔 2 格，所以寬度就是 cp950 的 byte 數。
   坑：框線、條、分隔只用 ASCII 和全形字（`=`、`-`、`｜`），不要用 ─ ■ ‧ 這種「寬度不一定」的符號，UTF-8 終端機可能只佔 1 格，會對不齊。
   `look in 東西`（`i`、`in` 都算，最先找，照 C 版）：看地上屍體裡有什麼（「野狗的屍體裝著：」，每件一行、前面空 5 格，空的是「空無一物。」）。
@@ -379,22 +383,32 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     - **一回合的訊息合成一段**：`combat` 用 `act.compose()` 放進 `Fight.messages`（`Fight.tell()`），`round()` 結束（`finally`）時 `flush()`，
       每個人只 `notify()` 一次（一下一個 notify 會冒出好幾個 prompt）。`flush(me=ch)`：ch 那段當作指令的回覆送（`send`，prompt 由 `command()` 補），技能用。
     - **技能**（`skills.py`，規則在玩家角色手冊「技能」，設計文件 §2.6）：`Skill` 的資料照 balance.py 的 `SKILLS`，**新增傷害技能只要在 `SKILLS` 加一筆**
-      （還有 `help/help.json` 的說明）。`owner` 是誰會：一個 `Guild`，或 `IMM`（**只有 imm 會的技能**，使用者要的；balance.py 沒有，測試只比公會的）。
-      傷害類型（`damage_kind()`）：公會的技能是技能的公會；imm 的技能是使用的人的公會（固定寫法術的話劍之公會打不痛）。imm 的技能沒有資源、`cost()` 是 0。
+      （還有 `help/help.json` 的說明）。**技能自己設計誰會**（使用者定的）：`starter` 是建立角色就會的公會，空的要用程式加（`learn()`：之後的學習、技能書，現在是 imm 的 `sset`）；
+      `imm_only` 是只有 imm 會（imm 自動會，`learn()` 不加；balance.py 沒有，測試只比其他的）。
+      會的技能是 `Player.skills`（id 的清單，存檔）：建立角色時是 `starter(公會)`，舊存檔沒有就補上；之後新增的 starter 技能舊角色不會自動會。
+      `known()` 照 SKILLS 的順序：`ch.skills` 裡有的 ＋ imm 的 imm_only（SKILLS 拿掉的 id 不算）；不會的用 use 是「你不會這個技能。」。
+      **`guild` 是技能的路數，不是誰會**：傷害類型（`damage_kind()`）、扣 MV 還是 MP（`resource()`）、`cost()` 用哪個公會標準都看它（學了別的公會的技能也照技能的公會）；
+      `None`（imm 的技能）是使用的人的公會（固定寫法術的話劍之公會打不痛），沒有資源、`cost()` 是 0。
       現在的 imm 技能是測試用的天雷（`thunder`，1 下、比率 10，數字是我們訂的）。**imm 用任何技能都不扣、不設冷卻**（`free()`，使用者選的，方便測試）。
       `cost()` ＝ max(1, .5 進位(這個等級的公會標準 MV／MP × 消耗比率))（`stats.resource_standard`，不是自己的上限）；
       夠不夠付看**四捨五入後**的 MV／MP（prompt 上的數字，使用者選的），扣完最少 0。
       `display_range()`（skills 顯示）：拿主手武器是設計文件的（傷害點數 ＋ 武器下限／上限）× 比率；空手是傷害點數 × 比率 × (1 ∓ `DMG_VAR`)（使用者選的，跟實際一樣）。
-      `use()`：扣消耗、`cooldowns[id] = 冷卻`、打 `hits` 次（`strike(kind) × ratio` → `land()`，死了就停），**打指令當下就打**（不排進時間軸，平砍照打），最後 `flush(me=ch)`。
+      `use()`：`pay()`（扣消耗、`cooldowns[id] = 冷卻`；沒有資源的不扣、冷卻 0 的不設，所以生物也能用這種技能）→
+      傷害技能打 `hits` 次（`strike(kind) × ratio` → `land()`，死了就停），**打指令當下就打**（不排進時間軸，平砍照打），最後 `flush(me=ch)`；
+      **增益技能**（`kind` `"buff"`、`target` `"ally"`）走 `buff()`：把 `skill.affect`（`Affect` 的欄位，每次 deepcopy 一份）放到目標身上、送訊息，不開打。
+      use 指令對增益技能：沒打名字是自己，打了名字用 `find_in_room()`，只能放玩家（`ready()` 是冷卻、MV／MP、武器的檢查，兩種技能共用）。
+      **餽贈**（`gift`，使用者定的，之後教學區的 NPC 送給玩家）：每 3 秒補 HP 上限的 10%、主屬性各 +3，3600 秒，死掉後還在；要用程式加、不扣消耗、沒有冷卻。
+      **NPC 直接呼叫 `skills.use(npc, SKILLS["gift"], 玩家)` 就能放**（不用學、不用在打架）。`skills` 指令的增益技能：那一行寫持續多久，做什麼放下一行（`system.wrap()`，不超過 79 格）。
       冷卻用 tick 數：世界每個 tick `skills.tick()` 減 1，所以實際等 5～6 秒。
-      **暫定**（mud_design 還沒定）：自己公會的技能都會（`known()`，imm 另外會 imm 的技能；不會的用 use 是「你不會這個技能。」）。
-      `weapon_ok()`：有限用武器的技能，主手要拿那種武器（空手不行）；技能那一下用主手的武器。還沒做：怎麼學、補血、增益、減益、打一群、怪物用技能。
+      `weapon_ok()`：有限用武器的技能，主手要拿那種武器（空手不行）；技能那一下用主手的武器。還沒做：學習、技能書、補血、減益、打一群、怪物打架時用技能。
     - 坑：`fight` → `combat` → `death` → `fight` 繞一圈：這幾個模組互相都用 `from . import 模組`，不要 `from .fight import stop_fighting`、`from .combat import hit`。
     - 還沒做：安全區、生物回血、生物主動攻擊、生物逃跑、C 版「快死了」「昏迷」（HP ≤ 0 就是死）。
   - **身上的效果**（buff／debuff，`affects.py`，規則在玩家角色手冊「身上的效果」，設計文件 §2.6）：`ch.affects` 是 `Affect` 的清單，玩家和生物都有。
     `Affect`：`source`（哪個技能放的，**同一個來源只有一份**：`add()` 是覆蓋，不同來源就疊）、`name`、`duration`、`ticks`（還剩）、
     `elapsed`（放下去後幾個 tick，**跳的時間點看它、不看剩下的**：矮人每 tick 減 2，用剩下的會跳錯時間）、
-    `applies`（次要屬性加減，`stats.add_affects()` 加進 panel；主屬性還沒做）、`periodic`（hp／mp／mv 每 `AFFECT_PULSE_TICKS` 3 加減）、
+    `applies`（屬性加減，`stats.add_affects()` 加進 panel：次要屬性照加；**主屬性照 `primary_bundle(公會, 主屬性, 被放的人自己的等級)` 換算**（使用者定的），
+    生物沒有公會不算；負重、MP／MV 上限、55 上限只看自己的主屬性）、`periodic`（hp／mp／mv 每 `AFFECT_PULSE_TICKS` 3 加減固定量）、
+    `periodic_pct`（每跳一次加減**當時上限**的幾成，例如餽贈的 `{"hp": 0.10}`；扣 HP 的也算矮人的堅韌、也會扣死，`drains_hp()`）、
     `flags`（`area.AffectFlag`，現在只是記號；`AFFECT_FLAG_NAMES` 跟手冊比對）、`keep_on_death`、`off_message`。
     效果變了就 `changed()`：從頭算（玩家 `stats.recompute`、生物 `npcs.recompute`），HP／MP／MV 夾在新上限（`stats.clamp`，上限變高不補）。
     `tick()` 在世界 tick 每個 tick 做（全部角色，副本裡的也是；離線的不在 `characters`，所以時間停住）：`elapsed` ＋1、`ticks` 減 1
@@ -402,7 +416,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     跳：加不超過上限，MP／MV 最少 0，**HP 扣到 0 就死**（使用者定的）：`combat.slain(out, ch.fighting, ch)`，打架中算被他正在打的對手打死（照常給經驗），
     沒在打架 `fighting` 是 None、誰都不給。一個 tick 的訊息（消失、死掉）收在 `Messages`，每人只 notify 一次。
     存檔整個存（`to_data()`／`from_data()`，剩下的時間和 `elapsed` 都在），讀檔先放回效果再 `recompute()`。
-    `affects` 指令（`a`，什麼姿勢都能看，`describe()` 一行一個，秒數是實際還要等的）。真正的效果、放效果的技能、光圈還沒做（光圈接 `system.tags()`）。
+    **沒有 affects 指令**（使用者要的）：身上的效果照 C 版列在 `score` 最下面（`system.affect_lines()`，`parts()` 是做什麼、`seconds_left()` 是實際還要等的秒數）；
+    說明太長就用 `wrap()` 換行，接在下一行對齊，不超過 79 格。mstat 用 `describe()` 寫成一行。真正的效果、放效果的技能、光圈還沒做（光圈接 `system.tags()`）。
   - 定時器共用 `clock.every()`：照 `loop.time()` 排時間不會越跑越慢，超時了從現在重新算、不追趕。
   - **loop 裡做的事不能卡住**：`Zone.tick()`、`Fight.tick()` 都是普通函式，要很快做完，不能 `time.sleep`、不能讀檔。
     每個 loop 自己接住錯誤：tick 出錯記 log、下次照跑（世界 tick 裡每個區域物件分開接）；一場戰鬥出錯只結束那一場。
@@ -478,7 +493,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - 穿脫之後 `inventory.changed()`：`stats.refresh()`（從頭算、HP／MP／MV 夾在新上限）、打架中 `Fight.arm()`。
   - **屬性**（設計文件 §8.2，mud_design 確認）：`stats.recompute()` ＝ 裸裝 ＋ MP／MV ＋ 每件 `gear_bonus()`：次要屬性（含龍焰抗性）照加、
     主屬性 × `primary_bundle(公會, p, **裝備等級**)`（照 balance.py，`test_gear.py` 跟 `apply_points` 比對）、AC 加總。負重、武器重量、MP、MV 只看角色自己的主屬性；
-    score 的主屬性顯示角色 ＋ 裝備（`gear_primaries()`）。
+    score、mstat 的主屬性顯示角色 ＋ 裝備、效果加的（`extra_primaries()`，四捨五入顯示）；flee 的 DEX 只算角色 ＋ 裝備（`gear_primaries()`）。
   - 存檔多 `carrying`、`equipment`（`objects.to_data()`），讀檔先放回裝備再 `recompute()`；舊存檔沒有就是空的。死掉不掉東西。
   - imm 的 `oload <號碼> [等級] [顏色]`（`commands/imm.py`，`ol`）：撿得起來放自己背包，撿不起來放地上（同房間看得到，照 C 版）；不檢查件數、負重。
   - `examine`（`ex`，`commands/items.py` 的 `identify()`）：**只看背包和身上的**（使用者要的），句型照 C 版 identify，每種東西只列有的行。

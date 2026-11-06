@@ -257,12 +257,22 @@ def gear_bonus(guild, obj):
 
 
 def gear_primaries(player):
-    """裝備加的主屬性（score 顯示「角色 ＋ 裝備」用；戰鬥、負重、MP、MV 都不用它）。"""
+    """裝備加的主屬性（flee 的 DEX 用；戰鬥、負重、MP、MV 都不用它）。"""
     out = {p: 0 for p in PRIMARY_KEYS}
     for obj in player.equipment.values():
         for apply, n in obj.affects:
             if apply.name.lower() in out:
                 out[apply.name.lower()] += n
+    return out
+
+
+def extra_primaries(ch):
+    """裝備 ＋ 身上的效果加的主屬性（score、mstat 顯示「角色 ＋ 加的」用，只是參考；戰鬥另外照公式算）。"""
+    out = gear_primaries(ch)
+    for a in ch.affects:
+        for key, n in a.applies.items():
+            if key in out:
+                out[key] += n
     return out
 
 
@@ -323,10 +333,19 @@ def recompute(player):
 
 
 def add_affects(panel, ch):
-    """ch 身上的效果的暫時加減屬性（affects.Affect.applies）加進 panel：玩家、生物共用。"""
+    """ch 身上的效果的暫時加減屬性（affects.Affect.applies）加進 panel：玩家、生物共用。
+
+    主屬性照 primary_bundle 換成次要屬性，用**被放的人自己的等級**（使用者定的；裝備是用裝備的等級）。
+    生物沒有公會，主屬性的加減不算。負重、MP／MV 上限、55 上限只看自己的主屬性，不受影響（設計文件 §2.6）。
+    """
+    guild = getattr(ch, "guild", None)
     for a in ch.affects:
         for key, n in a.applies.items():
-            panel[key] += n
+            if key not in PRIMARY_KEYS:
+                panel[key] += n
+            elif guild is not None:
+                for s, units in primary_bundle(guild, key, ch.level).items():
+                    panel[s] += n * units
 
 
 def refresh(player):

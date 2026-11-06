@@ -129,8 +129,8 @@ def test_create_character_and_save(folder):
         assert "角色建立好了。".encode(ENCODING) in got and SOUTH.encode(ENCODING) in got
         c.say("sc")
         text = re.sub(r"\x1b\[[0-9;]*m", "", (await c.until("> ")).decode(ENCODING))     # 拿掉顏色
-        assert " 【Vcx】 精靈｜杖之公會｜等級 1｜經驗 0/100｜女\r\n" in text
-        assert " 主屬性  力量 10  智慧 14  知識 12  體質 11  敏捷 13\r\n" in text
+        assert " 【Vcx】 精靈｜杖之公會｜女\r\n" in text and " 等級 1      經驗 0 / 100" in text
+        assert " 力量  10   智慧  14   知識  12   體質  11   敏捷  13\r\n" in text
         c.say("quit")
         await c.until("再見。")
         await c.closed()
@@ -146,6 +146,7 @@ def test_create_character_and_save(folder):
     assert data["hp"] == data["panel"]["hp"] and data["mp"] == data["panel"]["mp"] > 0   # 建好時補滿
     assert 0.95 <= data["resource_roll"] <= 1.05 and data["room"] == 101
     assert data["exp"] == 0.0
+    assert data["skills"] == ["fireball"]                                               # 杖之公會一開始就會的技能存進存檔
 
 
 def test_bad_names_ask_again(folder):

@@ -170,7 +170,7 @@ def test_load_problems(tmp_path):
 SUMMARY = [
     "說明的分類（help 分類 或 help 指令 看細節）：",
     "  移動  north east south west up down",
-    "  資訊  look score who weather skills affects help",
+    "  資訊  look score who weather skills help",
     "  溝通  chat tell reply say",
     "  角色  train rest sleep stand save quit",
     "  戰鬥  kill use flee",
@@ -188,13 +188,13 @@ def test_imm_sees_the_imm_category():
     want = [
         "說明的分類（help 分類 或 help 指令 看細節）：",
         "  移動    north east south west up down",
-        "  資訊    look score who weather skills affects help",
+        "  資訊    look score who weather skills help",
         "  溝通    chat tell reply say",
         "  角色    train rest sleep stand save quit",
         "  戰鬥    kill use flee",
         "  物品    get drop wear remove inventory equipment examine",
         "  門      open close lock unlock",
-        "  管理員  advance slay oload ostat mstat restore effect",
+        "  管理員  advance slay oload ostat mstat restore affect sset",
     ]
     assert say("help", imm=True) == "\r\n".join(want) + "\r\n\r\n> "
 

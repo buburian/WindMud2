@@ -70,6 +70,7 @@ def fighter(name, room=102):
     p.race, p.guild = stats.Race.HUMAN, stats.Guild.SWORD
     p.primaries = dict(stats.RACE_PRIMARIES[p.race])
     p.trained = {k: 0 for k in stats.PRIMARY_KEYS}
+    p.skills = skills.starter(p.guild)
     stats.set_level(p, 1)
     characters.append(p)
     return p

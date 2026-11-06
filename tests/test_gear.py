@@ -136,7 +136,7 @@ def test_score_shows_primaries_with_gear(world):
     p = person()
     give(p, 2)
     say(p, "wear sword")
-    assert "力量 14" in say(p, "score")                                            # 12 ＋ 長劍的 2
+    assert "力量  14" in say(p, "score")                                            # 12 ＋ 長劍的 2
     assert p.primaries["str"] == 12 and stats.carry_limit(p) == 140                # 負重照舊看自己的
 
 

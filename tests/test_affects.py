@@ -1,5 +1,5 @@
 """身上的效果（affects.py，玩家角色手冊「身上的效果」）：覆蓋和疊加、暫時加減屬性、持續加減 HP／MP／MV（每 3 tick、矮人的堅韌、扣死）、
-時間到消失、死掉、存檔，affects 指令、imm 的 effect、mstat 那一行，旗標的中文跟手冊比對。
+時間到消失、死掉、存檔，score 最下面那段、imm 的 affect、mstat 那一行，旗標的中文跟手冊比對。
 
 一個 tick 一個 tick 看：自己呼叫 affects.tick()（世界 tick 也測一次）。
 """
@@ -226,6 +226,74 @@ def test_healing_stops_at_the_top_and_mp_mv_stop_at_zero(world):
     assert (p.hp, p.mp, p.mv) == (p.panel["hp"], 0.0, p.panel["mv"])
 
 
+# ---- 上限的幾成（periodic_pct） ----
+
+def test_pct_follows_the_top_at_each_jump(world):
+    p = person("Ming")
+    top = p.panel["hp"]
+    p.hp = 10.0
+    affects.add(p, Affect("r", "回", 60, periodic_pct={"hp": 0.10}))
+    ticks(2)
+    assert p.hp == 10.0                                             # 放下去那一刻、第 1、2 tick 不跳
+    ticks(1)
+    assert p.hp == pytest.approx(10.0 + top * 0.10)
+    affects.add(p, Affect("big", "大", 60, applies={"hp": 100.0}))  # 上限變了：下一跳照新的上限算
+    ticks(3)
+    assert p.hp == pytest.approx(10.0 + top * 0.10 + (top + 100) * 0.10)
+
+
+def test_pct_stops_at_the_top_and_can_kill(world):
+    p, npc = person("Ming"), creature()
+    p.hp = p.panel["hp"] - 1
+    affects.add(p, Affect("r", "回", 60, periodic_pct={"hp": 0.10}))
+    npc.hp = 5
+    affects.add(npc, Affect("rot", "爛", 60, periodic_pct={"hp": -0.10}))
+    ticks(3)
+    assert p.hp == p.panel["hp"] and npc not in characters          # 補不超過上限；扣的一樣會扣死
+
+
+def test_pct_and_dwarves(world):
+    p = person("Ming", race=stats.Race.DWARF)
+    affects.add(p, Affect("rot", "爛", 60, periodic_pct={"hp": -0.01}))
+    affects.add(p, Affect("r", "回", 60, periodic_pct={"hp": 0.10}))
+    ticks(1)
+    assert [a.ticks for a in p.affects] == [58, 59]                 # 扣 HP 的（幾成也算）矮人減 2
+
+
+def test_pct_text_and_save():
+    a = Affect("x", "混", 60, periodic_pct={"hp": 0.10, "mp": -0.05})
+    assert affects.parts(a) == ["每 3 秒 HP +上限的 10%", "每 3 秒 MP -上限的 5%"]
+    assert affects.from_data(affects.to_data(a)) == a
+    old = affects.to_data(Affect("x", "舊", 60))
+    del old["periodic_pct"]                                         # 加這個欄位以前存的
+    assert affects.from_data(old).periodic_pct == {}
+
+
+# ---- 加主屬性（換算用被放的人自己的等級） ----
+
+def test_primary_applies_use_your_own_level(world):
+    p = person("Ming")
+    stats.set_level(p, 30)
+    before, carry, mp = dict(p.panel), stats.carry_limit(p), p.panel["mp"]
+    affects.add(p, Affect("s", "力", 60, applies={"str": 3.0}))
+    bundle = stats.primary_bundle(p.guild, "str", 30)
+    assert bundle != stats.primary_bundle(p.guild, "str", 1)
+    for k, v in p.panel.items():
+        assert v == pytest.approx(before[k] + 3 * bundle.get(k, 0.0)), k
+    assert p.primaries["str"] == 14 - 2 and stats.carry_limit(p) == carry and p.panel["mp"] == mp   # 負重、MP 不變
+    assert " 力量  15   智慧  12 " in say(p, "score")               # score 的主屬性算進去（整數，不是 15.0）
+    p.imm = True
+    assert "主屬性 力量 15（12＋3）" in say(p, "mstat ming")                 # mstat 也是（括號裡是自己的＋加的）
+    affects.remove(p, "s")
+    assert p.panel == pytest.approx(before)
+
+
+def test_creatures_ignore_primary_applies(world):
+    npc = creature()
+    affects.add(npc, Affect("s", "力", 60, applies={"str": 3.0}))
+    assert npc.panel == npc.base_panel
+
+
 # ---- 扣死 ----
 
 def test_hp_loss_kills_a_creature_out_of_a_fight(world):
@@ -333,63 +401,74 @@ def test_old_saves_have_no_affects(world):
 
 # ---- 指令 ----
 
-def test_affects_command(world):
+def score_tail(p):
+    """score 最下面那條粗線之後的每一行（沒有效果就是空的）。"""
+    lines = say(p, "score").split("\r\n")
+    return lines[lines.index("=" * 79, 1) + 1:]
+
+
+def test_score_lists_affects(world):
+    # 照 C 版放在 score 最下面：【名字】、做什麼、還有幾秒
     ming = person("Ming")
-    assert say(ming, "affects") == "你身上沒有任何效果。"
+    assert score_tail(ming) == []                                   # 沒有效果：沒有這一段
     for which in ("poison", "bless", "blind"):
         affects.add(ming, Affect(**commands.imm.TEST_EFFECTS[which]))
+    affects.add(ming, Affect("mix", "混合", 30, applies={"hit": 5.0}, periodic={"mv": -2.0}))
     ticks(1)
-    assert say(ming, "a") == ("你身上的效果：\r\n測試毒：還有 59 秒，每 3 秒 HP -10\r\n"
-                              "測試祝福：還有 59 秒，命中 +10\r\n測試失明：還有 29 秒，失明")
+    assert score_tail(ming) == [
+        " 你受到下列效果的影響：",
+        " 【      測試毒】 每 3 秒 HP -10                              還有    59 秒",
+        " 【    測試祝福】 命中 +10                                    還有    59 秒",
+        " 【    測試失明】 失明                                        還有    29 秒",
+        " 【        混合】 每 3 秒 MV -2、命中 +5                      還有    29 秒",
+    ]
 
 
-def test_affects_shows_real_seconds_for_dwarves(world):
+def test_score_shows_real_seconds_for_dwarves(world):
     ming = person("Ming", race=stats.Race.DWARF)
     affects.add(ming, drip(duration=11))
-    assert say(ming, "affects") == "你身上的效果：\r\n滴：還有 6 秒，每 3 秒 HP -1"
+    assert score_tail(ming)[1] == " 【          滴】 每 3 秒 HP -1                               還有     6 秒"
 
 
-def test_affects_while_asleep(world):
-    ming = person("Ming")
-    say(ming, "sleep")
-    assert say(ming, "affects") == "你身上沒有任何效果。"
+def test_no_affects_command(world):
+    assert say(person("Ming"), "affects") == "什麼？"                # 看 score 就好（使用者要的）
 
 
-USAGE = "用法：effect <名字> <poison、regen、bless、blind、clear>"
+USAGE = "用法：affect <名字> <poison、regen、bless、blind、clear>"
 
 
-@pytest.mark.parametrize("line", ["effect", "effect ming", "effect ming xyz"])
-def test_effect_usage(world, line):
+@pytest.mark.parametrize("line", ["affect", "affect ming", "affect ming xyz"])
+def test_affect_usage(world, line):
     assert say(person("Ming", imm=True), line) == USAGE
 
 
-def test_effect_on_yourself(world):
+def test_affect_on_yourself(world):
     ming = person("Ming", imm=True)
-    assert say(ming, "ef ming poison") == "你身上多了【測試毒】（60 秒）。"
-    assert say(ming, "ef ming blind") == "你身上多了【測試失明】（30 秒）。"
+    assert say(ming, "af ming poison") == "你身上多了【測試毒】（60 秒）。"
+    assert say(ming, "af ming blind") == "你身上多了【測試失明】（30 秒）。"
     assert [a.name for a in ming.affects] == ["測試毒", "測試失明"]
-    assert say(ming, "effect ming clear") == "你清掉了身上全部的效果。" and ming.affects == []
+    assert say(ming, "affect ming clear") == "你清掉了身上全部的效果。" and ming.affects == []
 
 
-def test_effect_on_others(world):
+def test_affect_on_others(world):
     ming, hua = person("Ming", imm=True), person("Hua", room=102)   # 不在同房間：找線上的玩家
     plain(hua)
-    assert say(ming, "effect hua bless") == "你讓Hua身上多了【測試祝福】（60 秒）。"
+    assert say(ming, "affect hua bless") == "你讓Hua身上多了【測試祝福】（60 秒）。"
     assert "Ming讓你身上多了【測試祝福】（60 秒）。" in plain(hua)
     assert hua.affects[0].keep_on_death
-    assert say(ming, "effect hua clear") == "你清掉了Hua身上全部的效果。"
+    assert say(ming, "affect hua clear") == "你清掉了Hua身上全部的效果。"
     assert "Ming清掉了你身上全部的效果。" in plain(hua) and hua.affects == []
 
 
-def test_effect_on_a_creature(world):
+def test_affect_on_a_creature(world):
     ming, npc = person("Ming", imm=True), creature()
-    assert say(ming, "effect mob1 regen") == "你讓生物1身上多了【測試回復】（60 秒）。"
+    assert say(ming, "affect mob1 regen") == "你讓生物1身上多了【測試回復】（60 秒）。"
     assert npc.affects[0].periodic == {"hp": 10.0}
 
 
-def test_effect_not_found_and_not_imm(world):
-    assert say(person("Ming", imm=True), "effect zzz poison") == "他們不在這兒。"
-    assert say(person("Hua"), "effect hua poison") == "什麼？"
+def test_affect_not_found_and_not_imm(world):
+    assert say(person("Ming", imm=True), "affect zzz poison") == "他們不在這兒。"
+    assert say(person("Hua"), "affect hua poison") == "什麼？"
 
 
 def test_mstat_lists_affects(world):

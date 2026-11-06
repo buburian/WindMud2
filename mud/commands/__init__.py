@@ -45,7 +45,6 @@ COMMANDS = [
     ("inventory", items.do_inventory, P.DEAD),  # i、inv
     ("equipment", items.do_equipment, P.DEAD),  # e 還是 east，eq 才是 equipment
     ("examine", items.do_examine, P.RESTING),   # ex；只看背包和身上的（照 C 版要醒著）
-    ("affects", system.do_affects, P.DEAD),     # a；看自己身上的效果，什麼姿勢都能看（imm 的 a 也變成它，ad 才是 advance）
     ("flee", combat.do_flee, P.FIGHTING),       # f；戰鬥中逃跑（照 C 版的最低姿勢）
 ]
 
@@ -57,7 +56,8 @@ IMM_COMMANDS = [
     ("ostat", imm.do_ostat, P.DEAD),            # os
     ("mstat", imm.do_mstat, P.DEAD),            # m
     ("restore", imm.do_restore, P.DEAD),        # res 還是 rest，resto 才是 restore
-    ("effect", imm.do_effect, P.DEAD),          # e 還是 east，ef 才是 effect（叫 affect 會被 affects 先找到）
+    ("affect", imm.do_affect, P.DEAD),          # a 還是 advance，af 才是 affect
+    ("sset", imm.do_sset, P.DEAD),              # s 還是 south、sa 是 say…，ss 才是 sset
 ]
 
 # 姿勢不夠時的訊息（照 C 版 interp.c）

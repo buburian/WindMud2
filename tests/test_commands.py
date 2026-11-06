@@ -311,43 +311,62 @@ def test_prompt_without_stats_is_plain():
     assert Player("小明", FakeWriter(), None).prompt() == "> "
 
 
+def score_of(p):
+    p.writer.data = b""
+    commands.command(p, "sc")
+    return p.writer.data.decode(ENCODING)
+
+
 def test_score_layout():
+    # 使用者選的樣子：寬 79 格（跟 C 版一樣），每個數字的位置固定
     p = stat_player()
     p.hp = p.panel["hp"] * 0.25
-    commands.command(p, "sc")
-    text = p.writer.data.decode(ENCODING)
-    rule = "=" * 52
+    text = score_of(p)
+    heavy, thin = "=" * 79, "-" * 79
     assert re.sub(r"\x1b\[[0-9;]*m", "", text) == "\r\n".join([
-        rule,
-        " 【Zzqa】 獸人｜劍之公會｜等級 1｜經驗 0/100｜男",       # 經驗：這一級累積的 / 升級要的
-        rule,
-        " 主屬性  力量 14  智慧 11  知識 11  體質 12  敏捷 12",
-        "",
-        " HP  [=====---------------]     16 / 62",
-        " MP  [====================]     26 / 26",
-        " MV  [====================]     39 / 39",
-        "",
-        " 攻擊  物理傷害   4   法術傷害   0   命中      16",
-        "       爆擊率     8   爆擊傷害   4   攻速      22",
-        " 防禦  閃躲      11   物理抗性   8   法術抗性  15",
-        "       龍焰抗性   0   AC         0",
-        rule,
+        heavy,
+        " 【Zzqa】 獸人｜劍之公會｜男",
+        thin,
+        " 等級 1      經驗 0 / 100                        金幣 0",          # 經驗：這一級累積的 / 升級要的
+        " 力量  14   智慧  11   知識  11   體質  12   敏捷  12",
+        thin,
+        " HP  [=====---------------]       16 / 62",
+        " MP  [====================]       26 / 26",
+        " MV  [====================]       39 / 39",
+        thin,
+        " 攻擊  物理傷害        4       法術傷害        0       命中           16",
+        "       爆擊率          8       爆擊傷害        4       攻速           22",
+        " 防禦  閃躲           11       物理抗性        8       法術抗性       15",
+        "       龍焰抗性        0       AC              0",
+        heavy,
         "",
         p.prompt().replace("\x1b[32;1m", "").replace("\x1b[31;1m", "").replace("\x1b[0m", ""),
     ])
-    assert "\x1b[30;1m法術傷害   0\x1b[0m" in text          # 劍之公會用不到法術傷害：整格變暗
+    assert "\x1b[30;1m法術傷害        0\x1b[0m" in text    # 劍之公會用不到法術傷害：整格變暗
     assert "\x1b[31;1m=====\x1b[30;1m---------------\x1b[0m" in text   # HP 條：紅色的滿格、暗灰的空格
+
+
+def test_score_has_room_for_big_numbers():
+    # 經驗 7 位數、金幣 10 位數、HP 和屬性 5 位數，每一行都不超過 79 格，位置也不會跑掉
+    p = stat_player()
+    p.level, p.exp, p.gold, p.points = 99, 9999999, 2147483647, 98
+    p.panel = {k: 99999.0 for k in p.panel}
+    p.hp = p.mp = p.mv = 99999.0
+    lines = re.sub(r"\x1b\[[0-9;]*m", "", score_of(p)).split("\r\n")[:-2]
+    assert max(len(line.encode(ENCODING)) for line in lines) == 79
+    assert lines[3].startswith(" 等級 99     經驗 9999999 / ") and lines[3].endswith("金幣 2147483647")
+    assert lines[3].index("金幣") == " 等級 1      經驗 0 / 100                        金幣 0".index("金幣")
+    assert lines[6] == " HP  [====================]    99999 / 99999"
+    assert lines[10] == " 攻擊  物理傷害    99999       法術傷害    99999       命中        99999"
 
 
 def test_score_shows_exp_until_max_level():
     p = stat_player()
     p.exp = 34.6
-    commands.command(p, "sc")
-    assert "｜等級 1｜經驗 35/100｜男" in re.sub(r"\x1b\[[0-9;]*m", "", p.writer.data.decode(ENCODING))
-    p.writer.data = b""
-    p.level = stats.MAX_LEVEL                       # 滿等不再拿經驗，不顯示
-    commands.command(p, "sc")
-    assert "｜等級 100｜男" in re.sub(r"\x1b\[[0-9;]*m", "", p.writer.data.decode(ENCODING))
+    assert " 等級 1      經驗 35 / 100 " in re.sub(r"\x1b\[[0-9;]*m", "", score_of(p))
+    p.level = stats.MAX_LEVEL                       # 滿等不再拿經驗，不顯示；金幣照樣在原本的位置
+    text = re.sub(r"\x1b\[[0-9;]*m", "", score_of(p))
+    assert " 等級 100" + " " * 40 + "金幣 0\r\n" in text and "經驗" not in text
 
 
 def test_score_without_stats():

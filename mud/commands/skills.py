@@ -1,11 +1,13 @@
 """技能類指令：use 放技能、skills 列出會的技能。規則在玩家角色手冊「技能」。
 
 技能只能用 use 放（使用者要的）：新增技能只要在 skills.SKILLS 加資料，不用加指令。
-誰會哪個技能是暫定的：自己公會的技能都會，imm 另外會 imm 的技能。可以用技能開打（使用者定的）。
+誰會哪個技能看 skills.known()（技能自己設計：一開始就會、要用程式加）。傷害技能可以開打（使用者定的）；增益技能放在自己或同房間的玩家身上，不開打。
 """
-from .. import fight, skills
+from .. import affects, fight, skills
 from ..characters import characters, find_in_room
+from ..config import TICK_SECONDS
 from ..npcs import Npc
+from .system import wrap
 
 
 def do_use(ch, arg):
@@ -15,8 +17,17 @@ def do_use(ch, arg):
         ch.send("你想要用什麼技能？\n")
         return
     skill = skills.find(ch, words[0])
-    if skill is None:                       # 不是自己公會的、imm 的技能也是這句
+    if skill is None:                       # 沒學過的、imm 的技能也是這句
         ch.send("你不會這個技能。\n")
+        return
+    if skill.target == "ally":              # 增益：沒打名字是自己，只能放在玩家身上，不開打
+        target = find_in_room(ch, words[1]) if len(words) > 1 else ch
+        if target is None:
+            ch.send("這裡沒有這個人。\n")
+        elif isinstance(target, Npc):
+            ch.send(f"{skill.name}只能放在玩家身上。\n")
+        elif ready(ch, skill):
+            skills.use(ch, skill, target)
         return
     if len(words) > 1:
         victim = find_in_room(ch, words[1])
@@ -34,18 +45,25 @@ def do_use(ch, arg):
     if not isinstance(victim, Npc):
         ch.send("你不可以攻擊玩家。\n")
         return
-    wait = ch.cooldowns.get(skill.id)
-    if wait:
-        ch.send(f"你還要等 {wait} 秒才能再用{skill.name}。\n")
-        return
-    if not skills.affordable(ch, skill):
-        ch.send(f"你的 {skills.RESOURCE_NAMES[skills.resource(skill)]} 不夠。\n")
-        return
-    if not skills.weapon_ok(ch, skill):
-        ch.send(f"你手上的武器不能用{skill.name}。\n")
+    if not ready(ch, skill):
         return
     engage(ch, victim)                      # 檢查都過了才開打：沒過就不會開打
     skills.use(ch, skill, victim)
+
+
+def ready(ch, skill):
+    """冷卻、MV／MP、武器都過了才是 True；沒過就送那一句。"""
+    wait = ch.cooldowns.get(skill.id)
+    if wait:
+        ch.send(f"你還要等 {wait} 秒才能再用{skill.name}。\n")
+        return False
+    if not skills.affordable(ch, skill):
+        ch.send(f"你的 {skills.RESOURCE_NAMES[skills.resource(skill)]} 不夠。\n")
+        return False
+    if not skills.weapon_ok(ch, skill):
+        ch.send(f"你手上的武器不能用{skill.name}。\n")
+        return False
+    return True
 
 
 def engage(ch, victim):
@@ -69,12 +87,19 @@ def do_skills(ch, arg):
         return
     lines = ["你會的技能（imm 用技能不扣消耗、不用等冷卻）：" if skills.free(ch) else "你會的技能："]
     for s in known:
-        low, high = skills.display_range(ch, s)
         pool = skills.resource(s)
-        spent = f"{skills.cost(s, ch.level)}" + (f" {skills.RESOURCE_NAMES[pool]}" if pool else "")    # imm 的技能沒有資源
-        line = f"  {s.name} {s.id}  傷害 {low}~{high}  消耗 {spent}  冷卻 {s.cooldown} 秒"
+        spent = f"{skills.cost(s, ch.level)}" + (f" {skills.RESOURCE_NAMES[pool]}" if pool else "")    # 沒有資源的技能
+        if s.kind == "buff":                # 增益：寫持續多久，做什麼放下一行（太長就換行，不超過 79 格）
+            a = affects.Affect(**s.affect)
+            what = f"持續 {a.duration * TICK_SECONDS:g} 秒"
+        else:
+            low, high = skills.display_range(ch, s)
+            what = f"傷害 {low}~{high}"
+        line = f"  {s.name} {s.id}  {what}  消耗 {spent}  冷卻 {s.cooldown} 秒"
         wait = ch.cooldowns.get(s.id)
         if wait:
             line += f"  還要等 {wait} 秒"
         lines.append(line)
+        if s.kind == "buff":
+            lines += ["    " + more for more in wrap(affects.parts(a), 75)]
     ch.send("\n".join(lines) + "\n")

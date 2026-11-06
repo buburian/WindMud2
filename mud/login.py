@@ -9,7 +9,7 @@ import logging
 import re
 from collections import deque
 
-from . import save, stats, zones
+from . import save, skills, stats, zones
 from .characters import SEX_FEMALE, SEX_MALE, characters
 from .commands.system import look
 from .players import Player, online_players, send
@@ -181,6 +181,7 @@ async def create(conn, name):
     player.primaries = dict(stats.RACE_PRIMARIES[race])     # 公會怎麼套在種族上還沒決定，先用種族的數字
     player.trained = {k: 0 for k in stats.PRIMARY_KEYS}
     player.resource_roll = stats.roll_resources()
+    player.skills = skills.starter(guild)   # 建立角色就會的技能（存進存檔，之後新增的不會自動補）
     stats.recompute(player)
     player.hp, player.mp, player.mv = player.panel["hp"], player.panel["mp"], player.panel["mv"]
     save.save_player(player)

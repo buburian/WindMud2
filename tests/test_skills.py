@@ -7,13 +7,15 @@ import asyncio
 import dataclasses
 import random
 import re
+from pathlib import Path
 
 import pytest
 
 import mud.commands as commands
 from area_helpers import make_area, make_mobile, make_room, write_json
 from balance_loader import load_balance
-from mud import combat, damage, fight, skills, stats, zones
+from player_helpers import make_player_file
+from mud import affects, combat, damage, death, fight, save, skills, stats, zones
 from mud.area import CORPSE_NPC_ITEM_TYPE, MobTier, WeaponKind
 from mud.characters import Position, characters
 from mud.commands import skills as skill_commands
@@ -22,6 +24,7 @@ from mud.npcs import Npc
 from mud.players import Player
 
 SMASH, FIREBALL = skills.SKILLS["smash"], skills.SKILLS["fireball"]
+AREAS = Path(__file__).resolve().parent.parent / "areas"
 
 
 class FakeWriter:
@@ -73,6 +76,7 @@ def player(level, race, guild):
     p.race, p.guild, p.level = race, guild, level
     p.primaries = dict(stats.RACE_PRIMARIES[race])
     p.trained = {k: 0 for k in stats.PRIMARY_KEYS}
+    p.skills = skills.starter(guild)            # 跟建立角色一樣：公會一開始就會的
     stats.recompute(p)
     return p
 
@@ -101,12 +105,13 @@ def own_skill(p):
 
 
 def test_skills_match_mud_design(balance):
-    # 公會的技能照 balance.py；imm 的技能是我們自己加的（balance.py 沒有）
-    assert {s["id"] for s in balance.SKILLS.values()} == {s.id for s in skills.SKILLS.values() if s.owner != skills.IMM}
+    # 傷害技能照 balance.py；imm 的技能、增益技能（餽贈）是我們自己加的（balance.py 沒有）
+    assert {s["id"] for s in balance.SKILLS.values()} == {s.id for s in skills.SKILLS.values()
+                                                         if s.kind == "damage" and not s.imm_only}
     for name, want in balance.SKILLS.items():
         s = skills.SKILLS[want["id"]]
         assert s.name == name
-        assert str(s.owner) == want["guild"]
+        assert str(s.guild) == want["guild"]
         assert (s.kind, s.target, s.hits, s.ratio, s.cost) == (want["kind"], want["target"], want["hits"], want["ratio"], want["cost"])
         assert s.cooldown == want["cooldown"]
         assert tuple(s.weapon_kinds) == tuple(want["weapon_kinds"])
@@ -193,6 +198,7 @@ def fighter(name, room=102, level=1, guild=stats.Guild.SWORD):
     p.race, p.guild = stats.Race.HUMAN, guild
     p.primaries = dict(stats.RACE_PRIMARIES[p.race])
     p.trained = {k: 0 for k in stats.PRIMARY_KEYS}
+    p.skills = skills.starter(guild)            # 跟建立角色一樣：公會一開始就會的
     stats.set_level(p, level)
     characters.append(p)
     return p
@@ -517,7 +523,7 @@ def imm_fighter(name, guild=stats.Guild.SWORD):
 
 
 def test_thunder_is_only_for_imm():
-    assert THUNDER.owner == skills.IMM and skills.resource(THUNDER) is None and skills.cost(THUNDER, 50) == 0
+    assert THUNDER.imm_only and THUNDER.guild is None and skills.resource(THUNDER) is None and skills.cost(THUNDER, 50) == 0
     shabu = player(5, stats.Race.HUMAN, stats.Guild.SWORD)
     assert skills.find(shabu, "th") is None                 # 不是 imm：use th 是「你不會這個技能。」
     shabu.imm = True
@@ -558,3 +564,192 @@ def test_skills_listing_for_imm(world):
     assert say(shabu, "skills") == ("你會的技能（imm 用技能不扣消耗、不用等冷卻）：\r\n"
                                     f"  重擊 smash  傷害 {low}~{high}  消耗 4 MV  冷卻 6 秒\r\n"
                                     f"  天雷 thunder  傷害 {t_low}~{t_high}  消耗 0  冷卻 0 秒\r\n\r\n{prompt_of(shabu)}")
+
+
+# ---- 誰會：一開始就會、要用程式加（使用者定的） ----
+
+def test_starter_skills():
+    assert skills.starter(stats.Guild.SWORD) == ["smash"] and skills.starter(stats.Guild.STAFF) == ["fireball"]
+    assert THUNDER.starter == () and THUNDER.imm_only
+
+
+def test_known_is_the_list():
+    p = player(5, stats.Race.HUMAN, stats.Guild.SWORD)
+    p.skills = []
+    assert skills.known(p) == []                                      # 劍之公會也不是自動會重擊：看清單
+    assert skills.learn(p, FIREBALL) and skills.learn(p, SMASH)
+    assert skills.known(p) == [SMASH, FIREBALL] and p.skills == ["fireball", "smash"]   # known 照 SKILLS 的順序
+    assert not skills.learn(p, SMASH)                                 # 已經會
+    assert skills.forget(p, FIREBALL) and not skills.forget(p, FIREBALL)
+    p.skills.append("gone")                                           # SKILLS 已經拿掉的技能：不算
+    assert skills.known(p) == [SMASH]
+
+
+def test_imm_only_cannot_be_learned():
+    p = player(5, stats.Race.HUMAN, stats.Guild.SWORD)
+    assert not skills.learn(p, THUNDER) and "thunder" not in p.skills
+    p.skills.append("thunder")                                        # 就算清單裡有，不是 imm 也不會
+    assert THUNDER not in skills.known(p)
+    p.imm = True
+    p.skills.remove("thunder")
+    assert THUNDER in skills.known(p)                                 # imm 自動會
+
+
+def test_another_guilds_skill_keeps_its_own_guild():
+    # 劍之公會學了火球：照樣打法術、照杖之公會的標準扣 MP（使用者：先這樣，做怎麼學技能時再看）
+    p = player(5, stats.Race.HUMAN, stats.Guild.SWORD)
+    skills.learn(p, FIREBALL)
+    assert (skills.damage_kind(FIREBALL, p), skills.resource(FIREBALL)) == ("spell", "mp")
+    assert skills.cost(FIREBALL, 5) == max(1, stats.shown(stats.resource_standard(5, stats.Guild.STAFF, "mp") * FIREBALL.cost))
+
+
+def test_skills_are_saved(tmp_path, monkeypatch):
+    monkeypatch.setattr(save, "PLAYER_DIR", tmp_path)
+    zones.load(AREAS)
+    try:
+        p = make_player_file("Ming")
+        assert p.skills == ["smash"]                                  # 跟建立角色一樣：劍之公會一開始就會重擊
+        p.skills = ["fireball", "smash"]
+        save.save_player(p)
+        assert save.player_from(save.load_data("Ming"), FakeWriter()).skills == ["fireball", "smash"]
+        data = save.load_data("Ming")
+        del data["skills"]                                            # 舊存檔：補上公會一開始就會的
+        assert save.player_from(data, FakeWriter()).skills == ["smash"]
+    finally:
+        characters.clear()
+        zones.stop()
+
+
+# ---- imm 的 sset ----
+
+@pytest.mark.parametrize("line, want", [
+    ("sset", "用法：sset <名字> <技能> [off]"),
+    ("sset ming", "用法：sset <名字> <技能> [off]"),
+    ("sset ming smash xyz", "用法：sset <名字> <技能> [off]"),
+    ("sset zzz smash", "沒有找到這個玩家。"),
+    ("sset ming zzz", "沒有這個技能。"),
+    ("sset ming th", "天雷只有 imm 會，不能給別人。"),
+    ("sset ming smash", "Ming 已經會重擊了。"),
+    ("sset ming fire off", "Ming 本來就不會火球。"),
+])
+def test_sset_mistakes(world, line, want):
+    shabu, ming = imm_fighter("Shabu"), fighter("Ming", room=101)
+    assert say(shabu, line) == f"{want}\r\n\r\n{prompt_of(shabu)}"
+    assert ming.skills == ["smash"]
+
+
+def test_sset_learn_and_forget(world):
+    shabu, ming = imm_fighter("Shabu"), fighter("Ming", room=101)    # 不在同房間也可以
+    raw(ming)
+    assert say(shabu, "ss mi fire") == f"Ming 學會了火球。\r\n\r\n{prompt_of(shabu)}"
+    assert "你學會了火球！" in raw(ming) and skills.known(ming) == [SMASH, FIREBALL]
+    assert say(shabu, "sset ming smash off") == f"Ming 忘掉了重擊。\r\n\r\n{prompt_of(shabu)}"
+    assert skills.known(ming) == [FIREBALL]
+    assert say(shabu, "sset shabu fire") == f"你學會了火球！\r\n\r\n{prompt_of(shabu)}"   # 給自己
+
+
+def test_sset_is_only_for_imm(world):
+    ming = fighter("Ming")
+    assert say(ming, "sset ming fire") == f"什麼？\r\n\r\n{prompt_of(ming)}"
+
+
+# ---- 增益技能：餽贈（之後教學區的 NPC 送給玩家，使用者定的） ----
+
+GIFT = skills.SKILLS["gift"]
+GIFT_LINES = ["  餽贈 gift  持續 3600 秒  消耗 0  冷卻 0 秒",
+              "    每 3 秒 HP +上限的 10%、力量 +3、智慧 +3、知識 +3、體質 +3、敏捷 +3"]   # 做什麼放下一行，不超過 79 格
+
+
+def gifted(name, room=102):
+    p = fighter(name, room=room)
+    skills.learn(p, GIFT)
+    return p
+
+
+def test_gift_data():
+    assert (GIFT.kind, GIFT.target, GIFT.starter, GIFT.imm_only, GIFT.cooldown, skills.cost(GIFT, 50)) == ("buff", "ally", (), False, 0, 0)
+    a = GIFT.affect
+    assert (a["duration"], a["periodic_pct"], a["keep_on_death"]) == (3600, {"hp": 0.10}, True)
+    assert a["applies"] == {k: 3.0 for k in stats.PRIMARY_KEYS}
+
+
+def test_gift_on_yourself(world):
+    shabu, ming = gifted("Shabu"), fighter("Ming")
+    raw(ming)
+    got = say(shabu, "use gift")                                      # 不是 imm、沒有消耗：不會當掉
+    assert got == f"你對自己施展了【餽贈】。\r\n\r\n{prompt_of(shabu)}"
+    assert "Shabu對自己施展了【餽贈】。" in text_of(ming)
+    assert [a.source for a in shabu.affects] == ["gift"] and shabu.fighting is None and shabu.cooldowns == {}
+
+
+def test_gift_on_others(world):
+    shabu, hua, lin = gifted("Shabu"), fighter("Hua"), fighter("Lin")
+    raw(hua), raw(lin)
+    assert say(shabu, "us g hua") == f"你對Hua施展了【餽贈】。\r\n\r\n{prompt_of(shabu)}"
+    assert "Shabu對你施展了【餽贈】。" in text_of(hua) and "Shabu對Hua施展了【餽贈】。" in text_of(lin)
+    assert hua.affects[0].source == "gift" and shabu.affects == []
+
+
+@pytest.mark.parametrize("line, want", [("use gift bird", "這裡沒有這個人。"), ("use gift dog", "餽贈只能放在玩家身上。")])
+def test_gift_mistakes(world, line, want):
+    shabu = gifted("Shabu")
+    assert say(shabu, line) == f"{want}\r\n\r\n{prompt_of(shabu)}"
+    assert shabu.fighting is None and mobile("野狗").affects == []
+
+
+def test_gift_in_a_fight_keeps_the_opponent(world):
+    shabu = gifted("Shabu")
+    dog = mobile("野狗")
+    got = in_fight([(shabu, dog)], lambda: (say(shabu, "use gift"), shabu.fighting))
+    assert got[1] is dog and shabu.affects[0].source == "gift"
+
+
+def test_gift_heals_every_3_seconds_and_overwrites(world):
+    shabu = gifted("Shabu")
+    say(shabu, "use gift")
+    shabu.hp = 1.0
+    affects.tick(), affects.tick()
+    assert shabu.hp == 1.0
+    affects.tick()
+    assert shabu.hp == pytest.approx(1.0 + shabu.panel["hp"] * 0.10)
+    say(shabu, "use gift")                                            # 再放一次：覆蓋，時間回到滿的
+    assert len(shabu.affects) == 1 and shabu.affects[0].ticks == 3600
+
+
+def test_gift_survives_death_and_wears_off(world):
+    shabu = gifted("Shabu")
+    say(shabu, "use gift")
+    death.player_dies(shabu)
+    assert shabu.affects[0].source == "gift"
+    raw(shabu)
+    for _ in range(3600):
+        affects.tick()
+    assert shabu.affects == [] and "你身上的【餽贈】消失了。" in text_of(shabu)
+
+
+def test_an_npc_can_give_it(world):
+    # 之後教學區的 NPC 直接呼叫 skills.use()：生物沒有冷卻、不用學，也不用在打架
+    hua, dog = fighter("Hua"), mobile("野狗")
+    raw(hua)
+    skills.use(dog, GIFT, hua)
+    assert hua.affects[0].source == "gift" and "野狗對你施展了【餽贈】。" in text_of(hua)
+
+
+def test_skills_line_for_gift(world):
+    shabu = gifted("Shabu")
+    lines = say(shabu, "skills").split("\r\n")
+    i = lines.index(GIFT_LINES[0])
+    assert lines[i:i + 2] == GIFT_LINES and max(len(line.encode(ENCODING)) for line in lines) <= 79
+
+
+def test_gift_in_score_wraps_within_79(world):
+    # 說明太長就換行，接在下一行對齊，整行不超過 79 格（使用者要 score 跟 C 版一樣寬）
+    shabu = gifted("Shabu")
+    say(shabu, "use gift")
+    lines = say(shabu, "score").split("\r\n")
+    i = lines.index(" 你受到下列效果的影響：")
+    assert lines[i + 1:i + 3] == [
+        " 【        餽贈】 每 3 秒 HP +上限的 10%、力量 +3、智慧 +3、  還有  3600 秒",
+        "                  知識 +3、體質 +3、敏捷 +3",
+    ]
+    assert max(len(line.encode(ENCODING)) for line in lines) <= 79

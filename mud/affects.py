@@ -2,8 +2,8 @@
 
 一個效果（Affect）可以同時有三種作用：
 - 暫時加減屬性（applies）：次要屬性加減，跟裝備一樣算進 panel（stats.recompute、npcs.recompute），打架就用得到。
-  主屬性下一步才加（使用者定的：可以加減，換算用哪個等級還沒定）。
-- 持續加減 HP／MP／MV（periodic）：每 AFFECT_PULSE_TICKS（3）tick 跳一次，從放下去開始數，放下去那一刻不跳。
+  主屬性照被放的人自己的等級換成次要屬性（使用者定的，stats.add_affects）；生物沒有公會，不算。
+- 持續加減 HP／MP／MV（periodic 固定量、periodic_pct 上限的幾成）：每 AFFECT_PULSE_TICKS（3）tick 跳一次，從放下去開始數，放下去那一刻不跳。
   HP 扣到 0 就死（使用者定的），跟被打死同一套（combat.slain）。
 - 旗標（flags，area.AffectFlag）：現在只是記號。
 同一個來源（哪個技能放的）只有一份：再放一次是覆蓋；不同來源就疊。
@@ -28,8 +28,9 @@ class Affect:
     source: str                             # 哪個技能放的（技能 id；imm 的測試效果是 test_…）：同一個來源只有一份
     name: str                               # 顯示的名字
     duration: int                           # 總共幾個 tick（覆蓋時回到這麼多）
-    applies: dict = field(default_factory=dict)     # 次要屬性的代號（stats.SECONDARY_KEYS）→ 加減多少
+    applies: dict = field(default_factory=dict)     # 屬性的代號（主屬性 stats.PRIMARY_KEYS 或次要屬性 SECONDARY_KEYS）→ 加減多少
     periodic: dict = field(default_factory=dict)    # "hp"、"mp"、"mv" → 每 AFFECT_PULSE_TICKS 加減多少（負的是扣）
+    periodic_pct: dict = field(default_factory=dict)    # "hp"、"mp"、"mv" → 每跳一次加減當時上限的幾成（0.10 是 10%）
     flags: AffectFlag = AffectFlag(0)
     keep_on_death: bool = False             # 死掉後還在不在（每個效果自己設定，使用者定的）
     off_message: str = ""                   # 時間到、效果消失時告訴他的話（可以用顏色代碼）；空的就不說
@@ -78,9 +79,17 @@ def on_death(ch):
     changed(ch)
 
 
+PULSE_KEYS = ("hp", "mp", "mv")             # 持續加減的資源，跳的順序
+
+
+def drains_hp(a):
+    """持續扣 HP 的效果（固定量或上限的幾成）：矮人的堅韌、扣死都看它。"""
+    return a.periodic.get("hp", 0) < 0 or a.periodic_pct.get("hp", 0) < 0
+
+
 def step(ch, a):
     """這個效果每 tick 減幾：矮人身上持續扣 HP 的減 TOUGH_STEP，其他減 1。"""
-    return TOUGH_STEP if getattr(ch, "race", None) == stats.Race.DWARF and a.periodic.get("hp", 0) < 0 else 1
+    return TOUGH_STEP if getattr(ch, "race", None) == stats.Race.DWARF and drains_hp(a) else 1
 
 
 def seconds_left(ch, a):
@@ -131,34 +140,42 @@ def tick_one(ch, out):
 
 
 def pulse(ch, a, out):
-    """跳一次：HP、MP、MV 照 periodic 加減，加不超過上限、MP／MV 扣到 0 為止。HP 扣到 0 就死，回傳 True。
+    """跳一次：HP、MP、MV 照 periodic（固定量）＋ periodic_pct（當時上限的幾成）加減，加不超過上限、MP／MV 扣到 0 為止。
+    HP 扣到 0 就死，回傳 True。
 
     打架中被扣死：算被他正在打的對手打死（照常給經驗）；沒在打架誰都不給經驗（使用者定的）。
     """
     if not ch.panel:
         return False
-    for key, n in a.periodic.items():
+    for key in PULSE_KEYS:
+        if key not in a.periodic and key not in a.periodic_pct:
+            continue
         now = getattr(ch, key)
+        n = a.periodic.get(key, 0.0) + ch.panel[key] * a.periodic_pct.get(key, 0.0)
         if n >= 0:
             setattr(ch, key, max(now, min(ch.panel[key], now + n)))
         elif key == "hp":
             ch.hp = now + n
         else:
             setattr(ch, key, min(now, max(0.0, now + n)))
-    if a.periodic.get("hp", 0) < 0 and ch.hp <= 0:
+    if drains_hp(a) and ch.hp <= 0:
         combat.slain(out, ch.fighting, ch)
         return True
     return False
 
 
-def describe(ch, a):
-    """affects、mstat 的一行：「測試毒：還有 25 秒，每 3 秒 HP -10」。"""
-    parts = [f"還有 {seconds_left(ch, a):g} 秒"]
+def parts(a):
+    """這個效果做什麼，一樣一句：持續加減（「每 3 秒 HP -10」「每 3 秒 HP +上限的 10%」）、加減屬性（「命中 +10」）、旗標（「失明」）。"""
     every = AFFECT_PULSE_TICKS * TICK_SECONDS
-    parts += [f"每 {every:g} 秒 {stats.STAT_NAMES[k]} {n:+g}" for k, n in a.periodic.items()]
-    parts += [f"{stats.STAT_NAMES[k]} {n:+g}" for k, n in a.applies.items()]
-    parts += [AFFECT_FLAG_NAMES[f] for f in AffectFlag if f in a.flags]
-    return f"{a.name}：" + "，".join(parts)
+    return ([f"每 {every:g} 秒 {stats.STAT_NAMES[k]} {n:+g}" for k, n in a.periodic.items()]
+            + [f"每 {every:g} 秒 {stats.STAT_NAMES[k]} {'+' if f >= 0 else '-'}上限的 {abs(f) * 100:g}%" for k, f in a.periodic_pct.items()]
+            + [f"{stats.STAT_NAMES[k]} {n:+g}" for k, n in a.applies.items()]
+            + [AFFECT_FLAG_NAMES[f] for f in AffectFlag if f in a.flags])
+
+
+def describe(ch, a):
+    """mstat 的一段：「測試毒：還有 25 秒，每 3 秒 HP -10」（score 最下面的那段另外排）。"""
+    return f"{a.name}：" + "，".join([f"還有 {seconds_left(ch, a):g} 秒", *parts(a)])
 
 
 def to_data(a):

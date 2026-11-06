@@ -6,7 +6,7 @@ import json
 import logging
 from collections import Counter
 
-from .. import affects, death, equipment, inventory, names, objects, stats
+from .. import affects, death, equipment, inventory, names, objects, skills, stats
 from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act, notify
 from ..area import ATTACK_NAMES, ITEM_TYPE_NAMES, WEAPON_KIND_NAMES, AffectFlag, Apply, ItemColor
 from ..characters import Position, find_in_room
@@ -222,10 +222,10 @@ def player_lines(p):
     lines = [f"名字 {p.name}  imm {'是' if p.imm else '否'}"]
     if not p.panel:                         # 沒有屬性（測試直接建的）
         return lines + [where_lines(p)]
-    gear = stats.gear_primaries(p)
+    gear = stats.extra_primaries(p)         # 裝備 ＋ 效果加的
     lines[0] += (f"  種族 {stats.RACE_NAMES[p.race]}  公會 {stats.GUILD_NAMES[p.guild]}  等級 {p.level}"
                  f"  經驗 {p.exp:.1f}/{stats.exp_to_level(p.level):.1f}")
-    lines.append("主屬性 " + "  ".join(f"{stats.STAT_NAMES[k]} {p.primaries[k] + gear[k]}（{p.primaries[k]}＋{gear[k]}）"
+    lines.append("主屬性 " + "  ".join(f"{stats.STAT_NAMES[k]} {p.primaries[k] + gear[k]:g}（{p.primaries[k]}＋{gear[k]:g}）"
                                     for k in stats.PRIMARY_KEYS) + f"  可分配 {p.points}")
     lines.append(f"HP {p.hp:.1f}/{p.panel['hp']:.1f}  MP {p.mp:.1f}/{p.panel['mp']:.1f}  MV {p.mv:.1f}/{p.panel['mv']:.1f}")
     lines += panel_lines(p.panel)
@@ -272,7 +272,7 @@ def refill(c):
         c.cooldowns.clear()
 
 
-# effect 指令的測試效果（數字只是測試用，不是設計；真的效果之後由技能放）：名稱 → Affect 的欄位
+# affect 指令的測試效果（數字只是測試用，不是設計；真的效果之後由技能放）：名稱 → Affect 的欄位
 TEST_EFFECTS = {
     "poison": dict(source="test_poison", name="測試毒", duration=60, periodic={"hp": -10.0},
                    off_message="你身上的【測試毒】退了。"),
@@ -283,17 +283,17 @@ TEST_EFFECTS = {
     "blind": dict(source="test_blind", name="測試失明", duration=30, flags=AffectFlag.BLIND,
                   off_message="你又看得見了。"),
 }
-EFFECT_USAGE = f"用法：effect <名字> <{'、'.join([*TEST_EFFECTS, 'clear'])}>"
+AFFECT_USAGE = f"用法：affect <名字> <{'、'.join([*TEST_EFFECTS, 'clear'])}>"
 
 
-def do_effect(ch, arg):
-    """effect <名字> <測試效果>：給角色放一個測試用的效果（poison、regen、bless、blind），clear 清掉全部的效果。
+def do_affect(ch, arg):
+    """affect <名字> <測試效果>：給角色放一個測試用的效果（poison、regen、bless、blind），clear 清掉全部的效果。
 
     名字跟 restore 一樣：先找同房間的（生物也可以），找不到再找線上的玩家。
     """
     words = arg.split()
     if len(words) < 2 or (words[1].lower() not in TEST_EFFECTS and words[1].lower() != "clear"):
-        ch.send(EFFECT_USAGE + "\n")
+        ch.send(AFFECT_USAGE + "\n")
         return
     victim = find_in_room(ch, words[0]) or names.pick(online_players(), words[0], lambda c: c.names())
     if victim is None:
@@ -315,3 +315,42 @@ def do_effect(ch, arg):
         return
     act(theirs, ch, victim, to=TO_VICT)
     act(mine, ch, victim, to=TO_CHAR)
+
+
+def do_sset(ch, arg):
+    """sset <名字> <技能> [off]：讓線上的玩家學會（off 是忘掉）一個技能（照 C 版的名字）。
+
+    名字是線上的玩家（開頭就行）；技能名稱可以縮寫，全部的技能裡找。imm_only 的（天雷）不能給別人。
+    """
+    words = arg.split()
+    if len(words) < 2 or len(words) > 3 or (len(words) == 3 and words[2].lower() != "off"):
+        ch.send("用法：sset <名字> <技能> [off]\n")
+        return
+    victim = names.pick(online_players(), words[0], lambda c: c.names())
+    if victim is None:
+        ch.send("沒有找到這個玩家。\n")
+        return
+    word = words[1].lower()
+    skill = next((s for s in skills.SKILLS.values() if s.id.startswith(word)), None)
+    if skill is None:
+        ch.send("沒有這個技能。\n")
+        return
+    if skill.imm_only:
+        ch.send(f"{skill.name}只有 imm 會，不能給別人。\n")
+        return
+    if len(words) == 3:
+        if not skills.forget(victim, skill):
+            ch.send(f"{victim.name} 本來就不會{skill.name}。\n")
+            return
+        mine, theirs = f"{victim.name} 忘掉了{skill.name}。", f"你忘掉了{skill.name}。"
+    else:
+        if not skills.learn(victim, skill):
+            ch.send(f"{victim.name} 已經會{skill.name}了。\n")
+            return
+        mine, theirs = f"{victim.name} 學會了{skill.name}。", f"你學會了{skill.name}！"
+    log.info(f"{ch.name}：{mine}")
+    if victim is ch:
+        ch.send(theirs + "\n")
+        return
+    ch.send(mine + "\n")
+    notify(victim, theirs)

@@ -62,8 +62,7 @@ def balanced(p):
 def test_only_imm_finds_imm_commands():
     assert commands.find("advance") is None
     assert commands.find("advance", is_imm=True) is imm.do_advance
-    assert commands.find("ad", is_imm=True) is imm.do_advance
-    assert commands.find("a", is_imm=True) is system.do_affects          # 玩家的指令先找：a 是 affects
+    assert commands.find("a", is_imm=True) is imm.do_advance
     # 原本的縮寫不受影響
     assert commands.find("t", is_imm=True) is system.do_tell
     assert commands.find("tr") is system.do_train
@@ -193,10 +192,10 @@ def test_score_shows_imm_and_unspent_points():
     commands.command(shabu, "score")
     raw = shabu.writer.data.decode(ENCODING)
     text = shabu.writer.text()
-    assert " 【Shabu】 人類｜劍之公會｜等級 100｜男｜imm\r\n" in text
-    assert " 主屬性  力量 12  智慧 12  知識 12  體質 12  敏捷 12  可分配 99\r\n" in text
+    assert " 【Shabu】 人類｜劍之公會｜男｜imm\r\n" in text
+    assert " 力量  12   智慧  12   知識  12   體質  12   敏捷  12     可分配 99\r\n" in text
     assert "\x1b[35;1mimm" in raw and "\x1b[33;1m可分配 99" in raw
-    assert "物理傷害\x1b[37;1m" in raw              # 數字是亮白色（名字照畫面寬度切，不是照字數）
+    assert "物理傷害 \x1b[37;1m" in raw             # 數字是亮白色（名字照畫面寬度切，不是照字數）
 
 
 def test_score_without_imm_or_points():
@@ -220,6 +219,17 @@ def test_imm_points_trained_are_saved(monkeypatch, tmp_path):
         (True, 30, 22, shabu.trained, shabu.primaries)
 
 
+def test_gold_is_saved(monkeypatch, tmp_path):
+    # 還沒有拿到金幣的地方，先是 0；存檔有這一格，之後有金幣了下線不會不見
+    monkeypatch.setattr(save, "PLAYER_DIR", tmp_path)
+    ming = player("Ming")
+    assert ming.gold == 0
+    ming.gold = 1234567890
+    ming.password = save.hash_password("secret")
+    save.save_player(ming)
+    assert save.player_from(save.load_data("Ming"), FakeWriter()).gold == 1234567890
+
+
 def test_old_save_without_new_fields_loads(monkeypatch, tmp_path):
     # 加 imm、points、trained 以前存的檔（例如 shabu.json）照樣讀得進來
     monkeypatch.setattr(save, "PLAYER_DIR", tmp_path)
@@ -228,8 +238,8 @@ def test_old_save_without_new_fields_loads(monkeypatch, tmp_path):
     save.save_player(ming)
     path = tmp_path / "ming.json"
     data = json.loads(path.read_text(encoding="utf-8"))
-    for key in ("imm", "points", "trained"):
+    for key in ("imm", "points", "trained", "gold"):
         del data[key]
     path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
     again = save.player_from(save.load_data("Ming"), FakeWriter())
-    assert (again.imm, again.points, again.trained) == (False, 0, {k: 0 for k in stats.PRIMARY_KEYS})
+    assert (again.imm, again.points, again.trained, again.gold) == (False, 0, {k: 0 for k in stats.PRIMARY_KEYS}, 0)

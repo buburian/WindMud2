@@ -25,6 +25,8 @@ class Player(Character):
         self.imm = False                     # 管理員：找得到 IMM_COMMANDS（存檔的 imm）
         self.panel = {}                      # 全部次要屬性的快取，用 stats.recompute() 從頭算
         self.hp = self.mp = self.mv = 0.0    # 現在的 HP、MP、MV（上限在 panel）
+        self.gold = 0                        # 金幣（還沒有拿到金幣的地方，先是 0；score 的位置留了很多位數）
+        self.skills = []                     # 會的技能 id（學會的順序，存檔）：建立角色時是公會一開始就會的（skills.starter）
         self.cooldowns = {}                  # 技能 id（還有 flee 失敗的等待 "flee"）→ 還要等幾個 tick 才能再用（skills.tick() 數），不存檔
 
     def send(self, text):

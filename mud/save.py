@@ -10,7 +10,7 @@ import os
 import secrets
 from pathlib import Path
 
-from . import affects, objects, stats, zones
+from . import affects, objects, skills, stats, zones
 from .config import PLAYER_DIR
 from .players import Player
 
@@ -45,7 +45,8 @@ def save_player(player):
         "name": player.name, "password": player.password, "sex": player.sex,
         "race": player.race, "guild": player.guild, "level": player.level, "exp": player.exp,
         "primaries": player.primaries, "resource_roll": player.resource_roll,
-        "points": player.points, "trained": player.trained, "imm": player.imm,
+        "points": player.points, "trained": player.trained, "imm": player.imm, "gold": player.gold,
+        "skills": player.skills,
         "hp": player.hp, "mp": player.mp, "mv": player.mv,
         "room": player.room.vnum,
         "panel": player.panel,
@@ -81,11 +82,13 @@ def player_from(data, writer):
     player.race, player.guild = stats.Race(data["race"]), stats.Guild(data["guild"])
     player.level, player.primaries = data["level"], data["primaries"]
     player.resource_roll = data["resource_roll"]
-    # 後來才加的欄位：舊存檔沒有，當作 0、不是 imm、身上沒東西、沒有效果
+    # 後來才加的欄位：舊存檔沒有，當作 0、不是 imm、沒有金幣、身上沒東西、沒有效果；技能補上一開始就會的
     player.exp = data.get("exp", 0.0)
     player.points = data.get("points", 0)
     player.trained = {k: data.get("trained", {}).get(k, 0) for k in stats.PRIMARY_KEYS}
     player.imm = data.get("imm", False)
+    player.gold = data.get("gold", 0)
+    player.skills = data["skills"] if "skills" in data else skills.starter(player.guild)   # 舊存檔沒有：補上公會一開始就會的
     player.carrying = [objects.from_data(d) for d in data.get("carrying", [])]
     player.equipment = {pos: objects.from_data(d) for pos, d in data.get("equipment", {}).items()}
     player.affects = [affects.from_data(d) for d in data.get("affects", [])]

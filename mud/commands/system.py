@@ -209,7 +209,9 @@ def do_quit(ch, arg):
     return False
 
 
+SCORE_WIDTH = 79                            # score 的寬度：跟 C 版 do_score 的分隔線一樣（使用者要的）
 SCORE_BAR = 20                              # score 的 HP／MP／MV 條有幾格
+AFFECT_TEXT_WIDTH = 44                      # score 最下面效果那段「做什麼」的寬度（後面接「還有 N 秒」，整行不超過 SCORE_WIDTH）
 SCORE_ROWS = [                              # score 下半部：(標題, 一列裡的屬性)，一列最多三格
     ("攻擊", ("dmg_phys", "dmg_spell", "hit")),
     ("", ("crit", "critdmg", "speed")),
@@ -233,6 +235,24 @@ def rpad(text, n):
     return " " * max(0, n - width(text)) + text
 
 
+def wrap(parts, n, sep="、"):
+    """把 parts 用 sep 連起來，每行最多 n 格（畫面寬度），在 sep 後面換行；一段本身比 n 長就自己一行。至少回傳一行。"""
+    lines, line = [], ""
+    for i, part in enumerate(parts):
+        piece = part + (sep if i < len(parts) - 1 else "")
+        if line and width(line + piece) > n:
+            lines.append(line)
+            line = piece
+        else:
+            line += piece
+    return lines + [line] if line or not lines else lines
+
+
+def cell(text, n):
+    """有顏色代碼的 text 補空白到畫面上 n 格（顏色代碼不佔格）。"""
+    return text + " " * max(0, n - width(plain(text)))
+
+
 def plain(text):
     """拿掉顏色代碼，算寬度用。"""
     return re.sub(r"\{.", "", text)
@@ -244,7 +264,11 @@ def bar(now, top, color):
 
 
 def do_score(ch, arg):
-    """看自己的全部屬性（有框、有 HP／MP／MV 條，使用者選的樣子）。公會用不到的傷害變暗。"""
+    """看自己的全部屬性（使用者選的樣子）：寬 SCORE_WIDTH 跟 C 版一樣，每個數字的位置固定，數字變長也不會把整個畫面撐寬。
+
+    數字留的位置：經驗 7 位數、HP／MP／MV 7 位數、屬性 8 位數；金幣放在行尾，再長也只往右。
+    公會用不到的傷害變暗。身上有效果時，最下面照 C 版列出來。
+    """
     panel = getattr(ch, "panel", None)
     if not panel:                           # NPC、還沒有屬性的角色
         ch.send("你沒有屬性可以看。\n")
@@ -252,37 +276,57 @@ def do_score(ch, arg):
     names = stats.STAT_NAMES
     sex = {SEX_MALE: "男", SEX_FEMALE: "女"}.get(ch.sex, "無")
     unused = stats.GUILD_DAMAGE[stats.Guild.STAFF if ch.guild == stats.Guild.SWORD else stats.Guild.SWORD]
-    gear = stats.gear_primaries(ch)         # 主屬性顯示角色 ＋ 裝備的總和（設計文件 §8.2，只是參考；戰鬥、負重不用這個總和）
+    gear = stats.extra_primaries(ch)        # 主屬性顯示角色 ＋ 裝備、效果加的總和（設計文件 §8.2，只是參考；戰鬥、負重不用這個總和）
+    heavy, thin = "{D" + "=" * SCORE_WIDTH + "{x", "{D" + "-" * SCORE_WIDTH + "{x"
     # 名字只有英文字母（login.py 檢查過），不會有顏色代碼混進來
     lines = [
+        heavy,
         " {G【{Y" + ch.name + "{G】{x {W" + stats.RACE_NAMES[ch.race] + "{D｜{C" + stats.GUILD_NAMES[ch.guild]
-        + "{D｜{x等級 {Y" + str(ch.level) + exp_text(ch) + "{D｜{x" + sex + ("{D｜{Mimm{x" if ch.imm else ""),
-        None,                               # 框線
-        " {C主屬性{x  " + "  ".join(names[k] + " {W" + rpad(str(ch.primaries[k] + gear[k]), 2) + "{x" for k in stats.PRIMARY_KEYS)
-        + (f"  {{Y可分配 {ch.points}{{x" if ch.points else ""),
-        "",
+        + "{D｜{x" + sex + ("{D｜{Mimm{x" if ch.imm else ""),
+        thin,
+        " " + cell("等級 {Y" + str(ch.level) + "{x", 12) + cell(exp_text(ch), 36) + "金幣 {Y" + str(ch.gold) + "{x",
+        " " + "   ".join(names[k] + " {W" + rpad(str(stats.shown(ch.primaries[k] + gear[k])), 3) + "{x" for k in stats.PRIMARY_KEYS)
+        + (f"     {{Y可分配 {ch.points}{{x" if ch.points else ""),
+        thin,
     ]
     for k in ("hp", "mp", "mv"):
         now, top = getattr(ch, k), panel[k]
         lines.append(" " + pad(names[k], 4) + bar(now, top, BAR_COLORS[k])
-                     + "  {W" + rpad(str(stats.shown(now)), 5) + "{x / " + str(stats.shown(top)))   # 100 級穿裝備的 HP 會到 5 位數
-    lines.append("")
+                     + "  {W" + rpad(str(stats.shown(now)), 7) + "{x / " + str(stats.shown(top)))
+    lines.append(thin)
     for title, keys in SCORE_ROWS:
         cells = []
         for k in keys:
-            name, value = pad(names[k], 8), rpad(str(stats.shown(panel[k])), 4)
+            name, value = pad(names[k], 9), rpad(str(stats.shown(panel[k])), 8)
             cells.append("{D" + name + value + "{x" if k == unused else name + "{W" + value + "{x")
-        lines.append(" " + ("{C" + pad(title, 4) + "{x" if title else "    ") + "  " + "   ".join(cells))
-    rule = "{D" + "=" * max(width(plain(line)) for line in lines if line) + "{x"
-    lines[1] = rule
-    ch.send(colorize("\n".join([rule, *lines, rule])) + "\n")
+        lines.append(" " + ("{C" + pad(title, 4) + "{x" if title else "    ") + "  "
+                     + "".join(cell(c, 24) for c in cells[:-1]) + cells[-1])
+    lines.append(heavy)
+    lines += affect_lines(ch)
+    ch.send(colorize("\n".join(lines)) + "\n")
 
 
 def exp_text(ch):
-    """score 抬頭等級後面的「｜經驗 35/139」：這一級累積的經驗 / 升級需求（取整）。滿等不顯示。"""
+    """score 等級那行的「經驗 35 / 139」：這一級累積的經驗 / 升級需求（取整）。滿等不顯示。"""
     if ch.level >= stats.MAX_LEVEL:
         return ""
-    return "{D｜{x經驗 {W" + str(stats.shown(ch.exp)) + "{x/" + str(stats.shown(stats.exp_to_level(ch.level)))
+    return "經驗 {W" + str(stats.shown(ch.exp)) + "{x / " + str(stats.shown(stats.exp_to_level(ch.level)))
+
+
+def affect_lines(ch):
+    """score 最下面：身上的效果，一個一行（照 C 版 do_score；沒有效果就沒有這一段）。
+
+    【名字】靠右、做什麼（affects.parts()，太長就換行，接在下一行對齊，不超過 SCORE_WIDTH）、還有幾秒（實際還要等的：矮人的毒減得快）。
+    """
+    if not ch.affects:
+        return []
+    lines = [" {C你受到下列效果的影響：{x"]
+    for a in ch.affects:
+        what = wrap(affects.parts(a), AFFECT_TEXT_WIDTH)
+        lines.append(" 【{W" + rpad(a.name, 12) + "{x】 " + pad(what[0], AFFECT_TEXT_WIDTH)
+                     + "還有 {W" + rpad(f"{affects.seconds_left(ch, a):g}", 5) + "{x 秒")
+        lines += [" " * 18 + more for more in what[1:]]          # 18 ＝ 「 【」＋ 名字 12 格 ＋「】 」
+    return lines
 
 
 PRIMARY_WORDS = {**{k: k for k in stats.PRIMARY_KEYS}, **{stats.STAT_NAMES[k]: k for k in stats.PRIMARY_KEYS}}
@@ -404,10 +448,3 @@ def do_save(ch, arg):
         return
     ch.send("存檔好了。\n")
 
-
-def do_affects(ch, arg):
-    """看自己身上的效果：每個一行，名字、還有幾秒、作用。什麼姿勢都能看。"""
-    if not ch.affects:
-        ch.send("你身上沒有任何效果。\n")
-        return
-    ch.send("你身上的效果：\n" + "\n".join(affects.describe(ch, a) for a in ch.affects) + "\n")
