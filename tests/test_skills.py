@@ -20,7 +20,7 @@ from mud.area import CORPSE_NPC_ITEM_TYPE, MobTier, WeaponKind
 from mud.characters import Position, characters
 from mud.commands import skills as skill_commands
 from mud.color import colorize
-from mud.config import ENCODING
+from mud.config import AFFECT_PULSE_TICKS, ENCODING, TICK_SECONDS
 from mud.npcs import Npc
 from mud.players import Player
 
@@ -116,6 +116,13 @@ def test_skills_match_mud_design(balance):
         assert (s.kind, s.target, s.hits, s.ratio, s.cost) == (want["kind"], want["target"], want["hits"], want["ratio"], want["cost"])
         assert s.cooldown == want["cooldown"]
         assert tuple(s.weapon_kinds) == tuple(want["weapon_kinds"])
+        want_dot = want.get("dot")                                      # 打中後的持續傷害（火球的燃燒）
+        assert (None if s.dot is None else {k: s.dot[k] for k in ("name", "ratio", "jumps")}) == want_dot
+
+
+def test_skill_constants_match_mud_design(balance):
+    assert skills.MIN_SKILL_DAMAGE == balance.SKILL_MIN_DMG                    # 技能打中最低 1 點
+    assert AFFECT_PULSE_TICKS * TICK_SECONDS == balance.AFFECT_PULSE_SECONDS  # 持續傷害每 3 秒跳一次
 
 
 def test_cost_matches_mud_design(balance, model):

@@ -40,7 +40,7 @@ class Skill:
 
 
 SKILLS = {s.id: s for s in (
-    Skill("smash", "重擊", Guild.SWORD, "damage", "single", 1, 1.2, 6, 0.10, starter=(Guild.SWORD,)),
+    Skill("smash", "重擊", Guild.SWORD, "damage", "single", 1, 1.8, 6, 0.10, starter=(Guild.SWORD,)),   # 1.8：使用者定的（火球加了燃燒，兩個公會一樣強）
     Skill("fireball", "火球", Guild.STAFF, "damage", "single", 1, 1.2, 6, 0.10, starter=(Guild.STAFF,),
           dot=dict(name="燃燒", ratio=0.3, jumps=3, hurt="燒傷")),   # 燃燒：使用者定的，每 3 秒一次、共 3 次，每次第一發的 30%
     Skill("thunder", "天雷", None, "damage", "single", 1, 10.0, 0, 0.0, imm_only=True),   # imm 測試用的（數字是我們訂的，不是設計文件的）
