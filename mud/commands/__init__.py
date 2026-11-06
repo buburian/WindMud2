@@ -49,6 +49,7 @@ COMMANDS = [
     ("flee", combat.do_flee, P.FIGHTING),       # f；戰鬥中逃跑（照 C 版的最低姿勢）
     ("give", items.do_give, P.RESTING),         # g 還是 get，gi 才是 give（照 C 版的最低姿勢）
     ("config", system.do_config, P.DEAD),       # co；什麼姿勢都能用（照 C 版）
+    ("!", system.do_again, P.DEAD),             # 重複上一個指令：command() 先換掉（again()），還沒打過指令才會跑到這裡
 ]
 
 # 管理員（imm）才找得到的指令，接在 COMMANDS 後面找，原本的縮寫都不受影響
@@ -108,6 +109,7 @@ def command(ch, line):
     """
     if pager.key(ch, line):
         return True
+    line = again(ch, line)
     verb, _, arg = line.partition(" ")
     verb, arg = verb.lower(), arg.strip()
     ch.sent = ch.notified = False
@@ -122,6 +124,21 @@ def command(ch, line):
         # 有送出訊息就先空一行再補 prompt；只按 Enter（沒有訊息）就直接補（使用者要的）
         pager.show(ch, text)
     return True
+
+
+def again(ch, line):
+    """「!」開頭的一行換成上一個指令（照 C 版，使用者要的）；其他有字的記成上一個指令。
+
+    只按 Enter、「!」本身不記（C 版連空行都記，那樣按完 Enter 再打 ! 就什麼都不做）。還沒打過指令就照打的跑，由 do_again() 說。
+    分頁的按鍵不會走到這裡（pager.key() 先處理掉），所以翻頁的 c、r 不會被記成上一個指令。
+    """
+    if not hasattr(ch, "last_line"):        # 生物沒有（腳本讓牠打的指令不用重複）
+        return line
+    if line.strip().startswith("!"):
+        return ch.last_line or line
+    if line.strip():
+        ch.last_line = line
+    return line
 
 
 def run(ch, line, verb, arg):

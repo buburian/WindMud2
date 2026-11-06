@@ -46,6 +46,7 @@ uv run python -m mud.builder                      # 區域編輯器，瀏覽器�
   `tests/test_give.py` 測 give（給東西、給金幣、店主不收、放不下、1 級不能給金幣、給完存檔、log）。
   `tests/test_scripts.py` 測 Lua 腳本：沙箱（拿不到的名字、碰不到 Python、指令數上限、記憶體）、開機檢查的每一條、10 個觸發時機、每個函式、vars、wait、出錯的提醒
   （wait 用假的 `scripts.schedule`，自己呼叫 `later.run()`；區域檔和 .lua 用 `build()` 寫進 `tmp_path`）。
+  `tests/test_again.py` 測 `!`（重複、Enter 不記、`!` 開頭都算、分頁中、腳本看到真的指令）。
   `tests/test_config.py` 測 config（列出、開關、lines 的範圍、存檔）；`tests/test_pager.py` 測分頁（假指令 many 送很多行：每個按鍵、打別的指令、別人的訊息、quit、出錯）。
   `tests/test_academy.py` 用真的 `areas/` 測教學學院：一人一份、一路走到畢業（技能教官照公會教 use、掉落、穿上、`say 畢業`）、學生重新登入和死掉回學院、沒有學院的區域檔時。
   `tests/test_flee.py` 測 flee（DEX 的機率、戰鬥中不能走、成功、失敗要等、關著的門、沒有出口）。
@@ -217,6 +218,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     模組在 `__init__` 裡叫 `help_command`（叫 help 會蓋掉 Python 內建的 `help()`）。
   `train <屬性> [點數]` 分配升級點數（`tr` 起才找得到，`t` 還是 tell），屬性可以寫 str 或中文。
   走路、look 這類指令 NPC 也能用（`command(npc, line)`）；reply、quit 只給玩家用（NPC 沒有 `reply`，quit 對它沒意義）。
+  **`!`**（使用者要的，照 C 版 inlast）：`command()` 在分頁的按鍵（`pager.key()`）之後用 `again()` 把「!」開頭的一行換成 `Player.last_line`；
+  有字的才記（只按 Enter、`!` 不記），所以腳本的 on_command 看到的是真的指令。指令表的 `!`（`do_again()`）只有還沒打過指令才跑到。
   `command()` 會在指令跑完後補送 `ch.prompt()`（斷線時不送）。**這個指令有送出訊息就先空一行再補 prompt**，只按 Enter 就直接補（使用者要的）：
   `Player.send()` 會把 `ch.sent` 設成 True，`command()` 開始時歸零。登入的歡迎畫面、`notify()` 也一樣空一行。
   `COMMANDS` 最前面是六個方向（`n e s w u d` 都是走路），接著 `look`。方向指令用 `walk(方向)` 做出來，共用 `move()`。

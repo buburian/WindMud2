@@ -510,6 +510,11 @@ def set_page_lines(ch, words):
         ch.send(f"每頁每【{n}】行暫停一次。\n")
 
 
+def do_again(ch, arg):
+    """「!」：重複上一個指令。command() 會先把「!」換成上一個指令，會跑到這裡只有還沒打過指令的時候。"""
+    ch.send("你還沒有打過指令。\n")
+
+
 def do_save(ch, arg):
     """手動存檔（離線時也會自動存）。什麼姿勢都能用（照 C 版）。"""
     if not getattr(ch, "panel", None):      # NPC、還沒有屬性的角色

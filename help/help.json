@@ -198,6 +198,16 @@
     },
     {
       "category": "角色",
+      "commands": ["!"],
+      "usage": "!",
+      "summary": "重複上一個指令",
+      "text": [
+        "打 ! 就是再打一次上一個指令，例如剛打了 kill dog，打 ! 就再 kill dog 一次。",
+        "只按 Enter 不算上一個指令。"
+      ]
+    },
+    {
+      "category": "角色",
       "commands": ["quit"],
       "usage": "quit",
       "summary": "離開遊戲",

@@ -36,6 +36,7 @@ class Player(Character):
         # 分頁（pager.py，不存檔）
         self.capture = None                  # 指令跑的時候，送給他的字先收在這裡（pager.collect），跑完才決定要不要分頁
         self.pages = None                    # 還沒看完的回覆（pager.Pages）；有的話 prompt 是分頁提示
+        self.last_line = ""                  # 上一個指令（打「!」重複它，commands.again()），不存檔
 
     def send(self, text):
         if self.capture is not None:         # 他的指令還沒跑完：先收起來（pager.collect）
