@@ -211,6 +211,13 @@ WEAR_SLOTS = {
 }
 LIGHT_ITEM_TYPE = 1                         # 物品種類 1 照明用具：不在 wear_flags 裡，放在光源的位置
 WEAPON_ITEM_TYPE = 5                        # 物品種類 5 武器
+CONTAINER_ITEM_TYPE = 15                    # 物品種類 15 容器：get 東西 容器 可以從裡面拿
+# 物品種類的中文（手冊的 item_type 表，有測試比對）：exam、ostat 顯示用。區域檢查還沒限制只能寫表裡的數字
+ITEM_TYPE_NAMES = {
+    1: "照明用具", 2: "卷軸", 3: "魔杖", 4: "魔棒", 5: "武器", 6: "弓", 8: "寶藏", 9: "護具", 10: "藥水", 12: "家具",
+    13: "垃圾", 15: "容器", 17: "液體容器", 18: "鑰匙", 19: "食物", 20: "金錢", 22: "船隻", 23: "怪物屍體", 24: "玩家屍體",
+    25: "噴泉", 26: "藥錠",
+}
 CORPSE_NPC_ITEM_TYPE = 23                   # 物品種類 23 怪物屍體：生物死掉時遊戲做出來的（objects.make_corpse），裡面放掉落的物品
 
 
@@ -247,12 +254,25 @@ class Attack(enum.IntEnum):
     CHOP = 13                               # 橫劈
 
 
+# 攻擊方式的中文（手冊「武器的攻擊方式」表，有測試比對）：拿武器打人的訊息「你使用重砍攻擊野狗」
+ATTACK_NAMES = {
+    Attack.HIT: "重擊", Attack.SLICE: "橫切", Attack.STAB: "戳刺", Attack.SLASH: "重砍", Attack.WHIP: "鞭打",
+    Attack.CLAW: "利爪", Attack.BLAST: "鎚擊", Attack.POUND: "敲擊", Attack.CRUSH: "轟擊", Attack.GREP: "削割",
+    Attack.BITE: "利牙", Attack.PIERCE: "突刺", Attack.SUCTION: "吸取", Attack.CHOP: "橫劈",
+}
+
+
 WEAPON_KIND_NAMES = {
     WeaponKind.DAGGER: "匕首", WeaponKind.LONGSWORD: "長劍", WeaponKind.SCIMITAR: "彎刀", WeaponKind.HANDAXE: "單手斧",
     WeaponKind.MACE: "釘頭鎚", WeaponKind.WHIP: "鞭", WeaponKind.CLAW: "拳爪", WeaponKind.GREATSWORD: "大劍",
     WeaponKind.BATTLEAXE: "戰斧", WeaponKind.WARHAMMER: "戰鎚", WeaponKind.SPEAR: "長槍",
 }
 TWO_HANDED_KINDS = {WeaponKind.GREATSWORD, WeaponKind.BATTLEAXE, WeaponKind.WARHAMMER, WeaponKind.SPEAR}
+WEAPON_KIND_NAMES = {                       # 武器種類的中文（手冊的武器種類表，有測試比對）：exam、ostat 顯示用
+    WeaponKind.DAGGER: "匕首", WeaponKind.LONGSWORD: "長劍", WeaponKind.SCIMITAR: "彎刀", WeaponKind.HANDAXE: "單手斧",
+    WeaponKind.MACE: "釘頭鎚", WeaponKind.WHIP: "鞭", WeaponKind.CLAW: "拳爪", WeaponKind.GREATSWORD: "大劍",
+    WeaponKind.BATTLEAXE: "戰斧", WeaponKind.WARHAMMER: "戰鎚", WeaponKind.SPEAR: "長槍",
+}
 DEFAULT_ATTACK = {                          # 每種武器預設的攻擊方式；作者可以改成別的武器攻擊方式
     WeaponKind.DAGGER: Attack.STAB, WeaponKind.LONGSWORD: Attack.SLICE, WeaponKind.SCIMITAR: Attack.GREP,
     WeaponKind.HANDAXE: Attack.SLASH, WeaponKind.MACE: Attack.BLAST, WeaponKind.WHIP: Attack.WHIP,

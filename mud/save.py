@@ -10,7 +10,7 @@ import os
 import secrets
 from pathlib import Path
 
-from . import stats, zones
+from . import objects, stats, zones
 from .config import PLAYER_DIR
 from .players import Player
 
@@ -49,6 +49,9 @@ def save_player(player):
         "hp": player.hp, "mp": player.mp, "mv": player.mv,
         "room": player.room.vnum,
         "panel": player.panel,
+        # 背包和裝備：整件存（詞綴、基本值都在裡面），區域檔之後改了身上的照舊
+        "carrying": [objects.to_data(o) for o in player.carrying],
+        "equipment": {pos: objects.to_data(o) for pos, o in player.equipment.items()},
     }
     path = path_of(player.name)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -76,11 +79,13 @@ def player_from(data, writer):
     player.race, player.guild = stats.Race(data["race"]), stats.Guild(data["guild"])
     player.level, player.primaries = data["level"], data["primaries"]
     player.resource_roll = data["resource_roll"]
-    # 後來才加的欄位：舊存檔沒有，當作 0 和不是 imm
+    # 後來才加的欄位：舊存檔沒有，當作 0、不是 imm、身上沒東西
     player.exp = data.get("exp", 0.0)
     player.points = data.get("points", 0)
     player.trained = {k: data.get("trained", {}).get(k, 0) for k in stats.PRIMARY_KEYS}
     player.imm = data.get("imm", False)
-    stats.recompute(player)
+    player.carrying = [objects.from_data(d) for d in data.get("carrying", [])]
+    player.equipment = {pos: objects.from_data(d) for pos, d in data.get("equipment", {}).items()}
+    stats.recompute(player)                 # 裝備先放回去，屬性才算得到
     player.hp, player.mp, player.mv = (min(data[k], player.panel[k]) for k in ("hp", "mp", "mv"))
     return player

@@ -1,6 +1,7 @@
 """角色：玩家和 NPC 共同的部分，以及遊戲裡所有角色的名單。"""
 import enum
 
+from . import names
 from .config import PROMPT
 
 SEX_NEUTRAL, SEX_MALE, SEX_FEMALE = 0, 1, 2
@@ -32,6 +33,8 @@ class Character:
         self.fighting = None                # 正在打誰（角色）
         self.fight = None                   # 在哪一場戰鬥裡（fight.Fight）
         self.sent = False                   # 這個指令有沒有送出訊息：有的話 prompt 前空一行（使用者要的，command() 用）
+        self.carrying = []                  # 背包裡的物品（objects.Obj），新的在前（照 C 版）；身上穿的不在這裡
+        self.equipment = {}                 # 穿在身上的：部位（inventory.SLOTS 的代號）→ Obj。生物不穿裝備（使用者說的）
 
     def send(self, text):
         """送文字給這個角色看。NPC 沒有連線，所以什麼都不做；玩家（Player）會改成寫到連線。"""
@@ -58,17 +61,9 @@ def in_room(ch):
 def find_in_room(ch, name):
     """ch 所在房間裡叫做 name 的角色，找不到是 None（使用者定的，**要找生物的指令都用它**：kill、slay、use…）。
 
-    - 名字跟指令一樣只要打開頭：角色的任何一個名字（names()）用 name 開頭就算，英文不分大小寫（do、DOG 都是 dog）。
-    - 同名的用「n.名字」：3.dog 是畫面上第 3 隻對得上 dog 的（照 C 版的 number_argument）；0.dog、3. 找不到。
-    - 順序照 look 畫面（in_room()），自己排最後（look 看不到自己；自己也找得到，照 C 版）。
+    名字的規則在 names.py（開頭就行、3.dog 是第 3 隻）。順序照 look 畫面（in_room()），自己排最後（look 看不到自己；自己也找得到，照 C 版）。
     """
-    number, dot, rest = name.partition(".")
-    n, word = (int(number), rest) if dot and number.isdigit() else (1, name)
-    word = word.lower()
-    if n < 1 or not word:
-        return None
-    matches = [c for c in in_room(ch) + [ch] if any(x.startswith(word) for x in c.names())]
-    return matches[n - 1] if n <= len(matches) else None
+    return names.pick(in_room(ch) + [ch], name, lambda c: c.names())
 
 
 characters = []  # 遊戲裡所有的角色（玩家和 NPC，所有區域物件裡的都在這），找同房間的人都從這裡找

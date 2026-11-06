@@ -76,11 +76,8 @@
       "long": "一位測試商人/merchant/站在櫃檯後面。\n",
       "description": "這是測試區域的商人，臉上一直掛著笑容。\n",
       "level": 5,
-      "tier": "elite",
-      "tier_roll": {
-        "normal": 2000,
-        "boss": 100
-      },
+      "tier": "normal",
+      "tier_roll": null,
       "attack": "phys/spell",
       "defense": "phys",
       "archetype": "tank",
@@ -266,6 +263,106 @@
       ],
       "weight": 1,
       "cost": 10,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 5,
+      "keywords": "shield 盾牌",
+      "short": "測試盾牌",
+      "long": "一面測試盾牌靠在牆邊。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": "1|512",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 4,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 6,
+      "keywords": "dagger 匕首",
+      "short": "測試匕首",
+      "long": "一把測試匕首掉在地上。",
+      "item_type": 5,
+      "extra_flags": 0,
+      "wear_flags": "1|512",
+      "values": [
+        1,
+        0,
+        0,
+        2
+      ],
+      "weight": 2,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 7,
+      "keywords": "greatsword 大劍",
+      "short": "測試大劍",
+      "long": "一把測試大劍插在地上。",
+      "item_type": 5,
+      "extra_flags": 512,
+      "wear_flags": "1|8192",
+      "values": [
+        8,
+        0,
+        0,
+        13
+      ],
+      "weight": 12,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 8,
+      "keywords": "ring 戒指",
+      "short": "測試戒指",
+      "long": "一枚測試戒指在地上閃閃發光。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": "1|2",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 9,
+      "keywords": "armor 皮甲",
+      "short": "測試皮甲",
+      "long": "一件測試皮甲丟在地上。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": "1|8",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 8,
+      "cost": 0,
       "affects": [],
       "extra_descriptions": [],
       "script": null

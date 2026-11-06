@@ -64,10 +64,15 @@ def cost(skill, level):
 def display_range(ch, skill):
     """skills 顯示的傷害 (最低, 最高)：還沒被抗性擋、不含爆擊。
 
-    武器做好前（使用者選的）：傷害點數 × ratio × (1 ∓ 浮動)，跟 damage.strike() 實際的 ±20% 一樣。
-    武器做好後改回設計文件的（傷害點數 ＋ 主手武器下限／上限）× ratio。
+    拿主手武器：設計文件的（傷害點數 ＋ 主手武器下限／上限）× ratio。
+    空手（使用者選的）：傷害點數 × ratio × (1 ∓ 浮動)，跟 damage.strike() 實際的 ±20% 一樣。
     """
-    points = ch.panel.get(f"dmg_{damage_kind(skill, ch)}", 0.0) * skill.ratio
+    points = ch.panel.get(f"dmg_{damage_kind(skill, ch)}", 0.0)
+    weapon = damage.weapon_in(ch, 0)
+    if weapon is not None:
+        return (stats.shown((points + weapon.base["dmg_min"]) * skill.ratio),
+                stats.shown((points + weapon.base["dmg_max"]) * skill.ratio))
+    points *= skill.ratio
     return stats.shown(points * (1.0 - damage.DMG_VAR)), stats.shown(points * (1.0 + damage.DMG_VAR))
 
 
@@ -97,8 +102,11 @@ def affordable(ch, skill):
 
 
 def weapon_ok(ch, skill):
-    """主手武器的種類符不符合：沒寫 weapon_kinds 是不限。武器還沒做，手上沒有武器，有限制的技能都不能用。"""
-    return not skill.weapon_kinds
+    """主手武器的種類符不符合：沒寫 weapon_kinds 是不限；有寫的話主手要拿那種武器（空手不行）。"""
+    if not skill.weapon_kinds:
+        return True
+    weapon = damage.weapon_in(ch, 0)
+    return weapon is not None and weapon.weapon_kind in skill.weapon_kinds
 
 
 def use(ch, skill, victim):

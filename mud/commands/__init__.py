@@ -1,6 +1,6 @@
 """處理玩家輸入的指令：照 COMMANDS 的順序，找第一個用輸入開頭的指令。"""
 from ..characters import Position as P
-from . import combat, doors, imm, skills, system
+from . import combat, doors, imm, items, skills, system
 from . import help as help_command          # 不叫 help：名字會蓋掉 Python 內建的 help()
 
 # 指令表：(指令, 函式, 最低姿勢)。輸入的字照這個順序比對，第一個用它開頭的指令就是答案（c 會找到 chat）。
@@ -38,12 +38,23 @@ COMMANDS = [
     ("skills", skills.do_skills, P.DEAD),       # sk；跟 score 一樣什麼姿勢都能看
     ("help", help_command.do_help, P.DEAD),     # h；什麼姿勢都能看，說明在 help/help.json
     ("use", skills.do_use, P.FIGHTING),         # us（u 還是 up、un 是 unlock）；放技能，可以開打；休息、睡覺不能用
+    # 物品（照 C 版的最低姿勢：拿、丟、穿、脫要醒著，打架中可以；看背包、裝備什麼姿勢都行）
+    ("get", items.do_get, P.RESTING),           # g
+    ("drop", items.do_drop, P.RESTING),         # d 還是 down，dr 才是 drop
+    ("wear", items.do_wear, P.RESTING),         # wea 還是 weather，要打完整的 wear
+    ("remove", items.do_remove, P.RESTING),     # r、re 還是 reply、res 是 rest，rem 才是 remove
+    ("inventory", items.do_inventory, P.DEAD),  # i、inv
+    ("equipment", items.do_equipment, P.DEAD),  # e 還是 east，eq 才是 equipment
+    ("examine", items.do_examine, P.RESTING),   # ex；只看背包和身上的（照 C 版要醒著）
 ]
 
 # 管理員（imm）才找得到的指令，接在 COMMANDS 後面找，原本的縮寫都不受影響
 IMM_COMMANDS = [
     ("advance", imm.do_advance, P.DEAD),
     ("slay", imm.do_slay, P.DEAD),
+    ("oload", imm.do_oload, P.DEAD),            # o 還是 open，ol 才是 oload
+    ("ostat", imm.do_ostat, P.DEAD),            # os
+    ("mstat", imm.do_mstat, P.DEAD),            # m
 ]
 
 # 姿勢不夠時的訊息（照 C 版 interp.c）

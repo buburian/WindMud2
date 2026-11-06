@@ -5,6 +5,7 @@
     {"name": "溝通", "imm": false},
     {"name": "角色", "imm": false},
     {"name": "戰鬥", "imm": false},
+    {"name": "物品", "imm": false},
     {"name": "門", "imm": false},
     {"name": "管理員", "imm": true}
   ],
@@ -212,6 +213,79 @@
       ]
     },
     {
+      "category": "物品",
+      "commands": ["get"],
+      "usage": "get <東西> [容器]",
+      "summary": "撿東西、從屍體拿東西",
+      "text": [
+        "get 東西：撿地上的。get all：撿地上全部撿得起來的。",
+        "get 東西 屍體：從屍體裡拿。get all 屍體：裡面的全部拿出來。屍體本身撿不起來。",
+        "名字只要打開頭，同名的用 2.sword。",
+        "背包最多 35 件，重量不能超過負重（看力量），用 inventory 看。睡著時不能用。"
+      ]
+    },
+    {
+      "category": "物品",
+      "commands": ["drop"],
+      "usage": "drop <東西>",
+      "summary": "丟到地上",
+      "text": [
+        "把背包裡的東西丟到地上。drop all：全部丟掉。",
+        "丟在地上的東西不會自己消失，但是區域重新建立時會不見。睡著時不能用。"
+      ]
+    },
+    {
+      "category": "物品",
+      "commands": ["wear"],
+      "usage": "wear <東西>",
+      "summary": "穿上裝備",
+      "text": [
+        "穿上背包裡的裝備，那個部位有東西就先換下來。wear all：能穿的都穿到空的部位。",
+        "等級不夠的裝備不能穿；武器太重（看力量）不能拿。",
+        "雙手武器同時佔主手和副手。副手拿武器（雙持）要先拿主手的武器。",
+        "穿上的裝備會加屬性，用 score 看。打架中也可以換。睡著時不能用。"
+      ]
+    },
+    {
+      "category": "物品",
+      "commands": ["remove"],
+      "usage": "remove <東西>",
+      "summary": "卸下裝備",
+      "text": [
+        "把穿著的裝備卸下來放回背包。remove all：全部卸下來。",
+        "雙持時要先卸下左手的武器。背包滿了卸不下來。睡著時不能用。"
+      ]
+    },
+    {
+      "category": "物品",
+      "commands": ["inventory"],
+      "usage": "inventory",
+      "summary": "看背包",
+      "text": [
+        "看背包裡有什麼，最後一行是件數和負重（身上穿的也算重量）。"
+      ]
+    },
+    {
+      "category": "物品",
+      "commands": ["equipment"],
+      "usage": "equipment",
+      "summary": "看身上的裝備",
+      "text": [
+        "看身上每個部位穿了什麼。"
+      ]
+    },
+    {
+      "category": "物品",
+      "commands": ["examine"],
+      "usage": "examine <東西>",
+      "summary": "看物品的屬性",
+      "text": [
+        "看背包裡或身上穿的物品：種類、重量、使用等級、稀有度、穿在哪裡。",
+        "武器看得到攻擊力範圍，護具看得到防護力，也看得到加了哪些屬性。",
+        "地上的東西要先撿起來才能看。睡著時不能用。"
+      ]
+    },
+    {
       "category": "門",
       "commands": ["open"],
       "usage": "open <門或方向>",
@@ -270,6 +344,37 @@
       "text": [
         "直接殺死同房間的生物，原地留下屍體，不給經驗。",
         "名字只要打開頭，同名的用 2.dog。不能殺玩家。"
+      ]
+    },
+    {
+      "category": "管理員",
+      "commands": ["oload"],
+      "usage": "oload <號碼> [等級] [顏色]",
+      "summary": "做出一件物品",
+      "text": [
+        "照區域檔做一件物品，號碼是遊戲號碼（例如 oload 102 1 white：1 級白色的測試長劍）。",
+        "等級沒寫是你的等級；顏色寫 gray、white、blue、purple、orange，沒寫就沒有隨機屬性。",
+        "撿得起來的放進你的背包，撿不起來的放在地上。不管負重、件數。"
+      ]
+    },
+    {
+      "category": "管理員",
+      "commands": ["ostat"],
+      "usage": "ostat <名字或號碼>",
+      "summary": "看物品的全部資料",
+      "text": [
+        "ostat 名字：找你的背包、身上、地上、地上屍體裡的物品，列出全部資料（點數、上限、基本值的小數）。",
+        "ostat 號碼：看區域檔裡那件物品原本的寫法。"
+      ]
+    },
+    {
+      "category": "管理員",
+      "commands": ["mstat"],
+      "usage": "mstat <名字>",
+      "summary": "看生物或玩家的全部資料",
+      "text": [
+        "看同房間的生物或玩家：等級、種類、全部屬性（小數）、掉落表；玩家還有主屬性、經驗、背包和裝備件數。",
+        "名字的找法跟 kill 一樣。"
       ]
     }
   ]

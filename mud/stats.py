@@ -170,6 +170,9 @@ TIER_DIFFICULTY = {                         # 種類難度：同級的這種怪�
     MobTier.ELITE: 1.0, MobTier.BOSS: 1.1751155564673397,
 }
 TIER_EXP_MULT = {MobTier.TRASH: 0.1, MobTier.NORMAL: 1.2, MobTier.ELITE: 1.1, MobTier.BOSS: 1.0}   # 種類加成（§4.3）
+# 前期經驗加成（§4.7，2026-11-05 使用者定）：打怪經驗 ×（1 ＋ 加成），1 級 ＋50%，前期減得慢、後期快，到滿等前一級（99）是 0。升級需求不乘
+EXP_EARLY_BONUS = 0.5                       # 1 級的前期經驗加成
+EXP_EARLY_CURVE = 3.0                       # 曲線陡度（跟怪物進度加成同一種曲線）：0 是直線，越大越「前期減得慢」
 
 
 def exp_base(level):
@@ -178,20 +181,32 @@ def exp_base(level):
     return EXP_NORMAL_LV1 / (TIER_DIFFICULTY[normal] * TIER_EXP_MULT[normal]) * G(level) / G(1)
 
 
-def kill_exp(player_level, mob_level, tier):
-    """player_level 級的玩家打死 mob_level 級、tier 種類的怪物拿到的經驗（小數）。低 EXP_ZERO_GAP 級以上是 0。"""
+def exp_early(level):
+    """前期經驗加成（balance.py 的 Model.exp_early）：1 級是 EXP_EARLY_BONUS，正規化指數曲線減到滿等前一級的 0。"""
+    t = min(max((level - 1) / max(MAX_LEVEL - 2, 1), 0.0), 1.0)
+    if EXP_EARLY_CURVE < 1e-9:
+        return EXP_EARLY_BONUS * (1.0 - t)
+    return EXP_EARLY_BONUS * (1.0 - (math.exp(EXP_EARLY_CURVE * t) - 1.0) / (math.exp(EXP_EARLY_CURVE) - 1.0))
+
+
+def kill_exp(player_level, mob_level, tier, early=True):
+    """player_level 級的玩家打死 mob_level 級、tier 種類的怪物拿到的經驗（小數）。低 EXP_ZERO_GAP 級以上是 0。
+
+    early：乘上前期經驗加成（打怪拿的都要乘）；False 是原本的值（升級需求用）。
+    """
     if player_level - mob_level >= EXP_ZERO_GAP:
         return 0.0
     tier = MobTier(tier)
     difficulty = TIER_DIFFICULTY[tier] * POWER_PER_LEVEL ** (mob_level - player_level)
-    return exp_base(player_level) * difficulty * TIER_EXP_MULT[tier]
+    bonus = 1.0 + exp_early(player_level) if early else 1.0
+    return exp_base(player_level) * difficulty * TIER_EXP_MULT[tier] * bonus
 
 
 def exp_to_level(level):
-    """level 級升到下一級要的經驗（1 → 2 是 100）。"""
+    """level 級升到下一級要的經驗（1 → 2 是 100）。不含前期經驗加成，所以加成讓實際要打的隻數變少。"""
     first, last = EXP_KILLS
     kills = first * (last / first) ** ((level - 1) / max(MAX_LEVEL - 2, 1))
-    return kills * kill_exp(level, level, MobTier.NORMAL)
+    return kills * kill_exp(level, level, MobTier.NORMAL, early=False)
 
 
 def gain_exp(player, amount):
@@ -212,6 +227,65 @@ def gain_exp(player, amount):
     return gained
 
 
+# ---- 裝備（玩家角色手冊「物品和裝備」、設計文件 §8.2） ----
+
+def primary_bundle(guild, p, level):
+    """裝備上的主屬性 p +1（照裝備等級 level 算）換成的次要屬性（balance.py 的 Model.primary_bundle）。
+
+    跟裸裝同一個算法：0.75 × 參考值 × G(L) × 切片 ÷ 公會標準。公會用不到的傷害、龍焰抗性不給（MP、MV 也不給：只看角色自己的主屬性）。
+    """
+    unused = GUILD_DAMAGE[Guild.STAFF if guild == Guild.SWORD else Guild.SWORD]
+    std = standard_primary(guild, p, level)
+    return {s: NAKED_SHARE * REF[s] * G(level) * SLICE[s][p] / std
+            for s in SECONDARY_KEYS if s not in (unused, "res_dragon") and SLICE[s][p] > 0}
+
+
+def gear_bonus(guild, obj):
+    """一件裝備加的次要屬性和 AC：寫的次要屬性（含龍焰抗性）照加；主屬性 × primary_bundle（用**裝備等級**，舊裝備不會跟著角色變強）；
+    AC 是護具的基本值（武器的傷害範圍在戰鬥時用，不加在這裡）。"""
+    out = {}
+    for apply, n in obj.affects:
+        key = apply.name.lower()
+        if key in PRIMARY_KEYS:
+            for s, units in primary_bundle(guild, key, obj.level).items():
+                out[s] = out.get(s, 0.0) + n * units
+        elif key in SECONDARY_KEYS:
+            out[key] = out.get(key, 0.0) + n
+    if "ac" in obj.base:
+        out["ac"] = out.get("ac", 0.0) + obj.base["ac"]
+    return out
+
+
+def gear_primaries(player):
+    """裝備加的主屬性（score 顯示「角色 ＋ 裝備」用；戰鬥、負重、MP、MV 都不用它）。"""
+    out = {p: 0 for p in PRIMARY_KEYS}
+    for obj in player.equipment.values():
+        for apply, n in obj.affects:
+            if apply.name.lower() in out:
+                out[apply.name.lower()] += n
+    return out
+
+
+# 負重、武器重量看角色自己的 STR（玩家角色手冊「負重」「武器重量限制」，沿用 C 版 str_app 的 carry、wield 欄；有測試比對手冊的表）
+CARRY_BY_STR = {8: 100, 9: 100, 10: 115, 11: 115, 12: 140, 13: 140, 14: 170, 15: 170, 16: 195, 17: 220, 18: 250, 19: 400,
+                20: 500, 21: 600, 22: 700, 23: 800, 24: 900, 25: 1000, 26: 1100, 27: 1200, 28: 1300, 29: 1400, 30: 1500}
+WIELD_BY_STR = {17: 22, 18: 25, 19: 30, 20: 35, 21: 40, 22: 45, 23: 50, 24: 55, 25: 60, 26: 65, 27: 70, 28: 75, 29: 80, 30: 85}
+ORC_CARRY = 1.25                            # 獸人的種族技能「怪力」：負重上限 ×1.25
+CARRY_COUNT = 35                            # 背包最多幾件（固定，不看 DEX；身上穿的不算）
+
+
+def carry_limit(player):
+    """負重上限：STR 表（30 以上都是 1500），獸人 ×1.25。身上穿的也算重量。"""
+    limit = CARRY_BY_STR[min(max(player.primaries["str"], min(CARRY_BY_STR)), max(CARRY_BY_STR))]
+    return limit * ORC_CARRY if player.race == Race.ORC else limit
+
+
+def wield_limit(player):
+    """武器重量上限：STR 16 以下就是 STR，17 以上查表（30 以上都是 85）。"""
+    s = player.primaries["str"]
+    return s if s <= 16 else WIELD_BY_STR[min(s, max(WIELD_BY_STR))]
+
+
 # 每次回復上限的幾成（玩家角色手冊「回復」）：跟屬性無關，屬性已經透過上限影響回復量。
 # 戰鬥中不回（戰鬥公式的 1:1 沒有算回血）；昏迷、快死了這些手冊沒寫，也不回
 REGEN_RATE = {Position.STANDING: 0.10, Position.RESTING: 0.20, Position.SLEEPING: 0.30}
@@ -225,14 +299,24 @@ def regen(player):
 
 
 def recompute(player):
-    """從頭算玩家的全部次要屬性（player.panel）：裸裝 ＋ MP、MV 上限；AC 來自裝備，裝備還沒做是 0。
+    """從頭算玩家的全部次要屬性（player.panel）：裸裝 ＋ MP、MV 上限 ＋ 每件裝備（gear_bonus）；AC 全部來自裝備。
 
-    設計文件 §8.2：升級、改主屬性、穿脫裝備時都從頭算一次，戰鬥只讀這份快取。
+    設計文件 §8.2：升級、改主屬性、穿脫裝備時都從頭算一次（不要穿上加、脫下減），戰鬥只讀這份快取。
     """
     panel = naked(player.level, player.primaries, player.guild)
     panel.update(resources(player.level, player.primaries, player.guild, player.resource_roll))
     panel["ac"] = 0.0
+    for obj in player.equipment.values():
+        for key, n in gear_bonus(player.guild, obj).items():
+            panel[key] += n
     player.panel = panel
+
+
+def refresh(player):
+    """穿脫裝備之後：從頭算，現在的 HP、MP、MV 夾在新上限以內（不補滿）。"""
+    recompute(player)
+    for key in ("hp", "mp", "mv"):
+        setattr(player, key, min(getattr(player, key), player.panel[key]))
 
 
 # ---- 怪物（區域檔的生物）：設計文件 §4.1～§4.3、§4.6，balance.py 的 Model.area_mob() ----

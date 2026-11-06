@@ -4,7 +4,7 @@ import re
 
 from .. import objects, save, stats, weather, zones
 from ..act import TO_CHAR, TO_ROOM, TO_VICT, act
-from ..area import CORPSE_NPC_ITEM_TYPE, DIRECTIONS, REVERSE
+from ..area import CORPSE_NPC_ITEM_TYPE, DIRECTIONS, REVERSE, MobTier
 from ..characters import SEX_FEMALE, SEX_MALE, Position, characters, in_room
 from ..color import colorize
 from ..config import ENCODING
@@ -77,7 +77,7 @@ def look(ch):
     text = colorize("{G【{Y" + room.name + "{G】{x\n{G【出口：" + exits + "{G】{x\n" + room.description)
     if not text.endswith("\n"):
         text += "\n"
-    lines = [f"{WHITE}{appearance(c)}{RESET}\n" for c in in_room(ch)] + [f"{objects.on_floor(o)}\n" for o in room.contents]
+    lines = [f"{tagged(c)}\n" for c in in_room(ch)] + [f"{objects.on_floor(o)}\n" for o in room.contents]
     if lines:
         text += "\n" + "".join(lines)
     return text
@@ -91,6 +91,23 @@ def appearance(c):
 
 
 WHITE, RESET = colorize("{W"), colorize("{x")
+
+# 名字前面的標記（使用者要的，照 C 版 show_char_to_char 的「(菁英)」）：種類 → (文字, 顏色代碼)。一般、雜魚沒有
+TIER_TAGS = {MobTier.ELITE: ("菁英", "{G"), MobTier.BOSS: ("首領", "{R")}
+
+
+def tags(c):
+    """c 名字前面要加的標記 [(文字, 顏色代碼)]，照順序：生物的種類（菁英亮綠、首領亮紅，使用者選的）。
+
+    之後做 buff／debuff：重要的效果的光圈（像 C 版的 (聖光)、(火燄)）也從這裡回傳，就會出現在 look 那一行前面。
+    """
+    tier = TIER_TAGS.get(getattr(c, "tier", None))
+    return [tier] if tier else []
+
+
+def tagged(c):
+    """look 裡 c 的那一行：標記各自上色、接在前面，後面的字亮白（「(菁英)一位測試商人/merchant/站在櫃檯後面。」）。"""
+    return "".join(colorize(f"{code}({word})") for word, code in tags(c)) + WHITE + appearance(c) + RESET
 
 
 LOOK_POSITIONS = {
@@ -231,12 +248,13 @@ def do_score(ch, arg):
     names = stats.STAT_NAMES
     sex = {SEX_MALE: "男", SEX_FEMALE: "女"}.get(ch.sex, "無")
     unused = stats.GUILD_DAMAGE[stats.Guild.STAFF if ch.guild == stats.Guild.SWORD else stats.Guild.SWORD]
+    gear = stats.gear_primaries(ch)         # 主屬性顯示角色 ＋ 裝備的總和（設計文件 §8.2，只是參考；戰鬥、負重不用這個總和）
     # 名字只有英文字母（login.py 檢查過），不會有顏色代碼混進來
     lines = [
         " {G【{Y" + ch.name + "{G】{x {W" + stats.RACE_NAMES[ch.race] + "{D｜{C" + stats.GUILD_NAMES[ch.guild]
         + "{D｜{x等級 {Y" + str(ch.level) + exp_text(ch) + "{D｜{x" + sex + ("{D｜{Mimm{x" if ch.imm else ""),
         None,                               # 框線
-        " {C主屬性{x  " + "  ".join(names[k] + " {W" + rpad(str(ch.primaries[k]), 2) + "{x" for k in stats.PRIMARY_KEYS)
+        " {C主屬性{x  " + "  ".join(names[k] + " {W" + rpad(str(ch.primaries[k] + gear[k]), 2) + "{x" for k in stats.PRIMARY_KEYS)
         + (f"  {{Y可分配 {ch.points}{{x" if ch.points else ""),
         "",
     ]

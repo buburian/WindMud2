@@ -37,6 +37,7 @@ class Fight:
         self.ticks = 0                      # 開打後過了幾個 tick，也是時間軸的「現在」
         self.queue = []                     # 時間軸（heapq）：(下一次出手的時間, 加入的順序, 第幾隻手, 角色)
         self.joined = {}                    # 角色 → 加入的順序；停手後又加入會換新的，舊的排程就作廢
+        self.armed = {}                     # 角色 → 時間軸上排了幾隻手（打架中換武器時 arm() 用）
         self.messages = {}                  # 這一回合要送的訊息：讀的人 → [句子]，回合結束時合成一段送（flush）
 
     async def run(self):
@@ -61,8 +62,21 @@ class Fight:
         ch.fight = self
         self.members.append(ch)
         seq = self.joined[ch] = next(_joins)
-        for hand in range(len(attacks(ch))):
+        self.armed[ch] = len(attacks(ch))
+        for hand in range(self.armed[ch]):
             heapq.heappush(self.queue, (self.ticks, seq, hand, ch))
+
+    def arm(self, ch):
+        """打架中換了武器（inventory.changed）：手變多了（穿上副手武器），把多的那隻手排在「現在 ＋ 一次間隔」。
+
+        不排在現在：不然一直換武器就能多打。手變少了不用做什麼：round() 拿到多出來的那隻手就丟掉。
+        """
+        if ch.fight is not self or ch not in self.joined:
+            return
+        hands = attacks(ch)
+        for hand in range(self.armed.get(ch, 0), len(hands)):
+            heapq.heappush(self.queue, (round(self.ticks + ROUND_TICKS / hands[hand], 9), self.joined[ch], hand, ch))
+        self.armed[ch] = max(self.armed.get(ch, 0), len(hands))
 
     def round(self):
         """一輪：這一回合（從 ticks − 1 起 ROUND_TICKS 個 tick）結束前的出手，照時間依序打出來。
@@ -84,6 +98,10 @@ class Fight:
                     start_fight(ch, victim)     # 對手停了手又被打：拉回這一場（在別場就合併），C 版也是這樣
                     if ch.fight is not self:    # 這一場併進先開的那場了，剩下的由那場打
                         return
+                hands = attacks(ch)
+                if hand >= len(hands):          # 打架中脫掉了副手武器：這隻手不打了（要在 hit() 前面，不然會用空手多打一下）
+                    self.armed[ch] = min(self.armed.get(ch, 0), hand)
+                    continue
                 hit(ch, victim, hand)
                 # 坑：浮點數一直加會有誤差（1.6 加三次是 4.800000000000001），剛好在回合邊界的出手會排錯回合，所以取到小數 9 位
                 heapq.heappush(self.queue, (round(t + ROUND_TICKS / attacks(ch)[hand], 9), seq, hand, ch))
@@ -109,14 +127,17 @@ class Fight:
 
 
 def attacks(ch):
-    """ch 每隻手每回合出手幾次，主手在前（都要大於 0）：照攻速（damage.attacks_per_round），武器還沒做，先當單手。
+    """ch 每隻手每回合出手幾次，主手在前（都要大於 0）：照攻速（damage.attacks_per_round）。
 
-    沒有屬性的角色（測試直接建的）是 1 下。之後雙持是 [A × 0.70, A × 0.3607…]（玩家角色手冊「雙持」）。
+    雙持（主手、副手都拿武器）是 [A × 0.70, A × 0.3607…]（玩家角色手冊「雙持」）；沒有屬性的角色（測試直接建的）是 1 下。
     小數不用擲骰子：間隔是一回合 ÷ 次數，自然會有些回合多打一下。
     """
     if not getattr(ch, "panel", None):
         return [1.0]
-    return [damage.attacks_per_round(ch)]
+    a = damage.attacks_per_round(ch)
+    if damage.dual_wielding(ch):
+        return [a * damage.DUAL_WIELD_MAIN, a * damage.DUAL_OFFHAND]
+    return [a]
 
 
 def hit(ch, victim, hand):

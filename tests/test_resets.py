@@ -8,6 +8,7 @@ from area_helpers import make_area, make_mobile, make_room, write_json
 from mud import resets, stats, zones
 from mud.area import MobTier
 from mud.characters import Position, characters
+from mud.color import colorize
 from mud.commands import command
 from mud.config import ENCODING
 from mud.npcs import Npc, roll_tier
@@ -209,6 +210,21 @@ def test_look_shows_mobiles_before_players(folder):
     # 站著的生物顯示 long；睡著的照姿勢寫；生物在玩家前面
     assert text.endswith("\r\n生物1在這裡晃來晃去。\r\n老鼠躺在這裡睡覺。\r\nHua站在這裡。\r\n\r\n> ")
 
+
+
+def test_look_tags_elite_and_boss(folder):
+    # 名字前面的標記（使用者要的）：菁英亮綠、首領亮紅；一般、雜魚沒有。站著顯示 long、睡著照姿勢寫都一樣加
+    load(folder, [mob(1, short="狼王", tier="elite"), mob(2, short="龍", tier="boss", position=4),
+                  mob(3, short="野狗", tier="normal"), mob(4, short="老鼠", tier="trash")], [M(1, 1), M(2, 1), M(3, 1), M(4, 1)])
+    zones.load(folder)
+    ming = player("Ming", zones.world.rooms[101])
+    command(ming, "look")
+    raw = ming.writer.data.decode(ENCODING)
+    green, red, white, reset = colorize("{G"), colorize("{R"), colorize("{W"), colorize("{x")
+    assert f"{green}(菁英){white}生物1在這裡晃來晃去。{reset}" in raw
+    assert f"{red}(首領){white}龍躺在這裡睡覺。{reset}" in raw
+    text = re.sub(r"\x1b\[[0-9;]*m", "", raw)
+    assert "\r\n生物3在這裡晃來晃去。\r\n生物4在這裡晃來晃去。\r\n" in text          # 一般、雜魚沒有標記
 
 def test_spawned_mobile_has_its_stats(folder):
     # 出現時就照等級、骰過的種類、攻擊類型、攻防傾向、原型算好全部屬性，HP 補滿

@@ -6,6 +6,7 @@
 import random
 
 from . import damage, death, stats
+from .area import ATTACK_NAMES
 from .act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, compose
 from .npcs import Npc
 from .players import Player
@@ -40,12 +41,18 @@ def severity(dmg, top_hp):
 
 
 def hit(ch, victim, hand):
-    """ch 打 victim 一下（hand 0 是主手；還沒有武器，兩手一樣）。有一邊沒有屬性（測試直接建的）就什麼都不做。"""
+    """ch 用第 hand 隻手（0 是主手）打 victim 一下。有一邊沒有屬性（測試直接建的）就什麼都不做。"""
     battle = ch.fight                       # 先記住：打死生物時 die() 會把 ch.fight 清掉，後面的訊息還要放進這一場
     if battle is None or not ch.panel or not victim.panel:
         return
-    dmg, crit = damage.strike(ch, victim, rng)
-    land(battle, ch, victim, dmg, crit)
+    dmg, crit = damage.strike(ch, victim, rng, hand=hand)
+    land(battle, ch, victim, dmg, crit, attack_name(ch, hand))
+
+
+def attack_name(ch, hand):
+    """玩家這一下用什麼打：那隻手的武器的攻擊方式（「重砍」），空手是「直拳」。"""
+    weapon = damage.weapon_in(ch, hand)
+    return ATTACK_NAMES[weapon.attack] if weapon is not None else BARE_HAND
 
 
 def land(battle, ch, victim, dmg, crit, attack=BARE_HAND):

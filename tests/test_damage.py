@@ -127,6 +127,7 @@ def test_exp_numbers_match_mud_design(balance, model):
     assert stats.POWER_PER_LEVEL == c.power_per_level
     assert stats.EXP_ZERO_GAP == c.exp_zero_gap
     assert stats.EXP_KILLS == (c.exp_kills_first, c.exp_kills_last)
+    assert (stats.EXP_EARLY_BONUS, stats.EXP_EARLY_CURVE) == (c.exp_early_bonus, c.exp_early_curve)
     assert stats.MAX_LEVEL == c.max_level
     assert {str(k): v for k, v in stats.TIER_DIFFICULTY.items()} == pytest.approx(model.tier_difficulty, rel=1e-9)
     assert {str(k): v for k, v in stats.TIER_EXP_MULT.items()} == {k: v["exp_mult"] for k, v in balance.MOB_TIERS.items()}
@@ -135,14 +136,22 @@ def test_exp_numbers_match_mud_design(balance, model):
 def test_exp_formulas_match_mud_design(model):
     for level in range(1, 100):
         assert stats.exp_to_level(level) == pytest.approx(model.exp_to_level(level), rel=1e-9), level
+    for level in range(1, 101):
+        assert stats.exp_early(level) == pytest.approx(model.exp_early(level), rel=1e-9, abs=1e-12), level
     for p_level, gap, tier in itertools.product((1, 10, 20, 55, 99), (-12, -10, -9, -3, 0, 2, 7), MobTier):
-        want = model.kill_exp(p_level, p_level + gap, str(tier))
-        assert stats.kill_exp(p_level, p_level + gap, tier) == pytest.approx(want, rel=1e-9), (p_level, gap, tier)
+        for early in (True, False):
+            want = model.kill_exp(p_level, p_level + gap, str(tier), early=early)
+            assert stats.kill_exp(p_level, p_level + gap, tier, early) == pytest.approx(want, rel=1e-9), (p_level, gap, tier)
 
 
 def test_design_doc_exp_examples():
-    # 設計文件 §4.7：1 級一般怪 10、升 2 級要 100；低 10 級以上是 0
-    assert stats.kill_exp(1, 1, MobTier.NORMAL) == pytest.approx(10.0)
+    # 設計文件 §4.7：1 級一般怪 10（前期經驗加成 ＋50% 後是 15）、升 2 級要 100（升級需求不乘加成）；低 10 級以上是 0
+    assert stats.kill_exp(1, 1, MobTier.NORMAL, early=False) == pytest.approx(10.0)
+    assert stats.kill_exp(1, 1, MobTier.NORMAL) == pytest.approx(15.0)
     assert stats.exp_to_level(1) == pytest.approx(100.0)
+    assert (stats.exp_early(1), stats.exp_early(99), stats.exp_early(100)) == (pytest.approx(0.5), 0.0, 0.0)
+    # 玩家角色手冊的例子：20 級打同級的垃圾怪 0.8、一般怪 36.0、菁英怪 85.2、Boss 91.0
+    got = [round(stats.kill_exp(20, 20, tier), 1) for tier in (MobTier.TRASH, MobTier.NORMAL, MobTier.ELITE, MobTier.BOSS)]
+    assert got == [0.8, 36.0, 85.2, 91.0]
     assert stats.kill_exp(20, 10, MobTier.BOSS) == 0.0
     assert stats.kill_exp(20, 11, MobTier.BOSS) > 0

@@ -39,6 +39,9 @@ uv run python -m mud.builder                      # 區域編輯器，瀏覽器�
   `tests/test_skills.py` 把技能的資料、消耗、說明的數字、技能那一下跟 balance.py 比對，也測 use 的每種拒絕（沒過不會開打）、開打、把旁邊的生物拉進來、訊息、冷卻、扣 MV／MP、打死、skills 指令
   （坑：`asyncio.run()` 結束時戰鬥會被收掉，開打和打指令要在同一個 `asyncio.run()` 裡）。
   `tests/test_targets.py` 測 `find_in_room()`（名字開頭、`n.名字`、照 look 的順序、自己最後）。
+  `tests/test_items.py` 測 get、drop、wear、remove、inventory、equipment、oload 的每種訊息和限制、背包和裝備的存檔；
+  `tests/test_gear.py` 測裝備的屬性（跟 balance.py 的 `primary_bundle`、`apply_points` 比對）、手冊的負重／武器重量／攻擊方式表、武器傷害、雙持、打架中換武器、技能的武器。
+  `tests/test_examine.py` 測 exam 的每一行、ostat、mstat、物品種類和武器種類的名稱表（跟手冊比對）、地上那一行接英文名字。
   `tests/test_help.py` 檢查真的 `help/help.json`（每個指令都有說明）、`helps.check()` 的每條規則、help 的三種畫面、縮寫、imm 的分類。
   要登入的測試先用 `tests/player_helpers.py` 的 `make_player_file()` 存好角色（密碼 `PASSWORD`），存檔資料夾用 monkeypatch 把 `save.PLAYER_DIR` 指到 `tmp_path`。
   `tests/test_stats.py` 比對種族、公會、裸裝屬性、MP／MV 跟玩家角色手冊、balance.py；`test_equipment.py`、`test_stats.py` 讀 balance.py 用 `tests/balance_loader.py`
@@ -108,6 +111,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     改完從頭算、HP／MP／MV 補滿），`stats.train()` 加點（每項最高 `PRIMARY_CAP` 55）。
     **經驗值**（玩家角色手冊「經驗值」，設計文件 §4.7）：`exp` 是這一級累積的（小數）；`stats.kill_exp()`、`exp_to_level()` 照 balance.py
     （常數 `TIER_DIFFICULTY`、`TIER_EXP_MULT`… 有測試比對）；`gain_exp()` 滿了就 `set_level(等級 ＋ 1)`、扣掉需求，可以連升，滿等不加。
+    **前期經驗加成**（`exp_early()`，2026-11-05 使用者定）：打怪的 `kill_exp()` 乘（1 ＋ 加成），1 級 ＋50%、到 99 級 0（`EXP_EARLY_BONUS`、`EXP_EARLY_CURVE`）；
+    升級需求 `exp_to_level()` 用 `kill_exp(..., early=False)`，不乘加成。跟種類的經驗加成（`TIER_EXP_MULT`）是兩回事。
     `advance` 改等級時 `exp` 歸 0。`score` 抬頭寫「經驗 35/139」。
     `cooldowns`：技能 id → 還要等幾個 tick（見下面「技能」），不存檔。
     `imm`：管理員（存檔的 `imm`），找得到 `IMM_COMMANDS`。舊存檔沒有 `imm`、`points`、`trained`、`exp`，讀檔時當作 False、0、0、0。
@@ -120,7 +125,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `STAFF = "spell"` 杖之公會，代號跟 balance.py 一樣）、`RACE_PRIMARIES`（手冊的種族表）。
     `naked()` 是裸裝次要屬性（0.75 × 參考值 × G(L) × Σ 主屬性 ÷ 公會標準 × 切片；公會用不到的傷害、龍焰抗性是 0），
     `resources()` 是 MP／MV 上限（兩個公會都有，創角骰一次 0.95～1.05 的倍率，MP、MV 同一個），公會標準用 `equipment.standard_primary()`。
-    `recompute(player)` 從頭算 `panel`（設計文件 §8.2：升級、改主屬性、穿脫裝備都從頭算，不要加加減減）；AC 來自裝備，現在是 0。
+    `recompute(player)` 從頭算 `panel`（設計文件 §8.2：升級、改主屬性、穿脫裝備都從頭算，不要加加減減）；AC 全部來自裝備（護具的基本值）。裝備怎麼加見下面「背包和裝備」。
     數字抄 balance.py，`tests/test_stats.py` 直接比對，設計文件改數字時要一起改。初始主屬性先用種族的數字（公會怎麼套上去還沒決定）。
   - **登入和建立角色**（`login.py`，一問一答照順序寫）：名字 3～12 個英文字母（照 C 版，保留字不行），存成第一個字大寫。
     有存檔就問密碼（錯了就斷線）；沒有就建立：密碼兩次（至少 5 個字）、性別、種族、公會，選完就建好、存檔。
@@ -161,11 +166,12 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   say 亮白色（照 C 版）；who 照等級排、顏色跟 score 一致。
   **imm 指令**放 `imm.py`，加進 `IMM_COMMANDS`：`find(word, is_imm)` 先找 `COMMANDS`，是 imm 才接著找 `IMM_COMMANDS`，所以原本的縮寫不受影響；
   不是 imm 打 imm 指令，跟打不存在的指令一樣是「什麼？」（照 C 版）。現在有 `advance <名字> <等級>`（在線上的玩家，可以升也可以降，1～100）、
-  `slay <名字>`（`sla` 起，直接殺死同房間的生物，訊息照 C 版，不給經驗；不能殺玩家）。
+  `slay <名字>`（`sla` 起，直接殺死同房間的生物，訊息照 C 版，不給經驗；不能殺玩家）、`oload`、`ostat`、`mstat`（見下面「背包和裝備」）。
   **`kill <名字>`**（`commands/combat.py`，`k`，最低姿勢 FIGHTING 照 C 版）：開打同房間的生物，牠自動還手；**不可以打玩家**（使用者要的，自己也不行）。
   **找同房間的角色一律用 `characters.find_in_room()`**（使用者定的：kill、slay、use，**之後要找生物的指令都用它**，不要另外寫比對）：
   名字跟指令一樣只要打開頭（任何一個 `names()` 用輸入開頭，英文不分大小寫）；`3.dog` 是第 3 個對得上的（照 C 版 number_argument，`0.dog`、`3.` 找不到）；
   順序照 look 畫面（`characters.in_room()`：生物在前、玩家在後，look 也用它），自己排最後（自己也找得到）。
+  比對的規則只寫在 `names.py`（`number_argument()`、`pick()`），找物品的 `objects.find()` 也用它（get、wear、`2.sword`…）。
   **`use <技能> [名字]`**（`commands/skills.py`，`us`，最低姿勢 FIGHTING）：**技能只能用 use 放**（使用者要的，技能不是指令；新增技能不用加指令）。
   技能名稱可以縮寫，只找自己會的（`skills.find()`）。檢查順序：沒打技能 → 不會 → 目標（打了名字用 `find_in_room()`；沒打名字是現在的對手，
   還要在同一間房；沒在打架又沒打名字是「你想要攻擊誰？」）→ 玩家 → 冷卻 → MV／MP → 武器，**都過了才開打**（`engage()`），再 `skills.use()`。
@@ -191,6 +197,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   `look()` 回傳房間畫面的字串，登入時 `login.py` 也用它。房間描述後**空一行**，再照順序列房間裡的東西（使用者定的）：
   先生物（NPC），再玩家（`characters.in_room()`，找人的 `n.名字` 也照這個順序），最後是地上的物品（`room.contents` 的 `long`，新的在前）；生物、玩家、地上的物品都是**亮白**。
   每個角色照姿勢寫「X站在這裡。」「X躺在這裡睡覺。」…（`LOOK_POSITIONS`）；房間沒有別人就不空行。
+  **名字前面的標記**（`tags()`、`tagged()`，使用者要的，照 C 版 show_char_to_char）：生物的種類「(菁英)」亮綠、「(首領)」亮紅（`TIER_TAGS`，一般、雜魚沒有）。
+  之後做 buff／debuff：重要效果的光圈（C 版的 (聖光)、(火燄)…）也從 `tags()` 回傳，就會接在那一行前面。
   `score` 看自己的全部屬性（指令表最後，`sc` 起才找得到），使用者選的樣子：暗灰框線、名字用房間標題的綠框黃字、
   HP／MP／MV 有條（紅、藍、綠，20 格）、下半部三欄對齊，公會用不到的傷害整格變暗；imm 在抬頭加「｜imm」，有沒分配的點數就在主屬性後面加「可分配 N」。數字四捨五入成整數（`stats.shown()`，不用 `round()`）。
   對齊用 `width()`：Big5 中文字 2 bytes 也佔 2 格，所以寬度就是 cp950 的 byte 數。
@@ -234,7 +242,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `areas/test.json` 是測試區域（世界區域，`type` 是 `world`）：`area_number` 100，房間 1（南）、2（北）在遊戲裡是 101、102，南北相連；
     起始房間 `config.START_ROOM` 是 101。之後會照使用者的指示繼續改格式。`area`、每個房間、每隻生物、每個物品和每筆重置的欄位**一個都不能少**，
     巢狀欄位也要有範例值（`extra_descriptions`、`script` 各放一筆；生物 1「測試商人」的每個欄位都有值，生物 2「測試坐騎」示範 null／空的寫法；
-    物品 1～4 是藥水、長劍、箱子、麵包（重置用到 1、3、4），物品 2「測試長劍」每個欄位都有值；
+    物品 1～4 是藥水、長劍、箱子、麵包（重置用到 1、3、4），物品 2「測試長劍」每個欄位都有值；物品 5～9 是給 `oload` 試裝備用的（盾牌、匕首（副手）、大劍（雙手）、戒指、皮甲，都沒寫 affects，給顏色就抽隨機屬性；不在重置裡，使用者同意加的）；
     `resets` 每種指令各一筆；房間 1 往北、房間 2 往南的出口是同一扇木門（門兩邊都要寫），給 `D` 的範例用）：使用者靠它看系統還缺哪些功能。
     房間的文字可以用顏色代碼。
     **每個欄位的意思和新系統的實作進度寫在 `docs/區域製作手冊.md`**：改區域檔格式、或做了新的區域功能時，
@@ -242,7 +250,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - **生物（`mobiles`）**：最上層的清單，欄位照舊版 `#MOBILES`（含 A、F、P、R 行）加上 `#SHOPS`（`shop`）、`#SPECIALS`（`special`）整理，
     名稱沿用 area2json；`act`、`affected_by` 寫法同 `room_flags`，`sex`、`actions` 的 `when`/`mode` 是整數。
     使用者刪掉了舊版的 `hitroll`、`ac`、`hit_dice`、`damage_dice`、`gold`、`custom`（K 行）、`exp`：系統之後也不用，不要加回來。
-    **經驗值只照 `mud_design` 設計文件 §4.7 算**（看怪物種類和等級差；使用者 2026-11-03 決定），生物身上沒有經驗倍數。
+    **經驗值只照 `mud_design` 設計文件 §4.7 算**（看怪物種類、等級差和玩家等級的前期經驗加成；使用者 2026-11-03 決定），生物身上沒有經驗倍數。
     **怪物的屬性由程式照「等級 ＋ 種類 ＋ 三個開關」算（設計文件 §4.1～§4.3），區域檔不寫數值**。四個欄位放在 `level` 後面，
     都寫代號（使用者選的），定義在 `area.py`：`tier` 種類（`MobTier`，必填：trash、normal、elite、boss）、
     `attack` 攻擊類型（`AttackType`：一種 `"phys"` 或主／次 `"dragon/phys"`，主 70%、次 30%）、`defense` 攻防傾向（`Defense`）、
@@ -337,7 +345,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `join()` 把每隻手的第一下排在現在；`round()` 把這一回合結束前的出手照時間打出來，每打一下加上間隔 `ROUND_TICKS ÷ 每回合次數`。
     同一時間先加入的先（`start_fight()` 讓先動手的人先加入）、主手先。停手又加入會拿新的順序號碼，舊的排程作廢（`joined`）。
     坑：時間每次加完要取到小數 9 位，不然浮點誤差會把剛好在回合邊界的出手排錯回合（有測試）。
-    `attacks(ch)` 是每隻手每回合出手幾次：照攻速 `[damage.attacks_per_round(ch)]`（武器、雙持還沒做；沒有屬性的是 `[1.0]`）；`hit(ch, victim, hand)` 的 hand 0 是主手。
+    `attacks(ch)` 是每隻手每回合出手幾次：照攻速 `[damage.attacks_per_round(ch)]`，**雙持**（主手、副手都拿武器）是 `[A × 0.70, A × 0.3608…]`（`damage.DUAL_WIELD_MAIN`、`DUAL_OFFHAND`，跟 balance.py 比對）；沒有屬性的是 `[1.0]`。`hit(ch, victim, hand)` 的 hand 0 是主手。
+    **打架中換武器**：`round()` 拿出一筆、`hit()` 之前先看 `hand >= len(attacks(ch))`（脫掉副手武器）就丟掉，不然會用空手多打一下；穿上副手武器 `Fight.arm(ch)` 把副手排在「現在 ＋ 一次間隔」（不排現在：一直換武器會多打）。`Fight.armed` 記排了幾隻手。
     `start_fight()` 開打：第三個人加入同一場；兩場的人互打就把後開的併進先開的（一個人同時只在一場）；被打的人自動還手。
     對手離開遊戲或不在同一間房就停手（`stop_fighting()`），沒人在打這場就結束。戰鬥屬於所在的區域物件（`zone.fights`）。
     對手停了手但還在同一間房、又被打到：拉回這一場（在別場就合併），C 版也是這樣。
@@ -345,8 +354,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     - **傷害公式在 `damage.py`**（設計文件 §2.3～§2.5、§8.1），照 balance.py 寫：命中、減傷（物理、法術加 AC，龍焰只看龍抗）、
       `per_hit()` ＝（傷害點數 ＋ 武器基本傷害）×（1 − 減傷）× 1.0778^(L攻 − L守)、爆擊、攻速，參考值用持有者自己的等級。
       `strike(a, d, rng)` 是一下（`(傷害, 爆擊)`，沒中是 0），**亂數順序跟 balance.py 的 `_strike_once` 一樣**（混合型先骰類型 → 命中 → ±20% → 爆擊），
-      `tests/test_damage.py` 用同一個種子比對每一下，改它時不能多叫或少叫一次亂數。浮動 ±20% 是使用者選的（照模擬），做武器時改成武器的最小～最大。
-      生物的攻擊類型是 `npc.mix`，玩家是自己公會那一種；武器基本傷害生物是 `panel["wpn"]`，玩家還沒武器是 0。
+      `tests/test_damage.py` 用同一個種子比對每一下，改它時不能多叫或少叫一次亂數。空手的玩家、生物每一下 ±20%（照模擬）；**玩家那隻手拿武器時，武器值 ＝ 下限 ＋ (上限 − 下限) × 亂數，放在 ±20% 那一格、不再 ±20%**（mud_design 確認的；balance.py 沒有拿武器的函數，`test_gear.py` 比對公式）。
+      生物的攻擊類型是 `npc.mix`，玩家是自己公會那一種；武器基本傷害生物是 `panel["wpn"]`，玩家是那隻手的武器（`damage.weapon_in()`）。拿武器時訊息的「直拳」換成武器的攻擊方式（`area.ATTACK_NAMES`，手冊的表，有測試）。
       技能用同一個 `strike()`，多給 `kind`（技能的公會）：一定是這個類型、不骰類型。
     - `combat.hit()` ＝ `strike()` ＋ `land()`；`land(battle, ch, victim, dmg, crit, attack)` 是打出去的一下（平砍和技能共用），回傳目標死了沒：扣 HP、C 版 dam_message 的訊息（程度看傷害佔 HP 上限幾 %，`SEVERITY` 表；自己那句亮綠、被打亮青、同房間的不上色，
       玩家用「直拳」，生物沒有武器名稱，爆擊加「爆擊！」；使用者選的）。HP ≤ 0：「$n已經斷氣，倒在地上死亡了!!」，
@@ -360,11 +369,11 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
       現在的 imm 技能是測試用的天雷（`thunder`，1 下、比率 10，數字是我們訂的）。**imm 用任何技能都不扣、不設冷卻**（`free()`，使用者選的，方便測試）。
       `cost()` ＝ max(1, .5 進位(這個等級的公會標準 MV／MP × 消耗比率))（`stats.resource_standard`，不是自己的上限）；
       夠不夠付看**四捨五入後**的 MV／MP（prompt 上的數字，使用者選的），扣完最少 0。
-      `display_range()`（skills 顯示）：**武器做好前**是傷害點數 × 比率 × (1 ∓ `DMG_VAR`)（使用者選的，跟實際一樣），武器做好後改回設計文件的（傷害點數 ＋ 武器下限／上限）× 比率。
+      `display_range()`（skills 顯示）：拿主手武器是設計文件的（傷害點數 ＋ 武器下限／上限）× 比率；空手是傷害點數 × 比率 × (1 ∓ `DMG_VAR`)（使用者選的，跟實際一樣）。
       `use()`：扣消耗、`cooldowns[id] = 冷卻`、打 `hits` 次（`strike(kind) × ratio` → `land()`，死了就停），**打指令當下就打**（不排進時間軸，平砍照打），最後 `flush(me=ch)`。
       冷卻用 tick 數：世界每個 tick `skills.tick()` 減 1，所以實際等 5～6 秒。
       **暫定**（mud_design 還沒定）：自己公會的技能都會（`known()`，imm 另外會 imm 的技能；不會的用 use 是「你不會這個技能。」）。
-      還沒做：怎麼學、補血、增益、減益、打一群、怪物用技能、武器（`weapon_ok()` 有限用武器的技能現在一律不能用）。
+      `weapon_ok()`：有限用武器的技能，主手要拿那種武器（空手不行）；技能那一下用主手的武器。還沒做：怎麼學、補血、增益、減益、打一群、怪物用技能。
     - 坑：`fight` → `combat` → `death` → `fight` 繞一圈：這幾個模組互相都用 `from . import 模組`，不要 `from .fight import stop_fighting`、`from .combat import hit`。
     - 還沒做：flee、安全區、生物回血、生物主動攻擊、C 版「快死了」「昏迷」（HP ≤ 0 就是死）。
   - 定時器共用 `clock.every()`：照 `loop.time()` 排時間不會越跑越慢，超時了從現在重新算、不追趕。
@@ -409,21 +418,42 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - **對面看得到**（使用者要的）：打開、關上（之後的撞開也是）時，對面房間醒著的人收到「南方的木門被打開了。」（`doors.tell_room()`）；
     對面很暗（`Room.dark()`：`RoomFlag.DARK` 而且沒有光源，光源是物品，還沒做）就看不到。上鎖、開鎖對面不知道（照 C 版）。
   - look 的出口：關著的門是紫色 `*北`（照 C 版）；`look 方向` 描述後面加「木門是關著的。」／「是開著的。」。
-- **物品**（`objects.py`，規則在區域製作手冊「屍體」）：遊戲裡真的出現的物品。現在只有生物死掉的屍體，和屍體裡照掉落表骰到的物品；撿、背包、存檔、G／O／P 還沒做。
-  - `Obj`：`vnum`、`keywords`、`name`（short）、`long`、`item_type`、`level`、`color`、`affects`（`[(Apply, 數值)]`）、`base`（武器傷害範圍或 AC）、`contains`、`timer`。只放現在用得到的。
-    **沒有全遊戲的物品名單**：放在 `room.contents`（地上，新的在前）或 `obj.contains`（屍體裡），區域物件釋放、重新載入時房間不要了就跟著不見（使用者要的，有測試）。
+- **物品**（`objects.py`，規則在區域製作手冊「屍體」、玩家角色手冊「物品和裝備」）：遊戲裡真的出現的物品：屍體和裡面掉落的、imm 用 `oload` 做的。G／O／P 還沒做。
+  - `Obj`：`vnum`、`keywords`、`name`（short）、`long`、`item_type`、`level`、`color`、`affects`（`[(Apply, 數值)]`）、`base`（武器傷害範圍或 AC）、`contains`、`timer`、
+    `weight`、`take`（wear_flags 有 1；屍體沒有）、`slot`（`equipment.best_slot()`，跟點數上限同一個；雙手武器是 `TWO_HANDED`）、武器的 `weapon_kind`、`attack`。只放現在用得到的。
+    **沒有全遊戲的物品名單**：放在 `room.contents`（地上，新的在前）、`obj.contains`（屍體裡）、角色的 `carrying`、`equipment`；
+    地上的在區域物件釋放、重新載入時房間不要了就跟著不見（使用者要的，有測試）。
+  - `find(objs, name)` 跟找生物同一個規則（`names.py`）。`to_data()`／`from_data()` 是存檔用的，整件存（區域檔改了身上的照舊）。
   - `protos`：遊戲號碼 → 區域檔的物品（`zones.load()` 跟 `resets.mobiles` 一起在 `stop()` 後面換）。`create(vnum, level, color, rng)` 照區域檔做一件：
     有穿戴部位的是裝備，寫了 `affects` 用寫好的（固定裝備），`[]` 就 `equipment.roll_item()` 隨機抽，名稱接在名字前面（「疾風之蠻力長劍」，使用者選的）。
     部位用 `area.wear_slots()` ＋ `equipment.best_slot()`（固定裝備檢查上限也用這兩個，所以是同一個部位）；副手的武器是副手武器。號碼找不到記 log、回傳 None。
   - **`equipment.roll_item()` 照 balance.py 的 `Model.roll_item` 寫，亂數的用法和順序一模一樣**：`tests/test_equipment.py` 用同一個種子比對每個部位、顏色、等級，
     結果要完全一樣（詞綴、名稱）。改它時不能多叫或少叫一次亂數，`AFFIX_WORD` 的順序也不能動（`rng.choice` 照順序挑）。
-  - `make_corpse(npc, rng)`：「野狗的屍體」（`area.CORPSE_NPC_ITEM_TYPE`）、地上「野狗的屍體/corpse/橫躺在地上。」（使用者定的，像生物的 long）、名字 `corpse 屍體`、`timer` 10～14（照 C 版）；
+  - `make_corpse(npc, rng)`：「野狗的屍體」（`area.CORPSE_NPC_ITEM_TYPE`）、地上「野狗的屍體橫躺在地上。」（後面由 `on_floor()` 接 /corpse，使用者定的）、名字 `corpse 屍體`、`timer` 10～14（照 C 版）；
     `roll_drops()` 每一行各自骰（`tiers` 對不上不骰，萬分之一），物品等級是生物等級、顏色是那一行的。
   - 名字（使用者選的，`short()`）：「測試藥水/potion」。名字裝備照顏色（灰 `{D`、白 `{W`、藍 `{B`、紫 `{M`、橘用暗黃 `{y`），其他亮綠 `{G`；
-    `/` 後面是 keywords 裡的英文字，亮青 `{C`（照 C 版），沒有英文字就只有名字。地上那一行（`on_floor()`）亮白。區域作者寫的名字不轉顏色代碼（跟生物一樣）。
+    `/` 後面是 keywords 裡的英文字，亮青 `{C`（照 C 版），沒有英文字就只有名字。地上那一行（`on_floor()`）：描述亮白，後面接「/英文名字」亮青（`english_tail()`，使用者定的：「一把測試長劍插在地上。/sword」）。區域作者寫的名字不轉顏色代碼（跟生物一樣）。
   - **消失**：`Zone.tick()` 每 `OBJ_TICKS`（30）呼叫 `objects.update()`，地上有 `timer` 的減 1，到 0 連同裡面的東西一起拿掉，醒著的人看到「野狗的屍體腐爛變成了灰塵。」
     （同時好幾具合成一段、只 notify 一次）。**不管屍體有沒有東西都照時間消失**（使用者選的，照 C 版）。
     坑：呼叫要放在 `Zone.tick()` 兩個提早的 `return` 前面，不然世界的、有人站著的副本裡的屍體不會爛（有測試）。
+- **背包和裝備**（`inventory.py`、指令在 `commands/items.py`，規則在玩家角色手冊「物品和裝備」，訊息照 C 版 act_obj.c）：
+  - `ch.carrying`（新的在前）、`ch.equipment`（部位 → Obj；部位、eq 的名稱和順序是 `inventory.SLOTS`，照 C 版 where_name；戒指 `finger_l`／`finger_r`，
+    雙手武器只放在 `wield`，`blocker()` 把副手當成被它佔住）。**生物不穿裝備**（使用者說的）：wear、remove 對生物是「你沒有辦法使用這項物品。」
+  - get（地上、`get x 屍體`；`get all` 跳過撿不起來的，拿不動說一次就停，照 C 版）、drop、wear（`wear x` 換下原本的；`wear all` 只穿空的部位，副手武器排最後）、
+    remove（`remove all` 照 SLOTS 的順序，副手在主手前）、inventory（最後一行件數和負重，使用者選的）、equipment。最低姿勢照 C 版：前四個 RESTING（打架中可以），後兩個 DEAD。
+  - 限制：裝備等級（角色等級 < 裝備等級不能穿，設計文件 §3.4）、件數 `stats.CARRY_COUNT` 35、負重 `stats.carry_limit()`（STR 表、獸人 ×1.25，身上穿的也算）、
+    武器重量 `stats.wield_limit()`（每一把武器自己比）；兩張表抄手冊（`test_gear.py` 比對）。生物不檢查件數、負重。
+    副手武器要主手先拿（單手）武器；雙持時不能先卸主手（這兩句訊息是新加的）。
+  - 訊息合成一段送（`inventory.Lines`：自己那段是指令的回覆，別人每人 notify 一次）。
+  - 穿脫之後 `inventory.changed()`：`stats.refresh()`（從頭算、HP／MP／MV 夾在新上限）、打架中 `Fight.arm()`。
+  - **屬性**（設計文件 §8.2，mud_design 確認）：`stats.recompute()` ＝ 裸裝 ＋ MP／MV ＋ 每件 `gear_bonus()`：次要屬性（含龍焰抗性）照加、
+    主屬性 × `primary_bundle(公會, p, **裝備等級**)`（照 balance.py，`test_gear.py` 跟 `apply_points` 比對）、AC 加總。負重、武器重量、MP、MV 只看角色自己的主屬性；
+    score 的主屬性顯示角色 ＋ 裝備（`gear_primaries()`）。
+  - 存檔多 `carrying`、`equipment`（`objects.to_data()`），讀檔先放回裝備再 `recompute()`；舊存檔沒有就是空的。死掉不掉東西。
+  - imm 的 `oload <號碼> [等級] [顏色]`（`commands/imm.py`，`ol`）：撿得起來放自己背包，撿不起來放地上（同房間看得到，照 C 版）；不檢查件數、負重。
+  - `examine`（`ex`，`commands/items.py` 的 `identify()`）：**只看背包和身上的**（使用者要的），句型照 C 版 identify，每種東西只列有的行。
+    imm 的 `ostat <名字>`（`os`：背包、身上、地上、地上屍體裡，照這個順序）／`ostat <號碼>`（區域檔的寫法）、`mstat <名字>`（`m`：同房間的生物或玩家）：
+    全部資料，數字留小數。名稱用 `area.ITEM_TYPE_NAMES`、`WEAPON_KIND_NAMES`、`ATTACK_NAMES`（手冊的表，有測試）、`equipment.STAT_NAMES`、`SLOT_NAMES`、`COLOR_NAMES`。
 - **顏色**（`color.py`）：字串裡寫代碼，`colorize()` 換成 C 版 `merc.h` 的色碼：`{r{R{g{G{y{Y{b{B{m{M{c{C{w{W{D`
   （小寫暗、大寫亮），`{x` 回到原本顏色，`{{` 印出 `{`，不認得的代碼原樣留著。不能巢狀：`{x` 是全部回到原本顏色。
   `act()` 會先對 fmt 做 `colorize()` 再代換 `$` 碼，所以玩家打的代碼會原樣顯示。`send()` 不轉代碼，要顏色就自己包 `colorize()`。

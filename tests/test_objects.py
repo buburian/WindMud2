@@ -227,7 +227,7 @@ def test_corpse_holds_the_drops(folder):
     room.contents.append(objects.Obj("石頭", "一顆石頭在這裡。", 13, ["stone"]))
     corpse = objects.make_corpse(dog, FixedRng(0))
     assert room.contents[0] is corpse                               # 新的在前面（照 C 版）
-    assert (corpse.name, corpse.long, corpse.keywords) == ("野狗的屍體", "野狗的屍體/corpse/橫躺在地上。", ["corpse", "屍體"])
+    assert (corpse.name, corpse.long, corpse.keywords) == ("野狗的屍體", "野狗的屍體橫躺在地上。", ["corpse", "屍體"])
     assert (corpse.item_type, corpse.level, corpse.timer) == (CORPSE_NPC_ITEM_TYPE, 5, 10)
     assert [o.name for o in corpse.contains] == ["治療藥水"]
 
@@ -324,9 +324,9 @@ def test_look_shows_the_corpse_after_players(folder):
     death.die(dog)
     assert system.look(shabu).endswith(
         "\n\n" + colorize("{W") + "Ming站在這裡。" + colorize("{x") + "\n"
-        + colorize("{W") + "野狗的屍體/corpse/橫躺在地上。" + colorize("{x") + "\n")      # 亮白，跟生物一樣
+        + colorize("{W") + "野狗的屍體橫躺在地上。/" + colorize("{C") + "corpse" + colorize("{x") + "\n")   # 描述亮白，英文名字亮青
     characters.remove(ming)
-    assert re.sub(r"\x1b\[[0-9;]*m", "", system.look(shabu)).endswith("\n\n野狗的屍體/corpse/橫躺在地上。\n")   # 只有屍體也空一行
+    assert re.sub(r"\x1b\[[0-9;]*m", "", system.look(shabu)).endswith("\n\n野狗的屍體橫躺在地上。/corpse\n")   # 只有屍體也空一行
 
 
 def test_look_in_corpse(folder):
