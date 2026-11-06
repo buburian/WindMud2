@@ -55,6 +55,7 @@ IMM_COMMANDS = [
     ("oload", imm.do_oload, P.DEAD),            # o 還是 open，ol 才是 oload
     ("ostat", imm.do_ostat, P.DEAD),            # os
     ("mstat", imm.do_mstat, P.DEAD),            # m
+    ("restore", imm.do_restore, P.DEAD),        # res 還是 rest，resto 才是 restore
 ]
 
 # 姿勢不夠時的訊息（照 C 版 interp.c）

@@ -6,8 +6,8 @@ import json
 import logging
 from collections import Counter
 
-from .. import death, equipment, inventory, objects, stats
-from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, act, notify
+from .. import death, equipment, inventory, names, objects, stats
+from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act, notify
 from ..area import ATTACK_NAMES, ITEM_TYPE_NAMES, WEAPON_KIND_NAMES, Apply, ItemColor
 from ..characters import Position, find_in_room
 from ..equipment import SLOT_NAMES, TWO_HANDED
@@ -230,3 +230,41 @@ def player_lines(p):
     cooldowns = "、".join(f"{k} {v}" for k, v in p.cooldowns.items()) or "無"
     lines.append(where_lines(p) + f"  背包 {len(p.carrying)} 件  裝備 {len(p.equipment)} 件  冷卻 {cooldowns}")
     return lines
+
+
+def do_restore(ch, arg):
+    """restore <名字>、restore all：HP、MP、MV 補滿，技能冷卻清掉（照 C 版 act_wiz.c；清冷卻是使用者要的，方便測試）。
+
+    名字先找同房間的（find_in_room：開頭就行、2.dog，生物也可以），找不到再找線上的玩家（名字開頭）。all 是所有在線的玩家。
+    """
+    words = arg.split()
+    if not words:
+        ch.send("恢復誰?\n")
+        return
+    if words[0].lower() == "all":
+        for p in online_players():
+            refill(p)
+            if p is not ch:
+                act("$n恢復了你身上的全滿狀態。", ch, p, to=TO_VICT)
+        ch.send("啊 ... 所有指數全滿囉!!\n")
+        return
+    victim = find_in_room(ch, words[0]) or names.pick(online_players(), words[0], lambda c: c.names())
+    if victim is None:
+        ch.send("他們不在這兒。\n")
+        return
+    refill(victim)
+    if victim is ch:
+        ch.send("你身上的狀態全滿了。\n")
+        return
+    act("$n恢復了你身上全滿的狀態。", ch, victim, to=TO_VICT)
+    act("你恢復了$N身上全滿的狀態。", ch, victim, to=TO_CHAR)
+    log.info(f"{ch.name} 恢復了 {victim.name}")
+
+
+def refill(c):
+    """HP、MP、MV 補到上限（生物的 MP、MV 上限是 0），技能冷卻清掉。沒有屬性的（測試直接建的）只清冷卻。"""
+    if c.panel:
+        c.hp = c.panel["hp"]
+        c.mp, c.mv = c.panel.get("mp", 0.0), c.panel.get("mv", 0.0)
+    if hasattr(c, "cooldowns"):
+        c.cooldowns.clear()

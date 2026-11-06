@@ -194,7 +194,7 @@ def test_imm_sees_the_imm_category():
         "  戰鬥    kill use",
         "  物品    get drop wear remove inventory equipment examine",
         "  門      open close lock unlock",
-        "  管理員  advance slay oload ostat mstat",
+        "  管理員  advance slay oload ostat mstat restore",
     ]
     assert say("help", imm=True) == "\r\n".join(want) + "\r\n\r\n> "
 

@@ -162,6 +162,31 @@
       "fight_actions": [],
       "shop": null,
       "special": null
+    },
+    {
+      "vnum": 3,
+      "keywords": "rabbit 野兔",
+      "short": "野兔",
+      "long": "一隻野兔/rabbit/在草叢裡跳來跳去。\n",
+      "description": "一隻灰色的小野兔，耳朵豎得高高的。\n",
+      "level": 1,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 0,
+      "affected_by": 0,
+      "alignment": 0,
+      "race": "animal",
+      "sex": 0,
+      "position": 7,
+      "drops": [],
+      "script": null,
+      "actions": [],
+      "fight_actions": [],
+      "shop": null,
+      "special": null
     }
   ],
   "objects": [
@@ -433,6 +458,30 @@
       "room_vnum": 2,
       "exit_count": 2,
       "comment": "打亂北邊房間北、東兩個方向的出口"
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 3,
+      "limit": 3,
+      "room_vnum": 2,
+      "comment": "練功用的野兔（北邊房間 3 隻）"
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 3,
+      "limit": 3,
+      "room_vnum": 2,
+      "comment": "練功用的野兔（北邊房間 3 隻）"
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 3,
+      "limit": 3,
+      "room_vnum": 2,
+      "comment": "練功用的野兔（北邊房間 3 隻）"
     }
   ]
 }

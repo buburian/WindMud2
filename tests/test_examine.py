@@ -12,7 +12,7 @@ from mud import equipment, objects, stats, zones
 from mud.area import ITEM_TYPE_NAMES, WEAPON_KIND_NAMES, WeaponKind
 from mud.characters import Position
 from mud.commands import imm, items, system
-from test_items import give, make, person, reply, say, the_dog, world  # noqa: F401（world 是 fixture）
+from test_items import give, make, person, plain, reply, say, the_dog, world  # noqa: F401（world 是 fixture）
 
 AREA_MANUAL = Path(__file__).resolve().parent.parent / "docs" / "區域製作手冊.md"
 
@@ -204,3 +204,55 @@ def test_ostat_looks_in_your_pack_first(world):
     p.carrying[0].name = "背包的藥水"
     assert "名字 背包的藥水" in say(p, "ostat potion")
     assert "名字 藥水" in say(p, "ostat 2.potion")
+
+
+# ---- restore ----
+
+def test_restore_someone_in_the_room(world):
+    admin, p = person("Admin", level=20, imm_=True), person("Shabu")
+    p.hp, p.mp, p.mv = 1.0, 0.0, 2.0
+    p.cooldowns["smash"] = 4
+    say(p, "look")
+    assert say(admin, "resto sha") == reply(admin, "你恢復了Shabu身上全滿的狀態。")
+    assert (p.hp, p.mp, p.mv) == (p.panel["hp"], p.panel["mp"], p.panel["mv"]) and p.cooldowns == {}
+    assert "Admin恢復了你身上全滿的狀態。" in plain(p)
+
+
+def test_restore_a_player_elsewhere_and_yourself(world):
+    admin, p = person("Admin", level=20, imm_=True), person("Shabu")
+    p.room = zones.world.rooms[101]                          # 不在同一間房：找線上的玩家
+    p.hp = admin.hp = 1.0
+    assert say(admin, "restore shabu") == reply(admin, "你恢復了Shabu身上全滿的狀態。")
+    assert p.hp == p.panel["hp"]
+    assert say(admin, "restore admin") == reply(admin, "你身上的狀態全滿了。")
+    assert admin.hp == admin.panel["hp"]
+
+
+def test_restore_a_mobile(world):
+    admin, dog = person("Admin", imm_=True), the_dog()
+    dog.hp = 1.0
+    assert say(admin, "restore dog") == reply(admin, "你恢復了野狗身上全滿的狀態。")
+    assert (dog.hp, dog.mp, dog.mv) == (dog.panel["hp"], 0.0, 0.0)
+
+
+def test_restore_all(world):
+    admin, a, b = person("Admin", imm_=True), person("Shabu"), person("Ming")
+    b.room = zones.world.rooms[101]
+    a.hp = b.hp = admin.hp = 1.0
+    b.cooldowns["smash"] = 3
+    plain(b)
+    assert say(admin, "restore all") == reply(admin, "啊 ... 所有指數全滿囉!!")
+    assert [c.hp == c.panel["hp"] for c in (admin, a, b)] == [True] * 3 and b.cooldowns == {}
+    assert "Admin恢復了你身上的全滿狀態。" in plain(b)
+
+
+@pytest.mark.parametrize("line, want", [("restore", "恢復誰?"), ("restore bird", "他們不在這兒。")])
+def test_restore_mistakes(world, line, want):
+    admin = person("Admin", imm_=True)
+    assert say(admin, line) == reply(admin, want)
+
+
+def test_restore_is_for_imm(world):
+    p = person()
+    assert say(p, "restore all") == reply(p, "什麼？")
+    assert commands.find("resto", True) is imm.do_restore and commands.find("res", True) is commands.find("rest")
