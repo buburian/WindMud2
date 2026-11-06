@@ -88,13 +88,13 @@
     },
     {
       "vnum": 4,
-      "name": "教官室",
-      "description": "寬敞的房間，牆上掛滿了木劍和盾牌。\n往北是訓練場，往南回到走廊。\n{Y【教學】{x教官送你的「餽贈」會慢慢補血、讓你變強。打 score 看最下面，就看得到身上的效果。\n{Y【教學】{x打 wear 長劍 把教官給的長劍拿在手上，打 equipment（或 eq）看身上穿了什麼。\n{Y【教學】{x準備好了就往北走進訓練場。\n",
+      "name": "技能教室",
+      "description": "擺滿書架的教室，黑板上寫滿了各種招式的名字。\n往北是教官室，往南回到走廊。\n{Y【教學】{x打 skills（或 sk）看你會的技能：傷害、要花多少 MV 或 MP、多久才能再用一次。\n{Y【教學】{x放技能打 use 技能 目標：劍之公會是 use smash 稻草人，杖之公會是 use fireball 稻草人。\n",
       "room_flags": 8,
       "sector": 0,
       "exits": {
         "north": {
-          "description": "往北看，是鋪著沙土的訓練場。\n",
+          "description": "往北看，是掛滿木劍和盾牌的教官室。\n",
           "keywords": "",
           "locks": 0,
           "key": -1,
@@ -113,20 +113,20 @@
     },
     {
       "vnum": 5,
-      "name": "訓練場",
-      "description": "鋪著沙土的訓練場，中間插著一個稻草人。\n北邊是一扇沉重的石門，往南回到教官室。\n{Y【教學】{x打 kill 稻草人（或 k 稻草人）開始打。打倒它，北邊的石門就會打開。\n{Y【教學】{x打的時候看最下面的 HP，打不過可以打 flee 逃跑。\n{Y【教學】{x打倒以後打 get 護甲 屍體 把它掉的護甲拿出來，再打 wear 護甲 穿上。\n",
+      "name": "教官室",
+      "description": "寬敞的房間，牆上掛滿了木劍和盾牌。\n往北是訓練場，往南回到技能教室。\n{Y【教學】{x教官送你的「餽贈」會慢慢補血、讓你變強。打 score 看最下面，就看得到身上的效果。\n{Y【教學】{x打 wear 長劍 把教官給的長劍拿在手上，打 equipment（或 eq）看身上穿了什麼。\n{Y【教學】{x準備好了就往北走進訓練場。\n",
       "room_flags": 8,
       "sector": 0,
       "exits": {
         "north": {
-          "description": "一扇沉重的石門，上面沒有鑰匙孔。\n",
-          "keywords": "石門 stone",
-          "locks": 4,
+          "description": "往北看，是鋪著沙土的訓練場。\n",
+          "keywords": "",
+          "locks": 0,
           "key": -1,
           "to_room": 6
         },
         "south": {
-          "description": "往南看，是教官室。\n",
+          "description": "往南看，是技能教室。\n",
           "keywords": "",
           "locks": 0,
           "key": -1,
@@ -138,6 +138,31 @@
     },
     {
       "vnum": 6,
+      "name": "訓練場",
+      "description": "鋪著沙土的訓練場，中間插著一個稻草人。\n北邊是一扇沉重的石門，往南回到教官室。\n{Y【教學】{x打 kill 稻草人（或 k 稻草人）開始打，也可以用技能開打（use 技能 稻草人）。打倒它，北邊的石門就會打開。\n{Y【教學】{x打的時候看最下面的 HP，打不過可以打 flee 逃跑。\n{Y【教學】{x打倒以後打 get 護甲 屍體 把它掉的護甲拿出來，再打 wear 護甲 穿上。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "一扇沉重的石門，上面沒有鑰匙孔。\n",
+          "keywords": "石門 stone",
+          "locks": 4,
+          "key": -1,
+          "to_room": 7
+        },
+        "south": {
+          "description": "往南看，是教官室。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 5
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 7,
       "name": "畢業廳",
       "description": "掛著紅色布幔的大廳，院長站在講台後面微笑。\n往南回到訓練場。\n{Y【教學】{x學會了就對院長說：say 畢業，院長會送你到外面的世界。\n",
       "room_flags": 8,
@@ -148,7 +173,7 @@
           "keywords": "石門 stone",
           "locks": 4,
           "key": -1,
-          "to_room": 5
+          "to_room": 6
         }
       },
       "extra_descriptions": [],
@@ -240,6 +265,32 @@
       },
       "shop": null,
       "special": null
+    },
+    {
+      "vnum": 4,
+      "keywords": "teacher 技能教官",
+      "short": "技能教官",
+      "long": "技能教官/teacher/站在黑板前面。\n",
+      "description": "戴著眼鏡的技能教官，手上拿著一根粉筆。\n",
+      "level": 30,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 2,
+      "affected_by": 0,
+      "alignment": 0,
+      "race": "human",
+      "sex": 2,
+      "position": 7,
+      "drops": [],
+      "script": {
+        "file": "技能教官.lua",
+        "timer": null
+      },
+      "shop": null,
+      "special": null
     }
   ],
   "objects": [
@@ -323,7 +374,7 @@
       "room_vnum": 2,
       "direction": "north",
       "state": 2,
-      "comment": "往教官室的鐵門鎖著"
+      "comment": "往技能教室的鐵門鎖著"
     },
     {
       "cmd": "O",
@@ -338,23 +389,31 @@
     {
       "cmd": "M",
       "rare": 0,
-      "mob_vnum": 1,
+      "mob_vnum": 4,
       "limit": 1,
       "room_vnum": 4,
-      "comment": "教官：走進來就放餽贈"
+      "comment": "技能教官：教 skills、use"
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 1,
+      "limit": 1,
+      "room_vnum": 5,
+      "comment": "教官：走進來就放餽贈、給長劍"
     },
     {
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 2,
       "limit": 1,
-      "room_vnum": 5,
+      "room_vnum": 6,
       "comment": "稻草人：打倒它石門就打開"
     },
     {
       "cmd": "D",
       "if_flag": 0,
-      "room_vnum": 5,
+      "room_vnum": 6,
       "direction": "north",
       "state": 2,
       "comment": "往畢業廳的石門鎖著"
@@ -364,7 +423,7 @@
       "rare": 0,
       "mob_vnum": 3,
       "limit": 1,
-      "room_vnum": 6,
+      "room_vnum": 7,
       "comment": "院長：說「畢業」送回 101"
     }
   ]

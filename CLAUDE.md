@@ -46,7 +46,7 @@ uv run python -m mud.builder                      # 區域編輯器，瀏覽器�
   `tests/test_give.py` 測 give（給東西、給金幣、店主不收、放不下、1 級不能給金幣、給完存檔、log）。
   `tests/test_scripts.py` 測 Lua 腳本：沙箱（拿不到的名字、碰不到 Python、指令數上限、記憶體）、開機檢查的每一條、10 個觸發時機、每個函式、vars、wait、出錯的提醒
   （wait 用假的 `scripts.schedule`，自己呼叫 `later.run()`；區域檔和 .lua 用 `build()` 寫進 `tmp_path`）。
-  `tests/test_academy.py` 用真的 `areas/` 測教學學院：一人一份、一路走到畢業（掉落、穿上、`say 畢業`）、學生重新登入和死掉回學院、沒有學院的區域檔時。
+  `tests/test_academy.py` 用真的 `areas/` 測教學學院：一人一份、一路走到畢業（技能教官照公會教 use、掉落、穿上、`say 畢業`）、學生重新登入和死掉回學院、沒有學院的區域檔時。
   `tests/test_flee.py` 測 flee（DEX 的機率、戰鬥中不能走、成功、失敗要等、關著的門、沒有出口）。
   `tests/test_affects.py` 測身上的效果（覆蓋和疊加、暫時加減屬性、每 3 tick 跳、矮人的堅韌、扣死給誰經驗、時間到、死掉、存檔、score 最下面那段、affect、mstat），自己呼叫 `affects.tick()`。
   `tests/test_examine.py` 測 exam 的每一行、ostat、mstat、物品種類和武器種類的名稱表（跟手冊比對）、地上那一行接英文名字。
@@ -349,6 +349,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - 「家」是 `zones.home(player)`：學生（`zones.is_student()`：有學院的區域檔，而且 `player.vars["academy"]["student"]`）是學院的第一間 `ACADEMY_START`，其他人是 `start_room()`。
     建角（`login.create()` 先 `enroll()`）、讀檔（`save.player_from()`：學生一律回家，其他人房間不在世界才回家）、玩家死掉（`death.player_dies()`）都用它。
   - 畢業是院長的腳本拿掉 `student`（`config.ACADEMY_STUDENT`，名字兩邊要一樣），再 `transfer(101)`。程式裡沒有別的畢業判斷。
+    腳本的 `transfer` 送玩家就存檔（使用者要的，`script_api.transfer()`），所以畢業馬上存進去。
   - 房間的描述就是教學（`{Y【教學】{x` 那幾行），改教學內容改區域檔就好。
 - **tick 和戰鬥的 loop**（使用者定的；C 版是全遊戲一個鐘，我們不照它）：
   - tick loop：世界和全部動態區域**共用一個**（世界 tick，`zones.start()` 開始），每次先做世界、再做每個動態區域；

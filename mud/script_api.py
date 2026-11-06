@@ -5,12 +5,15 @@
 - 「算腳本出錯」的地方丟 ScriptError：lua.wrap() 會加上腳本的行號，這一次停掉（pcall 接不住）。
 - 號碼照號碼規則：1～99 是這個腳本所在的區域檔，100 以上是完整號碼；給腳本的號碼也換回這種寫法。
 """
+import logging
 import math
 import random
 
 from . import lua
 from .area import DoorState, ItemColor, check_fixed_item, resolve
 from .config import ENCODING
+
+log = logging.getLogger(__name__)
 
 rng = random                                # 測試換掉
 MAX_LOADED_MOBS = 50                        # load_mob：同一個區域物件裡、同號碼的生物最多幾隻（使用者定的安全上限）
@@ -164,8 +167,11 @@ def read_var(ch, area, name):
 
 
 def transfer(r, ch, n):
-    """送到那間房：不能送進副本（找不到就算出錯）。先停手，給他看新房間，觸發那邊的 on_enter(actor, nil)。"""
-    from . import death, scripts, zones
+    """送到那間房：不能送進副本（找不到就算出錯）。先停手，給他看新房間，玩家就存檔，再觸發那邊的 on_enter(actor, nil)。
+
+    存檔是使用者要的：例如學院畢業送到 101，「畢業了」和人在哪裡馬上存進去。存檔失敗只記 log（跟 give 一樣）。
+    """
+    from . import death, inventory, save, scripts, zones
     from .commands.system import look
     vnum = number(r, n, "房號")
     target = zones.room_at(ch.room, vnum)
@@ -175,6 +181,11 @@ def transfer(r, ch, n):
     ch.room = target
     arrive(ch)
     deliver(ch, look(ch), apart=True)       # 新房間的畫面：前面空一行
+    if inventory.is_player(ch):
+        try:
+            save.save_player(ch)
+        except OSError:
+            log.exception(f"{ch.name} 被腳本傳送後存檔失敗")
     scripts.fire(target, "on_enter", ch, ch, None)
 
 

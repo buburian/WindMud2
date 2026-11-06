@@ -12,7 +12,7 @@ import pytest
 
 import mud.commands as commands
 from area_helpers import make_area, make_room, write_json
-from mud import combat, death, fight, save, stats, zones
+from mud import combat, death, fight, save, skills, stats, zones
 from mud.area import AreaType
 from mud.characters import characters
 from mud.config import ACADEMY_FILE, ACADEMY_START, ENCODING
@@ -51,15 +51,16 @@ def academy(tmp_path, monkeypatch):
     zones.stop()
 
 
-def student(name="Ming"):
-    """剛建好的 1 級學生：跟 login.create() 一樣先 enroll、再站在 home()。要在 asyncio 裡呼叫。"""
+def student(name="Ming", guild=stats.Guild.SWORD):
+    """剛建好的 1 級學生：跟 login.create() 一樣（一開始就會的技能、先 enroll、再站在 home()）。要在 asyncio 裡呼叫。"""
     p = Player(name, FakeWriter(), None)
-    p.race, p.guild = stats.Race.HUMAN, stats.Guild.SWORD
+    p.race, p.guild = stats.Race.HUMAN, guild
     p.primaries = dict(stats.RACE_PRIMARIES[p.race])
     p.trained = {k: 0 for k in stats.PRIMARY_KEYS}
     p.password = save.hash_password("secret")
     stats.set_level(p, 1)
     p.hp, p.mp, p.mv = p.panel["hp"], p.panel["mp"], p.panel["mv"]
+    p.skills = skills.starter(p.guild)
     zones.enroll(p)
     p.room = zones.home(p)
     characters.append(p)
@@ -104,6 +105,12 @@ def test_walk_through_the_academy_and_graduate(academy):
         do(p, "w")
         do(p, "unlock n")
         do(p, "open n")
+        out = do(p, "n")                                            # 技能教室：照公會教他放一開始就會的技能（使用者要的）
+        assert out.startswith("【技能教室】") and out.endswith(
+            "\r\n\r\n技能教官說：『Ming，先打 skills 看看你會哪些技能。』\r\n"
+            "技能教官說：『放技能打 use 技能 目標，等一下到訓練場試試看：use smash 稻草人。』\r\n\r\n"
+            + re.sub(r"\x1b\[[0-9;]*m", "", p.prompt()))
+        assert "重擊" in do(p, "skills")
         out = do(p, "n")                                            # 教官室：教官說話、放餽贈、給 1 級紫色長劍（使用者要的）
         assert out.startswith("【教官室】") and "教官說：『歡迎，Ming！" in out and "打 wear 長劍" in out
         # 別人在他的指令當下送來的好幾句連在一起（使用者要的）：跟房間畫面之間空一行，句子之間不空行
@@ -120,7 +127,7 @@ def test_walk_through_the_academy_and_graduate(academy):
         do(p, "unlock n")                                           # 石門沒有鑰匙：開不了
         assert p.room.doors["north"].locked and "【石門】關起來了。" in do(p, "n")
 
-        do(p, "kill 稻草人")
+        do(p, "use smash 稻草人")                                   # 用技能開打（技能教官教的）
         dummy = npc("稻草人")
         for _ in range(100):
             if dummy not in characters:
@@ -137,10 +144,18 @@ def test_walk_through_the_academy_and_graduate(academy):
         out = do(p, "say 畢業")                                     # 院長收回鑰匙、送回 101
         assert "院長說：『恭喜你畢業了，Ming！外面的世界很大，好好冒險吧。』\r\n\r\n【測試房間（南）】" in out   # 新房間的畫面另起一段
         assert p.room is zones.start_room() and not zones.is_student(p) and p.carrying == []
-        save.save_player(p)
-        data = save.load_data("Ming")
+        data = save.load_data("Ming")                               # 傳送出來就自動存好了（使用者要的）
         assert data["room"] == 101 and data["vars"] == {"academy": {}}
         assert save.player_from(data, FakeWriter()).room is zones.start_room()   # 畢業了：照存的房間
+    asyncio.run(main())
+
+
+def test_the_skill_teacher_names_the_skill_of_your_guild(academy):
+    async def main():
+        p = student(guild=stats.Guild.STAFF)
+        p.room = p.room.zone.rooms[ACADEMY_START + 4]               # 教官室，往南走進技能教室
+        assert "技能教官說：『放技能打 use 技能 目標，等一下到訓練場試試看：use fireball 稻草人。』" in do(p, "s")
+        assert "火球" in do(p, "skills")
     asyncio.run(main())
 
 
