@@ -341,11 +341,12 @@ def test_wearing_off_is_one_message(world):
     ming = person("Ming")
     affects.add(ming, Affect("a", "甲", 3, off_message="甲沒了。"))
     affects.add(ming, Affect("b", "乙", 3, off_message="乙沒了。"))
-    affects.add(ming, Affect("c", "丙", 3))                         # 沒寫 off_message：不說
+    affects.add(ming, Affect("c", "丙", 3))                         # 沒寫 off_message：用共用的那句（使用者要的）
     plain(ming)
     ticks(3)
     text = plain(ming)
-    assert ming.affects == [] and text.startswith("\r\n甲沒了。\r\n乙沒了。\r\n\r\n<HP ") and text.count("<HP") == 1
+    assert ming.affects == [] and text.startswith("\r\n甲沒了。\r\n乙沒了。\r\n你身上的【丙】消失了。\r\n\r\n<HP ")
+    assert text.count("<HP") == 1
 
 
 def test_world_tick_moves_everyone_once(world):
@@ -434,7 +435,7 @@ def test_no_affects_command(world):
     assert say(person("Ming"), "affects") == "什麼？"                # 看 score 就好（使用者要的）
 
 
-USAGE = "用法：affect <名字> <poison、regen、bless、blind、clear>"
+USAGE = "用法：affect <名字> <poison、regen、bless、blind、shield、clear>"
 
 
 @pytest.mark.parametrize("line", ["affect", "affect ming", "affect ming xyz"])
@@ -488,3 +489,123 @@ def test_flag_names_match_the_manual():
     part = text[text.index("### affected_by（身上的效果）"):text.index("### race（種族）")]
     rows = {int(n): meaning for n, _, meaning in re.findall(r"\| (\d+) \| (\w+) \| (\S+) \|", part)}
     assert rows == {int(f): AFFECT_FLAG_NAMES[f] for f in AffectFlag}
+
+
+# ---- 護盾（使用者 2026-11-06 定的）：HP 上限的幾 %，受到的傷害先扣它，扣光就破 ----
+
+class Out:
+    """收 combat.land() 的訊息（代替那一場的 Fight）。"""
+
+    def __init__(self):
+        self.pairs = []
+
+    def tell(self, pairs):
+        self.pairs += pairs
+
+    def text_for(self, reader):
+        return "\n".join(re.sub(r"\x1b\[[0-9;]*m", "", t) for r, t in self.pairs if r is reader)
+
+
+def shield(source="shield", pct=1.2, duration=10):
+    return Affect(source, "盾", duration, shield_pct=pct, off_message="盾沒了。")
+
+
+def test_shield_points_come_from_the_hp_top_when_cast(world):
+    ming = person("Ming")
+    top = ming.panel["hp"]
+    affects.add(ming, shield())
+    assert ming.affects[0].shield == pytest.approx(top * 1.2)       # 100 HP、120% 是 120 點
+
+
+def test_damage_hits_the_shield_first(world):
+    ming, mob = person("Ming"), creature()
+    top = ming.panel["hp"]
+    affects.add(ming, shield())
+    out = Out()
+    assert combat.land(out, mob, ming, 50.0, False) is False
+    assert ming.hp == top and ming.affects[0].shield == pytest.approx(top * 1.2 - 50)   # HP 不動
+    assert "（吸收 50）" in out.text_for(ming)
+    out = Out()
+    combat.land(out, mob, ming, top * 1.2 - 50 + 30, False)         # 盾剩下的 ＋ 30：盾破了，HP 扣 30
+    assert ming.hp == pytest.approx(top - 30) and ming.affects == []
+    assert out.text_for(ming).endswith("你的【盾】被打破了。")
+    out = Out()
+    combat.land(out, mob, ming, 5.0, False)                          # 沒有盾了：照舊
+    assert ming.hp == pytest.approx(top - 35) and "吸收" not in out.text_for(ming)
+
+
+def test_absorbed_is_in_all_three_messages(world):
+    ming, mob = person("Ming"), creature()
+    hua = person("Hua")
+    affects.add(ming, shield())
+    out = Out()
+    combat.land(out, mob, ming, 5.0, False)
+    assert out.text_for(ming).endswith(".(5)（吸收 5）") and out.text_for(hua).endswith(".(5)（吸收 5）")
+    out = Out()
+    combat.land(out, ming, mob, 5.0, False)                          # 打沒有盾的：照舊
+    assert out.text_for(ming).endswith(".(5)")
+
+
+def test_casting_again_refills_the_shield(world):
+    ming = person("Ming")
+    top = ming.panel["hp"]
+    affects.add(ming, shield())
+    affects.absorb(ming, 100.0)
+    ticks(4)
+    affects.add(ming, shield())                                      # 再放一次：回到滿的、10 秒
+    assert len(ming.affects) == 1 and ming.affects[0].shield == pytest.approx(top * 1.2) and ming.affects[0].ticks == 10
+
+
+def test_shield_wears_off(world):
+    ming = person("Ming")
+    affects.add(ming, shield())
+    plain(ming)
+    ticks(10)
+    assert ming.affects == [] and "盾沒了。" in plain(ming)
+
+
+def test_older_shields_go_first(world):
+    ming = person("Ming")
+    top = ming.panel["hp"]
+    affects.add(ming, shield("a", 0.1))
+    affects.add(ming, shield("b", 0.1))
+    taken, broken = affects.absorb(ming, top * 0.1 + 3)              # 先放的扣光、破掉，後放的扣 3
+    assert taken == pytest.approx(top * 0.1 + 3) and [a.source for a in broken] == ["a"]
+    assert [a.source for a in ming.affects] == ["b"] and ming.affects[0].shield == pytest.approx(top * 0.1 - 3)
+
+
+def test_hp_loss_over_time_hits_the_shield_first(world):
+    ming = person("Ming")
+    top = ming.panel["hp"]
+    affects.add(ming, shield(pct=4 / top))                           # 4 點的盾
+    affects.add(ming, drip(hp=-10.0))
+    plain(ming)
+    ticks(3)                                                         # 毒跳一次 -10：盾吸收 4、破掉，HP 扣 6
+    assert ming.hp == pytest.approx(top - 6) and [a.source for a in ming.affects] == ["drip"]
+    assert "你的【盾】被打破了。" in plain(ming)
+    ticks(3)
+    assert ming.hp == pytest.approx(top - 16)
+
+
+def test_shield_shows_how_much_is_left(world):
+    ming = person("Ming", imm=True)
+    affects.add(ming, shield())
+    affects.absorb(ming, 10.0)
+    left = stats.shown(ming.panel["hp"] * 1.2 - 10)
+    assert f"護盾還剩 {left} 點" in say(ming, "score")
+    assert f"盾：還有 10 秒，護盾還剩 {left} 點" in say(ming, "mstat ming")
+
+
+def test_shield_is_saved(world):
+    a = shield()
+    a.shield = 37.5
+    back = affects.from_data(affects.to_data(a))
+    assert (back.shield_pct, back.shield) == (1.2, 37.5)
+    old = {k: v for k, v in affects.to_data(drip()).items() if k not in ("shield_pct", "shield")}   # 舊存檔沒有這兩個欄位
+    assert affects.from_data(old).shield == 0.0
+
+
+def test_affect_shield(world):
+    ming = person("Ming", imm=True)
+    assert say(ming, "af ming shield") == "你身上多了【測試護盾】（10 秒）。"
+    assert ming.affects[0].shield == pytest.approx(ming.panel["hp"] * 1.2)

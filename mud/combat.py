@@ -5,7 +5,7 @@
 """
 import random
 
-from . import damage, death, stats
+from . import affects, damage, death, objects, stats
 from .area import ATTACK_NAMES
 from .act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, compose
 from .npcs import Npc
@@ -25,6 +25,7 @@ SEVERITY = [
     (500, "*****超-乎-想-像-的-創-傷*****", "{r"), (None, "*****鬼--哭--神--號--的--創--傷*****", "{r"),
 ]
 MISS = "但是失手了"
+ABSORBED = "（吸收 {}）"                      # 護盾吸收了幾點，接在傷害數字後面（使用者選的）
 CRIT = "爆擊！"
 DEAD_ROOM = "$n已經斷氣，倒在地上死亡了!!"                                   # 同房間的人（照 C 版）
 DEAD_SELF = "{R*********************你已經含恨死去了*********************{x"  # 死掉的玩家（照 C 版）
@@ -60,9 +61,11 @@ def land(battle, ch, victim, dmg, crit, attack=BARE_HAND):
 
     attack：玩家用什麼打的（訊息裡的「使用直拳」「使用重擊」）。
     """
-    victim.hp -= dmg
-    for to, fmt in messages(ch, victim, dmg, crit, attack):
+    taken, broken = affects.absorb(victim, dmg)     # 先扣護盾，扣完才扣 HP（使用者定的）
+    victim.hp -= dmg - taken
+    for to, fmt in messages(ch, victim, dmg, crit, attack, taken):
         battle.tell(compose(fmt, ch, victim, to=to))
+    battle.tell(affects.broken_messages(victim, broken))
     if victim.hp > 0:
         return False
     slain(battle, ch, victim)
@@ -78,22 +81,37 @@ def slain(out, killer, victim):
     if isinstance(victim, Npc):
         if isinstance(killer, Player):
             reward(out, killer, victim)
-        death.die(victim, killer=killer)
+        corpse = death.die(victim, killer=killer)
+        if isinstance(killer, Player) and corpse is not None and corpse in killer.room.contents:
+            loot(out, killer, corpse)
     else:
         out.tell(compose(DEAD_SELF, victim, to=TO_CHAR))
         death.player_dies(victim)
 
 
-def messages(ch, victim, dmg, crit, attack=BARE_HAND):
-    """C 版的三句：[(送給誰, 句子)]。
+def loot(out, player, corpse):
+    """打死生物以後（照 C 版 fight.c）：開了自動拾取（config +autoloot）就把屍體裡的東西全部拿出來（跟 get all 屍體 一樣），
+    沒開就給他看屍體裡有什麼（跟 look in 一樣，使用者選的）。訊息接在 out 這一段後面（斷氣、經驗之後），一起送。
+    """
+    if not player.autoloot:
+        out.tell([(player, objects.inside(corpse).rstrip("\n"))])
+        return
+    from . import inventory
+    from .commands import items             # 坑：commands 會 import 戰鬥的模組，在函式裡才 import
+    lines = inventory.Lines(player)
+    items.take_all(player, corpse.contains, corpse, lines, items.EMPTY_CONTAINER)
+    out.tell(lines.pairs())
+
+
+def messages(ch, victim, dmg, crit, attack=BARE_HAND, absorbed=0.0):
+    """C 版的三句：[(送給誰, 句子)]。護盾吸收了的話，數字後面加「（吸收 5）」（使用者選的），三句都加。
 
     你使用直拳攻擊野狗，對它造成輕微的擦傷.(3)  ／  野狗攻擊你，對你造成普通的擦傷.(5)
     照 C 版：自己那句亮綠、被打那句亮青，程度照傷害佔對方 HP 上限的 % 上色，後面的「.(3)」回到一般顏色；
     同房間的人那句不上色。生物沒有武器名稱，寫「$n攻擊」；沒打中是「但是失手了」；傷害 ≤ 10 用「.」，其他「!」。
     """
-    shown = stats.shown(dmg)
     words, code = severity(dmg, victim.panel["hp"]) if dmg > 0 else (MISS, "{c")
-    tail = f"{'.' if shown <= 10 else '!'}({shown})"
+    tail = damage_tail(dmg, absorbed)
     weapon = f"使用{attack}" if isinstance(ch, Player) else ""
 
     def result(whom):                       # 「爆擊！對它造成」＋程度；沒打中只有「但是失手了」
@@ -103,6 +121,12 @@ def messages(ch, victim, dmg, crit, attack=BARE_HAND):
     theirs = "{C$n" + weapon + "攻擊你，" + result("你") + code + words + "{x" + tail
     others = "$n" + weapon + "攻擊$N，" + result("$E") + words + tail
     return [(TO_CHAR, mine), (TO_VICT, theirs), (TO_NOTVICT, others)]
+
+
+def damage_tail(dmg, absorbed=0.0):
+    """傷害數字那一段「.(3)」「!(15)」（≤ 10 用「.」，照 C 版），護盾吸收了接「（吸收 5）」。戰鬥訊息和持續扣血的訊息共用。"""
+    shown = stats.shown(dmg)
+    return f"{'.' if shown <= 10 else '!'}({shown})" + (ABSORBED.format(stats.shown(absorbed)) if absorbed > 0 else "")
 
 
 def reward(battle, player, npc):

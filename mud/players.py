@@ -1,6 +1,8 @@
 """玩家：有連線的角色，以及送文字到連線。"""
+from . import pager
 from .characters import SEX_MALE, Character, characters
 from .color import colorize
+from .config import PAGE_LINES
 from .stats import shown
 from .telnet import encode
 
@@ -28,14 +30,25 @@ class Player(Character):
         self.vars = {}                       # 腳本的變數（存檔）：{區域檔名（不含 .json）: {名字: 值}}
         self.skills = []                     # 會的技能 id（學會的順序，存檔）：建立角色時是公會一開始就會的（skills.starter）
         self.cooldowns = {}                  # 技能 id（還有 flee 失敗的等待 "flee"）→ 還要等幾個 tick 才能再用（skills.tick() 數），不存檔
+        # 設定（config 指令，存檔）
+        self.autoloot = False                # 打死生物後自動拾取屍體（使用者選的：預設關，照 C 版）
+        self.page_lines = PAGE_LINES         # 分頁：每頁幾行
+        # 分頁（pager.py，不存檔）
+        self.capture = None                  # 指令跑的時候，送給他的字先收在這裡（pager.collect），跑完才決定要不要分頁
+        self.pages = None                    # 還沒看完的回覆（pager.Pages）；有的話 prompt 是分頁提示
 
     def send(self, text):
-        send(self.writer, text)              # 下面那個 send()：寫到連線
+        if self.capture is not None:         # 他的指令還沒跑完：先收起來（pager.collect）
+            self.capture.append(text)
+        else:
+            send(self.writer, text)          # 下面那個 send()：寫到連線
         self.sent = True
         self.notified = False                # notify() 送完會再設回 True
 
     def prompt(self):
-        """<HP 62/62 MP 25/25 MV 38/38>：現在的值照剩多少變色（多綠、一半左右黃、很少紅），上限是一般顏色。"""
+        """<HP 62/62 MP 25/25 MV 38/38>：現在的值照剩多少變色（多綠、一半左右黃、很少紅），上限是一般顏色。分頁中是分頁提示。"""
+        if self.pages is not None:
+            return pager.PROMPT
         if not self.panel:                   # 沒有屬性（測試直接建的玩家）
             return super().prompt()
         parts = []

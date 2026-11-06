@@ -8,7 +8,7 @@
 def number_argument(text):
     """「3.dog」→ (3, "dog")；沒有點、或點前面不是數字 → (1, 原本的字)。"""
     number, dot, rest = text.partition(".")
-    return (int(number), rest) if dot and number.isdigit() else (1, text)
+    return (int(number), rest) if dot and number.isdecimal() else (1, text)
 
 
 def pick(candidates, text, names_of):

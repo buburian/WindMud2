@@ -5,7 +5,7 @@
 """
 from .. import affects, fight, skills
 from ..characters import characters, find_in_room
-from ..config import TICK_SECONDS
+from ..config import AFFECT_PULSE_TICKS, TICK_SECONDS
 from ..npcs import Npc
 from .system import wrap
 
@@ -90,7 +90,7 @@ def do_skills(ch, arg):
         pool = skills.resource(s)
         spent = f"{skills.cost(s, ch.level)}" + (f" {skills.RESOURCE_NAMES[pool]}" if pool else "")    # 沒有資源的技能
         if s.kind == "buff":                # 增益：寫持續多久，做什麼放下一行（太長就換行，不超過 79 格）
-            a = affects.Affect(**s.affect)
+            a = skills.make_affect(s)
             what = f"持續 {a.duration * TICK_SECONDS:g} 秒"
         else:
             low, high = skills.display_range(ch, s)
@@ -101,5 +101,8 @@ def do_skills(ch, arg):
             line += f"  還要等 {wait} 秒"
         lines.append(line)
         if s.kind == "buff":
-            lines += ["    " + more for more in wrap(affects.parts(a), 75)]
+            lines += ["    " + more for more in wrap(affects.parts(a, listing=True), 75)]
+        if s.dot:                           # 打中後的持續傷害：燃燒：每 3 秒 第一發的 30%，3 次
+            lines.append(f"    {s.dot['name']}：每 {AFFECT_PULSE_TICKS * TICK_SECONDS:g} 秒 第一發的 {s.dot['ratio'] * 100:g}%，"
+                         f"{s.dot['jumps']} 次")
     ch.send("\n".join(lines) + "\n")

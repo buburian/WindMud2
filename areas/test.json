@@ -66,7 +66,7 @@
   "mobiles": [
     {
       "vnum": 1,
-      "keywords": "merchant 商人",
+      "keywords": "merchant",
       "short": "測試商人",
       "long": "一位測試商人/merchant/站在櫃檯後面。\n",
       "description": "這是測試區域的商人，臉上一直掛著笑容。\n",
@@ -116,7 +116,7 @@
     },
     {
       "vnum": 2,
-      "keywords": "horse 馬",
+      "keywords": "horse",
       "short": "測試坐騎",
       "long": "一匹測試坐騎/horse/在這裡低頭吃草。\n",
       "description": "一匹溫馴的馬，背上放著馬鞍。\n",
@@ -139,7 +139,7 @@
     },
     {
       "vnum": 3,
-      "keywords": "rabbit 野兔",
+      "keywords": "rabbit",
       "short": "野兔",
       "long": "一隻野兔/rabbit/在草叢裡跳來跳去。\n",
       "description": "一隻灰色的小野兔，耳朵豎得高高的。\n",
@@ -164,7 +164,7 @@
   "objects": [
     {
       "vnum": 1,
-      "keywords": "potion 藥水",
+      "keywords": "potion",
       "short": "測試藥水",
       "long": "一瓶測試藥水放在地上。",
       "item_type": 10,
@@ -184,7 +184,7 @@
     },
     {
       "vnum": 2,
-      "keywords": "sword 長劍",
+      "keywords": "sword",
       "short": "測試長劍",
       "long": "一把測試長劍插在地上。",
       "item_type": 5,
@@ -226,7 +226,7 @@
     },
     {
       "vnum": 3,
-      "keywords": "box 箱子",
+      "keywords": "box",
       "short": "測試箱子",
       "long": "一個木頭做的測試箱子放在角落。",
       "item_type": 15,
@@ -246,7 +246,7 @@
     },
     {
       "vnum": 4,
-      "keywords": "bread 麵包",
+      "keywords": "bread",
       "short": "測試麵包",
       "long": "一塊測試麵包掉在地上。",
       "item_type": 19,
@@ -266,7 +266,7 @@
     },
     {
       "vnum": 5,
-      "keywords": "shield 盾牌",
+      "keywords": "shield",
       "short": "測試盾牌",
       "long": "一面測試盾牌靠在牆邊。",
       "item_type": 9,
@@ -286,7 +286,7 @@
     },
     {
       "vnum": 6,
-      "keywords": "dagger 匕首",
+      "keywords": "dagger",
       "short": "測試匕首",
       "long": "一把測試匕首掉在地上。",
       "item_type": 5,
@@ -306,7 +306,7 @@
     },
     {
       "vnum": 7,
-      "keywords": "greatsword 大劍",
+      "keywords": "greatsword",
       "short": "測試大劍",
       "long": "一把測試大劍插在地上。",
       "item_type": 5,
@@ -326,7 +326,7 @@
     },
     {
       "vnum": 8,
-      "keywords": "ring 戒指",
+      "keywords": "ring",
       "short": "測試戒指",
       "long": "一枚測試戒指在地上閃閃發光。",
       "item_type": 9,
@@ -346,7 +346,7 @@
     },
     {
       "vnum": 9,
-      "keywords": "armor 皮甲",
+      "keywords": "armor",
       "short": "測試皮甲",
       "long": "一件測試皮甲丟在地上。",
       "item_type": 9,

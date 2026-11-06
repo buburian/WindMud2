@@ -224,7 +224,7 @@ def test_get_from_a_corpse(world):
     give(p, 1)
     assert say(p, "get x potion") == reply(p, "這不是個容器。")              # 容器也可以在背包裡
     p.carrying.clear()
-    assert say(p, "get ring 屍") == reply(p, "你把【戒指/ring】從【野狗的屍體/corpse】拿出來。")
+    assert say(p, "get ring corp") == reply(p, "你把【戒指/ring】從【野狗的屍體/corpse】拿出來。")   # 只打開頭也可以
     plain(ming)
     assert say(p, "get all corpse") == reply(p, "你把【藥水/potion】從【野狗的屍體/corpse】拿出來。")
     assert "Shabu把【藥水/potion】從【野狗的屍體/corpse】拿出來。" in plain(ming)

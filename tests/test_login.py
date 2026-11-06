@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from mud import save, stats, zones
+from mud import pager, save, stats, zones
 from mud.characters import characters
 from mud.config import ACADEMY_START, ENCODING
 from mud.players import online_players
@@ -111,6 +111,8 @@ async def create_until_guild(c, name):
     c.say("secret1")
     await c.until(bytes([IAC, WONT, ECHO]) + "\r\n性別：1 男、2 女：".encode(ENCODING))      # 打完恢復顯示，補換行
     c.say("3")
+    await c.until("請輸入列表裡的號碼。\r\n性別：1 男、2 女：")
+    c.say("①")                              # 特殊的數字字元：不會斷線，照樣再問
     await c.until("請輸入列表裡的號碼。\r\n性別：1 男、2 女：")
     c.say("2")
     menu = await c.until("請選擇種族（輸入號碼）：")
@@ -220,6 +222,7 @@ def test_second_login_takes_over(folder):
         a = await log_in(connect, "Ming")
         a.say("n")
         await a.until("> ")
+        online_players()[0].pages = pager.Pages(["舊連線還沒看完的"] * 30, 20)   # 舊連線在分頁中：新連線不接著分頁
         b = await connect()
         await b.until("請輸入你的英文名字：")
         b.say("Ming")
@@ -229,6 +232,7 @@ def test_second_login_takes_over(folder):
         await a.closed()
         got = await b.until("> ")
         assert "重新連上了。".encode(ENCODING) in got and NORTH.encode(ENCODING) in got    # 站在原本的地方
+        assert online_players()[0].pages is None and pager.PROMPT.encode(ENCODING) not in got
         for _ in range(2):                  # 舊連線的 handle() 收尾以後，角色還在遊戲裡、只有一個
             b.say("look")
             await b.until("> ")

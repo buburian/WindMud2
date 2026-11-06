@@ -1,6 +1,9 @@
 """共用設定。"""
 ENCODING = "cp950"   # Big5（微軟版，字比標準 Big5 多）
 MAX_LINE = 1000      # 一行最多幾個 byte，跟 Diku 的 MAX_INPUT_LENGTH 一樣
+PAGE_LINES = 20       # 分頁：一個指令的回覆超過每頁幾行就先送一頁（玩家用 config lines 改，照 C 版 pagelength）
+PAGE_LINES_MIN = 19   # 每頁最少幾行（照 C 版）
+PAGE_LINES_MAX = 60   # 每頁最多幾行（照 C 版：打更大的設成這個）
 PROMPT = "> "          # 沒有屬性的角色用的 prompt（測試直接建的角色）；玩家的 prompt 顯示 HP、MP、MV（Player.prompt()）
 AREA_DIR = "areas"   # 區域檔的資料夾，跟 logs/ 同一層
 HELP_FILE = "help/help.json"   # help 指令的說明檔（helps.py），跟 areas/ 同一層

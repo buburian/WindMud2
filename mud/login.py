@@ -70,7 +70,7 @@ async def choose(conn, prompt, options):
         line = await ask(conn, prompt)
         if line is None:
             return None
-        if line.isdigit() and 1 <= int(line) <= len(options):
+        if line.isdecimal() and 1 <= int(line) <= len(options):
             return options[int(line) - 1]
         conn.send("請輸入列表裡的號碼。\n")
 
@@ -121,6 +121,7 @@ async def enter(conn, name, data):
         send(old.writer, "\n有人從別的地方登入了你的角色。\n")
         old.writer.close()
         old.writer = conn.writer
+        old.pages = None                    # 舊連線還沒看完的分頁不接著看（新連線沒看過前面那幾頁）
         log.info(f"{name} 從別的地方重新連上")
         conn.send("重新連上了。\n" + look(old) + "\n" + old.prompt())
         return old

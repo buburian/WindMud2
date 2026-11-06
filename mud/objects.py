@@ -17,7 +17,7 @@ from .players import online_players
 
 log = logging.getLogger(__name__)
 
-CORPSE_KEYWORDS = ("corpse", "屍體")         # 屍體的名字（C 版只有 corpse，加上中文）
+CORPSE_KEYWORDS = ("corpse",)               # 屍體的名字（照 C 版；使用者定的：生物、物品的名字一律英文）
 CORPSE_TIMER = (10, 14)                     # 屍體過幾次 OBJ_TICKS 消失（照 C 版：10～14 個 tick，約 5～7 分鐘）
 DECAY = "腐爛變成了灰塵。"                    # timer 到了的訊息（照 C 版的屍體；現在只有屍體有 timer）
 # 名字的顏色（使用者選的）：裝備照顏色（終端機沒有橘色，用暗黃），其他物品照 C 版亮綠；後面的英文名字亮青（照 C 版）
@@ -80,7 +80,7 @@ def create(vnum, level, color, rng=random):
     slot = obj.slot = equipment.best_slot(*wear_slots(proto))
     if proto["item_type"] == CONTAINER_ITEM_TYPE:
         # 鑰匙的換算跟出口的 key 一樣（−1、0 是沒有鑰匙）；area_number ＝ 遊戲號碼 − 檔案號碼
-        _, flags, key, seal = (int(v) if str(v).lstrip("-").isdigit() else 0 for v in proto["values"])
+        _, flags, key, seal = (int(v) if str(v).lstrip("-").isdecimal() else 0 for v in proto["values"])
         obj.container = ContainerFlag(flags & sum(ContainerFlag))
         obj.key = resolve(vnum - proto["vnum"], key) if key > 0 else None
         obj.seal = seal
@@ -137,6 +137,15 @@ def short(obj):
     英文名字是 keywords 裡的英文字；沒有英文字就只有名字。名字是區域作者寫的，不轉裡面的顏色代碼（跟生物一樣）。
     """
     return colorize(COLOR_CODES.get(obj.color, OTHER_CODE)) + obj.name + english_tail(obj) + RESET
+
+
+def inside(container):
+    """容器、屍體裡有什麼（look in 和打死生物後看屍體共用，照 C 版 act_info.c）：每件一行、前面空 5 格。
+
+    C 版會把一樣的合成「( 2) 」，先不做。
+    """
+    items = "".join(f"     {short(o)}\n" for o in container.contains) or "     空無一物。\n"
+    return f"{container.name}裝著：\n{items}"
 
 
 def english_tail(obj):

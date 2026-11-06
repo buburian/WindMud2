@@ -19,17 +19,18 @@ def stop_all(ch):
 
 
 def die(npc, rng=random, killer=None):
-    """npc 死掉：打牠的人和牠自己停手，原地留下屍體（掉落表骰到的物品放在裡面），從遊戲裡拿掉。
+    """npc 死掉：打牠的人和牠自己停手，原地留下屍體（掉落表骰到的物品放在裡面），從遊戲裡拿掉。回傳屍體（自動拾取用）。
 
     拿掉以後重置的 limit 數不到牠，下次重置會再放一隻（照 C 版）。
-    倒下之前先跑牠腳本的 on_death(killer)（使用者定的：還在房間裡，留遺言做得到）；腳本讓牠消失了（destroy）就不留屍體。
+    倒下之前先跑牠腳本的 on_death(killer)（使用者定的：還在房間裡，留遺言做得到）；腳本讓牠消失了（destroy）就不留屍體、回傳 None。
     """
     scripts.fire_owner(npc, "on_death", None, killer)
     if npc not in characters:
-        return
+        return None
     stop_all(npc)
-    objects.make_corpse(npc, rng)
+    corpse = objects.make_corpse(npc, rng)
     characters.remove(npc)
+    return corpse
 
 
 def player_dies(player):

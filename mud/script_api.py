@@ -206,14 +206,26 @@ def make_item(r, n, level, color):
     if vnum not in objects.protos:
         raise ScriptError(f"沒有物品 {vnum}")
     problems = []
-    check_fixed_item(f"放出物品 {vnum}", vnum, objects.protos, level, color, problems)
+    check_fixed_item("", vnum, objects.protos, level, color, problems)   # 訊息自己會寫「放出物品 號碼」
     if problems:
         raise ScriptError(problems[0])
     return objects.create(vnum, level, color, rng)
 
 
 def give_item(r, ch, n, level, color):
-    ch.carrying.insert(0, make_item(r, n, level, color))
+    """給 ch 一件新做的物品，放進背包。腳本的主人是生物、給的是別人：訊息跟玩家用 give 給東西一樣（使用者要的）；
+    房間的腳本沒有「誰給的」，不說話（作者自己 echo）。
+    """
+    from . import objects
+    from .act import TO_NOTVICT, TO_VICT, act
+    from .commands.items import GIVEN_SEEN, GIVEN_TO_YOU
+    from .npcs import Npc
+    obj = make_item(r, n, level, color)
+    ch.carrying.insert(0, obj)
+    giver = r.owner
+    if isinstance(giver, Npc) and giver is not ch:
+        act(GIVEN_TO_YOU, giver, ch, t=objects.short(obj), to=TO_VICT)
+        act(GIVEN_SEEN, giver, ch, t=objects.short(obj), to=TO_NOTVICT)
 
 
 def take_item(r, ch, n):
@@ -293,13 +305,16 @@ def load_mob(r, room, n):
 
 
 def door(room, direction, action):
-    """開、關、鎖、開鎖門，兩邊一起變，不用鑰匙。"""
+    """開、關、鎖、開鎖門，兩邊一起變，不用鑰匙。真的打開、關上了，對面的人跟玩家開關門一樣看得到（使用者要的）；鎖、開鎖對面不知道。"""
     from . import doors
     if direction not in room.doors:
         raise ScriptError(f"往 {lua_repr(direction)} 沒有門")
     if action not in DOOR_ACTIONS:
         raise ScriptError(f"門要 open、close、lock 或 unlock，不能是 {lua_repr(action)}")
-    doors.set_state(room, direction, DOOR_ACTIONS[action])
+    was_closed = room.doors[direction].closed
+    to, back = doors.set_state(room, direction, DOOR_ACTIONS[action])
+    if action in ("open", "close") and was_closed != room.doors[direction].closed:
+        doors.tell_other_side(direction, to, back, opened=action == "open")
 
 
 # ---- 其他 ----

@@ -1,4 +1,5 @@
 """送訊息給一群人，並代換 $ 碼（名字、代名詞、帶進來的文字）。"""
+import contextlib
 import logging
 import re
 
@@ -8,6 +9,9 @@ from .color import colorize
 log = logging.getLogger(__name__)
 
 TO_CHAR, TO_VICT, TO_ROOM, TO_NOTVICT = 0, 1, 2, 3
+# 正在收訊息的一段（戰鬥的一回合、技能那幾下、效果的一個 tick：有 tell([(讀的人, 文字)]) 的）。
+# 有的話 notify() 不馬上送、放進最上面那一段，那一段結束時每個人一起送（使用者要的：打死生物時腳本說的話在「斷氣」後面、只有一個 prompt）
+blocks = []
 
 HE_SHE = ("它", "他", "她")             # 照 SEX_NEUTRAL、SEX_MALE、SEX_FEMALE 的順序
 HIS_HER = ("它的", "他的", "她的")
@@ -54,11 +58,47 @@ def notify(ch, text, apart=False):
     這時好幾句連在一起送（使用者要的）：跟指令自己的訊息之間空一行，句子之間不空行；apart 是另起一段、前面一定空一行（例如傳送到新房間的畫面）。
     """
     from . import scripts                   # 坑：scripts 會用到這裡，在函式裡才 import
+    if blocks and not (isinstance(blocks[-1], Block) and ch in scripts.commanding):
+        blocks[-1].tell([(ch, "\n" + text if apart else text)])     # 正在收的一段：放進去，那一段結束時一起送
+        return
     if ch in scripts.commanding:
         ch.send(("\n" if ch.sent and (apart or not ch.notified) else "") + text + "\n")
         ch.notified = True
         return
     ch.send(f"\n{text}\n\n{ch.prompt()}")      # 有訊息：prompt 前空一行
+
+
+class Block:
+    """一個指令、一串腳本送給別人的訊息先收起來，最後每個人送一次、一個 prompt（使用者要的：旁邊的人也只有一個 prompt）。
+
+    下指令的那個人不收在這裡（notify() 照「他自己的指令還沒跑完」送，prompt 由 command() 補）。
+    """
+
+    def __init__(self):
+        self.by = {}
+
+    def tell(self, pairs):
+        for reader, text in pairs:
+            self.by.setdefault(reader, []).append(text)
+
+    def flush(self):
+        for reader, lines in self.by.items():
+            notify(reader, "\n".join(lines))
+
+
+@contextlib.contextmanager
+def gathering():
+    """開始收一段（command()、一串腳本 scripts.one_chain() 用）。已經在收了（例如戰鬥的一回合、外面的指令）就併進外面那段。"""
+    if blocks:
+        yield
+        return
+    block = Block()
+    blocks.append(block)
+    try:
+        yield
+    finally:
+        blocks.remove(block)
+        block.flush()
 
 
 def fill(fmt, ch, vch, t, T, reader):

@@ -71,7 +71,7 @@
     {
       "vnum": 3,
       "name": "儲藏室",
-      "description": "堆滿木箱和舊掃帚的小房間，空氣裡有灰塵的味道。\n往西回到走廊。\n{Y【教學】{x打 get 鑰匙 把地上的鑰匙撿起來，打 inventory（或 i）看背包。\n{Y【教學】{x回到走廊（west 或 w）以後，打 unlock north 開鎖，再打 open north 開門。\n",
+      "description": "堆滿木箱和舊掃帚的小房間，空氣裡有灰塵的味道。\n往西回到走廊。\n{Y【教學】{x打 get key 把地上的鑰匙撿起來，打 inventory（或 i）看背包。\n{Y【教學】{x回到走廊（west 或 w）以後，打 unlock north 開鎖，再打 open north 開門。\n",
       "room_flags": 8,
       "sector": 0,
       "exits": {
@@ -89,7 +89,7 @@
     {
       "vnum": 4,
       "name": "技能教室",
-      "description": "擺滿書架的教室，黑板上寫滿了各種招式的名字。\n往北是教官室，往南回到走廊。\n{Y【教學】{x打 skills（或 sk）看你會的技能：傷害、要花多少 MV 或 MP、多久才能再用一次。\n{Y【教學】{x放技能打 use 技能 目標：劍之公會是 use smash 稻草人，杖之公會是 use fireball 稻草人。\n",
+      "description": "擺滿書架的教室，黑板上寫滿了各種招式的名字。\n往北是教官室，往南回到走廊。\n{Y【教學】{x打 skills（或 sk）看你會的技能：傷害、要花多少 MV 或 MP、多久才能再用一次。\n{Y【教學】{x放技能打 use 技能 目標：劍之公會是 use smash dummy，杖之公會是 use fireball dummy。\n",
       "room_flags": 8,
       "sector": 0,
       "exits": {
@@ -114,7 +114,7 @@
     {
       "vnum": 5,
       "name": "教官室",
-      "description": "寬敞的房間，牆上掛滿了木劍和盾牌。\n往北是訓練場，往南回到技能教室。\n{Y【教學】{x教官送你的「餽贈」會慢慢補血、讓你變強。打 score 看最下面，就看得到身上的效果。\n{Y【教學】{x打 wear 長劍 把教官給的長劍拿在手上，打 equipment（或 eq）看身上穿了什麼。\n{Y【教學】{x準備好了就往北走進訓練場。\n",
+      "description": "寬敞的房間，牆上掛滿了木劍和盾牌。\n往北是訓練場，往南回到技能教室。\n{Y【教學】{x教官送你的「餽贈」會慢慢補血、讓你變強。打 score 看最下面，就看得到身上的效果。\n{Y【教學】{x打 wear sword 把教官給的長劍拿在手上，打 equipment（或 eq）看身上穿了什麼。\n{Y【教學】{x準備好了就往北走進訓練場。\n",
       "room_flags": 8,
       "sector": 0,
       "exits": {
@@ -139,7 +139,7 @@
     {
       "vnum": 6,
       "name": "訓練場",
-      "description": "鋪著沙土的訓練場，中間插著一個稻草人。\n北邊是一扇沉重的石門，往南回到教官室。\n{Y【教學】{x打 kill 稻草人（或 k 稻草人）開始打，也可以用技能開打（use 技能 稻草人）。打倒它，北邊的石門就會打開。\n{Y【教學】{x打的時候看最下面的 HP，打不過可以打 flee 逃跑。\n{Y【教學】{x打倒以後打 get 護甲 屍體 把它掉的護甲拿出來，再打 wear 護甲 穿上。\n",
+      "description": "鋪著沙土的訓練場，中間插著一個稻草人。\n北邊是一扇沉重的石門，往南回到教官室。\n{Y【教學】{x打 kill dummy（或 k dummy）打稻草人，也可以用技能開打（use 技能 dummy）。打倒它，北邊的石門就會打開。\n{Y【教學】{x打的時候看最下面的 HP，打不過可以打 flee 逃跑。\n{Y【教學】{x打倒以後打 get armor corpse 把它掉的護甲拿出來，再打 wear armor 穿上。\n",
       "room_flags": 8,
       "sector": 0,
       "exits": {
@@ -183,7 +183,7 @@
   "mobiles": [
     {
       "vnum": 1,
-      "keywords": "instructor 教官",
+      "keywords": "instructor",
       "short": "教官",
       "long": "教官/instructor/雙手抱胸站在這裡。\n",
       "description": "一位曬得黝黑的教官，眼神很銳利，但說話很和氣。\n",
@@ -209,7 +209,7 @@
     },
     {
       "vnum": 2,
-      "keywords": "dummy 稻草人",
+      "keywords": "dummy",
       "short": "稻草人",
       "long": "一個稻草人/dummy/插在沙地上。\n",
       "description": "用稻草紮成的人偶，身上套著破舊的布衣，被打過很多次了。\n",
@@ -242,7 +242,7 @@
     },
     {
       "vnum": 3,
-      "keywords": "dean 院長",
+      "keywords": "dean",
       "short": "院長",
       "long": "院長/dean/站在講台後面。\n",
       "description": "頭髮花白的院長，看著每一個學生畢業是他最開心的事。\n",
@@ -268,7 +268,7 @@
     },
     {
       "vnum": 4,
-      "keywords": "teacher 技能教官",
+      "keywords": "teacher",
       "short": "技能教官",
       "long": "技能教官/teacher/站在黑板前面。\n",
       "description": "戴著眼鏡的技能教官，手上拿著一根粉筆。\n",
@@ -296,7 +296,7 @@
   "objects": [
     {
       "vnum": 1,
-      "keywords": "key 鑰匙 銅鑰匙",
+      "keywords": "key",
       "short": "銅鑰匙",
       "long": "一把銅鑰匙掉在地上。",
       "item_type": 18,
@@ -316,7 +316,7 @@
     },
     {
       "vnum": 2,
-      "keywords": "sword 長劍",
+      "keywords": "sword",
       "short": "長劍",
       "long": "一把長劍插在地上。",
       "item_type": 5,
@@ -336,7 +336,7 @@
     },
     {
       "vnum": 3,
-      "keywords": "armor 護甲 衣服",
+      "keywords": "armor",
       "short": "護甲",
       "long": "一件護甲丟在地上。",
       "item_type": 9,

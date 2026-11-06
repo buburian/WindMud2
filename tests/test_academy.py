@@ -100,7 +100,7 @@ def test_walk_through_the_academy_and_graduate(academy):
         assert "【木門】關起來了。" in do(p, "e")
         do(p, "open e")
         assert do(p, "e").startswith("【儲藏室】")
-        do(p, "get 鑰匙")
+        do(p, "get key")
         assert [o.name for o in p.carrying] == ["銅鑰匙"]
         do(p, "w")
         do(p, "unlock n")
@@ -108,17 +108,19 @@ def test_walk_through_the_academy_and_graduate(academy):
         out = do(p, "n")                                            # 技能教室：照公會教他放一開始就會的技能（使用者要的）
         assert out.startswith("【技能教室】") and out.endswith(
             "\r\n\r\n技能教官說：『Ming，先打 skills 看看你會哪些技能。』\r\n"
-            "技能教官說：『放技能打 use 技能 目標，等一下到訓練場試試看：use smash 稻草人。』\r\n\r\n"
+            "技能教官說：『放技能打 use 技能 目標，等一下到訓練場試試看：use smash dummy。』\r\n\r\n"
             + re.sub(r"\x1b\[[0-9;]*m", "", p.prompt()))
         assert "重擊" in do(p, "skills")
         out = do(p, "n")                                            # 教官室：教官說話、放餽贈、給 1 級紫色長劍（使用者要的）
-        assert out.startswith("【教官室】") and "教官說：『歡迎，Ming！" in out and "打 wear 長劍" in out
+        assert out.startswith("【教官室】") and "教官說：『歡迎，Ming！" in out and "打 wear sword" in out
         # 別人在他的指令當下送來的好幾句連在一起（使用者要的）：跟房間畫面之間空一行，句子之間不空行
+        sword = next(o for o in p.carrying if o.vnum == 202)               # 名字前面的詞綴是隨機的
         assert out.endswith("站在這裡。\r\n\r\n教官說：『歡迎，Ming！上場之前，先送你一份餽贈。』\r\n教官對你施展了【餽贈】。\r\n"
-                            "教官說：『這把長劍給你，打 wear 長劍 拿在手上。』\r\n教官說：『去北邊的訓練場，把稻草人打倒吧。』\r\n\r\n"
+                            f"教官把【{sword.name}/sword】拿給你。\r\n"         # 跟 give 一樣的訊息（使用者要的）
+                            "教官說：『這把長劍給你，打 wear sword 拿在手上。』\r\n教官說：『去北邊的訓練場，把稻草人打倒吧。』\r\n\r\n"
                             + re.sub(r"\x1b\[[0-9;]*m", "", p.prompt()))
         assert [a.source for a in p.affects] == ["gift"]
-        do(p, "wear 長劍")
+        do(p, "wear sword")
         do(p, "s")
         do(p, "n")                                                  # 回來：已經有長劍就不再給
         assert [o.name for o in p.carrying] == ["銅鑰匙"] and (p.equipment["wield"].vnum, p.equipment["wield"].color,
@@ -127,16 +129,19 @@ def test_walk_through_the_academy_and_graduate(academy):
         do(p, "unlock n")                                           # 石門沒有鑰匙：開不了
         assert p.room.doors["north"].locked and "【石門】關起來了。" in do(p, "n")
 
-        do(p, "use smash 稻草人")                                   # 用技能開打（技能教官教的）
+        do(p, "use smash dummy")                                   # 用技能開打（技能教官教的）
         dummy = npc("稻草人")
         for _ in range(100):
             if dummy not in characters:
                 break
             p.fight.tick()
         assert dummy not in characters and p.hp > 0
-        assert "北邊的石門喀啦一聲打開了。" in plain(p) and not p.room.doors["north"].closed
-        do(p, "get 護甲 屍體")                                      # 一定掉 1 級紫色的護甲（使用者要的）
-        do(p, "wear 護甲")
+        # 同一段（兩個 prompt 中間，使用者要的）：斷氣、經驗、石門打開（腳本）、屍體裡有什麼
+        block = next(b for b in plain(p).split("<HP") if "北邊的石門喀啦一聲打開了。" in b)
+        assert block.index("稻草人已經斷氣") < block.index("北邊的石門喀啦一聲打開了。") < block.index("稻草人的屍體裝著：")
+        assert not p.room.doors["north"].closed
+        do(p, "get armor corpse")                                      # 一定掉 1 級紫色的護甲（使用者要的）
+        do(p, "wear armor")
         worn = {slot: (o.vnum, o.color, o.level) for slot, o in p.equipment.items()}
         assert worn == {"wield": (202, "purple", 1), "body": (203, "purple", 1)}
 
@@ -154,7 +159,7 @@ def test_the_skill_teacher_names_the_skill_of_your_guild(academy):
     async def main():
         p = student(guild=stats.Guild.STAFF)
         p.room = p.room.zone.rooms[ACADEMY_START + 4]               # 教官室，往南走進技能教室
-        assert "技能教官說：『放技能打 use 技能 目標，等一下到訓練場試試看：use fireball 稻草人。』" in do(p, "s")
+        assert "技能教官說：『放技能打 use 技能 目標，等一下到訓練場試試看：use fireball dummy。』" in do(p, "s")
         assert "火球" in do(p, "skills")
     asyncio.run(main())
 

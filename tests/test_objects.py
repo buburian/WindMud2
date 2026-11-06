@@ -227,7 +227,7 @@ def test_corpse_holds_the_drops(folder):
     room.contents.append(objects.Obj("石頭", "一顆石頭在這裡。", 13, ["stone"]))
     corpse = objects.make_corpse(dog, FixedRng(0))
     assert room.contents[0] is corpse                               # 新的在前面（照 C 版）
-    assert (corpse.name, corpse.long, corpse.keywords) == ("野狗的屍體", "野狗的屍體橫躺在地上。", ["corpse", "屍體"])
+    assert (corpse.name, corpse.long, corpse.keywords) == ("野狗的屍體", "野狗的屍體橫躺在地上。", ["corpse"])   # 名字一律英文（使用者定的）
     assert (corpse.item_type, corpse.level, corpse.timer) == (CORPSE_NPC_ITEM_TYPE, 5, 10)
     assert [o.name for o in corpse.contains] == ["治療藥水"]
 
@@ -333,7 +333,7 @@ def test_look_in_corpse(folder):
     dog = world_with_dog(folder, [drop(2), drop(1, color="orange")], [potion(2), sword(1)])
     shabu = player("Shabu", dog.room)
     death.die(dog, random.Random(3))
-    commands.command(shabu, "look in 屍體")
+    commands.command(shabu, "look in corpse")
     text = raw(shabu)
     name = corpse_in(dog.room).contains[1].name
     assert name.endswith("長劍") and name != "長劍"                  # 隨機裝備：名稱接在前面

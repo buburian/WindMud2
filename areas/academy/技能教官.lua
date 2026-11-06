@@ -4,6 +4,6 @@ function on_enter(actor, from)
     local skill = "smash"
     if actor.guild == "spell" then skill = "fireball" end
     me:command("say " .. actor.name .. "，先打 skills 看看你會哪些技能。")
-    me:command("say 放技能打 use 技能 目標，等一下到訓練場試試看：use " .. skill .. " 稻草人。")
+    me:command("say 放技能打 use 技能 目標，等一下到訓練場試試看：use " .. skill .. " dummy。")
   end
 end

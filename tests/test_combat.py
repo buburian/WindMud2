@@ -10,7 +10,7 @@ import pytest
 
 import mud.commands as commands
 from area_helpers import make_area, make_mobile, make_room, write_json
-from mud import combat, damage, fight, save, stats, zones
+from mud import combat, damage, fight, objects, save, stats, zones
 from mud.area import CORPSE_NPC_ITEM_TYPE
 from mud.characters import Position, characters
 from mud.color import colorize
@@ -223,11 +223,96 @@ def test_killing_a_mobile(world):
     # 打死的那一下、死亡訊息、經驗值在同一段，只有一個 prompt
     assert lines[1].startswith("你使用直拳攻擊野狗，")
     assert lines[2:4] == ["野狗已經斷氣，倒在地上死亡了!!", f"你共獲得了【{stats.shown(want_exp)}】點的經驗點數。"]
+    assert lines[4:6] == ["野狗的屍體裝著：", "     空無一物。"]                # 沒開自動拾取：看屍體裡有什麼（照 C 版）
     assert dog not in characters and shabu.fighting is None and shabu.fight is None
     assert [o.item_type for o in zones.world.rooms[102].contents] == [CORPSE_NPC_ITEM_TYPE]
     assert shabu.exp == pytest.approx(want_exp)
-    assert "野狗已經斷氣，倒在地上死亡了!!" in text_of(ming)
+    out = text_of(ming)
+    assert "野狗已經斷氣，倒在地上死亡了!!" in out and "裝著" not in out          # 屍體裡有什麼只給打死牠的人看
     assert ming.exp == 0                                    # 只給打出最後一下的人
+
+
+def stone():
+    o = objects.Obj("石頭", "一顆石頭在這裡。", 13, ["stone", "石頭"])
+    o.take, o.weight = True, 1
+    return o
+
+
+def dog_carrying(n):
+    """身上帶著 n 顆石頭的野狗，一下就死。坑：fixture 的野狗有商店（make_mobile 的每個欄位都有值），店主身上的東西死掉直接消失。"""
+    dog = the_dog()
+    dog.shopkeeper = False
+    dog.carrying = [stone() for _ in range(n)]
+    dog.hp = 0.1
+    return dog
+
+
+def test_autoloot_takes_everything_from_the_corpse(world):
+    shabu, ming = fighter("Shabu"), fighter("Ming")
+    shabu.autoloot = True
+    dog = dog_carrying(2)                                   # 牠身上的東西進屍體
+    one_round((shabu, dog))
+    out = text_of(shabu)
+    lines = out.split("\r\n")
+    # 斷氣、經驗之後接著拿（跟 get all corpse 一樣的訊息），同一段、一個 prompt
+    assert lines[2] == "野狗已經斷氣，倒在地上死亡了!!" and lines[4:6] == ["你把【石頭/stone】從【野狗的屍體/corpse】拿出來。"] * 2
+    assert out.count(prompt_of(shabu)) == 1 and [o.name for o in shabu.carrying] == ["石頭", "石頭"]
+    assert zones.world.rooms[102].contents[0].contains == []
+    assert "Shabu把【石頭/stone】從【野狗的屍體/corpse】拿出來。" in text_of(ming)
+
+
+def test_autoloot_of_an_empty_corpse(world):
+    shabu = fighter("Shabu")
+    shabu.autoloot = True
+    the_dog().hp = 0.1
+    one_round((shabu, the_dog()))
+    assert "在【野狗的屍體/corpse】裡面沒有東西。" in text_of(shabu)
+
+
+def test_autoloot_follows_the_get_rules(world):
+    shabu = fighter("Shabu")
+    shabu.autoloot = True
+    shabu.carrying = [stone() for _ in range(stats.CARRY_COUNT)]   # 拿不動了
+    dog = dog_carrying(1)
+    one_round((shabu, dog))
+    corpse = zones.world.rooms[102].contents[0]
+    assert len(corpse.contains) == 1 and len(shabu.carrying) == stats.CARRY_COUNT
+    got = text_of(shabu)
+    shabu.writer.data = b""
+    async def main():
+        commands.command(shabu, "get all corpse")
+    asyncio.run(main())
+    refusal = text_of(shabu).split("\r\n")[0]
+    assert refusal and refusal in got                        # 跟自己打 get all corpse 一樣的訊息
+
+
+def test_no_looting_from_another_room(world):
+    shabu = fighter("Shabu", room=101)                      # 打死牠的人不在那間房（例如持續扣血扣死）：不能隔空拿
+    shabu.autoloot = True
+    dog = dog_carrying(1)
+
+    class Out:
+        def __init__(self):
+            self.pairs = []
+
+        def tell(self, pairs):
+            self.pairs += pairs
+
+    out = Out()
+    combat.slain(out, shabu, dog)
+    assert shabu.carrying == [] and not any("屍體" in text for _, text in out.pairs)
+
+
+def test_autoloot_after_a_skill_kill(world):
+    shabu = fighter("Shabu")
+    shabu.autoloot = True
+    shabu.skills = ["smash"]
+    dog_carrying(1)
+    async def main():
+        commands.command(shabu, "use smash 野狗")
+    asyncio.run(main())
+    out = text_of(shabu)
+    assert "你把【石頭/stone】從【野狗的屍體/corpse】拿出來。" in out and out.count(prompt_of(shabu)) == 1
 
 
 def test_killing_levels_up(world):

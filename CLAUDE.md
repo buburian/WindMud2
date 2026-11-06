@@ -46,6 +46,7 @@ uv run python -m mud.builder                      # 區域編輯器，瀏覽器�
   `tests/test_give.py` 測 give（給東西、給金幣、店主不收、放不下、1 級不能給金幣、給完存檔、log）。
   `tests/test_scripts.py` 測 Lua 腳本：沙箱（拿不到的名字、碰不到 Python、指令數上限、記憶體）、開機檢查的每一條、10 個觸發時機、每個函式、vars、wait、出錯的提醒
   （wait 用假的 `scripts.schedule`，自己呼叫 `later.run()`；區域檔和 .lua 用 `build()` 寫進 `tmp_path`）。
+  `tests/test_config.py` 測 config（列出、開關、lines 的範圍、存檔）；`tests/test_pager.py` 測分頁（假指令 many 送很多行：每個按鍵、打別的指令、別人的訊息、quit、出錯）。
   `tests/test_academy.py` 用真的 `areas/` 測教學學院：一人一份、一路走到畢業（技能教官照公會教 use、掉落、穿上、`say 畢業`）、學生重新登入和死掉回學院、沒有學院的區域檔時。
   `tests/test_flee.py` 測 flee（DEX 的機率、戰鬥中不能走、成功、失敗要等、關著的門、沒有出口）。
   `tests/test_affects.py` 測身上的效果（覆蓋和疊加、暫時加減屬性、每 3 tick 跳、矮人的堅韌、扣死給誰經驗、時間到、死掉、存檔、score 最下面那段、affect、mstat），自己呼叫 `affects.tick()`。
@@ -128,7 +129,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     **prompt 每個角色自己的**（`ch.prompt()`，使用者選的樣子）：玩家是 `<HP 62/62 MP 25/25 MV 38/38> `，
     現在的值照剩多少變色（超過 2/3 綠、超過 1/3 黃、其他紅，`level_color()`），上限一般顏色；
     沒有屬性的角色（`Character.prompt()`，例如測試直接建的）是 `config.PROMPT` 的 `> `。
-    `online_players()` 是在線的玩家（chat 只找他們；tell 先找他們，找不到才找同房間的生物）。模組的 `send(writer, text)` 給還沒登入時用。
+    `online_players()` 是在線的玩家（chat 只找他們；玩家下 tell 先找他們，找不到才找同房間的生物；
+    **生物下 tell 先找同一間房**（使用者定的：生物的名字是英文，可能跟線上的玩家同名），找不到才找線上的玩家）。模組的 `send(writer, text)` 給還沒登入時用。
   - **屬性**（`stats.py`，玩家角色手冊、設計文件 §2.6、§3.6、§8）：`Race`（6 個，存檔寫代號 human…spirit）、`Guild`（`SWORD = "phys"` 劍之公會、
     `STAFF = "spell"` 杖之公會，代號跟 balance.py 一樣）、`RACE_PRIMARIES`（手冊的種族表）。
     `naked()` 是裸裝次要屬性（0.75 × 參考值 × G(L) × Σ 主屬性 ÷ 公會標準 × 切片；公會用不到的傷害、龍焰抗性是 0），
@@ -149,6 +151,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `tests/test_stats.py` 比對常數，也把 4 等級 × 4 種類 × 7 攻擊 × 3 攻防 × 5 原型全部跟 `area_mob()` 比。`Npc(name, sex, room)` 直接建的（測試）沒有區域檔的資料。
     `spawn(vnum, proto, room, rng, base)` 也存 `npc.drops`（掉落表，`obj_vnum` 用**牠自己那個檔**的 `base` 換算：M 可以放別的檔的生物），
     所以 `resets.mobiles` 的值是 `(area_number, 生物)`。`names()` 是別人指定牠用的名字（keywords；玩家是名字），`characters.find_in_room()` 用它。
+    **生物、物品的 keywords 一律只寫英文**（使用者 2026-11-06 定的；屍體只認 `corpse`）。門的名字、可以細看的東西不算。區域檔檢查還沒擋中文（要擋照區域檔格式的流程，先改手冊）。
     **死掉**（`death.die(npc, killer=)`，照 C 版 raw_kill）：先跑牠的 on_death（腳本，牠被 destroy 了就到此為止）→ 打牠的人和牠停手 → `objects.make_corpse()` → 移出 `characters`（重置的 limit 數不到牠，下次重置再放）。
     imm 的 slay、戰鬥打到 HP 0（`combat.py`）都呼叫它。死亡慘叫（C 版 death_cry）還沒做。
     **玩家死掉**（`death.player_dies()`，使用者選的簡單做法）：打他的人和他停手、`affects.on_death()`、回 `zones.start_room()`、HP 1、站著；不掉東西、不留屍體、不扣經驗。
@@ -165,6 +168,11 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   （`act()` 送給別人時就是呼叫它）。`notify()` 不轉顏色代碼。對方自己的指令還沒跑完（在 `scripts.commanding` 裡）就不補 prompt，見下面「腳本」；
   這時好幾句連在一起不空行（使用者要的，`ch.notified`：上一個送的是 notify；`Player.send()` 設回 False），跟指令自己的訊息之間空一行，
   `apart=True` 是另起一段、前面一定空一行（腳本的 `transfer` 送新房間的畫面）。
+  **`act.blocks`**（使用者要的：一段裡發生的事一起送）：正在收訊息的一段（戰鬥一回合 `Fight.collecting()`、技能那幾下、`affects.tick()` 的 `Messages`）。
+  有的話 `notify()` 放進最上面那一段、那一段結束時每個人送一次，所以打死生物時腳本（on_death）說的話在「斷氣」後面、只有一個 prompt。
+  `round()` 不自己 flush，由 `Fight.tick()` 的 `collecting()` 收（連回合後的 on_fight）。
+  **`act.gathering()`**（使用者要的：旁邊的人也只有一個 prompt）：`command()` 和一串腳本（`scripts.one_chain()`，例如 on_timer）開一段 `act.Block`，
+  送給別人的收起來、結束時每人 notify 一次；已經在收了（戰鬥一回合、外面的指令）就併進外面那段。下指令的那個人不收在 `Block` 裡（照他自己的指令的回覆送）。
 - **指令**（`commands/`）：`__init__.py` 的 `COMMANDS` 是指令表，輸入的字照表的順序找**第一個用它開頭的指令**
   （例如 `c` → chat），表的順序就是縮寫的優先順序。指令依類別分檔：系統類在 `system.py`，戰鬥在 `combat.py`，技能在 `skills.py`。
   加新指令：在類別檔寫 `do_xxx(ch, arg)`（`ch` 是下指令的角色，回傳 `False` 代表斷線），再加進 `COMMANDS`。
@@ -408,9 +416,14 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
       `display_range()`（skills 顯示）：拿主手武器是設計文件的（傷害點數 ＋ 武器下限／上限）× 比率；空手是傷害點數 × 比率 × (1 ∓ `DMG_VAR`)（使用者選的，跟實際一樣）。
       `use()`：`pay()`（扣消耗、`cooldowns[id] = 冷卻`；沒有資源的不扣、冷卻 0 的不設，所以生物也能用這種技能）→
       傷害技能打 `hits` 次（`strike(kind) × ratio` → `land()`，死了就停），**打指令當下就打**（不排進時間軸，平砍照打），最後 `flush(me=ch)`；
-      **增益技能**（`kind` `"buff"`、`target` `"ally"`）走 `buff()`：把 `skill.affect`（`Affect` 的欄位，每次 deepcopy 一份）放到目標身上、送訊息，不開打。
+      **增益技能**（`kind` `"buff"`、`target` `"ally"`）走 `buff()`：把 `make_affect(skill)`（`skill.affect` 是 `Affect` 的欄位，每次 deepcopy 一份；
+      **`source`、`name` 沒寫就用技能的 id、名稱**，使用者定的，不一樣才寫）放到目標身上、送訊息，不開打。
       use 指令對增益技能：沒打名字是自己，打了名字用 `find_in_room()`，只能放玩家（`ready()` 是冷卻、MV／MP、武器的檢查，兩種技能共用）。
       **餽贈**（`gift`，使用者定的，之後教學區的 NPC 送給玩家）：每 3 秒補 HP 上限的 10%、主屬性各 +3，3600 秒，死掉後還在；要用程式加、不扣消耗、沒有冷卻。
+      **打中最低 `MIN_SKILL_DAMAGE` 1 點**（使用者定的，技能不是平砍；失手還是 0）。**持續傷害** `Skill.dot`（火球的燃燒：name、ratio 0.3、jumps 3、hurt 燒傷）：
+      第一發打中、目標沒死就 `dot_affect()`（每 3 tick 跳、共 jumps 次、每跳 ＝ 第一發 × ratio 最低 1，來源是技能 id），
+      走 `affects.pulse()` 的持續扣 HP（護盾、扣死、矮人照舊），`Affect.hurt` 有寫就每跳說「你被【燃燒】燒傷了.(6)」（`combat.damage_tail()` 跟戰鬥訊息共用）。
+      **天護**（`aegis`，使用者定的）：護盾 HP 上限的 120%、10 秒，要用程式加、不扣消耗、沒有冷卻；`skills` 列出時寫「護盾 HP 上限的 120%」（`affects.parts(listing=True)`）。
       **NPC 直接呼叫 `skills.use(npc, SKILLS["gift"], 玩家)` 就能放**（不用學、不用在打架）。`skills` 指令的增益技能：那一行寫持續多久，做什麼放下一行（`system.wrap()`，不超過 79 格）。
       冷卻用 tick 數：世界每個 tick `skills.tick()` 減 1，所以實際等 5～6 秒。
       `weapon_ok()`：有限用武器的技能，主手要拿那種武器（空手不行）；技能那一下用主手的武器。還沒做：學習、技能書、補血、減益、打一群、怪物打架時用技能。
@@ -422,7 +435,10 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `applies`（屬性加減，`stats.add_affects()` 加進 panel：次要屬性照加；**主屬性照 `primary_bundle(公會, 主屬性, 被放的人自己的等級)` 換算**（使用者定的），
     生物沒有公會不算；負重、MP／MV 上限、55 上限只看自己的主屬性）、`periodic`（hp／mp／mv 每 `AFFECT_PULSE_TICKS` 3 加減固定量）、
     `periodic_pct`（每跳一次加減**當時上限**的幾成，例如餽贈的 `{"hp": 0.10}`；扣 HP 的也算矮人的堅韌、也會扣死，`drains_hp()`）、
-    `flags`（`area.AffectFlag`，現在只是記號；`AFFECT_FLAG_NAMES` 跟手冊比對）、`keep_on_death`、`off_message`。
+    `flags`（`area.AffectFlag`，現在只是記號；`AFFECT_FLAG_NAMES` 跟手冊比對）、`keep_on_death`、`off_message`（有寫才用，沒寫是共用的 `affects.off_message()`：「你身上的【名字】消失了。」，使用者要的）、
+    **護盾** `shield_pct`（HP 上限的幾倍，使用者 2026-11-06 定的效果，名字是我取的「護盾」）和 `shield`（還剩幾點，`add()` 照當時的上限算，覆蓋就是回到滿的）。
+    扣 HP 的地方只有兩個，都先 `affects.absorb()`（先放的先扣，扣光的拿掉）：`combat.land()`（平砍、技能；訊息加「（吸收 N）」`ABSORBED`）、
+    `affects.pulse()`（持續扣血）。被打破的訊息 `broken_messages()` 放進同一段。**新增會扣 HP 的地方也要先 absorb**。
     效果變了就 `changed()`：從頭算（玩家 `stats.recompute`、生物 `npcs.recompute`），HP／MP／MV 夾在新上限（`stats.clamp`，上限變高不補）。
     `tick()` 在世界 tick 每個 tick 做（全部角色，副本裡的也是；離線的不在 `characters`，所以時間停住）：`elapsed` ＋1、`ticks` 減 1
     （矮人身上持續扣 HP 的減 `TOUGH_STEP` 2）、`elapsed` 是 3 的倍數就跳、`ticks ≤ 0` 拿掉（跳完才拿掉，60 tick 剛好跳 20 次）。
@@ -474,6 +490,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     **沒寫 `keywords` → 用方向，例如「北方關起來了。」**（C 版沒寫時是顯示 door，我們不照它）。
   - **對面看得到**（使用者要的）：打開、關上（之後的撞開也是）時，對面房間醒著的人收到「南方的木門被打開了。」（`doors.tell_room()`）；
     對面很暗（`Room.dark()`：`RoomFlag.DARK` 而且沒有光源，光源是物品，還沒做）就看不到。上鎖、開鎖對面不知道（照 C 版）。
+    那一句是 `doors.tell_other_side()`，玩家的 open／close 和腳本的 `room:door` 共用（腳本真的打開、關上了才說，使用者要的）。
   - look 的出口：關著的門是紫色 `*北`（照 C 版）；`look 方向` 描述後面加「木門是關著的。」／「是開著的。」。
 - **物品**（`objects.py`，規則在區域製作手冊「屍體」、玩家角色手冊「物品和裝備」）：遊戲裡真的出現的物品：屍體和裡面掉落的、重置 G／O／P 放的、imm 用 `oload` 做的。
   - **容器**：`obj.container`（`area.ContainerFlag`，從 values 第 2 個開始，開關、上鎖改它）、`key`（values 第 3 個，換算跟出口的 key 一樣，`area_number` ＝ 遊戲號碼 − 檔案號碼）、`seal`。屍體的 `container` 是 None，一直開著。
@@ -489,7 +506,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     部位用 `area.wear_slots()` ＋ `equipment.best_slot()`（固定裝備檢查上限也用這兩個，所以是同一個部位）；副手的武器是副手武器。號碼找不到記 log、回傳 None。
   - **`equipment.roll_item()` 照 balance.py 的 `Model.roll_item` 寫，亂數的用法和順序一模一樣**：`tests/test_equipment.py` 用同一個種子比對每個部位、顏色、等級，
     結果要完全一樣（詞綴、名稱）。改它時不能多叫或少叫一次亂數，`AFFIX_WORD` 的順序也不能動（`rng.choice` 照順序挑）。
-  - `make_corpse(npc, rng)`：「野狗的屍體」（`area.CORPSE_NPC_ITEM_TYPE`）、地上「野狗的屍體橫躺在地上。」（後面由 `on_floor()` 接 /corpse，使用者定的）、名字 `corpse 屍體`、`timer` 10～14（照 C 版）；
+  - `make_corpse(npc, rng)`：「野狗的屍體」（`area.CORPSE_NPC_ITEM_TYPE`）、地上「野狗的屍體橫躺在地上。」（後面由 `on_floor()` 接 /corpse，使用者定的）、名字只有 `corpse`（使用者定的：生物、物品的名字一律英文）、`timer` 10～14（照 C 版）；
     `roll_drops()` 每一行各自骰（`tiers` 對不上不骰，萬分之一），物品等級是生物等級、顏色是那一行的。
   - 名字（使用者選的，`short()`）：「測試藥水/potion」。名字裝備照顏色（灰 `{D`、白 `{W`、藍 `{B`、紫 `{M`、橘用暗黃 `{y`），其他亮綠 `{G`；
     `/` 後面是 keywords 裡的英文字，亮青 `{C`（照 C 版），沒有英文字就只有名字。地上那一行（`on_floor()`）：描述亮白，後面接「/英文名字」亮青（`english_tail()`，使用者定的：「一把測試長劍插在地上。/sword」）。區域作者寫的名字不轉顏色代碼（跟生物一樣）。
@@ -531,7 +548,9 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `running` 是正在跑的堆疊，最多 `MAX_DEPTH` 5 層；actor 是主人自己也不跑。**錯誤都在這裡接住**，不往外丟。
     `commanding` 是正在打指令的人的堆疊（`command()` 推進來）：`act.notify()` 送給還在裡面的人時當作指令的回覆、不補 prompt
     （生物的腳本在他說話的當下回話，才不會有兩個 prompt；指令跑完 `command()` 補一個）。
+  - **`docs/Lua任務教學.md`**（使用者要的，從手冊獨立出來，只講怎麼做任務）：例子都實際跑過。改了腳本的函式、訊息、規則時，教學裡的例子和畫面也要跟著對。
   - `script_api.py`：給腳本的名字和函式（`me`、`room`、`actor` 的欄位和方法、`random`、`hour`、vars、號碼換算、`transfer`、`load_mob`、`mob:use`…）。
+    `give_item`：主人是生物、給的是別人時，訊息跟 give 一樣（`items.GIVEN_TO_YOU`、`GIVEN_SEEN`，使用者要的）；房間的腳本不說話。
     判定「算腳本出錯」就丟 `ScriptError`。玩家的 vars 在 `player.vars[區域檔名][名字]`（存檔），生物、房間的在自己的 `vars`。
   - 觸發的地方：`commands.command()`（on_command，`quit` 不觸發）、`system.move()`（on_enter）、`do_say()`（**只有玩家說的**，使用者選的：生物之間對話用 tell）、`do_tell()`（找不到線上玩家才找同房間的生物，on_tell）、
     `items.do_give()`／`give_gold()`、`death.die(npc, killer=)`（on_death，倒下之前）、`Fight.tick()`（on_fight）、`npcs.spawn()`（on_born）、
@@ -555,6 +574,17 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
 - **紀錄**（`log.py`）：`__main__` 啟動時呼叫 `setup()`。畫面用 rich 的 `RichHandler`，同時用 `DailyFileHandler` 存到
   `logs/日期_編號.log`（例如 `2026-10-30_001.log`）：換日從 001 重新編號，超過 5MB 換下一個編號，只留最新 30 個檔。
   檔名格式不符的檔案不會被刪。
+- **設定和分頁**（規則在玩家角色手冊「設定」，使用者 2026-11-06 定的，照 C 版 do_config、show_string）：
+  - `config`（`commands/system.py`，`co`）：開關是一張表 `CONFIG_TOGGLES`（名稱、Player 的欄位、說明），加開關只要加一筆；`config lines N` 是分頁每頁幾行
+    （`config.PAGE_LINES` 20、`PAGE_LINES_MIN` 19、`PAGE_LINES_MAX` 60）。`Player.autoloot`、`page_lines` 存檔。不做單獨的 `autoloot` 指令（會搶 imm 指令 `a` 的縮寫）。
+  - 自動拾取在 `combat.slain()` 的 `loot()`：打死生物的玩家在同一間房（`death.die()` 回傳屍體），開了就 `items.take_all()`、沒開就 `objects.inside()`（look in 也用它）；
+    訊息用 `inventory.Lines.pairs()` 放進同一段（`out.tell`），所以在斷氣、經驗後面、只有一個 prompt。
+  - 分頁在 `pager.py`：`command()` 先給 `pager.key()`（分頁中的按鍵），再用 `pager.collect()` 把送給這個玩家的字收在 `ch.capture`（`Player.send()` 看它），
+    跑完 `pager.show()` 決定整段送還是送一頁、補 prompt（分頁中 `Player.prompt()` 是分頁提示）。指令本身在 `run()`。
+    坑：`collect()` 出錯時也要把收起來的字送出去（`finally`）；quit 回傳 False 時 `command()` 自己把字送出去、不補 prompt；
+    重複登入接手時 `login.enter()` 清掉舊連線的 `pages`（新連線沒看過前面那幾頁）。
+  - 坑：玩家打的數字用 `isdecimal()` 檢查再 `int()`，不要用 `isdigit()`：Big5 打得出來的「①…⑨」「⑴…⑼」isdigit 認得、int 不認得，
+    會丟錯讓玩家斷線（`handle()` 只接 OSError）。全部的地方都換過了，有測試（`tests/test_digits.py`）。
 - `send()` 只寫進 buffer，`drain()` 在 `handle()` 每處理完一批 read 才做一次。
 
 ## 必須守住的規則
@@ -565,7 +595,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
 - Big5 一個中文字 2 bytes（第一碼 ≥ `0x81`）。任何截斷、退格都要以「整個字」為單位（參考 `_backspace()`）。
 - 送給別人的訊息用 `act()`，不要自己 `send()`：`act()` 會包成 `"\n...\n\n" + 對方的 prompt()`（先換行避免接在對方 prompt 後面，
   說完空一行再補回對方的 prompt）；送給自己只加換行，prompt 由 `command()` 補。
-  已知限制：一個指令對同一個別人送兩次 `act()`，對方會看到兩個 prompt。要送多行，就放在同一段文字裡。
+  一個指令對同一個別人送好幾次 `act()` 沒關係：`command()` 用 `act.gathering()` 把送給別人的收成一段，指令跑完每人送一次、一個 prompt（使用者要的）。
 - 協商：一連上就送 `START`（`IAC DO BINARY`）請客戶端用 8-bit 傳。坑：沒談好 BINARY，macOS 的 telnet 會把每個 byte 的
   第 8 bit 拿掉，中文全壞（加 `-8` 也一樣）。對方回 `WILL BINARY` 是答應，不再回覆。
   其他一律拒絕：對方 WILL 回 DONT、DO 回 WONT，同一組 (verb, option) 只回一次；對方 WONT/DONT 不回，避免兩邊無限互回。

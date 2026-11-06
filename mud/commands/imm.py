@@ -33,7 +33,7 @@ def do_advance(ch, arg):
     if not victim.panel:                    # 沒有屬性（測試直接建的玩家）
         ch.send("這個玩家沒有屬性，不能改等級。\n")
         return
-    if not level.isdigit() or not 1 <= int(level) <= stats.MAX_LEVEL:
+    if not level.isdecimal() or not 1 <= int(level) <= stats.MAX_LEVEL:
         ch.send(f"等級要是 1～{stats.MAX_LEVEL}。\n")
         return
     level, old = int(level), victim.level
@@ -86,7 +86,7 @@ def do_oload(ch, arg):
     撿得起來放進自己的背包，撿不起來放地上（同房間的人看得到）。不檢查負重、件數。
     """
     words = arg.split()
-    if not words or not words[0].isdigit():
+    if not words or not words[0].isdecimal():
         ch.send("用法：oload <號碼> [等級] [顏色]\n")
         return
     vnum = int(words[0])
@@ -95,7 +95,7 @@ def do_oload(ch, arg):
         return
     level = ch.level
     if len(words) > 1:
-        if not words[1].isdigit() or not 1 <= int(words[1]) <= stats.MAX_LEVEL:
+        if not words[1].isdecimal() or not 1 <= int(words[1]) <= stats.MAX_LEVEL:
             ch.send(f"等級要寫 1～{stats.MAX_LEVEL}。\n")
             return
         level = int(words[1])
@@ -121,7 +121,7 @@ def do_ostat(ch, arg):
     if not words:
         ch.send("用法：ostat <名字或號碼>\n")
         return
-    if words[0].isdigit():
+    if words[0].isdecimal():
         proto = objects.protos.get(int(words[0]))
         ch.send(proto_text(int(words[0]), proto) if proto else "沒有這個號碼的物品。\n")
         return
@@ -282,6 +282,7 @@ TEST_EFFECTS = {
                   off_message="你身上的【測試祝福】沒了。"),
     "blind": dict(source="test_blind", name="測試失明", duration=30, flags=AffectFlag.BLIND,
                   off_message="你又看得見了。"),
+    "shield": dict(source="test_shield", name="測試護盾", duration=10, shield_pct=1.2),
 }
 AFFECT_USAGE = f"用法：affect <名字> <{'、'.join([*TEST_EFFECTS, 'clear'])}>"
 

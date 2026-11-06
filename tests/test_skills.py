@@ -19,6 +19,7 @@ from mud import affects, combat, damage, death, fight, save, skills, stats, zone
 from mud.area import CORPSE_NPC_ITEM_TYPE, MobTier, WeaponKind
 from mud.characters import Position, characters
 from mud.commands import skills as skill_commands
+from mud.color import colorize
 from mud.config import ENCODING
 from mud.npcs import Npc
 from mud.players import Player
@@ -753,3 +754,161 @@ def test_gift_in_score_wraps_within_79(world):
         "                  知識 +3、體質 +3、敏捷 +3",
     ]
     assert max(len(line.encode(ENCODING)) for line in lines) <= 79
+
+
+# ---- 天護（使用者定的）：護盾，HP 上限的 120%、10 秒；要用程式加，不扣消耗、沒有冷卻 ----
+
+AEGIS = skills.SKILLS["aegis"]
+
+
+def test_aegis_data():
+    assert (AEGIS.name, AEGIS.kind, AEGIS.target, AEGIS.guild, AEGIS.starter, AEGIS.imm_only, AEGIS.cooldown) == \
+        ("天護", "buff", "ally", None, (), False, 0)
+    assert skills.cost(AEGIS, 50) == 0
+    a = AEGIS.affect
+    assert (a["duration"], a["shield_pct"], a.get("keep_on_death", False)) == (10, 1.2, False)
+
+
+def test_aegis_is_learned_with_sset(world):
+    shabu = fighter("Shabu")
+    assert "aegis" not in shabu.skills                                  # 一開始不會
+    imm = fighter("Imm")
+    imm.imm = True
+    say(imm, "sset shabu aegis")
+    assert "aegis" in shabu.skills
+
+
+def test_aegis_puts_a_shield_on_yourself_or_others(world):
+    shabu, hua = fighter("Shabu"), fighter("Hua")
+    skills.learn(shabu, AEGIS)
+    assert say(shabu, "use aegis") == f"你對自己施展了【天護】。\r\n\r\n{prompt_of(shabu)}"
+    a = shabu.affects[0]
+    assert (a.name, a.ticks, a.shield) == ("天護", 10, pytest.approx(shabu.panel["hp"] * 1.2))
+    assert shabu.cooldowns == {} and shabu.mv == shabu.panel["mv"] and shabu.fighting is None   # 不扣、沒有冷卻、不開打
+    raw(hua)
+    assert say(shabu, "use aegis hua") == f"你對Hua施展了【天護】。\r\n\r\n{prompt_of(shabu)}"
+    assert hua.affects[0].shield == pytest.approx(hua.panel["hp"] * 1.2)
+
+
+def test_aegis_absorbs_and_casting_again_refills(world):
+    shabu = fighter("Shabu")
+    skills.learn(shabu, AEGIS)
+    say(shabu, "use aegis")
+    affects.absorb(shabu, 30.0)
+    say(shabu, "use aegis")                                             # 再放一次：回到滿的
+    assert len(shabu.affects) == 1 and shabu.affects[0].shield == pytest.approx(shabu.panel["hp"] * 1.2)
+
+
+def test_skills_lists_the_aegis_shield(world):
+    shabu = fighter("Shabu")
+    skills.learn(shabu, AEGIS)
+    out = say(shabu, "skills")
+    assert "天護 aegis  持續 10 秒  消耗 0  冷卻 0 秒" in out and "護盾 HP 上限的 120%" in out and "還剩" not in out
+
+
+def test_effects_take_the_skills_name_unless_written():
+    # 使用者定的：效果的 source、name 沒寫就用技能的 id、名稱；寫了照寫的（例如火球留下「燃燒」）
+    a = skills.make_affect(AEGIS)
+    assert (a.source, a.name) == ("aegis", "天護")
+    burn = skills.Skill("fireball2", "火球", None, "buff", "ally", 0, 0.0, 0, 0.0,
+                        affect=dict(source="burn", name="燃燒", duration=5))
+    a = skills.make_affect(burn)
+    assert (a.source, a.name) == ("burn", "燃燒")
+    assert skills.make_affect(AEGIS) is not skills.make_affect(AEGIS) and "source" not in AEGIS.affect   # 每次一份新的，不改技能的資料
+
+
+# ---- 技能打中最低 1 點、火球的燃燒（使用者 2026-11-06 定的） ----
+
+def strikes(monkeypatch, dmg):
+    """damage.strike() 一律回傳 (dmg, 沒爆擊)：0 是失手。"""
+    monkeypatch.setattr(damage, "strike", lambda *args, **kwargs: (dmg, False))
+
+
+def mage(name="Shabu"):
+    return fighter(name, guild=stats.Guild.STAFF)
+
+
+def test_skill_hits_do_at_least_1(world, monkeypatch):
+    strikes(monkeypatch, 0.1)                                           # 打中但很小：0.1 × 1.2 → 1
+    shabu, dog = fighter("Shabu"), mobile("野狗")
+    before = dog.hp
+    out = in_fight([], lambda: say(shabu, "use smash dog"))
+    assert dog.hp == pytest.approx(before - 1) and "對它造成輕微的擦傷.(1)" in out
+
+
+def test_skill_misses_still_do_0_and_leave_no_burn(world, monkeypatch):
+    strikes(monkeypatch, 0.0)
+    shabu, dog = mage(), mobile("野狗")
+    before = dog.hp
+    out = in_fight([], lambda: say(shabu, "use fireball dog"))
+    assert dog.hp == before and "但是失手了.(0)" in out and dog.affects == []
+
+
+def test_fireball_burns_3_times(world, monkeypatch):
+    strikes(monkeypatch, 10.0)                                          # 第一發 10 × 1.2 ＝ 12，每跳 12 × 0.3 ＝ 3.6
+    shabu, dog = mage(), mobile("野狗")
+    in_fight([], lambda: say(shabu, "use fireball dog"))
+    burn = dog.affects[0]
+    assert (burn.source, burn.name, burn.duration, burn.periodic) == ("fireball", "燃燒", 9, {"hp": -12 * 0.3})
+    after_hit = dog.hp
+    raw(shabu)
+    affects.tick(), affects.tick()
+    assert dog.hp == after_hit                                          # 放下去後 3 秒才第一跳
+    affects.tick()
+    assert dog.hp == pytest.approx(after_hit - 3.6) and text_of(shabu) == "\r\n野狗被【燃燒】燒傷了.(4)\r\n\r\n" + prompt_of(shabu)
+    for _ in range(6):
+        affects.tick()
+    assert dog.hp == pytest.approx(after_hit - 3 * 3.6) and dog.affects == []   # 3、6、9 秒各一次，燒完拿掉
+
+
+def test_each_burn_does_at_least_1(world, monkeypatch):
+    strikes(monkeypatch, 1.0)                                           # 第一發 1.2，每跳 0.36 → 1
+    shabu, dog = mage(), mobile("野狗")
+    in_fight([], lambda: say(shabu, "use fireball dog"))
+    assert dog.affects[0].periodic == {"hp": -1}
+
+
+def test_fireball_again_burns_again(world, monkeypatch):
+    strikes(monkeypatch, 10.0)
+    shabu, dog = mage(), mobile("野狗")
+    shabu.imm = True                                                    # imm 不用等冷卻
+    in_fight([], lambda: say(shabu, "use fireball dog"))
+    for _ in range(4):
+        affects.tick()
+    in_fight([], lambda: say(shabu, "use fireball dog"))
+    assert len(dog.affects) == 1 and dog.affects[0].ticks == 9          # 重新燒 3 次
+
+
+def test_no_burn_when_the_first_hit_kills(world, monkeypatch):
+    strikes(monkeypatch, 10.0)
+    shabu, dog = mage(), mobile("野狗")
+    dog.hp = 1.0
+    in_fight([], lambda: say(shabu, "use fireball dog"))
+    assert dog not in characters and dog.affects == []                  # 打死了：不留燃燒
+
+
+def test_burns_are_heard_by_the_burned_and_hit_the_shield_first():
+    p = Player("Ming", FakeWriter(), None)
+    p.race, p.guild = stats.Race.HUMAN, stats.Guild.SWORD
+    p.primaries = dict(stats.RACE_PRIMARIES[p.race])
+    p.trained = {k: 0 for k in stats.PRIMARY_KEYS}
+    stats.set_level(p, 1)
+    characters.append(p)
+    try:
+        affects.add(p, affects.Affect("aegis", "天護", 30, shield_pct=4 / p.panel["hp"]))   # 4 點的護盾
+        affects.add(p, affects.Affect("fireball", "燃燒", 9, periodic={"hp": -6.0}, hurt="燒傷"))
+        top = p.hp
+        raw(p)
+        for _ in range(3):
+            affects.tick()
+        got = raw(p)
+        out = re.sub(r"\x1b\[[0-9;]*m", "", got)
+        assert "你被【燃燒】燒傷了.(6)（吸收 4）" in out and "你的【天護】被打破了。" in out and p.hp == pytest.approx(top - 2)
+        assert colorize("{C你被【燃燒】燒傷了{x") in got                 # 被燒的那句亮青（跟被打一樣）
+    finally:
+        characters.clear()
+
+
+def test_skills_lists_the_burn(world):
+    out = say(mage(), "skills")
+    assert "火球 fireball" in out and "    燃燒：每 3 秒 第一發的 30%，3 次" in out

@@ -51,6 +51,10 @@ class Lines:
         for reader, text in compose(fmt, self.ch, vch, t=t, T=T, to=to):
             self.by.setdefault(reader, []).append(text)
 
+    def pairs(self):
+        """收起來的訊息，寫成 act.compose() 那種 [(讀的人, 文字)]：要放進別的一段一起送時用（例如戰鬥那一回合的 Fight.tell）。"""
+        return [(reader, text) for reader, lines in self.by.items() for text in lines]
+
     def send(self):
         for reader, lines in self.by.items():
             text = "\n".join(lines)

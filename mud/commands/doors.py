@@ -4,7 +4,7 @@
 """
 from .. import doors, objects
 from ..act import TO_CHAR, TO_ROOM, act
-from ..area import DIRECTIONS, REVERSE, ContainerFlag, DoorState
+from ..area import DIRECTIONS, ContainerFlag, DoorState
 
 
 def has_key(ch, vnum):
@@ -74,8 +74,7 @@ def do_open(ch, arg):
     else:
         to, back = doors.set_state(ch.room, d, DoorState.OPEN)
         done(ch, "$n打開了$t。", door)
-        if back is not None:
-            doors.tell_room(to, f"{DIRECTIONS[REVERSE[d]]}方的{back.name}被打開了。")
+        doors.tell_other_side(d, to, back, opened=True)
 
 
 def do_close(ch, arg):
@@ -94,8 +93,7 @@ def do_close(ch, arg):
     else:
         to, back = doors.set_state(ch.room, d, DoorState.CLOSED)
         done(ch, "$n關上了$t。", door)
-        if back is not None:
-            doors.tell_room(to, f"{DIRECTIONS[REVERSE[d]]}方的{back.name}被關起來了。")
+        doors.tell_other_side(d, to, back, opened=False)
 
 
 def do_lock(ch, arg):

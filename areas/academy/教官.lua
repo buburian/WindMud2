@@ -5,7 +5,7 @@ function on_enter(actor, from)
     me:use("gift", actor)
     if not actor:has_item(2) and not actor:wears_item(2) then   -- 已經有了就不再給（來回走才不會拿到一堆）
       actor:give_item(2, 1, "purple")
-      me:command("say 這把長劍給你，打 wear 長劍 拿在手上。")
+      me:command("say 這把長劍給你，打 wear sword 拿在手上。")
     end
     me:command("say 去北邊的訓練場，把稻草人打倒吧。")
   end

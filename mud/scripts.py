@@ -14,7 +14,7 @@ import logging
 import math
 import time
 
-from . import lua
+from . import act, lua
 from .characters import characters
 
 log = logging.getLogger(__name__)
@@ -136,7 +136,8 @@ def one_chain():
         chain.clear()
     outer += 1
     try:
-        yield
+        with act.gathering():               # 一串送給別人的訊息合成一段（不是指令引起的，例如 on_timer；指令裡的併進指令那段）
+            yield
     finally:
         outer -= 1
 

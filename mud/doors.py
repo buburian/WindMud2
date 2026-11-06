@@ -3,7 +3,7 @@
 門兩邊都要寫（check_files() 會查），兩邊各是一個 area.Door；開、關、鎖的時候兩邊一起變（照 C 版）。
 """
 from .act import notify
-from .area import REVERSE
+from .area import DIRECTIONS, REVERSE
 from .characters import Position, characters
 
 
@@ -28,6 +28,15 @@ def set_state(room, direction, state):
     if back is not None:
         back.set(state)
     return to, back
+
+
+def tell_other_side(direction, to, back, opened):
+    """門被打開、關上以後，對面的人看到「南方的木門被打開了。」（玩家的 open、close 和腳本的 room:door 共用）。
+
+    to、back 是 set_state() 回傳的對面；沒有對面就什麼都不做。上鎖、開鎖對面不知道（照 C 版），不要呼叫它。
+    """
+    if back is not None:
+        tell_room(to, f"{DIRECTIONS[REVERSE[direction]]}方的{back.name}被{'打開' if opened else '關起來'}了。")
 
 
 def tell_room(room, text):

@@ -10,11 +10,12 @@
 一回合的訊息先放在 messages，回合結束時每個人只送一次（一下一個 notify 會冒出好幾個 prompt）。
 """
 import asyncio
+import contextlib
 import heapq
 import itertools
 import logging
 
-from . import combat, damage, scripts       # 坑：combat 會 import 回來，要用「模組.名字」，不能 from .combat import hit
+from . import act, combat, damage, scripts  # 坑：combat 會 import 回來，要用「模組.名字」，不能 from .combat import hit
 from .act import notify
 from .characters import Position, characters
 from .clock import cancel, every
@@ -50,15 +51,32 @@ class Fight:
         """一個 tick：每回合的第一個 tick 打一輪，其他 tick 停（打一輪、停一秒）。回傳 False 代表這場結束了。"""
         self.ticks += 1
         if (self.ticks - 1) % ROUND_TICKS == 0:
-            try:
-                self.round()
-            except Exception:
-                log.exception("戰鬥出錯，結束這一場")
-                return False
-            for ch in list(self.members):   # 腳本的 on_fight(target)：每回合打完以後，還在打的生物（出錯 scripts 自己接住）
-                if ch.fight is self and ch.fighting is not None and scripts.has(ch, "on_fight"):
-                    scripts.fire_owner(ch, "on_fight", ch.fighting, ch.fighting)
+            with self.collecting():         # 這一回合打的、腳本說的話（on_death、on_fight）合成一段
+                try:
+                    self.round()
+                except Exception:
+                    log.exception("戰鬥出錯，結束這一場")
+                    return False
+                for ch in list(self.members):   # 腳本的 on_fight(target)：每回合打完以後，還在打的生物（出錯 scripts 自己接住）
+                    if ch.fight is self and ch.fighting is not None and scripts.has(ch, "on_fight"):
+                        scripts.fire_owner(ch, "on_fight", ch.fighting, ch.fighting)
         return bool(self.members)
+
+    @contextlib.contextmanager
+    def collecting(self, me=None):
+        """這一段的訊息先收在 messages（打的訊息 tell()、別人送的 act.notify() 也放進來），結束時每個人送一次（flush）。
+
+        me：下指令的人（技能），他那段當作指令的回覆。已經在收這一場了（例如 on_fight 的腳本讓生物用技能）就不再收一層，由外面那層送。
+        """
+        if self in act.blocks:
+            yield
+            return
+        act.blocks.append(self)
+        try:
+            yield
+        finally:
+            act.blocks.remove(self)
+            self.flush(me)
 
     def join(self, ch):
         """ch 加入這一場：每隻手的第一下排在現在（開打的兩個人都是 0）。"""
@@ -85,31 +103,28 @@ class Fight:
         """一輪：這一回合（從 ticks − 1 起 ROUND_TICKS 個 tick）結束前的出手，照時間依序打出來。
 
         同一時間：先加入的先打（開打的人比還手的人先），同一個人主手先、副手後。
-        這一回合的訊息打完才送（flush），每個人只收到一段、一個 prompt。
+        這一回合的訊息由 tick() 的 collecting() 收，回合結束才送，每個人只收到一段、一個 prompt。
         """
         end_time = self.ticks - 1 + ROUND_TICKS
-        try:
-            while self.queue and self.queue[0][0] < end_time:
-                t, seq, hand, ch = heapq.heappop(self.queue)
-                if ch.fight is not self or self.joined.get(ch) != seq:
-                    continue                # 已經停手，或停手後又加入了：這一筆作廢
-                victim = ch.fighting
-                if victim not in characters or victim.room is not ch.room:
-                    stop_fighting(ch)       # 對手離開遊戲（例如死了）、或不在同一間房了
-                    continue
-                if victim.fight is not self:
-                    start_fight(ch, victim)     # 對手停了手又被打：拉回這一場（在別場就合併），C 版也是這樣
-                    if ch.fight is not self:    # 這一場併進先開的那場了，剩下的由那場打
-                        return
-                hands = attacks(ch)
-                if hand >= len(hands):          # 打架中脫掉了副手武器：這隻手不打了（要在 hit() 前面，不然會用空手多打一下）
-                    self.armed[ch] = min(self.armed.get(ch, 0), hand)
-                    continue
-                hit(ch, victim, hand)
-                # 坑：浮點數一直加會有誤差（1.6 加三次是 4.800000000000001），剛好在回合邊界的出手會排錯回合，所以取到小數 9 位
-                heapq.heappush(self.queue, (round(t + ROUND_TICKS / attacks(ch)[hand], 9), seq, hand, ch))
-        finally:
-            self.flush()
+        while self.queue and self.queue[0][0] < end_time:
+            t, seq, hand, ch = heapq.heappop(self.queue)
+            if ch.fight is not self or self.joined.get(ch) != seq:
+                continue                # 已經停手，或停手後又加入了：這一筆作廢
+            victim = ch.fighting
+            if victim not in characters or victim.room is not ch.room:
+                stop_fighting(ch)       # 對手離開遊戲（例如死了）、或不在同一間房了
+                continue
+            if victim.fight is not self:
+                start_fight(ch, victim)     # 對手停了手又被打：拉回這一場（在別場就合併），C 版也是這樣
+                if ch.fight is not self:    # 這一場併進先開的那場了，剩下的由那場打
+                    return
+            hands = attacks(ch)
+            if hand >= len(hands):          # 打架中脫掉了副手武器：這隻手不打了（要在 hit() 前面，不然會用空手多打一下）
+                self.armed[ch] = min(self.armed.get(ch, 0), hand)
+                continue
+            hit(ch, victim, hand)
+            # 坑：浮點數一直加會有誤差（1.6 加三次是 4.800000000000001），剛好在回合邊界的出手會排錯回合，所以取到小數 9 位
+            heapq.heappush(self.queue, (round(t + ROUND_TICKS / attacks(ch)[hand], 9), seq, hand, ch))
 
     def tell(self, pairs):
         """把 act.compose() 算好的 [(讀的人, 文字)] 放進這一回合的訊息。"""

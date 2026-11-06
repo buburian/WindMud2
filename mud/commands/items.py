@@ -74,7 +74,7 @@ def get_from_container(ch, name, where, out):
         out.add("【$t】關起來了。", t=objects.short(container))       # 照 C 版
         return
     if is_all(name):
-        take_all(ch, container.contains, container, out, "在【$t】裡面沒有東西。")
+        take_all(ch, container.contains, container, out, EMPTY_CONTAINER)
         return
     obj = objects.find(container.contains, name)
     if obj is None:
@@ -83,6 +83,9 @@ def get_from_container(ch, name, where, out):
         out.add("你不能拿起這樣東西。")
     elif inventory.room_for(ch, obj, out):
         pick_up(ch, obj, container.contains, container, out)
+
+
+EMPTY_CONTAINER = "在【$t】裡面沒有東西。"   # get all 容器：沒有拿得起來的（自動拾取也用）
 
 
 def take_all(ch, source, container, out, nothing):
@@ -173,13 +176,17 @@ def do_give(ch, arg):
         return
     ch.carrying.remove(obj)
     victim.carrying.insert(0, obj)
-    out.add("$n將【$t】拿給$N。", TO_NOTVICT, t=name, vch=victim)
-    out.add("$n把【$t】拿給你。", TO_VICT, t=name, vch=victim)
+    out.add(GIVEN_SEEN, TO_NOTVICT, t=name, vch=victim)
+    out.add(GIVEN_TO_YOU, TO_VICT, t=name, vch=victim)
     out.add("你把【$t】拿給$N。", t=name, vch=victim)
     out.send()
     keep(ch)
     if isinstance(victim, Npc):             # 腳本的 on_give(actor, item, gold)：給完以後
         scripts.fire_owner(victim, "on_give", ch, ch, Vnum(obj.vnum), 0)
+
+
+GIVEN_TO_YOU = "$n把【$t】拿給你。"           # 給東西：收到的人看到的（照 C 版；腳本的 give_item 也用，使用者要的）
+GIVEN_SEEN = "$n將【$t】拿給$N。"           # 給東西：旁邊的人看到的
 
 
 def give_gold(ch, words):

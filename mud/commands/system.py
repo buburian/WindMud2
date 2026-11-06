@@ -7,7 +7,7 @@ from ..act import TO_CHAR, TO_ROOM, TO_VICT, act
 from ..area import DIRECTIONS, REVERSE, MobTier
 from ..characters import SEX_FEMALE, SEX_MALE, Position, arrive, characters, find_in_room, in_room
 from ..color import colorize
-from ..config import ENCODING
+from ..config import ENCODING, PAGE_LINES, PAGE_LINES_MAX, PAGE_LINES_MIN
 from ..npcs import Npc
 from ..players import online_players
 
@@ -55,9 +55,7 @@ def look_in(ch, name):
     if obj.closed():
         ch.send("它是蓋起來的。\n")             # 照 C 版
         return
-    # 每件一行、前面空 5 格（照 C 版；C 版會把一樣的合成「( 2) 」，先不做）
-    inside = "".join(f"     {objects.short(o)}\n" for o in obj.contains) or "     空無一物。\n"
-    ch.send(f"{obj.name}裝著：\n{inside}")
+    ch.send(objects.inside(obj))
 
 
 def block(text):
@@ -173,15 +171,19 @@ def do_tell(ch, arg):
     if not target or not msg:
         ch.send("你想要告訴誰些什麼呢？\n")
         return
-    victim = next((p for p in online_players() if p.name.lower() == target.lower()), None)
+    # 玩家下 tell：先找線上的玩家，找不到才找同房間的生物（使用者選的）。
+    # 生物下 tell：先找同一間房（使用者定的：生物的名字是英文，可能跟線上的玩家同名），找不到才找線上的玩家
+    victim = find_in_room(ch, target) if isinstance(ch, Npc) else None
     if victim is None:
-        # 線上的玩家找不到，才找同房間的生物（使用者選的）：tell 生物會觸發牠的 on_tell
-        npc = find_in_room(ch, target)
-        if isinstance(npc, Npc):
-            act("{G你告訴$N：$t{x", ch, vch=npc, t=msg, to=TO_CHAR)
-            scripts.fire_owner(npc, "on_tell", ch, ch, msg)
+        victim = next((p for p in online_players() if p.name.lower() == target.lower()), None)
+    if victim is None:
+        victim = find_in_room(ch, target)
+        if not isinstance(victim, Npc):
+            ch.send("沒有找到你想說話的對象。\n")
             return
-        ch.send("沒有找到你想說話的對象。\n")
+    if isinstance(victim, Npc):             # tell 生物：觸發牠的 on_tell
+        act("{G你告訴$N：$t{x", ch, vch=victim, t=msg, to=TO_CHAR)
+        scripts.fire_owner(victim, "on_tell", ch, ch, msg)
         return
     tell(ch, victim, msg)
 
@@ -359,7 +361,7 @@ def do_train(ch, arg):
         ch.send("要加哪一項？str int wis con dex（或力量、智慧、知識、體質、敏捷）\n")
         return
     amount = amount.strip() or "1"
-    if not amount.isdigit() or int(amount) < 1:
+    if not amount.isdecimal() or int(amount) < 1:
         ch.send("點數要寫 1 以上的整數。\n")
         return
     n, room = int(amount), stats.PRIMARY_CAP - ch.primaries[key]
@@ -443,6 +445,69 @@ def do_who(ch, arg):
         lines.append(" [" + info + "] {W" + p.name + "{x" + ("{M（imm）{x" if p.imm else ""))
     lines.append(f"共 {len(players)} 人。")
     ch.send(colorize("\n".join(lines)) + "\n")
+
+
+# ---- config：設定（玩家角色手冊「設定」，訊息照 C 版 do_config、do_pagelen）----
+
+# 開關：(名稱, Player 的欄位, 開的說明, 關的說明)。之後加開關只要加一筆（使用者要的）
+CONFIG_TOGGLES = [
+    ("autoloot", "autoloot", "你將會自動搜刮屍體物品。", "你放棄自動搜刮屍體物品。"),
+]
+CONFIG_NAME_WIDTH = 9                       # 「[+AUTOLOOT ]」名稱那格的寬度（照 C 版）
+
+
+def do_config(ch, arg):
+    """config：列出設定；config +名稱、-名稱：開、關；config lines 數字：分頁每頁幾行。什麼姿勢都能用（照 C 版）。"""
+    if not hasattr(ch, "page_lines"):       # 生物沒有設定
+        ch.send("你沒有可以設定的東西。\n")
+        return
+    words = arg.split()
+    if not words:
+        ch.send(config_list(ch))
+    elif words[0].lower() == "lines":
+        set_page_lines(ch, words[1:])
+    elif words[0][0] not in "+-":
+        ch.send("想要開啟或關閉什麼選項?\n")
+    else:
+        on, name = words[0][0] == "+", words[0][1:].lower()
+        toggle = next((t for t in CONFIG_TOGGLES if t[0] == name), None)
+        if toggle is None:
+            ch.send("有這個選項嗎？\n")
+            return
+        setattr(ch, toggle[1], on)
+        ch.send(f"{name.capitalize()} 已設定成{'開啟' if on else '關閉'}。\n")
+
+
+def config_list(ch):
+    """照 C 版：標題亮紫；開的亮青、名稱大寫帶 +，關的暗青、小寫帶 -；最後一行是分頁。"""
+    lines = ["{M[ 關鍵字   ] 選項說明{x"]
+    for name, field, on, off in CONFIG_TOGGLES:
+        if getattr(ch, field):
+            lines.append("{C[+" + name.upper().ljust(CONFIG_NAME_WIDTH) + "] " + on + "{x")
+        else:
+            lines.append("{c[-" + name.ljust(CONFIG_NAME_WIDTH) + "] " + off + "{x")
+    lines.append("{C[ LINES " + str(ch.page_lines).ljust(2) + " ] 每頁 " + str(ch.page_lines)
+                 + f" 行暫停一次（config lines 數字，{PAGE_LINES_MIN}～{PAGE_LINES_MAX}）。" + "{x")
+    return colorize("\n".join(lines) + "\n")
+
+
+def set_page_lines(ch, words):
+    """config lines [數字]：不打數字是預設的 PAGE_LINES（照 C 版 pagelength）；太少不改、太多設成最多。"""
+    if not words:
+        n = PAGE_LINES
+    elif not words[0].isdecimal():          # 坑：不能用 isdigit()，「①」這種它認得、int() 卻不認得，會丟錯讓玩家斷線
+        ch.send("要打數字，例如 config lines 30。\n")
+        return
+    else:
+        n = int(words[0])
+    if n < PAGE_LINES_MIN:
+        ch.send(f"一頁不允許少於【{PAGE_LINES_MIN}】行。\n")
+    elif n > PAGE_LINES_MAX:
+        ch.page_lines = PAGE_LINES_MAX
+        ch.send(f"現在應該沒有螢幕有超過【{PAGE_LINES_MAX}】行的吧!!\n")
+    else:
+        ch.page_lines = n
+        ch.send(f"每頁每【{n}】行暫停一次。\n")
 
 
 def do_save(ch, arg):

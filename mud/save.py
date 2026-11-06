@@ -11,7 +11,7 @@ import secrets
 from pathlib import Path
 
 from . import affects, objects, skills, stats, zones
-from .config import PLAYER_DIR
+from .config import PAGE_LINES, PLAYER_DIR
 from .players import Player
 
 SCRYPT = {"n": 2 ** 14, "r": 8, "p": 1}   # hashlib.scrypt 的參數：一次大約 50 毫秒，要在別的執行緒算（asyncio.to_thread）
@@ -48,6 +48,7 @@ def save_player(player):
         "points": player.points, "trained": player.trained, "imm": player.imm, "gold": player.gold,
         "skills": player.skills,
         "vars": player.vars,                # 腳本的變數：{區域檔名: {名字: 值}}
+        "autoloot": player.autoloot, "page_lines": player.page_lines,   # 設定（config）
         "hp": player.hp, "mp": player.mp, "mv": player.mv,
         "room": player.room.vnum,
         "panel": player.panel,
@@ -91,6 +92,8 @@ def player_from(data, writer):
     player.gold = data.get("gold", 0)
     player.skills = data["skills"] if "skills" in data else skills.starter(player.guild)
     player.vars = data.get("vars", {})
+    player.autoloot = data.get("autoloot", False)
+    player.page_lines = data.get("page_lines", PAGE_LINES)
     room = zones.world.rooms.get(data["room"])
     player.room = zones.home(player) if room is None or zones.is_student(player) else room   # vars 讀好才知道是不是學生
     player.carrying = [objects.from_data(d) for d in data.get("carrying", [])]

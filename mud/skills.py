@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 
 from . import affects, combat, damage, stats
 from .act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act
+from .config import AFFECT_PULSE_TICKS
 from .players import online_players
 from .stats import GUILD_RESOURCE, Guild
 
@@ -34,18 +35,25 @@ class Skill:
     weapon_kinds: tuple = ()    # 限用的武器種類（area.WeaponKind），空的是不限
     starter: tuple = ()         # 建立角色就會的公會；空的是要用程式加（learn）
     imm_only: bool = False      # 只有 imm 會：imm 自動會，不能給別人
-    affect: dict = field(default=None, hash=False)  # 增益技能放上去的效果：affects.Affect 的欄位
+    affect: dict = field(default=None, hash=False)  # 增益技能放上去的效果：affects.Affect 的欄位；source、name 沒寫就用技能的 id、名稱（make_affect）
+    dot: dict = field(default=None, hash=False)     # 打中後留在目標身上的持續傷害（dot_affect）：name、ratio（每跳 ＝ 第一發 × ratio）、jumps（跳幾次）、hurt（訊息的動詞）
 
 
 SKILLS = {s.id: s for s in (
     Skill("smash", "重擊", Guild.SWORD, "damage", "single", 1, 1.2, 6, 0.10, starter=(Guild.SWORD,)),
-    Skill("fireball", "火球", Guild.STAFF, "damage", "single", 1, 1.2, 6, 0.10, starter=(Guild.STAFF,)),
+    Skill("fireball", "火球", Guild.STAFF, "damage", "single", 1, 1.2, 6, 0.10, starter=(Guild.STAFF,),
+          dot=dict(name="燃燒", ratio=0.3, jumps=3, hurt="燒傷")),   # 燃燒：使用者定的，每 3 秒一次、共 3 次，每次第一發的 30%
     Skill("thunder", "天雷", None, "damage", "single", 1, 10.0, 0, 0.0, imm_only=True),   # imm 測試用的（數字是我們訂的，不是設計文件的）
     # 增益：之後教學區的 NPC 放在玩家身上的（使用者定的，數字是使用者給的）：每 3 秒補 HP 上限的 10%、主屬性各 +3，3600 秒，死掉後還在
     Skill("gift", "餽贈", None, "buff", "ally", 0, 0.0, 0, 0.0, affect=dict(
-        source="gift", name="餽贈", duration=3600, periodic_pct={"hp": 0.10},
-        applies={k: 3.0 for k in stats.PRIMARY_KEYS}, keep_on_death=True, off_message="你身上的【餽贈】消失了。")),
+        duration=3600, periodic_pct={"hp": 0.10},
+        applies={k: 3.0 for k in stats.PRIMARY_KEYS}, keep_on_death=True)),
+    # 增益：護盾（使用者定的，數字是使用者給的）：HP 上限 120% 的護盾、10 秒；要用程式加，不扣消耗、沒有冷卻
+    Skill("aegis", "天護", None, "buff", "ally", 0, 0.0, 0, 0.0, affect=dict(duration=10, shield_pct=1.2)),
 )}
+
+
+MIN_SKILL_DAMAGE = 1                        # 技能（不是平砍）打中最低幾點，燃燒每跳也是（使用者定的；失手還是 0）
 
 
 def damage_kind(skill, ch):
@@ -164,13 +172,34 @@ def use(ch, skill, victim):
         buff(ch, skill, victim)
         return
     battle = ch.fight                       # 先記住：打死生物時 die() 會把 ch.fight 清掉
-    try:
+    with battle.collecting(me=ch):          # 技能那幾下、打死時腳本說的話合成一段
+        first = None                        # 第一發打中的傷害（持續傷害用）
         for _ in range(skill.hits):
             dmg, crit = damage.strike(ch, victim, combat.rng, damage_kind(skill, ch))
-            if combat.land(battle, ch, victim, dmg * skill.ratio, crit, skill.name):
-                break
-    finally:
-        battle.flush(me=ch)
+            dmg *= skill.ratio
+            if dmg > 0:
+                dmg = max(MIN_SKILL_DAMAGE, dmg)     # 打中最低 1 點（使用者定的）
+                first = dmg if first is None else first
+            if combat.land(battle, ch, victim, dmg, crit, skill.name):
+                return                      # 打死了：不留持續傷害
+        if skill.dot and first is not None:
+            affects.add(victim, dot_affect(skill, first))
+
+
+def dot_affect(skill, first):
+    """打中後留在目標身上的持續傷害（例如火球的燃燒）：每 AFFECT_PULSE_TICKS 跳一次、共 jumps 次，
+    每跳 ＝ 第一發的傷害 × ratio，放下去時算好（最低 MIN_SKILL_DAMAGE）。來源是技能的 id：再中一次就重新燒。
+    """
+    d = skill.dot
+    return affects.Affect(source=skill.id, name=d["name"], duration=d["jumps"] * AFFECT_PULSE_TICKS,
+                          periodic={"hp": -max(MIN_SKILL_DAMAGE, first * d["ratio"])}, hurt=d["hurt"])
+
+
+def make_affect(skill):
+    """增益技能放上去的效果，每次一份新的（dict 不跟技能的資料共用）。source、name 沒寫就用技能的 id、名稱（使用者定的）：
+    再放一次是同一個來源（覆蓋），score 和「消失了」寫的是技能的名字。需要不一樣時才寫（例如火球留下「燃燒」）。
+    """
+    return affects.Affect(**{"source": skill.id, "name": skill.name, **copy.deepcopy(skill.affect)})
 
 
 def buff(ch, skill, target):
@@ -178,7 +207,7 @@ def buff(ch, skill, target):
 
     不用打架、不開打：NPC 也能直接呼叫 use(npc, 技能, 玩家)（之後教學區的 NPC 用）。
     """
-    affects.add(target, affects.Affect(**copy.deepcopy(skill.affect)))   # 每次一份新的：dict 不跟技能的資料共用
+    affects.add(target, make_affect(skill))
     if target is ch:
         act("你對自己施展了【$t】。", ch, t=skill.name, to=TO_CHAR)
         act("$n對自己施展了【$t】。", ch, t=skill.name, to=TO_ROOM)

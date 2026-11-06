@@ -1,5 +1,5 @@
 """處理玩家輸入的指令：照 COMMANDS 的順序，找第一個用輸入開頭的指令。"""
-from .. import scripts
+from .. import act, pager, scripts
 from ..characters import Position as P
 from . import combat, doors, imm, items, skills, system
 from . import help as help_command          # 不叫 help：名字會蓋掉 Python 內建的 help()
@@ -48,6 +48,7 @@ COMMANDS = [
     ("examine", items.do_examine, P.RESTING),   # ex；只看背包和身上的（照 C 版要醒著）
     ("flee", combat.do_flee, P.FIGHTING),       # f；戰鬥中逃跑（照 C 版的最低姿勢）
     ("give", items.do_give, P.RESTING),         # g 還是 get，gi 才是 give（照 C 版的最低姿勢）
+    ("config", system.do_config, P.DEAD),       # co；什麼姿勢都能用（照 C 版）
 ]
 
 # 管理員（imm）才找得到的指令，接在 COMMANDS 後面找，原本的縮寫都不受影響
@@ -101,25 +102,44 @@ def find(word, is_imm=False):
 
 
 def command(ch, line):
-    """處理角色 ch 下的一行指令（玩家或 NPC 都可以）。回傳 False 代表要斷線。"""
+    """處理角色 ch 下的一行指令（玩家或 NPC 都可以）。回傳 False 代表要斷線。
+
+    分頁中打的字先給 pager.key()（按鍵就到此為止）。送給他的回覆先收起來（pager.collect），跑完由 pager.show() 決定要不要分頁、補 prompt。
+    """
+    if pager.key(ch, line):
+        return True
     verb, _, arg = line.partition(" ")
     verb, arg = verb.lower(), arg.strip()
     ch.sent = ch.notified = False
-    if line:
-        name = command_name(verb, getattr(ch, "imm", False))
-        scripts.commanding.append(ch)       # 腳本給他的訊息當作這個指令的回覆（prompt 由下面補）
-        try:
-            # 腳本的 on_command：遊戲處理之前，房間先、再房間裡的生物；有一個擋住就不照平常處理（quit 擋不住，使用者選的）
-            if name == "quit" or not scripts.fire(ch.room, "on_command", ch, ch, name or verb, arg):
-                found = lookup(verb, getattr(ch, "imm", False))
-                if found is None:
-                    ch.send("什麼？\n")
-                elif ch.position < found[1]:    # 姿勢不夠，例如睡著時 look
-                    ch.send(REFUSALS[ch.position] + "\n")
-                elif found[0](ch, arg) is False:
-                    return False
-        finally:
-            scripts.commanding.pop()
-    # 有送出訊息就先空一行再補 prompt；只按 Enter（沒有訊息）就直接補（使用者要的）
-    ch.send(("\n" if ch.sent else "") + ch.prompt())
+    with act.gathering():                   # 這個指令送給別人的訊息合成一段，每人一個 prompt（使用者要的）
+        with pager.collect(ch) as reply:
+            keep = run(ch, line, verb, arg)
+        text = "".join(reply)
+        if not keep:                        # 要斷線（quit）：收起來的字送出去，不補 prompt
+            if text:
+                ch.send(text)
+            return False
+        # 有送出訊息就先空一行再補 prompt；只按 Enter（沒有訊息）就直接補（使用者要的）
+        pager.show(ch, text)
+    return True
+
+
+def run(ch, line, verb, arg):
+    """找到指令、檢查姿勢、執行。回傳 False 代表要斷線。"""
+    if not line:
+        return True
+    name = command_name(verb, getattr(ch, "imm", False))
+    scripts.commanding.append(ch)           # 腳本給他的訊息當作這個指令的回覆（prompt 由 command() 補）
+    try:
+        # 腳本的 on_command：遊戲處理之前，房間先、再房間裡的生物；有一個擋住就不照平常處理（quit 擋不住，使用者選的）
+        if name == "quit" or not scripts.fire(ch.room, "on_command", ch, ch, name or verb, arg):
+            found = lookup(verb, getattr(ch, "imm", False))
+            if found is None:
+                ch.send("什麼？\n")
+            elif ch.position < found[1]:        # 姿勢不夠，例如睡著時 look
+                ch.send(REFUSALS[ch.position] + "\n")
+            elif found[0](ch, arg) is False:
+                return False
+    finally:
+        scripts.commanding.pop()
     return True
