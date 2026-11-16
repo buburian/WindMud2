@@ -188,6 +188,36 @@ def tick_one(ch, out):
             out.tell(compose(off_message(a), ch, to=TO_CHAR))
 
 
+GAIN_COLOR, LOSS_COLOR = "{G", "{R"         # 效果跳的訊息：加的亮綠、扣的亮紅（使用者定的）
+
+
+def watching(reader, ch):
+    """reader 看不看得到 ch 身上的效果跳的訊息（使用者定的）：開了 config +showbuff、自己在打架、ch 跟他在同一場。"""
+    return bool(getattr(reader, "showbuff", False)) and reader.fight is not None and reader.fight is ch.fight
+
+
+def change_text(key, n, absorbed=0.0):
+    """一種資源變了 n：「HP {G+6{x」「HP {R-10{x（吸收 6）」。四捨五入後是 0 就是空的（不寫）。"""
+    shown = stats.shown(n)
+    if shown == 0:
+        return ""
+    tail = combat.ABSORBED.format(stats.shown(absorbed)) if absorbed > 0 else ""
+    return f"{stats.STAT_NAMES[key]} {GAIN_COLOR if shown > 0 else LOSS_COLOR}{shown:+d}{{x{tail}"
+
+
+def pulse_messages(ch, a, changes):
+    """效果 a 在 ch 身上跳了一次：「你的【餽贈】HP +6 MP +3」「野狗的【測試毒】HP -10」，只給 watching() 的人：[(讀的人, 文字)]。
+
+    一個效果一行，沒變的資源不寫，全部沒變就不送。
+    """
+    changes = [c for c in changes if c]
+    if not changes:
+        return []
+    tail = "【$t】" + " ".join(changes)
+    pairs = compose("你的" + tail, ch, t=a.name, to=TO_CHAR) + compose("$n的" + tail, ch, t=a.name, to=TO_ROOM)
+    return [(reader, text) for reader, text in pairs if watching(reader, ch)]
+
+
 def pulse(ch, a, out):
     """跳一次：HP、MP、MV 照 periodic（固定量）＋ periodic_pct（當時上限的幾成）加減，加不超過上限、MP／MV 扣到 0 為止。
     HP 扣到 0 就死，回傳 True。
@@ -196,6 +226,8 @@ def pulse(ch, a, out):
     """
     if not ch.panel:
         return False
+    changes = []                            # 這一跳每種資源變了多少（change_text()），給開了 config +showbuff 的人看
+    broke = []                              # 護盾被打破的那幾句：放在最後（跟戰鬥一樣，先說扣多少、再說破了）
     for key in PULSE_KEYS:
         if key not in a.periodic and key not in a.periodic_pct:
             continue
@@ -203,6 +235,7 @@ def pulse(ch, a, out):
         n = a.periodic.get(key, 0.0) + ch.panel[key] * a.periodic_pct.get(key, 0.0)
         if n >= 0:
             setattr(ch, key, max(now, min(ch.panel[key], now + n)))
+            changes.append(change_text(key, getattr(ch, key) - now))    # 實際加到的（滿了加不進去）
         elif key == "hp":
             taken, broken = absorb(ch, -n)  # 持續扣血也先扣護盾（使用者選的：全部傷害）
             ch.hp = now + n + taken
@@ -210,9 +243,14 @@ def pulse(ch, a, out):
                 tail = combat.damage_tail(-n, taken)
                 out.tell(compose("{C你被【$t】" + a.hurt + "了{x" + tail, ch, t=a.name, to=TO_CHAR))
                 out.tell(compose("$n被【$t】" + a.hurt + "了" + tail, ch, t=a.name, to=TO_ROOM))
-            out.tell(broken_messages(ch, broken))
+            else:                           # 已經有上面那句的不再寫一次
+                changes.append(change_text(key, n, taken))              # 傷害的點數（扣護盾之前，跟戰鬥訊息一樣）
+            broke += broken_messages(ch, broken)
         else:
             setattr(ch, key, min(now, max(0.0, now + n)))
+            changes.append(change_text(key, getattr(ch, key) - now))    # 實際扣到的（到 0 為止）
+    out.tell(pulse_messages(ch, a, changes))
+    out.tell(broke)
     if drains_hp(a) and ch.hp <= 0:
         combat.slain(out, ch.fighting, ch)
         return True

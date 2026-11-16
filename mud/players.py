@@ -33,6 +33,7 @@ class Player(Character):
         # 設定（config 指令，存檔）
         self.autoloot = False                # 打死生物後自動拾取屍體（使用者選的：預設關，照 C 版）
         self.page_lines = PAGE_LINES         # 分頁：每頁幾行
+        self.showbuff = False                # 戰鬥中看得到效果加減 HP／MP／MV 的訊息（affects.watching，使用者要的：預設關）
         # 分頁（pager.py，不存檔）
         self.capture = None                  # 指令跑的時候，送給他的字先收在這裡（pager.collect），跑完才決定要不要分頁
         self.pages = None                    # 還沒看完的回覆（pager.Pages）；有的話 prompt 是分頁提示

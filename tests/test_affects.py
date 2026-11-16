@@ -1,5 +1,5 @@
 """身上的效果（affects.py，玩家角色手冊「身上的效果」）：覆蓋和疊加、暫時加減屬性、持續加減 HP／MP／MV（每 3 tick、矮人的堅韌、扣死）、
-時間到消失、死掉、存檔，score 最下面那段、imm 的 affect、mstat 那一行，旗標的中文跟手冊比對。
+時間到消失、死掉、存檔，score 最下面那段、imm 的 affect、mstat 那一行，旗標的中文跟手冊比對，config +showbuff 的訊息。
 
 一個 tick 一個 tick 看：自己呼叫 affects.tick()（世界 tick 也測一次）。
 """
@@ -17,6 +17,7 @@ from mud import affects, combat, fight, npcs, save, stats, zones
 from mud.affects import Affect
 from mud.area import AFFECT_FLAG_NAMES, CORPSE_NPC_ITEM_TYPE, AffectFlag
 from mud.characters import characters
+from mud.color import colorize
 from mud.config import ENCODING
 from mud.players import Player
 
@@ -609,3 +610,204 @@ def test_affect_shield(world):
     ming = person("Ming", imm=True)
     assert say(ming, "af ming shield") == "你身上多了【測試護盾】（10 秒）。"
     assert ming.affects[0].shield == pytest.approx(ming.panel["hp"] * 1.2)
+
+
+# ---- config +showbuff：戰鬥中看得到效果加減 HP／MP／MV（使用者 2026-11-13 定的） ----
+
+def raw(p):
+    """送給 p 的字，色碼留著。"""
+    text = p.writer.data.decode(ENCODING)
+    p.writer.data = b""
+    return text
+
+
+def watcher(name, room=101):
+    p = person(name, room)
+    p.showbuff = True
+    return p
+
+
+def fighting(*pairs, then):
+    """pairs 每一對開打，再做 then()：都在同一個 asyncio.run() 裡（結束時戰鬥會被收掉）。"""
+    async def run():
+        for a, b in pairs:
+            fight.start_fight(a, b)
+        for a, _ in pairs:
+            raw(a)
+        return then()
+
+    return asyncio.run(run())
+
+
+def test_showbuff_gain_is_green_and_loss_is_red(world):
+    ming, npc = watcher("Ming"), creature()
+    ming.hp -= 50
+
+    def then():
+        affects.add(ming, drip("regen", hp=10.0))
+        ticks(3)
+        gain = raw(ming)
+        affects.remove(ming, "regen")
+        affects.add(ming, drip("poison", hp=-10.0))
+        ticks(3)
+        return gain, raw(ming)
+
+    gain, loss = fighting((ming, npc), then=then)
+    assert gain.startswith("\r\n你的【滴】HP " + colorize("{G+10{x") + "\r\n\r\n") and gain.count("<") == 1   # 一行、一個 prompt
+    assert loss.startswith("\r\n你的【滴】HP " + colorize("{R-10{x") + "\r\n\r\n")
+
+
+def test_showbuff_off_shows_nothing(world):
+    ming, npc = person("Ming"), creature()
+    ming.hp -= 50
+
+    def then():
+        affects.add(ming, drip(hp=10.0))
+        ticks(3)
+        return raw(ming)
+
+    assert fighting((ming, npc), then=then) == ""                    # 預設關：打架中也沒有
+
+
+def test_showbuff_only_in_a_fight(world):
+    ming, npc = watcher("Ming"), creature()
+    ming.hp -= 50
+    affects.add(ming, drip(hp=10.0))
+    affects.add(npc, drip(hp=-1.0))
+    ticks(3)
+    assert raw(ming) == "" and ming.hp == pytest.approx(ming.panel["hp"] - 40)      # 沒在打架：照跳，不說
+
+    def then():
+        ticks(3)
+        seen = raw(ming)
+        fight.stop_fighting(ming)
+        fight.stop_fighting(npc)
+        ticks(3)
+        return seen, raw(ming)
+
+    seen, after = fighting((ming, npc), then=then)
+    assert "你的【滴】HP +10" in plain_of(seen) and "生物1的【滴】HP -1" in plain_of(seen)
+    assert after == ""                                               # 打完了：不說
+
+
+def plain_of(text):
+    return re.sub(r"\x1b\[[0-9;]*m", "", text)
+
+
+def test_showbuff_shows_everyone_in_your_fight_only(world):
+    ming, hua, bao = watcher("Ming"), watcher("Hua"), watcher("Bao")
+    one, two = creature(), creature()
+
+    def then():
+        assert ming.fight is not None and hua.fight is not None and ming.fight is not hua.fight
+        affects.add(one, drip(hp=-10.0))
+        ticks(3)
+        return plain_of(raw(ming)), plain_of(raw(hua)), raw(bao)
+
+    mine, other, idle = fighting((ming, one), (hua, two), then=then)
+    assert mine == "\r\n生物1的【滴】HP -10\r\n\r\n" + plain_of(ming.prompt())   # 打牠的人看得到
+    assert other == "" and idle == ""                                # 同一間房、別場的和沒打架的看不到
+
+
+def test_showbuff_writes_what_really_changed(world):
+    ming, npc = watcher("Ming"), creature()
+
+    def then():
+        affects.add(ming, drip("regen", hp=10.0, mp=10.0))
+        ticks(3)
+        full = raw(ming)                                             # 都是滿的：加不進去，整行不送
+        ming.hp -= 3
+        ticks(3)
+        nearly = plain_of(raw(ming))                                 # HP 只加得進 3，MP 滿的不寫
+        affects.remove(ming, "regen")
+        ming.mp = 2.0
+        affects.add(ming, drip("drain", hp=-1.0, mp=-5.0, mv=-4.0))
+        ticks(3)
+        return full, nearly, plain_of(raw(ming))
+
+    full, nearly, drained = fighting((ming, npc), then=then)
+    assert full == ""
+    assert nearly.startswith("\r\n你的【滴】HP +3\r\n\r\n")
+    assert drained.startswith("\r\n你的【滴】HP -1 MP -2 MV -4\r\n\r\n")       # 同一行，照 HP、MP、MV；MP 只剩 2 就寫 -2
+    assert ming.mp == 0.0
+
+
+def test_showbuff_rounds_and_skips_zero(world):
+    ming, npc = watcher("Ming"), creature()
+
+    def then():
+        affects.add(ming, drip(hp=-0.4, mv=-2.6))
+        ticks(3)
+        return plain_of(raw(ming))
+
+    assert fighting((ming, npc), then=then).startswith("\r\n你的【滴】MV -3\r\n\r\n")    # HP -0.4 四捨五入是 0：不寫
+
+
+def test_showbuff_with_a_shield(world):
+    ming, npc = watcher("Ming"), creature()
+    top = ming.panel["hp"]
+
+    def then():
+        affects.add(ming, shield(pct=4 / top))                       # 4 點的盾
+        affects.add(ming, drip(hp=-10.0))
+        ticks(3)
+        return raw(ming)
+
+    text = fighting((ming, npc), then=then)
+    assert text.startswith("\r\n你的【滴】HP " + colorize("{R-10{x") + "（吸收 4）\r\n你的【盾】被打破了。\r\n")
+    assert ming.hp == pytest.approx(top - 6)
+
+
+def test_showbuff_does_not_repeat_effects_with_their_own_message(world):
+    ming, npc = watcher("Ming"), creature()
+
+    def then():
+        affects.add(ming, Affect("fireball", "燃燒", 9, periodic={"hp": -6.0, "mv": -2.0}, hurt="燒傷"))
+        ticks(3)
+        return plain_of(raw(ming))
+
+    text = fighting((ming, npc), then=then)
+    assert text.startswith("\r\n你被【燃燒】燒傷了.(6)\r\n你的【燃燒】MV -2\r\n\r\n")   # 燒傷那句照舊，HP 不再寫一次
+
+
+def test_showbuff_shield_breaks_after_the_line(world):
+    # 順序：燒傷那句 → showbuff 那一行 → 盾破；沒開的人看到的跟原本一樣
+    ming, hua, npc = watcher("Ming"), person("Hua"), creature()
+    top = ming.panel["hp"]
+
+    def then():
+        affects.add(ming, shield(pct=4 / top))
+        affects.add(ming, Affect("fireball", "燃燒", 9, periodic={"hp": -6.0, "mv": -2.0}, hurt="燒傷"))
+        ticks(3)
+        return plain_of(raw(ming)), plain_of(raw(hua))
+
+    mine, other = fighting((ming, npc), then=then)
+    assert mine.startswith("\r\n你被【燃燒】燒傷了.(6)（吸收 4）\r\n你的【燃燒】MV -2\r\n你的【盾】被打破了。\r\n\r\n")
+    assert other.startswith("\r\nMing被【燃燒】燒傷了.(6)（吸收 4）\r\n\r\n")              # 盾破了只有自己知道（原本就是）
+
+
+def test_showbuff_line_comes_before_the_death(world):
+    ming, npc = watcher("Ming"), creature()
+
+    def then():
+        npc.hp = 5
+        affects.add(npc, drip(hp=-10.0))
+        ticks(3)
+        return plain_of(raw(ming))
+
+    text = fighting((ming, npc), then=then)
+    assert text.startswith("\r\n生物1的【滴】HP -10\r\n生物1已經斷氣，倒在地上死亡了!!\r\n") and text.count("<HP") == 1
+    assert npc not in characters
+
+
+def test_messages_without_showbuff_are_unchanged(world):
+    # 沒開的人：扣死那一段跟原本一模一樣
+    ming, npc = person("Ming"), creature()
+
+    def then():
+        npc.hp = 5
+        affects.add(npc, drip(hp=-10.0))
+        ticks(3)
+        return plain_of(raw(ming))
+
+    assert fighting((ming, npc), then=then).startswith("\r\n生物1已經斷氣，倒在地上死亡了!!\r\n")

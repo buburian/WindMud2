@@ -47,10 +47,10 @@ uv run python -m mud.builder                      # 區域編輯器，瀏覽器�
   `tests/test_scripts.py` 測 Lua 腳本：沙箱（拿不到的名字、碰不到 Python、指令數上限、記憶體）、開機檢查的每一條、10 個觸發時機、每個函式、vars、wait、出錯的提醒
   （wait 用假的 `scripts.schedule`，自己呼叫 `later.run()`；區域檔和 .lua 用 `build()` 寫進 `tmp_path`）。
   `tests/test_again.py` 測 `!`（重複、Enter 不記、`!` 開頭都算、分頁中、腳本看到真的指令）。
-  `tests/test_config.py` 測 config（列出、開關、lines 的範圍、存檔）；`tests/test_pager.py` 測分頁（假指令 many 送很多行：每個按鍵、打別的指令、別人的訊息、quit、出錯）。
+  `tests/test_config.py` 測 config（列出、開關 autoloot 和 showbuff、lines 的範圍、存檔）；`tests/test_pager.py` 測分頁（假指令 many 送很多行：每個按鍵、打別的指令、別人的訊息、quit、出錯）。
   `tests/test_academy.py` 用真的 `areas/` 測教學學院：一人一份、一路走到畢業（技能教官照公會教 use、掉落、穿上、`say 畢業`）、學生重新登入和死掉回學院、沒有學院的區域檔時。
   `tests/test_flee.py` 測 flee（DEX 的機率、戰鬥中不能走、成功、失敗要等、關著的門、沒有出口）。
-  `tests/test_affects.py` 測身上的效果（覆蓋和疊加、暫時加減屬性、每 3 tick 跳、矮人的堅韌、扣死給誰經驗、時間到、死掉、存檔、score 最下面那段、affect、mstat），自己呼叫 `affects.tick()`。
+  `tests/test_affects.py` 測身上的效果（覆蓋和疊加、暫時加減屬性、每 3 tick 跳、矮人的堅韌、扣死給誰經驗、時間到、死掉、存檔、score 最下面那段、affect、mstat、`config +showbuff` 的每一種訊息），自己呼叫 `affects.tick()`。
   `tests/test_examine.py` 測 exam 的每一行、ostat、mstat、物品種類和武器種類的名稱表（跟手冊比對）、地上那一行接英文名字。
   `tests/test_help.py` 檢查真的 `help/help.json`（每個指令都有說明）、`helps.check()` 的每條規則、help 的三種畫面、縮寫、imm 的分類。
   要登入的測試先用 `tests/player_helpers.py` 的 `make_player_file()` 存好角色（密碼 `PASSWORD`），存檔資料夾用 monkeypatch 把 `save.PLAYER_DIR` 指到 `tmp_path`。
@@ -448,6 +448,9 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     跳：加不超過上限，MP／MV 最少 0，**HP 扣到 0 就死**（使用者定的）：`combat.slain(out, ch.fighting, ch)`，打架中算被他正在打的對手打死（照常給經驗），
     沒在打架 `fighting` 是 None、誰都不給。一個 tick 的訊息（消失、死掉）收在 `Messages`，每人只 notify 一次。
     存檔整個存（`to_data()`／`from_data()`，剩下的時間和 `elapsed` 都在），讀檔先放回效果再 `recompute()`。
+    **`config +showbuff`**（使用者 2026-11-13 定的，預設關，規則在手冊「設定」）：`pulse()` 每種資源記下這一跳變了多少（`change_text()`：加的 `GAIN_COLOR` 亮綠、扣的 `LOSS_COLOR` 亮紅，
+    四捨五入是 0 不寫），`pulse_messages()` 組成一行「你的【餽贈】HP +6 MP +3」，只給 `watching(reader, ch)` 的人（開了、自己在打架、`reader.fight is ch.fight`）；
+    有 `Affect.hurt` 的 HP 不再寫一次。順序：燒傷那句 → 這一行 → 護盾被打破 → 斷氣。**原本的戰鬥訊息不能動**（沒開的人看到的要一模一樣，有測試）。
     **沒有 affects 指令**（使用者要的）：身上的效果照 C 版列在 `score` 最下面（`system.affect_lines()`，`parts()` 是做什麼、`seconds_left()` 是實際還要等的秒數）；
     說明太長就用 `wrap()` 換行，接在下一行對齊，不超過 79 格。mstat 用 `describe()` 寫成一行。真正的效果、放效果的技能、光圈還沒做（光圈接 `system.tags()`）。
   - 定時器共用 `clock.every()`：照 `loop.time()` 排時間不會越跑越慢，超時了從現在重新算、不追趕。
@@ -579,7 +582,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   檔名格式不符的檔案不會被刪。
 - **設定和分頁**（規則在玩家角色手冊「設定」，使用者 2026-11-06 定的，照 C 版 do_config、show_string）：
   - `config`（`commands/system.py`，`co`）：開關是一張表 `CONFIG_TOGGLES`（名稱、Player 的欄位、說明），加開關只要加一筆；`config lines N` 是分頁每頁幾行
-    （`config.PAGE_LINES` 20、`PAGE_LINES_MIN` 19、`PAGE_LINES_MAX` 60）。`Player.autoloot`、`page_lines` 存檔。不做單獨的 `autoloot` 指令（會搶 imm 指令 `a` 的縮寫）。
+    （`config.PAGE_LINES` 20、`PAGE_LINES_MIN` 19、`PAGE_LINES_MAX` 60）。`Player.autoloot`、`showbuff`、`page_lines` 存檔。不做單獨的 `autoloot` 指令（會搶 imm 指令 `a` 的縮寫）。
   - 自動拾取在 `combat.slain()` 的 `loot()`：打死生物的玩家在同一間房（`death.die()` 回傳屍體），開了就 `items.take_all()`、沒開就 `objects.inside()`（look in 也用它）；
     訊息用 `inventory.Lines.pairs()` 放進同一段（`out.tell`），所以在斷氣、經驗後面、只有一個 prompt。
   - 分頁在 `pager.py`：`command()` 先給 `pager.key()`（分頁中的按鍵），再用 `pager.collect()` 把送給這個玩家的字收在 `ch.capture`（`Player.send()` 看它），

@@ -48,7 +48,7 @@ def save_player(player):
         "points": player.points, "trained": player.trained, "imm": player.imm, "gold": player.gold,
         "skills": player.skills,
         "vars": player.vars,                # 腳本的變數：{區域檔名: {名字: 值}}
-        "autoloot": player.autoloot, "page_lines": player.page_lines,   # 設定（config）
+        "autoloot": player.autoloot, "page_lines": player.page_lines, "showbuff": player.showbuff,   # 設定（config）
         "hp": player.hp, "mp": player.mp, "mv": player.mv,
         "room": player.room.vnum,
         "panel": player.panel,
@@ -94,6 +94,7 @@ def player_from(data, writer):
     player.vars = data.get("vars", {})
     player.autoloot = data.get("autoloot", False)
     player.page_lines = data.get("page_lines", PAGE_LINES)
+    player.showbuff = data.get("showbuff", False)
     room = zones.world.rooms.get(data["room"])
     player.room = zones.home(player) if room is None or zones.is_student(player) else room   # vars 讀好才知道是不是學生
     player.carrying = [objects.from_data(d) for d in data.get("carrying", [])]

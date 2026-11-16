@@ -452,6 +452,7 @@ def do_who(ch, arg):
 # 開關：(名稱, Player 的欄位, 開的說明, 關的說明)。之後加開關只要加一筆（使用者要的）
 CONFIG_TOGGLES = [
     ("autoloot", "autoloot", "你將會自動搜刮屍體物品。", "你放棄自動搜刮屍體物品。"),
+    ("showbuff", "showbuff", "戰鬥中你會看到效果加減資源的訊息。", "戰鬥中你不會看到效果加減資源的訊息。"),
 ]
 CONFIG_NAME_WIDTH = 9                       # 「[+AUTOLOOT ]」名稱那格的寬度（照 C 版）
 

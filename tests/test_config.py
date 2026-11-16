@@ -1,4 +1,4 @@
-"""config 指令（玩家角色手冊「設定」）：列出、開關 autoloot、分頁每頁幾行、存檔。訊息照 C 版 do_config、do_pagelen。"""
+"""config 指令（玩家角色手冊「設定」）：列出、開關 autoloot 和 showbuff、分頁每頁幾行、存檔。訊息照 C 版 do_config、do_pagelen。"""
 import re
 
 import pytest
@@ -54,9 +54,12 @@ def test_config_lists_the_settings(ming):
     assert ming.autoloot is False and ming.page_lines == PAGE_LINES          # 預設：自動拾取關、每頁 20 行（照 C 版）
     assert reply(ming, "config") == ("[ 關鍵字   ] 選項說明\r\n"
                                      "[-autoloot ] 你放棄自動搜刮屍體物品。\r\n"
+                                     "[-showbuff ] 戰鬥中你不會看到效果加減資源的訊息。\r\n"
                                      "[ LINES 20 ] 每頁 20 行暫停一次（config lines 數字，19～60）。")
     ming.autoloot = True
     assert "[+AUTOLOOT ] 你將會自動搜刮屍體物品。" in reply(ming, "config")
+    ming.showbuff = True
+    assert "[+SHOWBUFF ] 戰鬥中你會看到效果加減資源的訊息。" in reply(ming, "config")
 
 
 def test_config_colors(ming):
@@ -74,6 +77,13 @@ def test_toggle_autoloot(ming):
     assert reply(ming, "config +autoloot") == "Autoloot 已設定成開啟。" and ming.autoloot is True
     assert reply(ming, "config -AutoLoot") == "Autoloot 已設定成關閉。" and ming.autoloot is False   # 不分大小寫
     assert reply(ming, "co +autoloot") == "Autoloot 已設定成開啟。"
+
+
+def test_toggle_showbuff(ming):
+    assert ming.showbuff is False                                            # 預設關（使用者要的）
+    assert reply(ming, "config +showbuff") == "Showbuff 已設定成開啟。" and ming.showbuff is True
+    assert ming.autoloot is False                                            # 只動這一個
+    assert reply(ming, "config -SHOWBUFF") == "Showbuff 已設定成關閉。" and ming.showbuff is False
 
 
 @pytest.mark.parametrize("arg, want", [
@@ -102,12 +112,18 @@ def test_settings_are_saved(ming):
     do(ming, "config lines 40")
     save.save_player(ming)
     data = save.load_data("Ming")
-    assert (data["autoloot"], data["page_lines"]) == (True, 40)
+    assert (data["autoloot"], data["page_lines"], data["showbuff"]) == (True, 40, False)
     back = save.player_from(data, FakeWriter())
-    assert (back.autoloot, back.page_lines) == (True, 40)
-    old = {k: v for k, v in data.items() if k not in ("autoloot", "page_lines")}   # 舊存檔沒有：預設
+    assert (back.autoloot, back.page_lines, back.showbuff) == (True, 40, False)
+    do(ming, "config -autoloot")
+    do(ming, "config +showbuff")
+    save.save_player(ming)
+    data = save.load_data("Ming")
+    back = save.player_from(data, FakeWriter())
+    assert (back.autoloot, back.showbuff) == (False, True)
+    old = {k: v for k, v in data.items() if k not in ("autoloot", "page_lines", "showbuff")}   # 舊存檔沒有：預設
     back = save.player_from(old, FakeWriter())
-    assert (back.autoloot, back.page_lines) == (False, PAGE_LINES)
+    assert (back.autoloot, back.page_lines, back.showbuff) == (False, PAGE_LINES, False)
 
 
 def test_mobiles_have_no_settings(ming):
@@ -120,4 +136,4 @@ def test_mobiles_have_no_settings(ming):
 
 def test_players_without_attributes_still_have_settings():
     p = Player("Ming", FakeWriter(), None)
-    assert p.autoloot is False and p.page_lines == PAGE_LINES
+    assert p.autoloot is False and p.page_lines == PAGE_LINES and p.showbuff is False
