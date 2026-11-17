@@ -2,6 +2,7 @@
 
 門兩邊都要寫（check_files() 會查），兩邊各是一個 area.Door；開、關、鎖的時候兩邊一起變（照 C 版）。
 """
+from . import light
 from .act import notify
 from .area import DIRECTIONS, REVERSE
 from .characters import Position, characters
@@ -40,12 +41,10 @@ def tell_other_side(direction, to, back, opened):
 
 
 def tell_room(room, text):
-    """門的對面發生的事（被打開、關上，之後還有被撞開）：room 裡醒著、看得見的人收到 text。
+    """門的對面發生的事（被打開、關上，之後還有被撞開）：room 裡醒著、看得見房間的人收到 text。
 
-    看得見：房間不暗，或暗但有光源（room.dark()）。
+    看得見：一個一個人判斷（light.can_see_room()：房間不暗，或他有夜視）。
     """
-    if room.dark():
-        return
     for c in characters:
-        if c.room is room and c.position > Position.SLEEPING:
+        if c.room is room and c.position > Position.SLEEPING and light.can_see_room(c):
             notify(c, text)

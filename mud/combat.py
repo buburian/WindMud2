@@ -5,7 +5,7 @@
 """
 import random
 
-from . import affects, damage, death, objects, stats
+from . import affects, damage, death, light, objects, stats
 from .area import ATTACK_NAMES
 from .act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, compose
 from .npcs import Npc
@@ -82,7 +82,8 @@ def slain(out, killer, victim):
         if isinstance(killer, Player):
             reward(out, killer, victim)
         corpse = death.die(victim, killer=killer)
-        if isinstance(killer, Player) and corpse is not None and corpse in killer.room.contents:
+        if (isinstance(killer, Player) and corpse is not None and corpse in killer.room.contents
+                and light.can_see_room(killer)):    # 很暗看不到屍體：不自動拾取、不列出裡面有什麼
             loot(out, killer, corpse)
     else:
         out.tell(compose(DEAD_SELF, victim, to=TO_CHAR))

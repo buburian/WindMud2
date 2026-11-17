@@ -28,7 +28,7 @@ LEVELS_ALL = [1, 100]                       # 舊檔頭的等級寫 All（不是
 OBJECT_LEVEL = 1                            # 重置 O、P 的物品等級（舊版沒有，我們一定要寫）
 SURE_RARE = 10                              # rare 0～10 一定出現；大於 10 是 (rare − 10) ÷ 10000（同 resets.SURE_RARE）
 ARMOR_ITEM_TYPE = 9                         # 護具：values 第 1、3 格由裝備等級算，寫 0
-USED_ROOM_FLAGS = RoomFlag.DARK | RoomFlag.NO_MOB | RoomFlag.INDOORS | RoomFlag.SAFE   # 有作用的，其他照留、列進報告
+USED_ROOM_FLAGS = RoomFlag.DARK | RoomFlag.NO_MOB | RoomFlag.INDOORS | RoomFlag.SAFE | RoomFlag.NO_RECALL   # 有作用的，其他照留、列進報告
 # 武器種類照英文名字（keywords 裡第一個對得上的字），都對不上就是長劍
 WEAPON_WORDS = {
     "dagger": WeaponKind.DAGGER, "knife": WeaponKind.DAGGER, "sword": WeaponKind.LONGSWORD,

@@ -169,7 +169,7 @@ def test_load_problems(tmp_path):
 
 SUMMARY = [
     "說明的分類（help 分類 或 help 指令 看細節）：",
-    "  移動  north east south west up down",
+    "  移動  north east south west up down recall /",
     "  資訊  look score who weather skills help",
     "  溝通  chat tell reply say",
     "  角色  train rest sleep stand save config ! quit",
@@ -187,7 +187,7 @@ def test_imm_sees_the_imm_category():
     # 分類名稱照最寬的對齊（管理員 6 格）
     want = [
         "說明的分類（help 分類 或 help 指令 看細節）：",
-        "  移動    north east south west up down",
+        "  移動    north east south west up down recall /",
         "  資訊    look score who weather skills help",
         "  溝通    chat tell reply say",
         "  角色    train rest sleep stand save config ! quit",
@@ -211,7 +211,7 @@ def test_imm_category_is_only_for_imm():
 
 def test_help_command():
     want = ("kill <名字>（縮寫 k）\r\n打同房間的生物，牠會自動還手。\r\n名字只要打開頭，例如 kill do。同名的用 2.dog 指定畫面上第 2 隻。\r\n"
-            "不可以打玩家，自己也不行。\r\n休息、睡覺時不能用，要先 stand。\r\n\r\n> ")
+            "不可以打玩家，自己也不行。安全區裡不能開打。\r\n休息、睡覺時不能用，要先 stand。\r\n\r\n> ")
     for line in ("help kill", "help k", "help ki", "help K", "help Kill"):
         assert say(line) == want, line
 

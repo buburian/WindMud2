@@ -15,12 +15,12 @@ import json
 import logging
 from pathlib import Path
 
-from . import affects, area, behavior, fight, objects, resets, scripts, skills, stats, weather
+from . import affects, area, behavior, fight, light, objects, resets, scripts, skills, stats, terrain, weather
 from .area import AreaType
 from .characters import characters
 from .clock import cancel, every
-from .config import (ACADEMY_FILE, ACADEMY_START, ACADEMY_STUDENT, AREA_TICKS, HOUR_TICKS, OBJ_TICKS, REGEN_TICKS,
-                     RELEASE_TICKS, START_ROOM, TICK_SECONDS)
+from .config import (ACADEMY_FILE, ACADEMY_START, ACADEMY_STUDENT, AREA_TICKS, CHOKE_TICKS, HOUR_TICKS, OBJ_TICKS,
+                     REGEN_TICKS, RELEASE_TICKS, START_ROOM, TICK_SECONDS)
 from .npcs import Npc
 from .players import online_players
 
@@ -55,6 +55,7 @@ class Zone:
     def tick(self):
         """這個區域物件一次 tick 要做的事。都要做：重置、地上物品的 timer。世界：每個 tick 數技能冷卻、走身上的效果、生物的行為，
         每 HOUR_TICKS 走一次天氣，每 REGEN_TICKS 回復；動態區域、副本：沒有玩家太久就釋放。
+        世界也每 HOUR_TICKS 燒一次照明用具、每 CHOKE_TICKS 水底的玩家窒息一次。
         世界的變換之後加在這裡，用「每幾個 tick 做一次」（self.ticks % N == 0）。"""
         self.ticks += 1
         scripts.tick(self)                  # 腳本的 on_timer（坑：跟 objects.update 一樣要在下面兩個 return 前面）
@@ -69,6 +70,9 @@ class Zone:
             behavior.tick(self.ticks)       # 生物的行為：走動、撿東西、主動攻擊（副本裡的也是，設計文件 §4.11）
             if self.ticks % HOUR_TICKS == 0:
                 weather.tick()              # 全遊戲一個天氣，只由世界 tick 走時間
+                light.burn()                # 玩家身上的照明用具少 1 小時（照 C 版，遊戲裡每小時）
+            if self.ticks % CHOKE_TICKS == 0:
+                terrain.choke()             # 水底沒有水中呼吸的玩家窒息（副本裡的也是：掛在角色身上的事放世界 tick）
             if self.ticks % REGEN_TICKS == 0:
                 # 回復掛在角色身上，在線玩家和全部生物一起回（副本裡的也是）：放在各區域的 tick 會因為節拍不同步，走來走去多回或少回
                 for c in list(characters):
@@ -184,6 +188,19 @@ def enroll(player):
 def is_student(player):
     """還沒從教學學院畢業：有學院的區域檔，而且他的腳本變數有 student（enroll() 設、院長的腳本拿掉）。"""
     return ACADEMY_FILE in templates and bool(player.vars.get(ACADEMY_AREA, {}).get(ACADEMY_STUDENT))
+
+
+def recall_room(ch):
+    """recall 會送到哪間房（使用者定的）：所在的區域檔有寫 recall 就用區域的（通常是副本：送回入口），
+    沒寫就用玩家自己的返回點（player.recall，沒設定是起始房間 START_ROOM）。找不到是 None。
+
+    所以在副本裡要先 recall 回入口、離開副本，才會 recall 到自己的返回點。
+    """
+    area = getattr(ch.room, "area", None)
+    vnum = area.data["area"]["recall"] if area is not None else None
+    if vnum is None:
+        vnum = getattr(ch, "recall", None) or START_ROOM
+    return room_at(ch.room, vnum)
 
 
 def home(player):

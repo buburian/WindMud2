@@ -50,6 +50,8 @@ COMMANDS = [
     ("give", items.do_give, P.RESTING),         # g 還是 get，gi 才是 give（照 C 版的最低姿勢）
     ("config", system.do_config, P.DEAD),       # co；什麼姿勢都能用（照 C 版）
     ("!", system.do_again, P.DEAD),             # 重複上一個指令：command() 先換掉（again()），還沒打過指令才會跑到這裡
+    ("recall", system.do_recall, P.STANDING),   # rec（re 還是 reply）；回到返回點，打架中、休息、睡覺不能用（使用者要的）
+    ("/", system.do_recall, P.STANDING),        # recall 的另一個名字（照 C 版）
 ]
 
 # 管理員（imm）才找得到的指令，接在 COMMANDS 後面找，原本的縮寫都不受影響

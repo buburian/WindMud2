@@ -83,8 +83,8 @@ def manual_table(marker):
     pytest.param("### affected_by（身上的效果）", area.AffectFlag, id="affected_by"),
 ])
 def test_definitions_match_manual(marker, cls):
-    # 手冊表格的「數字、C 版名稱」跟程式裡的定義要一模一樣（中文意思寫在註解，測試看不到）
-    want = [(int(number), name.upper()) for number, name, _ in manual_table(marker)]
+    # 手冊表格的「數字、C 版名稱」跟程式裡的定義要一模一樣（中文意思寫在註解，測試看不到；有的表後面多一欄「新系統」）
+    want = [(int(number), name.upper()) for number, name, *_ in manual_table(marker)]
     assert [(m.value, m.name) for m in cls] == want
 
 

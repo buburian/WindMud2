@@ -205,3 +205,13 @@ def test_without_the_academy_new_characters_are_not_students(tmp_path, monkeypat
         assert not zones.is_student(p) and zones.home(p) is zones.start_room()
     finally:
         zones.stop()
+
+
+def test_students_cannot_recall(academy):
+    async def main():
+        ming = student("Ming")
+        text = do(ming, "recall")
+        return text, ming.room.vnum
+
+    text, room = asyncio.run(main())
+    assert "你還沒從教學學院畢業，不能用 recall。" in text and room == ACADEMY_START

@@ -48,6 +48,7 @@ def save_player(player):
         "points": player.points, "trained": player.trained, "imm": player.imm, "gold": player.gold,
         "skills": player.skills,
         "vars": player.vars,                # 腳本的變數：{區域檔名: {名字: 值}}
+        "recall": player.recall,            # 自己的返回點（null 是起始房間）
         "autoloot": player.autoloot, "page_lines": player.page_lines, "showbuff": player.showbuff,   # 設定（config）
         "hp": player.hp, "mp": player.mp, "mv": player.mv,
         "room": player.room.vnum,
@@ -92,6 +93,7 @@ def player_from(data, writer):
     player.gold = data.get("gold", 0)
     player.skills = data["skills"] if "skills" in data else skills.starter(player.guild)
     player.vars = data.get("vars", {})
+    player.recall = data.get("recall")
     player.autoloot = data.get("autoloot", False)
     player.page_lines = data.get("page_lines", PAGE_LINES)
     player.showbuff = data.get("showbuff", False)

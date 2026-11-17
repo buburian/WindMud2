@@ -9,8 +9,8 @@ import random
 
 from . import equipment, names
 from .act import notify
-from .area import (CHANCE_MAX, CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE, WEAPON_ITEM_TYPE, Apply, Attack, ContainerFlag,
-                   ItemColor, WeaponKind, WearFlag, parse_flags, wear_slots)
+from .area import (CHANCE_MAX, CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE, LIGHT_ITEM_TYPE, WEAPON_ITEM_TYPE, Apply, Attack,
+                   ContainerFlag, ItemColor, WeaponKind, WearFlag, parse_flags, wear_slots)
 from .characters import Position
 from .color import colorize
 from .players import online_players
@@ -52,6 +52,7 @@ class Obj:
         self.container = None               # 容器才有：現在的 area.ContainerFlag（values 第 2 個開始，開關、上鎖會改它）；屍體是 None，一直開著
         self.key = None                     # 容器的鑰匙：遊戲號碼（values 第 3 個，換算跟出口的 key 一樣），None 是鎖不起來
         self.seal = 0                       # 容器的封印密碼（values 第 4 個）：可以封印又不是 0 就打不開（封印的指令還沒做）
+        self.hours = None                   # 照明用具才有：還能亮幾小時（values 第 3 個；0 燒完了、負數永遠不熄，light.py）
 
     def is_weapon(self):
         return self.weapon_kind is not None
@@ -87,6 +88,8 @@ def create(vnum, level, color, rng=random):
         obj.seal = seal
     if proto["item_type"] == WEAPON_ITEM_TYPE:      # 區域檢查保證武器的種類、攻擊方式是對的
         obj.weapon_kind, obj.attack = WeaponKind(int(proto["values"][0])), Attack(int(proto["values"][3]))
+    if proto["item_type"] == LIGHT_ITEM_TYPE:
+        obj.hours = light_hours(proto)
     if slot is None:                        # 不是裝備：沒有屬性
         return obj
     offhand_weapon = slot == "offhand" and proto["item_type"] == WEAPON_ITEM_TYPE   # 副手武器（雙持）：給武器傷害、不給 AC
@@ -99,6 +102,12 @@ def create(vnum, level, color, rng=random):
     obj.affects = [(Apply[stat.upper()], n) for stat, n in rolled["affixes"].items()]
     obj.name = rolled["name"] + obj.name
     return obj
+
+
+def light_hours(proto):
+    """區域檔的照明用具可以亮幾小時（values 第 3 個）：寫錯（不是整數）當作 0、燒完了。"""
+    hours = proto["values"][2]
+    return int(hours) if str(hours).lstrip("-").isdecimal() else 0
 
 
 def base_price(obj):
@@ -192,7 +201,7 @@ def to_data(obj):
                 weapon_kind=None if obj.weapon_kind is None else int(obj.weapon_kind),
                 attack=None if obj.attack is None else int(obj.attack),
                 container=None if obj.container is None else int(obj.container), key=obj.key, seal=obj.seal, cost=obj.cost,
-                contains=[to_data(o) for o in obj.contains])
+                hours=obj.hours, contains=[to_data(o) for o in obj.contains])
     return data
 
 
@@ -207,6 +216,11 @@ def from_data(data):
     obj.container = None if data.get("container") is None else ContainerFlag(data["container"])
     for k, default in LATER_FIELDS.items():
         setattr(obj, k, data.get(k, default))
+    if "hours" in data:
+        obj.hours = data["hours"]
+    elif obj.item_type == LIGHT_ITEM_TYPE:  # 舊存檔沒有 hours：照區域檔現在的值；區域檔沒有這件了就當作永遠不熄
+        proto = protos.get(obj.vnum)
+        obj.hours = light_hours(proto) if proto else -1
     obj.contains = [from_data(d) for d in data["contains"]]
     return obj
 

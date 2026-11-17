@@ -6,7 +6,7 @@
 import logging
 import re
 
-from .. import inventory, objects, save, scripts, stats
+from .. import inventory, light, objects, save, scripts, stats
 from ..act import TO_NOTVICT, TO_ROOM, TO_VICT
 from ..characters import find_in_room
 from ..npcs import Npc
@@ -43,7 +43,7 @@ def do_get(ch, arg):
 
 
 def get_from_floor(ch, name, out):
-    floor = ch.room.contents
+    floor = light.floor(ch)                 # 很暗：看不到地上的東西（照 C 版）
     if is_all(name):
         take_all(ch, floor, None, out, "我沒看到任何的東西。")
         return
@@ -62,7 +62,7 @@ def get_from_container(ch, name, where, out):
     if is_all(where):
         out.add("你不能這麼做。")
         return
-    container = objects.find(ch.room.contents + ch.carrying, where)
+    container = objects.find(light.floor(ch) + ch.carrying, where)
     if container is None:
         out.add("這裡沒有【$t】。", t=where)
         return

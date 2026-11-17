@@ -14,6 +14,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   **只是參考：這是新遊戲，不是把 C 版改寫**，不照它的結構和命名。要看連線通訊和核心程式時參考它，連線通訊在 `comm.c`（`game_loop_unix`、`read_from_descriptor`、`write_to_descriptor`）。
   原始碼是 Big5，搜尋要用 `LC_ALL=C grep -a`，不然會搜不到。
 
+## 待辦
+
+使用者說要做、但之後再做的事，一件一個 Markdown 檔放在 `todo/`（使用者選的：不開 GitHub issue，本機 gh 的帳號沒有這個 repo 的權限）。開始新工作前先看一下有沒有相關的。
+
 ## 指令
 
 都要在專案根目錄執行（套件沒有安裝，`python -m mud` 靠目前目錄找到 `mud/`）：
@@ -54,6 +58,11 @@ uv run python -m mud.areaconvert 舊.json builder_area/新.json   # 舊區域（
   `tests/test_config.py` 測 config（列出、開關 autoloot 和 showbuff、lines 的範圍、存檔）；`tests/test_pager.py` 測分頁（假指令 many 送很多行：每個按鍵、打別的指令、別人的訊息、quit、出錯）。
   `tests/test_academy.py` 用真的 `areas/` 測教學學院：一人一份、一路走到畢業（技能教官照公會教 use、掉落、穿上、`say 畢業`）、學生重新登入和死掉回學院、沒有學院的區域檔時。
   `tests/test_flee.py` 測 flee（DEX 的機率、戰鬥中不能走、成功、失敗要等、關著的門、沒有出口）。
+  `tests/test_light.py` 測黑暗和光源（很暗的四個條件、光源在身上／地上／背包、精靈和 imm、look 的每一種、找不到人、撿不到、「某人」、走進來、對面的門、燒完、燈籠放光源位置、存檔的 hours、暗處不自動拾取）；
+  `tests/test_terrain.py` 測地形（每一種擋法、船、飛行、現在站的房間也算、生物不受限制、飛和游的訊息、flee 不挑走不過去的出口、窒息）和飛翔術、水中呼吸術；
+  `tests/test_safe.py` 測安全區（kill、use 傷害技能擋下來而且不扣消耗、增益技能照用）。
+  `tests/test_recall.py` 測 recall（起始房間、自己的返回點、副本的 recall 先、no_recall、找不到、已經在那裡、打架中和休息、旁人的訊息、on_enter、存檔）；學生不能用的在 `test_academy.py`。
+  坑：日夜照現實時間算，原野、水、空中的房間大約 12 分鐘有 5 分鐘是暗的：用到這些房間的測試要 `monkeypatch.setattr(weather, "current", weather.Weather(hour=12))`。
   `tests/test_affects.py` 測身上的效果（覆蓋和疊加、暫時加減屬性、每 3 tick 跳、矮人的堅韌、扣死給誰經驗、時間到、死掉、存檔、score 最下面那段、affect、mstat、`config +showbuff` 的每一種訊息、生物的 affected_by），自己呼叫 `affects.tick()`。
   `tests/test_examine.py` 測 exam 的每一行、ostat、mstat、物品種類和武器種類的名稱表（跟手冊比對）、地上那一行接英文名字。
   `tests/test_help.py` 檢查真的 `help/help.json`（每個指令都有說明）、`helps.check()` 的每條規則、help 的三種畫面、縮寫、imm 的分類。
@@ -151,7 +160,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `name` 是區域檔的 `short`，另外存 `vnum`（遊戲號碼）、`keywords`、`long`、`description`、`level`、`tier`（骰過 `tier_roll`，`roll_tier()`）、
     `attack`／`defense`／`archetype`（代號，算屬性用）、`special`、`special_ratio`、`poison_ratio`（照區域檔存，null 用的時候才換成預設，見下面「生物的行為」）、
     `unnoticed`（半身人的不起眼）、`act`（`area.ActFlag`）、`affected_by`（`area.AffectFlag`：照 C 版一直帶著，不是 `Affect`，
-    不會消失、`affect clear` 拿不掉；`affects.has_flag()` 也看它，mstat 看得到；現在只是記號）。姿勢照區域檔的 `position`（C 版讀了就丟，我們用它），寫錯就站著。
+    不會消失、`affect clear` 拿不掉；`affects.has_flag()` 也看它，mstat 看得到；有作用的只有 FLYING、GILLS，見下面「地形」）。姿勢照區域檔的 `position`（C 版讀了就丟，我們用它），寫錯就站著。
     **出現時就算好全部屬性**：`stats.mob_stats(level, tier, attack, defense, archetype)` 照 balance.py 的 `Model.area_mob()`
     （等級 ＋ 種類的裝備完整度和進度加成 → 攻擊類型 → 原型 → 攻防傾向），存在 `npc.base_panel`（SECONDARY_KEYS、dmg_dragon、mp、mv、wpn、ac；
     `npc.panel` ＝ 它 ＋ 身上的效果，`npcs.recompute()`；測試直接設 `panel` 沒有 `base_panel` 的生物不要放效果）、
@@ -198,6 +207,10 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   `sset <名字> <技能> [off]`（`ss`，照 C 版的名字，讓線上的玩家學會／忘掉技能，imm_only 的不能給）。
   **玩家的指令排在 imm 指令前面**：同字首的玩家指令會搶走 imm 指令的縮寫（之前加了 affects，imm 打 `a` 就變成 affects）。
   **`kill <名字>`**（`commands/combat.py`，`k`，最低姿勢 FIGHTING 照 C 版）：開打同房間的生物，牠自動還手；**不可以打玩家**（使用者要的，自己也不行）。
+  **安全區**（`RoomFlag.SAFE`，使用者要的）：`commands/combat.protected()` 送 C 版「$N正在受到神力所保護的房間內。」，kill 和 use 的傷害技能都在扣消耗之前呼叫它；主動攻擊在 `behavior.aggress()` 自己看。開打只有這三個地方，所以安全區裡不會有戰鬥。
+  **`recall`**（`rec`，也可以打 `/`，最低姿勢 STANDING，所以打架中、休息、睡覺不能用；規則在玩家角色手冊「回城」，使用者 2026-11-17 定的）：
+  `system.do_recall()`，回到 `zones.recall_room()`：所在區域檔寫了 `recall` 就用它（通常是副本：送回入口），沒寫就用 `Player.recall`（自己的返回點，存檔，None 是 `START_ROOM`；改返回點的方法之後做）。
+  no_recall 房間、學生（`zones.is_student()`）不能用；不扣 MV；訊息照 C 版；到了跟腳本的 transfer 一樣觸發 on_enter(actor, nil)。
   **`flee`**（`f`，最低姿勢 FIGHTING，規則在玩家角色手冊「戰鬥」）：機率 `stats.flee_chance()` ＝ min(80%, 10% ＋ 70% × DEX ÷ 55)，DEX 是自己的 ＋ 裝備加的（使用者定的）。
   檢查：沒在打架 → 還在等（`cooldowns["flee"]`，失敗設 `FLEE_WAIT_TICKS` 2，`skills.tick()` 減）→ 開著的出口（關著的門不算）→ 骰 `rng.random()`。
   成功：`rng.choice(出口)` → `escape()`：`death.stop_all()`（自己和打自己的都停手）→ `system.move(ch, 方向, leave=…)`（`leave` 是原本房間看到的那句）。不扣經驗。
@@ -269,7 +282,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   註解的中文意思測試看不到，要自己對。**程式裡用名字（例如 `RoomFlag.SAFE`），不要直接寫數字。**
   `room_flags` 用 `parse_flags()` 解析：可以寫數字（`5`），
   也可以寫字串（`"5"`、`"1|4"`，`|` 是把幾個數字的位元合起來，`"1|3"` 是 3 不是 4），只能用 `RoomFlag` 裡有的旗標；
-  `sector` 只能寫 0～10 的一個整數（地形一間房只有一種）。伺服器還沒用到這兩個值，只是先存在 `Room` 上。
+  `sector` 只能寫 0～10 的一個整數（地形一間房只有一種）。有作用的旗標是 DARK、NO_MOB、INDOORS、SAFE、NO_RECALL，地形全部有作用（見下面「黑暗和光源」「地形」）；
+  **其他旗標使用者要之後做**，照樣留在區域檔：手冊 room_flags 表的「新系統」欄寫 ⏳、編輯器 `model.js` 的 `FLAGS` 說明寫「（還沒做）」，做了要兩邊一起改，這些數字不要拿去做別的。
   **號碼規則**（照 C 版，使用者 2026-11-17 定的；以前的 `area_number` ＋ 檔案號碼 1～99 拿掉了）：
   - 檔案裡的號碼一律寫完整的遊戲號碼（房間 101 就寫 101），程式裡沒有換算。
     每個檔在 `area.header.vnums` 寫自己的範圍 `[最小, 最大]`（`area.vnum_range()`）：自己的房間、生物、物品要在範圍裡（`check_number()`），
@@ -336,7 +350,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `check_object()` 大多只檢查寫法，例外有兩個：主手 8192 和副手 512 同時寫是錯的（使用者定的：武器只能放做出來的那一手，
     兩個都寫會用主手的上限算點數，放到副手就多拿點數）；武器（`item_type` 5）用 `check_weapon()` 查種類、雙手、攻擊方式。可以細看的東西跟房間共用 `check_extra_descriptions()`。物品號碼跟房間、生物分開算。
     `wear_flags` 的位置照 `mud_design` 設計文件 §3.3 的裝備欄位（使用者要求）：512 shield 當「副手」（盾牌或副手武器，雙持的出手規則在玩家角色手冊），
-    1 take（能不能撿起來）留著；光源不在 wear_flags，照明用具自己放光源位置。
+    1 take（能不能撿起來）留著；光源不在 wear_flags，照明用具一定放光源位置（`area.wear_slots()` 只回傳 `light`，寫了 hold 也一樣，照 C 版）。
   - **重置（`resets`）**：最上層的清單，照舊版 `#RESETS` 一串指令照順序執行（`M G O P D R` 和 `*` 註解），`G` 跟著前面最近的 `M`。
     每種 `cmd` 的欄位在 `area.RESET_KEYS`，名稱沿用 area2json。`direction` 寫方向名稱（同出口），`state` 寫數字。
     **使用者說生物不穿裝備**：舊版的 `E`（穿裝備；`wear_loc` 100 是給坐騎）連同坐騎一起拿掉了，`wear_loc` 表也拿掉，不要加回來。
@@ -357,7 +371,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - 世界區域（`world`）：開機時把所有 world 檔建進**一個**區域物件 `zones.world`，永遠不釋放。
   - 動態區域（`dynamic`）：有人走進去才建立（`room_at()`），大家共用一份（`zones.dynamic`，檔名 → Zone）。
   - 副本區域（`instance`）：`zones.instance(檔名, 擁有者)` 建立，一個擁有者一份（擁有者用名字；之後是隊長的名字）。
-    只能用 enter 進去、recall 出來，所以 `check_files()` 不准出口跨進或跨出副本。enter、recall、傳送門（之後做成物品）、組隊、死亡回 1 號房**還沒做**。
+    只能用 enter 進去、recall 出來，所以 `check_files()` 不准出口跨進或跨出副本。recall 回到副本寫的 `area.recall`（見上面的 recall 指令）；enter、傳送門（之後做成物品）、組隊**還沒做**。
   - 動態區域和副本連續 `RELEASE_TICKS`（1200 tick，20 分鐘）沒有玩家就 `release()`：停掉裡面的戰鬥、移走留下的角色、從名單拿掉。
     在 tick 裡數（`zone.empty_ticks`），有玩家就歸 0，所以實際上是 20 分鐘再加 0～1 秒。下一個人進去時重新建立，裡面全部重來。
   - 區域檔開機時就讀好、檢查好（`templates`），建立動態區域和副本時不讀檔。
@@ -382,7 +396,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - tick loop：世界和全部動態區域**共用一個**（世界 tick，`zones.start()` 開始），每次先做世界、再做每個動態區域；
     **副本每份自己一個**（建立時開始，釋放時結束）。間隔 `TICK_SECONDS` 固定 1 秒（使用者 2026-11-04 從 30 秒改成 1 秒，不加亂數）。
     **定時做的事都用「每幾個 tick 做一次」定義**（使用者定的）：數字在 `config.py`（`ROUND_TICKS` 2、`HOUR_TICKS` 30、`REGEN_TICKS` 30、`AREA_TICKS` 60、`OBJ_TICKS` 30、`AFFECT_PULSE_TICKS` 3、`RELEASE_TICKS` 1200、
-    `MOBILE_TICKS` 5、`SPECIAL_TICKS` 6），表在玩家角色手冊「定時做的事」，改數字要一起改表。每個區域物件一次 tick 要做的事寫在 `Zone.tick()`，用 `self.ticks % N == 0`：
+    `MOBILE_TICKS` 5、`SPECIAL_TICKS` 6、`CHOKE_TICKS` 3），表在玩家角色手冊「定時做的事」，改數字要一起改表。每個區域物件一次 tick 要做的事寫在 `Zone.tick()`，用 `self.ticks % N == 0`：
     世界每 `HOUR_TICKS` 走一次天氣、每 `REGEN_TICKS`（30）在線玩家和全部生物回復一次（`stats.regen()`，照姿勢：站 10%、休息 20%、睡 30%，
     戰鬥中不回）、每個 tick 數技能的冷卻（`skills.tick()`）、走身上的效果（`affects.tick()`）、生物的行為（`behavior.tick()`）；動態區域、副本數要不要釋放。
     **掛在角色身上的定時事情（回復、技能冷卻、身上的效果、生物的行為）放世界 tick、全部角色一起做**：副本的 loop 跟世界節拍不同步，放各區域的 tick 會走來走去多做或少做。
@@ -443,11 +457,12 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
       第一發打中、目標沒死就 `dot_affect(source, dot, first)`（每 3 tick 跳、共 jumps 次、每跳 ＝ 第一發 × ratio 最低 1，來源是技能 id；生物的 spec_poison 也用它），
       走 `affects.pulse()` 的持續扣 HP（護盾、扣死、矮人照舊），`Affect.hurt` 有寫就每跳說「你被【燃燒】燒傷了.(6)」（`combat.damage_tail()` 跟戰鬥訊息共用）。
       **天護**（`aegis`，使用者定的）：護盾 HP 上限的 120%、10 秒，要用程式加、不扣消耗、沒有冷卻；`skills` 列出時寫「護盾 HP 上限的 120%」（`affects.parts(listing=True)`）。
+      **飛翔術、水中呼吸術**（`fly`、`breathe`，使用者定的）：帶 `AffectFlag.FLYING`、`GILLS` 的增益，1800 秒，要用程式加、不扣消耗、沒有冷卻，`off_message` 照 C 版。
       **NPC 直接呼叫 `skills.use(npc, SKILLS["gift"], 玩家)` 就能放**（不用學、不用在打架）。`skills` 指令的增益技能：那一行寫持續多久，做什麼放下一行（`system.wrap()`，不超過 79 格）。
       冷卻用 tick 數：世界每個 tick `skills.tick()` 減 1，所以實際等 5～6 秒。
       `weapon_ok()`：有限用武器的技能，主手要拿那種武器（空手不行）；技能那一下用主手的武器。還沒做：學習、技能書、補血、減益、打一群、怪物打架時用技能。
     - 坑：`fight` → `combat` → `death` → `fight` 繞一圈：這幾個模組互相都用 `from . import 模組`，不要 `from .fight import stop_fighting`、`from .combat import hit`。
-    - 還沒做：安全區（只有主動攻擊會看）、C 版「快死了」「昏迷」（HP ≤ 0 就是死）。
+    - 還沒做：C 版「快死了」「昏迷」（HP ≤ 0 就是死）。
   - **生物的行為**（設計文件 §4.11，使用者 2026-11-16 定案，規則在區域製作手冊 act、special）：
     - `behavior.py`：世界 tick 每個 tick 呼叫 `behavior.tick(ticks)`（包在 `act.gathering()`，旁人一個 prompt）：每 `MOBILE_TICKS` 站著的生物 `idle()`
       （平常的 special → scavenger 25% → 沒有 sentinel 的 20% 走一步，`system.move()`），然後 `aggress()`（先從在線玩家整理每間房能打的人：不是 imm、沒在打架；
@@ -467,7 +482,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `applies`（屬性加減，`stats.add_affects()` 加進 panel：次要屬性照加；**主屬性照 `primary_bundle(公會, 主屬性, 被放的人自己的等級)` 換算**（使用者定的），
     生物沒有公會不算；負重、MP／MV 上限、55 上限只看自己的主屬性）、`periodic`（hp／mp／mv 每 `AFFECT_PULSE_TICKS` 3 加減固定量）、
     `periodic_pct`（每跳一次加減**當時上限**的幾成，例如餽贈的 `{"hp": 0.10}`；扣 HP 的也算矮人的堅韌、也會扣死，`drains_hp()`）、
-    `flags`（`area.AffectFlag`，現在只是記號；`AFFECT_FLAG_NAMES` 跟手冊比對）、`keep_on_death`、`off_message`（有寫才用，沒寫是共用的 `affects.off_message()`：「你身上的【名字】消失了。」，使用者要的）、
+    `flags`（`area.AffectFlag`，有作用的只有 FLYING、GILLS（`terrain.py`）；`AFFECT_FLAG_NAMES` 跟手冊比對）、`keep_on_death`、`off_message`（有寫才用，沒寫是共用的 `affects.off_message()`：「你身上的【名字】消失了。」，使用者要的）、
     **護盾** `shield_pct`（HP 上限的幾倍，使用者 2026-11-06 定的效果，名字是我取的「護盾」）和 `shield`（還剩幾點，`add()` 照當時的上限算，覆蓋就是回到滿的）。
     扣 HP 的地方只有兩個，都先 `affects.absorb()`（先放的先扣，扣光的拿掉）：`combat.land()`（平砍、技能；訊息加「（吸收 N）」`ABSORBED`）、
     `affects.pulse()`（持續扣血）。被打破的訊息 `broken_messages()` 放進同一段。**新增會扣 HP 的地方也要先 absorb**。
@@ -526,9 +541,27 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - 門關著還要走過去：有 `keywords` → 「【鐵門】關起來了。」（取 `keywords` 的第一個字）；
     **沒寫 `keywords` → 用方向，例如「北方關起來了。」**（C 版沒寫時是顯示 door，我們不照它）。
   - **對面看得到**（使用者要的）：打開、關上（之後的撞開也是）時，對面房間醒著的人收到「南方的木門被打開了。」（`doors.tell_room()`）；
-    對面很暗（`Room.dark()`：`RoomFlag.DARK` 而且沒有光源，光源是物品，還沒做）就看不到。上鎖、開鎖對面不知道（照 C 版）。
+    看不到房間的人（`light.can_see_room()`，一個一個人判斷）收不到。上鎖、開鎖對面不知道（照 C 版）。
     那一句是 `doors.tell_other_side()`，玩家的 open／close 和腳本的 `room:door` 共用（腳本真的打開、關上了才說，使用者要的）。
   - look 的出口：關著的門是紫色 `*北`（照 C 版）；`look 方向` 描述後面加「木門是關著的。」／「是開著的。」。
+- **黑暗和光源**（`light.py`，規則在玩家角色手冊「黑暗和光源」、區域製作手冊「很暗和光源」，使用者 2026-11-17 定的：照 C 版全部擋）：
+  - `dark(room)` 照 C 版 room_is_dark：有亮著的光源（有人穿在光源位置、或地上的照明用具；背包裡的不算）→ 不暗；`RoomFlag.DARK` → 暗；
+    地形室內、城市 → 不暗；`weather.current.sunlight` 是 SET、DARK → 暗。先看旗標、地形、日夜，本來會暗才找光源（`act` 每個讀的人都問一次）。
+    沒有 `room_flags`、`sector` 的房間（測試拿 `object()` 當房間）當作不暗。
+  - 看得到房間 `can_see_room(ch)`：不暗，或 `night_vision()`（imm、精靈的夜視、生物：簡化成生物都看得到，C 版只有出生在暗處的）。
+    `visible(reader, ch)`：自己、不在同一間房都看得到，同一間房才看房間（所以同一間房的人 chat、tell 也是「某人」，跟 C 版一樣；不同房間的照樣有名字，C 版不是）。
+  - 看不到時：`look`（`do_look` 在看參數之前就擋，`look()` 回 `darkness()`：那一句加上同房間每個精靈一雙紅眼睛）、
+    `characters.find_in_room()` 只找得到自己、`light.floor(ch)` 是空的（撿東西、地上的容器、`find_door` 用它）、
+    `act.fill()` 的 `$n`／`$N` 是「某人」、`system.move()` 走進來那句只送看得到的人、`doors.tell_room()` 一個一個人判斷、`combat.slain()` 不自動拾取。
+    自己的背包、身上的照樣看得到（C 版連這些都看不到，不做）。
+  - 照明用具：`Obj.hours`（values 第 3 個；0 燒完、負數不熄，存檔；舊存檔沒有就照區域檔現在的值）；世界每 `HOUR_TICKS` 的 `burn()`：在線玩家（imm 除外）光源位置的少 1，到 0 自己和旁人看到「【火把】燃燒殆盡了。」、不見。地上的不燒。
+  - 坑：`act`、`characters` 在函式裡才 import `light`（`light` → `weather` → `act`，`light` → `characters`）。
+- **地形**（`terrain.py`，規則在玩家角色手冊「地形」、區域製作手冊 sector，使用者 2026-11-17 定的）：
+  - `blocked(ch, to)`：空中要 `AffectFlag.FLYING`、要船的水要飛行或背包有船（`BOAT_ITEM_TYPE` 22）、水底要 `GILLS`（`affects.has_flag()`），訊息照 C 版。
+    **現在站的房間和要去的房間都算**（照 C 版，使用者定的：到期了走不出去就用 recall；空中房間又是 no_recall 會卡住是區域設計的問題，程式不擋）、**只限制玩家**（照 C 版）。`system.move()` 在門的檢查之後呼叫；flee 用 `can_go()` 先拿掉走不過去的出口。
+  - 訊息：`leave_text()`（預設的「朝…離開」從水裡到水裡換成「游向」）、`arrive_text()`（飛行 → 游泳（要去可游泳的水）→ 走路，照 C 版的順序）。
+  - 窒息 `choke()`：世界每 `CHOKE_TICKS`（3），水底、沒有 GILLS 的在線玩家（imm 除外）扣 HP 上限的 `CHOKE_PCT` 10%，先 `affects.absorb()`，到 0 `combat.slain()`。
+  - 走路扣 MV 不做（使用者定的）。秋風城的生物 3189 舊檔有 flying，轉換時拿掉了，加了 FLYING 後手動補回兩份 midgaard.json。
 - **物品**（`objects.py`，規則在區域製作手冊「屍體」、玩家角色手冊「物品和裝備」）：遊戲裡真的出現的物品：屍體和裡面掉落的、重置 G／O／P 放的、imm 用 `oload` 做的。
   - **容器**：`obj.container`（`area.ContainerFlag`，從 values 第 2 個開始，開關、上鎖改它）、`key`（values 第 3 個，跟出口的 key 一樣寫完整的遊戲號碼，0 以下是沒有鑰匙）、`seal`。屍體的 `container` 是 None，一直開著。
     關著的拿不出東西（「【X】關起來了。」）、`look in` 看不到（「它是蓋起來的。」）；封印著的撿不起來；可以封印又有密碼的打不開（封印的指令還沒做）。
@@ -604,7 +637,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   `act()` 會先對 fmt 做 `colorize()` 再代換 `$` 碼，所以玩家打的代碼會原樣顯示。`send()` 不轉代碼，要顏色就自己包 `colorize()`。
   目前 chat 用 `{M`（亮紫），tell／reply 用 `{G`（亮綠），跟 C 版一樣。
 - **存檔**（`save.py`）：一個角色一個 JSON 檔 `players/名字小寫.json`（`config.PLAYER_DIR`，不進 git），先寫暫存檔再 `os.replace`。
-  存主屬性、等級、經驗值 `exp`、種族、公會、`resource_roll`、HP／MP／MV、房間號碼、身上的效果 `affects`、腳本的變數 `vars`，**也寫一份全部次要屬性 `panel`**（使用者要的：打開檔案就看得到全屬性）。
+  存主屬性、等級、經驗值 `exp`、種族、公會、`resource_roll`、HP／MP／MV、房間號碼、身上的效果 `affects`、腳本的變數 `vars`、返回點 `recall`，**也寫一份全部次要屬性 `panel`**（使用者要的：打開檔案就看得到全屬性）。
   讀檔（`player_from()`）時次要屬性一律從頭算、蓋掉檔案那份，HP／MP／MV 夾在新上限以內；房間不在世界區域（動態、副本）就站起始房間。
   密碼只存 `hashlib.scrypt` 的雜湊（每個角色自己的鹽），比對用 `hmac.compare_digest`。
   離線時存：quit 和直接斷線都在 `handle()` 的 `finally` 存，`do_quit` 不另外存。建好角色時也存。

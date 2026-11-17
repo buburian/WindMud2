@@ -67,8 +67,10 @@ def find_in_room(ch, name):
     """ch 所在房間裡叫做 name 的角色，找不到是 None（使用者定的，**要找生物的指令都用它**：kill、slay、use…）。
 
     名字的規則在 names.py（開頭就行、3.dog 是第 3 隻）。順序照 look 畫面（in_room()），自己排最後（look 看不到自己；自己也找得到，照 C 版）。
+    很暗的房間找不到別人（照 C 版 can_see，light.visible()），自己找得到。
     """
-    return names.pick(in_room(ch) + [ch], name, lambda c: c.names())
+    from . import light                     # 坑：light 會 import 這個模組，在函式裡才 import
+    return names.pick([c for c in in_room(ch) if light.visible(ch, c)] + [ch], name, lambda c: c.names())
 
 
 _arrivals = itertools.count(1)

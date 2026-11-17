@@ -1,7 +1,9 @@
 """戰鬥類指令：kill 開打、flee 逃跑。"""
 import random
 
-from .. import death, fight, stats
+from .. import death, fight, stats, terrain
+from ..act import TO_CHAR, act
+from ..area import RoomFlag
 from ..characters import find_in_room
 from ..config import TICK_SECONDS
 from ..npcs import Npc
@@ -27,10 +29,23 @@ def do_kill(ch, arg):
     if not isinstance(victim, Npc):
         ch.send("你不可以攻擊玩家。\n")
         return
+    if protected(ch, victim):
+        return
     if ch.fighting is not None:
         ch.send("你現在正在為自己的戰鬥努力著!!\n")
         return
     fight.start_fight(ch, victim)
+
+
+def protected(ch, victim):
+    """victim 在安全區（RoomFlag.SAFE）：不能對牠開打，送 C 版那句、回傳 True。kill 和 use 的傷害技能用（使用者要的）。
+
+    開打的地方只有 kill、use、主動攻擊（behavior.aggress 自己看 SAFE），都擋掉了，所以安全區裡不會有戰鬥。
+    """
+    if RoomFlag.SAFE not in victim.room.room_flags:
+        return False
+    act("$N正在受到神力所保護的房間內。", ch, victim, to=TO_CHAR)
+    return True
 
 
 def do_flee(ch, arg):
@@ -45,7 +60,8 @@ def do_flee(ch, arg):
     if waits and waits.get("flee"):
         ch.send(f"你還要等 {waits['flee'] * TICK_SECONDS:g} 秒才能再逃跑。\n")
         return
-    exits = [d for d in ch.room.exits if not (d in ch.room.doors and ch.room.doors[d].closed)]
+    exits = [d for d in ch.room.exits if not (d in ch.room.doors and ch.room.doors[d].closed)
+             and terrain.can_go(ch, ch.room, d)]            # 走不過去的地形（要飛、要船…）不挑
     if not exits:
         ch.send("這裡沒有可以逃跑的出口！\n")
         return

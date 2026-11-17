@@ -106,7 +106,9 @@ def fill(fmt, ch, vch, t, T, reader):
 
     小寫是自己（ch），大寫是對象（vch）；$t、$T 是帶進來的文字。
     顏色要先換：玩家的字是代換時才放進去的，這樣他們打的 {R 才會原樣顯示、不會變色。
+    讀的人在很暗的房間看不到同房間的人：$n、$N 是「某人」（照 C 版 PERS，light.visible()）。
     """
+    from . import light                     # 坑：light 用到 weather，weather 又 import 這個模組，在函式裡才 import
 
     def one(m):
         code = m.group(1)
@@ -120,7 +122,7 @@ def fill(fmt, ch, vch, t, T, reader):
             if code == "n" and reader is ch:
                 value = "你"
             elif code in "nN":
-                value = who.name
+                value = who.name if light.visible(reader, who) else light.SOMEONE
             elif code in "eEmM":
                 value = HE_SHE[who.sex]
             elif code in "sS":

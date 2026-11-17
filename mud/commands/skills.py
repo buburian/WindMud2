@@ -7,6 +7,7 @@ from .. import affects, fight, skills
 from ..characters import characters, find_in_room
 from ..config import AFFECT_PULSE_TICKS, TICK_SECONDS
 from ..npcs import Npc
+from .combat import protected
 from .system import wrap
 
 
@@ -45,7 +46,7 @@ def do_use(ch, arg):
     if not isinstance(victim, Npc):
         ch.send("你不可以攻擊玩家。\n")
         return
-    if not ready(ch, skill):
+    if protected(ch, victim) or not ready(ch, skill):   # 安全區在扣消耗之前擋
         return
     engage(ch, victim)                      # 檢查都過了才開打：沒過就不會開打
     skills.use(ch, skill, victim)

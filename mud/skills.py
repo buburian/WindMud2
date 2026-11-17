@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 
 from . import affects, combat, damage, stats
 from .act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act
+from .area import AffectFlag
 from .config import AFFECT_PULSE_TICKS
 from .players import online_players
 from .stats import GUILD_RESOURCE, Guild
@@ -50,6 +51,11 @@ SKILLS = {s.id: s for s in (
         applies={k: 3.0 for k in stats.PRIMARY_KEYS}, keep_on_death=True)),
     # 增益：護盾（使用者定的，數字是使用者給的）：HP 上限 120% 的護盾、10 秒；要用程式加，不扣消耗、沒有冷卻
     Skill("aegis", "天護", None, "buff", "ally", 0, 0.0, 0, 0.0, affect=dict(duration=10, shield_pct=1.2)),
+    # 增益：帶旗標的（使用者定的：30 分鐘；用程式加，不扣消耗、沒有冷卻）：進得去空中、要船的水、水底（terrain.py）。消失的訊息照 C 版
+    Skill("fly", "飛翔術", None, "buff", "ally", 0, 0.0, 0, 0.0, affect=dict(
+        duration=1800, flags=AffectFlag.FLYING, off_message="你的腳緩慢的降回地面。")),
+    Skill("breathe", "水中呼吸術", None, "buff", "ally", 0, 0.0, 0, 0.0, affect=dict(
+        duration=1800, flags=AffectFlag.GILLS, off_message="你不能在水下呼吸了。")),
 )}
 
 

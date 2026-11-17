@@ -2,9 +2,9 @@
 import logging
 import re
 
-from .. import affects, objects, save, scripts, stats, weather, zones
-from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act
-from ..area import DIRECTIONS, REVERSE, MobTier
+from .. import affects, light, objects, save, scripts, stats, terrain, weather, zones
+from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act, compose, notify
+from ..area import DIRECTIONS, REVERSE, MobTier, RoomFlag
 from ..characters import SEX_FEMALE, SEX_MALE, Position, arrive, characters, find_in_room, in_room
 from ..color import colorize
 from ..config import ENCODING, PAGE_LINES, PAGE_LINES_MAX, PAGE_LINES_MIN
@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 
 
 def do_look(ch, arg):
-    if not arg:
+    if not arg or not light.can_see_room(ch):    # 很暗：look 什麼都只看到那一句（照 C 版，在看要看什麼之前）
         ch.send(look(ch))
         return
     room = ch.room
@@ -50,7 +50,7 @@ def look_in(ch, name):
     if not name:
         ch.send("你想看些什麼東西？\n")
         return
-    obj = objects.find(ch.room.contents + ch.carrying, name)
+    obj = objects.find(light.floor(ch) + ch.carrying, name)
     if obj is None:
         ch.send("這裡沒有你想看的東西。\n")
         return
@@ -108,7 +108,10 @@ def look(ch):
 
     順序（使用者定的）：先生物（NPC），再玩家，最後是地上的物品（新的在前）。
     生物、玩家、地上的物品都是亮白。名字不經過 colorize()：玩家名字只有英文字母，之後 NPC 用區域作者寫的描述時再看要不要轉顏色代碼。
+    很暗、看不到房間：只有「這裡黑漆漆的一片」那一句（light.darkness()，照 C 版）。
     """
+    if not light.can_see_room(ch):
+        return light.darkness(ch)
     room = ch.room
     # 關著的門是紫色的 *北（照 C 版），其他出口亮青色
     exits = "".join((" {M*" if d in room.doors and room.doors[d].closed else " {C") + DIRECTIONS[d]
@@ -156,8 +159,12 @@ LOOK_POSITIONS = {
 }
 
 
-def move(ch, direction, leave="$n朝$t離開。"):
-    """往 direction 走。leave 是原本房間的人看到的那句（flee 換成「逃竄了」）。"""
+def move(ch, direction, leave=terrain.WALK_AWAY):
+    """往 direction 走。leave 是原本房間的人看到的那句（flee 換成「逃竄了」；從水裡到水裡照常走路換成游泳，terrain.leave_text()）。
+
+    地形走不過去（現在的或要去的房間要飛、要船、要會潛水）就停在原地（terrain.blocked()，只限制玩家）。
+    走進去的房間：有飛行是「飛了過來」、可游泳的水是「游了過來」；很暗看不到他的人收不到（照 C 版）。
+    """
     vnum = ch.room.exits.get(direction)
     door = ch.room.doors.get(direction)
     if door is not None and door.closed:
@@ -169,10 +176,16 @@ def move(ch, direction, leave="$n朝$t離開。"):
     if to is None:
         ch.send("那裡不能走。\n")
         return
-    act(leave, ch, t=DIRECTIONS[direction], to=TO_ROOM)
+    refused = terrain.blocked(ch, ch.room, to)
+    if refused:
+        ch.send(refused + "\n")
+        return
+    act(terrain.leave_text(ch.room, to, leave), ch, t=DIRECTIONS[direction], to=TO_ROOM)    # 看不到的人是「某人」
     ch.room = to
     arrive(ch)
-    act("$n從$t邊走了過來。", ch, t=DIRECTIONS[REVERSE[direction]], to=TO_ROOM)
+    for reader, text in compose(terrain.arrive_text(ch, to), ch, t=DIRECTIONS[REVERSE[direction]], to=TO_ROOM):
+        if light.visible(reader, ch):
+            notify(reader, text)
     ch.send(look(ch))
     scripts.fire(to, "on_enter", ch, ch, REVERSE[direction])   # 腳本的 on_enter(actor, from)：from 是從哪個方向進來
 
@@ -184,6 +197,41 @@ def walk(direction):
         move(ch, direction)
 
     return do_walk
+
+
+RECALL_PRAY = "$n向天神祈求【傳送】"          # recall 的訊息照 C 版 do_recall
+RECALL_REFUSED = "天神遺棄了你。"
+RECALL_STUDENT = "你還沒從教學學院畢業，不能用 recall。"
+RECALL_LOST = "你完全地迷失了。"
+RECALL_LEAVE = "$n消失不見了。"
+RECALL_ARRIVE = "$n突然在這個房間裡面出現。"
+
+
+def do_recall(ch, arg):
+    """recall（`/`）：回到返回點（使用者定的，zones.recall_room()：區域檔寫的 recall，沒寫是自己的返回點）。
+
+    不能用：no_recall 的房間（照 C 版）、還沒畢業的學生（不然可以跳過學院）；打架中、休息、睡覺不能用（指令表的最低姿勢 STANDING）。
+    不扣 MV（C 版扣一半，使用者選不扣）。已經在那裡就什麼都不做（照 C 版）。到了跟腳本的 transfer 一樣觸發 on_enter(actor, nil)。
+    """
+    act(RECALL_PRAY, ch, to=TO_ROOM)
+    if RoomFlag.NO_RECALL in ch.room.room_flags:
+        ch.send(RECALL_REFUSED + "\n")
+        return
+    if zones.is_student(ch):
+        ch.send(RECALL_STUDENT + "\n")
+        return
+    to = zones.recall_room(ch)
+    if to is None:
+        ch.send(RECALL_LOST + "\n")
+        return
+    if to is ch.room:
+        return
+    act(RECALL_LEAVE, ch, to=TO_ROOM)
+    ch.room = to
+    arrive(ch)
+    act(RECALL_ARRIVE, ch, to=TO_ROOM)
+    ch.send(look(ch))
+    scripts.fire(to, "on_enter", ch, ch, None)
 
 
 do_north = walk("north")

@@ -129,17 +129,23 @@ class ActFlag(enum.IntFlag):
 
 
 class AffectFlag(enum.IntFlag):
-    """身上的效果的旗標（生物的 affected_by、身上的效果的 flags，affects.py）。名字是手冊的 C 版名稱；現在只是記號，還沒有作用。"""
+    """身上的效果的旗標（生物的 affected_by、身上的效果的 flags，affects.py）。名字、數字是手冊的 C 版名稱和數字。
+
+    有作用的只有 FLYING、GILLS（terrain.py：空中、要船的水、水底）；其他現在只是記號。判斷一律用 affects.has_flag()。
+    """
     BLIND = 1                               # 失明
     INVISIBLE = 2                           # 隱形
     DETECT_EVIL = 4                         # 看得出邪惡
     DETECT_INVIS = 8                        # 看得到隱形
     DETECT_MAGIC = 16                       # 看得出魔法
+    FLYING = 524288                         # 飛行：進得去空中、要船的水（飛翔術）
+    GILLS = 16777216                        # 水中呼吸：進得去水底、不會窒息（水中呼吸術）
 
 
 AFFECT_FLAG_NAMES = {                       # 顯示用的中文（手冊 affected_by 表的「意思」，有測試比對）
     AffectFlag.BLIND: "失明", AffectFlag.INVISIBLE: "隱形", AffectFlag.DETECT_EVIL: "看得出邪惡",
     AffectFlag.DETECT_INVIS: "看得到隱形", AffectFlag.DETECT_MAGIC: "看得出魔法",
+    AffectFlag.FLYING: "飛行", AffectFlag.GILLS: "水中呼吸",
 }
 
 
@@ -227,6 +233,7 @@ WEAR_SLOTS = {
 LIGHT_ITEM_TYPE = 1                         # 物品種類 1 照明用具：不在 wear_flags 裡，放在光源的位置
 WEAPON_ITEM_TYPE = 5                        # 物品種類 5 武器
 CONTAINER_ITEM_TYPE = 15                    # 物品種類 15 容器：get 東西 容器 可以從裡面拿
+BOAT_ITEM_TYPE = 22                         # 物品種類 22 船隻：背包裡有船才進得去要船的水（terrain.py）
 
 
 class ContainerFlag(enum.IntFlag):
@@ -382,10 +389,6 @@ class Room:
         self.zone = None                    # 屬於哪個區域物件（zones.Zone），建進區域物件時設定
         # 腳本（scripts.py）：script 是 scripts.Script；vars 是房間身上的變數（這個區域檔重置時清掉）
         self.script, self.timer, self.timer_left, self.waiting, self.vars = None, None, 0, 0, {}
-
-    def dark(self):
-        """很暗、看不到東西：有 RoomFlag.DARK，而且沒有光源。光源是物品，還沒做，現在很暗的房間一律看不到。"""
-        return RoomFlag.DARK in self.room_flags
 
 
 class Door:
@@ -614,15 +617,16 @@ def check_fixed_items(name, data, objects, mob_levels, problems):
 
 
 def wear_slots(obj):
-    """區域檔的物品 obj 穿在哪些部位（equipment.py 的代號，照明用具是光源）、是不是雙手武器。旗標寫錯丟 ValueError。
+    """區域檔的物品 obj 穿在哪些部位（equipment.py 的代號）、是不是雙手武器。旗標寫錯丟 ValueError。
 
+    照明用具一定放光源的位置（照 C 版），wear_flags 寫了別的（例如持握）也一樣。
     檢查固定裝備的上限和做出隨機裝備（objects.create）都用它。
     """
     wear = parse_flags(obj.get("wear_flags"))
     two_handed = bool(parse_flags(obj.get("extra_flags")) & ExtraFlag.TWO_HANDED)
-    slots = [slot for flag, slot in WEAR_SLOTS.items() if wear & flag]
     if obj.get("item_type") == LIGHT_ITEM_TYPE:
-        slots.append("light")
+        return ["light"], two_handed
+    slots = [slot for flag, slot in WEAR_SLOTS.items() if wear & flag]
     return slots, two_handed
 
 

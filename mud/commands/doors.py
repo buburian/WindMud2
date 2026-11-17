@@ -2,7 +2,7 @@
 
 撬（pick）、撞（bash）要等技能做好再做。門成功時這一邊和對面那一邊一起變（doors.set_state()）；容器改它自己的 container 旗標。
 """
-from .. import doors, objects
+from .. import doors, light, objects
 from ..act import TO_CHAR, TO_ROOM, act
 from ..area import DIRECTIONS, ContainerFlag, DoorState
 
@@ -34,7 +34,7 @@ def find_door(ch, arg):
         else:
             return direction
         return None
-    obj = objects.find(ch.room.contents + ch.carrying + list(ch.equipment.values()), word)
+    obj = objects.find(light.floor(ch) + ch.carrying + list(ch.equipment.values()), word)     # 很暗看不到地上的
     if obj is None:
         act("這裡沒有叫做「$t」的門。", ch, t=word, to=TO_CHAR)    # 玩家打的字用 $t 帶進去
     return obj

@@ -23,6 +23,7 @@ OBJ_TICKS = 30               # 每 30 tick 地上物品的 timer 減 1（C 版�
 RELEASE_TICKS = 20 * 60      # 動態區域、副本連續這麼多 tick 沒有玩家就釋放（20 分鐘）
 MOBILE_TICKS = 5             # 每 5 tick 站著的生物做平常的事：平常的 special、scavenger 撿東西、走動（設計文件 §4.11，behavior.py）
 SPECIAL_TICKS = 6            # 打架用的 special：開打後先等 6 tick，之後每 6 tick 放一次（設計文件 §4.11，specials.py）
+CHOKE_TICKS = 3              # 在水底沒有水中呼吸的玩家每 3 tick 窒息一次（terrain.choke）
 PLAYER_DIR = "players"       # 玩家存檔的資料夾（一個角色一個 JSON 檔），跟 areas/ 同一層，不進 git
 BUILDER_DIR = "builder_area"   # 區域編輯器存區域檔的資料夾，跟 areas/ 同一層
 BUILDER_PORT = 1234            # 區域編輯器的網頁 port
