@@ -7,10 +7,11 @@
 import logging
 import random
 
-from . import equipment, names
+from . import area, equipment, names
 from .act import notify
-from .area import (CHANCE_MAX, CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE, LIGHT_ITEM_TYPE, WEAPON_ITEM_TYPE, Apply, Attack,
-                   ContainerFlag, ItemColor, WeaponKind, WearFlag, parse_flags, wear_slots)
+from .area import (CHANCE_MAX, CHARGED_ITEM_TYPES, CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE, DRINK_CON_ITEM_TYPE, FOOD_ITEM_TYPE,
+                   FOUNTAIN_ITEM_TYPE, LIGHT_ITEM_TYPE, SKILL_ITEM_TYPES, WEAPON_ITEM_TYPE, Apply, Attack, ContainerFlag,
+                   ItemColor, WeaponKind, WearFlag, parse_flags, skill_slots, wear_slots)
 from .characters import Position
 from .color import colorize
 from .players import online_players
@@ -53,6 +54,14 @@ class Obj:
         self.key = None                     # 容器的鑰匙：遊戲號碼（values 第 3 個，換算跟出口的 key 一樣），None 是鎖不起來
         self.seal = 0                       # 容器的封印密碼（values 第 4 個）：可以封印又不是 0 就打不開（封印的指令還沒做）
         self.hours = None                   # 照明用具才有：還能亮幾小時（values 第 3 個；0 燒完了、負數永遠不熄，light.py）
+        self.skills = []                    # 會放技能的物品（卷軸、藥水、魔杖、魔棒）：用的時候放哪些技能（技能的 id，commands/item_skills.py）
+        self.charges = None                 # 魔杖、魔棒才有：還剩幾次（values 第 3 個），到 0 就碎掉
+        # 吃喝（設計文件 §3.9，commands/meals.py）：不是這幾種的都是 None
+        self.bites = None                   # 食物：還能吃幾口（values 第 1 個），到 0 就不見
+        self.buff = None                    # 食物：坐滿 10 秒放的 buff 技能（values 第 2 個，"" 是沒有）
+        self.capacity = None                # 液體容器：容量（values 第 1 個）
+        self.amount = None                  # 液體容器：現在有多少（values 第 2 個），每喝少 1
+        self.liquid = None                  # 液體容器、噴泉：液體種類（values 第 3 個，area.LIQUIDS）
 
     def is_weapon(self):
         return self.weapon_kind is not None
@@ -90,6 +99,10 @@ def create(vnum, level, color, rng=random):
         obj.weapon_kind, obj.attack = WeaponKind(int(proto["values"][0])), Attack(int(proto["values"][3]))
     if proto["item_type"] == LIGHT_ITEM_TYPE:
         obj.hours = light_hours(proto)
+    if proto["item_type"] in SKILL_ITEM_TYPES:
+        obj.skills, obj.charges = skill_parts(proto)
+    for k, v in meal_parts(proto).items():
+        setattr(obj, k, v)
     if slot is None:                        # 不是裝備：沒有屬性
         return obj
     offhand_weapon = slot == "offhand" and proto["item_type"] == WEAPON_ITEM_TYPE   # 副手武器（雙持）：給武器傷害、不給 AC
@@ -108,6 +121,28 @@ def light_hours(proto):
     """區域檔的照明用具可以亮幾小時（values 第 3 個）：寫錯（不是整數）當作 0、燒完了。"""
     hours = proto["values"][2]
     return int(hours) if str(hours).lstrip("-").isdecimal() else 0
+
+
+def skill_parts(proto):
+    """會放技能的物品：(技能的 id 清單, 剩幾次)。區域檢查保證寫的是技能的 key；不是魔杖、魔棒的剩幾次是 None。"""
+    values = proto["values"]
+    skills = [values[i] for i in skill_slots(proto["item_type"]) if values[i]]
+    return skills, (int(values[2]) if proto["item_type"] in CHARGED_ITEM_TYPES else None)
+
+
+MEAL_FIELDS = ("bites", "buff", "capacity", "amount", "liquid")
+
+
+def meal_parts(proto):
+    """吃喝的東西照區域檔的 values（區域檢查保證寫法對）：{欄位: 值}；不是吃喝的東西是空的。"""
+    values, kind = proto["values"], proto["item_type"]
+    if kind == FOOD_ITEM_TYPE:
+        return {"bites": int(values[0]), "buff": values[1]}
+    if kind == DRINK_CON_ITEM_TYPE:
+        return {"capacity": int(values[0]), "amount": int(values[1]), "liquid": int(values[2])}
+    if kind == FOUNTAIN_ITEM_TYPE:
+        return {"liquid": int(values[2])}
+    return {}
 
 
 def base_price(obj):
@@ -180,6 +215,12 @@ def on_floor(obj):
     return FLOOR + obj.long.rstrip("\n") + english_tail(obj) + RESET
 
 
+def extra_descriptions(obj):
+    """物品可以細看的東西 [(小寫的名字們, 描述)]：照區域檔現在寫的（存檔不帶，區域檔改了就跟著變）。屍體、區域檔沒有的是空的。"""
+    proto = protos.get(obj.vnum)
+    return area.extra_descriptions(proto["extra_descriptions"]) if proto else []
+
+
 def find(objs, name):
     """objs 裡（照順序）叫做 name 的那件，找不到是 None。規則跟找生物一樣（names.py：開頭就行、2.sword 是第 2 件）。"""
     return names.pick(objs, name, lambda o: o.keywords)
@@ -201,7 +242,8 @@ def to_data(obj):
                 weapon_kind=None if obj.weapon_kind is None else int(obj.weapon_kind),
                 attack=None if obj.attack is None else int(obj.attack),
                 container=None if obj.container is None else int(obj.container), key=obj.key, seal=obj.seal, cost=obj.cost,
-                hours=obj.hours, contains=[to_data(o) for o in obj.contains])
+                hours=obj.hours, skills=list(obj.skills), charges=obj.charges, contains=[to_data(o) for o in obj.contains],
+                **{k: getattr(obj, k) for k in MEAL_FIELDS})
     return data
 
 
@@ -221,6 +263,19 @@ def from_data(data):
     elif obj.item_type == LIGHT_ITEM_TYPE:  # 舊存檔沒有 hours：照區域檔現在的值；區域檔沒有這件了就當作永遠不熄
         proto = protos.get(obj.vnum)
         obj.hours = light_hours(proto) if proto else -1
+    if "skills" in data:
+        obj.skills, obj.charges = list(data["skills"]), data["charges"]
+    elif obj.item_type in SKILL_ITEM_TYPES:     # 舊存檔沒有：照區域檔現在的值；區域檔沒有這件了就當作沒有技能、0 次
+        proto = protos.get(obj.vnum)
+        obj.skills, obj.charges = skill_parts(proto) if proto else ([], 0 if obj.item_type in CHARGED_ITEM_TYPES else None)
+    if "bites" in data:
+        for k in MEAL_FIELDS:
+            setattr(obj, k, data[k])
+    elif obj.item_type in (FOOD_ITEM_TYPE, DRINK_CON_ITEM_TYPE, FOUNTAIN_ITEM_TYPE):   # 舊存檔沒有：照區域檔現在的值
+        gone = [1, "", 0, 0] if obj.item_type == FOOD_ITEM_TYPE else [0, 0, 0, 0]   # 區域檔沒有這件了：一口、空的、清水
+        proto = protos.get(obj.vnum) or {"item_type": obj.item_type, "values": gone}
+        for k, v in meal_parts(proto).items():
+            setattr(obj, k, v)
     obj.contains = [from_data(d) for d in data["contains"]]
     return obj
 

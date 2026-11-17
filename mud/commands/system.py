@@ -2,7 +2,7 @@
 import logging
 import re
 
-from .. import affects, light, objects, save, scripts, socials, stats, terrain, weather, zones
+from .. import affects, light, meals, objects, save, scripts, socials, stats, terrain, weather, zones
 from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act, compose, notify
 from ..area import DIRECTIONS, REVERSE, MobTier, RoomFlag
 from ..characters import SEX_FEMALE, SEX_MALE, Position, arrive, characters, find_in_room, in_room
@@ -31,18 +31,32 @@ def do_look(ch, arg):
             return
     direction = next((d for d in DIRECTIONS if d.startswith(target)), None)
     if direction is None:
-        # 最後才找房間裡的角色（C 版最先找）：名字只比開頭，放在方向前面的話 look d、look n 會變成看 d、n 開頭的生物
+        # 方向以後才找房間裡的角色、物品（C 版最先找）：名字只比開頭，放在方向前面的話 look d、look n 會變成看 d、n 開頭的生物
         victim = find_in_room(ch, words[0])
-        if victim is None:
-            ch.send("在這裡找不到你要看的東西。\n")
-        else:
+        if victim is not None:
             look_at(ch, victim)
+            return
+        ch.send(look_object(ch, words[0]) or "在這裡找不到你要看的東西。\n")
         return
     text = room.exit_descriptions.get(direction)
     ch.send(block(text) if text else "那裡沒有什麼特別的東西。\n")    # 沒寫描述，或那個方向沒有出口
     door = room.doors.get(direction)
     if door is not None:                    # 照 C 版接著說門的狀態；C 版沒寫名字就不說，我們叫它「門」
         ch.send(f"{door.name}是{'關著' if door.closed else '開著'}的。\n")
+
+
+def look_object(ch, word):
+    """look 物品（照 C 版 do_look）：背包、身上、地上（照這個順序）的物品；找不到是 None。
+    先找物品可以細看的東西（名字要整個字一樣，跟房間的一樣），再找物品的名字（跟 get 一樣：開頭就行、2.x），看它放在地上的那一句。
+    """
+    objs = ch.carrying + list(ch.equipment.values()) + light.floor(ch)
+    target = word.lower()
+    for obj in objs:
+        for keywords, text in objects.extra_descriptions(obj):
+            if target in keywords:
+                return block(text)
+    obj = objects.find(objs, word)
+    return obj.long.rstrip("\n") + "\n" if obj is not None else None
 
 
 def look_in(ch, name):
@@ -502,10 +516,12 @@ def do_stand(ch, arg):
         ch.send("你不是已經站起來了嗎？\n")
     elif ch.position == Position.SLEEPING:
         ch.position = Position.STANDING
+        meals.cancel(ch)                    # 站起來：吃喝的效果沒了（設計文件 §3.9）
         ch.send("你醒過來，站了起來。\n")
         act("$n醒過來，站了起來。", ch, to=TO_ROOM)
     else:
         ch.position = Position.STANDING
+        meals.cancel(ch)
         ch.send("你站了起來。\n")
         act("$n站了起來。", ch, to=TO_ROOM)
 

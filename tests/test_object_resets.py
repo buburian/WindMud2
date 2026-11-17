@@ -55,8 +55,8 @@ def obj(vnum, short, keywords, item_type, values, wear="1"):
     return o
 
 
-OBJECTS = [obj(101, "藥水", "potion", 10, [5, "cure light", "", ""]), obj(102, "箱子", "box", 15, [50, 1, -1, 0]),
-           obj(103, "麵包", "bread", 19, [10, 0, 0, 0]), obj(104, "長劍", "sword", 5, [2, 0, 0, 3], "1|8192")]
+OBJECTS = [obj(101, "藥水", "potion", 10, [5, "fly", "", ""]), obj(102, "箱子", "box", 15, [50, 1, -1, 0]),
+           obj(103, "麵包", "bread", 19, [10, "", 0, 0]), obj(104, "長劍", "sword", 5, [2, 0, 0, 3], "1|8192")]
 
 
 def M(mob_vnum, room_vnum, limit=1, rare=0):

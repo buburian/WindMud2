@@ -47,7 +47,7 @@ def world(tmp_path, monkeypatch):
     dog = make_mobile(101)
     dog.update(short="野狗", keywords="dog", act=2, position=7, drops=[], special=None, shop=None, long="")
     bread = make_object(103)
-    bread.update(short="麵包", keywords="bread", item_type=19, wear_flags="1", values=[0, 0, 0, 0], affects=[],
+    bread.update(short="麵包", keywords="bread", item_type=19, wear_flags="1", values=[1, "", 0, 0], affects=[],
                  extra_descriptions=[], script=None)
     objs = [light_item(101, "火把", "torch", 2), light_item(102, "燈籠", "lantern", -1, wear="1|16384"), bread]
     resets = [{"cmd": "M", "rare": 0, "mob_vnum": 101, "limit": 1, "room_vnum": 103, "comment": ""},

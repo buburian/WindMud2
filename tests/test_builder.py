@@ -293,7 +293,7 @@ def test_page_tables_with_several_columns_match_manual():
     # 這幾張表在手冊裡一列放好幾組（數字、名字、數字、名字…）
     attacks = [int(row[i]) for row in manual_rows("### 武器的攻擊方式") for i in (0, 2) if row[i]]
     assert tables_js("ATTACKS") == sorted(attacks)
-    liquids = [int(row[i]) for row in manual_rows("### 液體種類") for i in (0, 3) if row[i]]
+    liquids = [int(row[0]) for row in manual_rows("### 液體種類")]
     assert tables_js("LIQUIDS") == sorted(liquids)
     races = [row[i].lower() for row in manual_rows("### race（種族）") for i in (0, 2, 4) if row[i]]
     assert tables_js("RACES") == races

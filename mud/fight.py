@@ -15,7 +15,7 @@ import heapq
 import itertools
 import logging
 
-from . import act, behavior, combat, damage, scripts, specials  # 坑：combat 會 import 回來，要用「模組.名字」，不能 from .combat import hit
+from . import act, behavior, combat, damage, meals, scripts, specials  # 坑：combat 會 import 回來，要用「模組.名字」，不能 from .combat import hit
 from .act import notify
 from .characters import Position, characters
 from .clock import cancel, every
@@ -184,6 +184,7 @@ def start_fight(ch, victim):
         if c.fight is None:
             fight.join(c)
         c.position = Position.FIGHTING
+        meals.cancel(c)                     # 開打：吃喝的效果沒了（設計文件 §3.9）
     return fight
 
 

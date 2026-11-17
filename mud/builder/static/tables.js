@@ -180,11 +180,13 @@ export const ITEM_TYPES = [
 const AUTO_TIP = "由裝備等級算，不用寫（寫 0），見設計文件 §3.3";
 const UNUSED = [["沒用到", "number"], ["沒用到", "number"], ["沒用到", "number"], ["沒用到", "number"]];
 const UNKNOWN = [["不確定", "number"], ["不確定", "number"], ["不確定", "number"], ["不確定", "number"]];
-const SPELLS = [["法術等級", "number"], ["法術 1", "spell"], ["法術 2", "spell"], ["法術 3", "spell"]];
-const WAND = [["法術等級", "number"], ["可以用幾次", "number"], ["最多幾次", "number", "C 版放出時改成跟第 2 個一樣"], ["法術名稱", "spell"]];
+// 會放技能的物品（設計文件 §3.8）：寫技能的 key，例如 fly
+const SKILL_TIP = "技能的 key，例如 fly、breathe；不用的寫空的";
+const SKILL_ITEM = [["沒用到", "number", "C 版的法術等級"], ["技能 1", "spell", SKILL_TIP], ["技能 2", "spell", SKILL_TIP], ["技能 3", "spell", SKILL_TIP]];
+const WAND = [["沒用到", "number", "C 版的法術等級"], ["最多幾次", "number", "沒用到"], ["剩幾次", "number", "每用一次少 1，到 0 就碎掉"], ["技能", "spell", SKILL_TIP]];
 export const VALUE_FIELDS = {
-  1: [["不確定", "number"], ["不確定", "number"], ["可以亮幾小時", "number", "每個 tick 少 1，到 0 就燒完；寫負數永遠不會熄"], ["不確定", "number"]],
-  2: SPELLS,
+  1: [["不確定", "number"], ["不確定", "number"], ["可以亮幾小時", "number", "穿著時遊戲裡每小時少 1，到 0 就燒完；寫負數永遠不會熄"], ["不確定", "number"]],
+  2: SKILL_ITEM,
   3: WAND,
   4: WAND,
   5: [["武器種類", "weapon", "單手的可以做主手或副手；雙手的一定要勾 extra_flags 512 雙手"], ["傷害下限", "auto", AUTO_TIP], ["傷害上限", "auto", AUTO_TIP], ["攻擊方式", "attack"]],
@@ -192,19 +194,20 @@ export const VALUE_FIELDS = {
   8: UNUSED,
   9: [["防護力", "auto", AUTO_TIP], ["耐久上限", "number", "C 版放出時改成價格"], ["防護上限", "auto", AUTO_TIP],
     ["特殊能力", "number", "穿在身上或披在身上寫 1 會飛；戴在頭上寫 1、2、3 分別是看得到隱形、看得到躲起來的人、看得出邪惡"]],
-  10: SPELLS,
+  10: SKILL_ITEM,
   12: UNUSED,
   13: UNUSED,
   15: [["容量", "number", "最多裝多重"], ["容器旗標", "container"], ["鑰匙", "number", "鑰匙的物品號碼，寫法同出口的 key，負數是沒有鑰匙"], ["封印的密碼", "number"]],
-  17: [["容量", "number"], ["現在裝了多少", "number"], ["液體種類", "liquid"], ["有毒", "number", "不是 0 就是有毒"]],
+  17: [["容量", "number"], ["現在裝了多少", "number", "每喝一口少 1，0 是空的；0～容量"], ["液體種類", "liquid"], ["有毒", "number", "還沒做"]],
   18: UNUSED,
-  19: [["吃了會飽多少", "number"], ["不確定", "number"], ["不確定", "number"], ["有毒", "number", "不是 0 就是有毒"]],
+  19: [["可以吃幾口", "number", "至少 1；每吃一口少 1，到 0 就不見"], ["buff 技能", "spell", "吃完坐滿 10 秒放的增益技能 key，例如 fly；沒有寫空的（回 HP 快一倍）"],
+    ["沒用到", "number"], ["有毒", "number", "還沒做"]],
   20: [["多少錢", "number", "C 版放出時改成價格"], ["不確定", "number"], ["不確定", "number"], ["不確定", "number"]],
   22: UNUSED,
   23: UNKNOWN,
   24: UNKNOWN,
-  25: [["不確定", "number"], ["不確定", "number"], ["液體種類", "liquid"], ["不確定", "number"]],
-  26: SPELLS,
+  25: [["沒用到", "number"], ["沒用到", "number"], ["液體種類", "liquid", "喝不完"], ["沒用到", "number"]],
+  26: SKILL_ITEM,
 };
 
 // 物品的特性 extra_flags
@@ -294,7 +297,7 @@ export const ATTACKS = [
   [13, "橫劈"],
 ];
 
-// 液體容器、噴泉 values 第 3 個：液體種類
+// 液體容器、噴泉 values 第 3 個：液體種類（喝了的 buff 在 area.LIQUIDS，現在都沒有）
 export const LIQUIDS = [
   [0, "清水"],
   [1, "啤酒"],

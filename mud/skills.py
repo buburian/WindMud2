@@ -167,13 +167,15 @@ def pay(ch, skill):
         ch.cooldowns[skill.id] = skill.cooldown
 
 
-def use(ch, skill, victim):
+def use(ch, skill, victim, pay_cost=True):
     """ch 對 victim 用 skill（能不能用由指令先檢查）：扣消耗、開始冷卻，增益技能放效果（buff()），傷害技能打 hits 次。
+    物品放的技能（藥水、卷軸、魔杖、魔棒，設計文件 §3.8）pay_cost 是 False：不扣消耗、沒有冷卻。
 
     每一次 ＝ 平砍的一下（各自擲命中、浮動、爆擊）× ratio，類型見 damage_kind()；目標死了就不打剩下的。
     打指令當下就打，平砍照打（技能是額外的）。訊息放進那一場，打完馬上送：ch 那段是指令的回覆，別人照舊 notify。
     """
-    pay(ch, skill)
+    if pay_cost:
+        pay(ch, skill)
     if skill.kind == "buff":
         buff(ch, skill, victim)
         return

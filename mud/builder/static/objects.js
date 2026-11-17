@@ -94,7 +94,7 @@ function valuesGrid(ctx, obj) {
   const cells = kinds.map(([label, kind, tip], i) => {
     const id = `val-${i}`;
     const code = `values[${i}]`;
-    if (kind === "spell") return textField({ id, label, code, obj: values, key: i, tip: tip || "法術名稱，例如 cure light；不用的寫空的", done });
+    if (kind === "spell") return textField({ id, label, code, obj: values, key: i, tip: tip || "技能的 key；不用的寫空的", done });
     if (kind === "attack") return selectField({ id, label, code, obj: values, key: i, options: T.ATTACKS, done });
     if (kind === "weapon") return selectField({ id, label, code, tip, obj: values, key: i, options: T.WEAPON_KINDS, done });
     if (kind === "liquid") return selectField({ id, label, code, obj: values, key: i, options: T.LIQUIDS, done });

@@ -62,7 +62,7 @@ def mob(vnum, drops=(), **fields):
 def potion(vnum):
     """不是裝備的物品（藥水，只能拿起來）。"""
     o = make_object(vnum)
-    o.update(short="治療藥水", keywords="potion 藥水", item_type=10, wear_flags="1", values=[5, "cure light", "", ""],
+    o.update(short="治療藥水", keywords="potion 藥水", item_type=10, wear_flags="1", values=[5, "fly", "", ""],
              affects=[], extra_descriptions=[], script=None)
     return o
 
@@ -397,6 +397,66 @@ def test_look_in_mistakes(folder, line, want):
     shabu = player("Shabu", dog.room)
     commands.command(shabu, line)
     assert text_of(shabu) == f"{want}\r\n\r\n> "
+
+
+def pit(vnum):
+    """奉獻箱：搬不動的容器，寫了可以細看的東西。"""
+    o = make_object(vnum)
+    o.update(short="奉獻箱", keywords="donation pit", long="一個奉獻箱擺在祭壇前。", item_type=15, wear_flags=0,
+             values=[100, 0, 0, 0], affects=[], script=None,
+             extra_descriptions=[{"keywords": "奉獻箱 donation pit", "description": "一口用舊門板釘成的{Y大木箱{x。"}])
+    return o
+
+
+@pytest.mark.parametrize("line", ["look pit", "look PIT", "look 奉獻箱", "l donation"])
+def test_look_at_an_object_shows_its_extra_description(folder, line):
+    dog = world_with_dog(folder, objs=[pit(103)])
+    dog.room.contents.append(objects.create(103, 1, None))
+    shabu = player("Shabu", dog.room)
+    commands.command(shabu, line)
+    assert raw(shabu) == "一口用舊門板釘成的" + colorize("{Y") + "大木箱" + colorize("{x") + "。\r\n\r\n> "
+
+
+def test_look_at_an_object_without_extra_description_shows_its_long(folder):
+    dog = world_with_dog(folder, objs=[potion(102)])
+    shabu = player("Shabu", dog.room)
+    shabu.carrying.append(objects.create(102, 1, None))
+    commands.command(shabu, "look pot")                            # 名字跟 get 一樣只要打開頭
+    assert text_of(shabu) == f"{shabu.carrying[0].long}\r\n\r\n> "
+
+
+def test_look_finds_carried_and_worn_before_the_floor(folder):
+    dog = world_with_dog(folder, objs=[pit(103)])
+    mine, floor = objects.create(103, 1, None), objects.create(103, 1, None)
+    mine.long, floor.long = "我的。", "地上的。"
+    dog.room.contents.append(floor)
+    shabu = player("Shabu", dog.room)
+    shabu.equipment["hold"] = mine
+    commands.command(shabu, "look donation")                        # 細看：身上的那件先
+    assert text_of(shabu).startswith("一口用舊門板釘成的大木箱")
+    commands.command(shabu, "look 2.donation")                      # 名字：第 2 件是地上的
+    assert text_of(shabu) == "地上的。\r\n\r\n> "
+
+
+def test_look_prefers_directions_and_characters(folder):
+    dog = world_with_dog(folder, objs=[pit(103)])
+    obj = objects.create(103, 1, None)
+    obj.keywords = ["dog", "north"]
+    dog.room.contents.append(obj)
+    shabu = player("Shabu", dog.room)
+    commands.command(shabu, "look dog")                             # 角色先：看到的是野狗，不是奉獻箱
+    text = text_of(shabu)
+    assert "奉獻箱" not in text and "大木箱" not in text and "找不到" not in text
+    commands.command(shabu, "look n")                               # 方向先
+    assert text_of(shabu) == "那裡沒有什麼特別的東西。\r\n\r\n> "
+
+
+def test_corpse_can_be_looked_at(folder):
+    dog = world_with_dog(folder)
+    shabu = player("Shabu", dog.room)
+    death.die(dog)
+    commands.command(shabu, "look corpse")
+    assert text_of(shabu) == "野狗的屍體橫躺在地上。\r\n\r\n> "
 
 
 @pytest.mark.parametrize("color, code", [("gray", "{D"), ("white", "{W"), ("blue", "{B"), ("purple", "{M"),

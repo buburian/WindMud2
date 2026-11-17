@@ -313,8 +313,10 @@ REGEN_RATE = {Position.STANDING: 0.10, Position.RESTING: 0.20, Position.SLEEPING
 def regen(ch):
     """回復一次（世界 tick 每 REGEN_TICKS 呼叫，玩家和生物一樣，設計文件 §4.11）：HP、MP、MV 各回上限的固定比例，不超過上限。"""
     rate = REGEN_RATE.get(ch.position, 0)
+    # 吃喝坐滿 10 秒：那一項回得快一倍（meals.py，設計文件 §3.9）；只有休息、睡覺時算（站起來時 meals.cancel 會清掉，這裡再保險一次）
+    bonus = getattr(ch, "meal_bonus", {}) if ch.position in (Position.RESTING, Position.SLEEPING) else {}
     for key in ("hp", "mp", "mv"):
-        setattr(ch, key, min(ch.panel[key], getattr(ch, key) + ch.panel[key] * rate))
+        setattr(ch, key, min(ch.panel[key], getattr(ch, key) + ch.panel[key] * rate * bonus.get(key, 1)))
 
 
 def recompute(player):

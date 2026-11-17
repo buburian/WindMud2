@@ -16,6 +16,7 @@ SLOTS = (
     ("hold", "手中握著"),
 )
 OFFHAND_WEAPON_LABEL, TWO_HANDED_LABEL = "左手武器", "雙手武器"
+LEVEL_TOO_LOW = "你至少等級(Level)要達到【{}】級以上才能使用這項物品。"   # 穿裝備、用會放技能的物品（commands/item_skills.py）共用
 
 # 穿上的句子（自己, 同房間的人），照 C 版 wear_obj；$t 是物品的名字
 WEAPON_WORDS = ("你把【$t】握為手中的武器。", "$n把【$t】握為手中的武器。")
@@ -143,7 +144,7 @@ def wear(ch, obj, replace, out):
             out.add("這項物品你沒有辦法裝備，舉起或握到手裡。")
         return False
     if ch.level < obj.level:
-        out.add(f"你至少等級(Level)要達到【{obj.level}】級以上才能使用這項物品。")
+        out.add(LEVEL_TOO_LOW.format(obj.level))
         out.add("$n想嘗試裝備上【$t】，卻因為自己的等級(Level)不足而苦惱。", TO_ROOM, t=objects.short(obj))
         return False
     if obj.is_weapon() and objects.weight(obj) > stats.wield_limit(ch):

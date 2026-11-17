@@ -15,7 +15,7 @@ import json
 import logging
 from pathlib import Path
 
-from . import affects, area, behavior, fight, light, objects, resets, scripts, skills, stats, terrain, weather
+from . import affects, area, behavior, fight, light, meals, objects, resets, scripts, skills, stats, terrain, weather
 from .area import AreaType
 from .characters import characters
 from .clock import cancel, every
@@ -67,6 +67,7 @@ class Zone:
         if self.kind == AreaType.WORLD:
             skills.tick()                   # 技能的冷卻：掛在角色身上，跟回復一樣所有在線玩家一起數
             affects.tick()                  # 身上的效果：全部角色（玩家和生物，副本裡的也是）一起走
+            meals.tick()                    # 吃喝之後坐滿 10 秒的效果（設計文件 §3.9）
             behavior.tick(self.ticks)       # 生物的行為：走動、撿東西、主動攻擊（副本裡的也是，設計文件 §4.11）
             if self.ticks % HOUR_TICKS == 0:
                 weather.tick()              # 全遊戲一個天氣，只由世界 tick 走時間

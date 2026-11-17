@@ -8109,8 +8109,8 @@
       "extra_flags": 0,
       "wear_flags": 1,
       "values": [
-        40,
-        0,
+        1,
+        "",
         0,
         0
       ],
@@ -8168,66 +8168,6 @@
           "description": "持有這張許可狀的人，可以依規矩向人提出決鬥。\n議會只管發狀，不管收屍，請小心使用。\n"
         }
       ],
-      "script": null
-    },
-    {
-      "vnum": 3012,
-      "keywords": "basic herb",
-      "short": "初心藥草",
-      "long": "一小撮初心藥草掉在地上，藥效很淡，只能回復一點點傷勢。",
-      "item_type": 26,
-      "extra_flags": 64,
-      "wear_flags": 1,
-      "values": [
-        49,
-        "cure light",
-        "cure light",
-        "cure serious"
-      ],
-      "weight": 1,
-      "cost": 10000,
-      "affects": [],
-      "extra_descriptions": [],
-      "script": null
-    },
-    {
-      "vnum": 3013,
-      "keywords": "risk herb",
-      "short": "冒險藥草",
-      "long": "一把冒險藥草掉在地上，能回復少量傷勢，出城的人常帶著。",
-      "item_type": 26,
-      "extra_flags": 64,
-      "wear_flags": 1,
-      "values": [
-        49,
-        "cure serious",
-        "cure serious",
-        "cure critical"
-      ],
-      "weight": 1,
-      "cost": 30000,
-      "affects": [],
-      "extra_descriptions": [],
-      "script": null
-    },
-    {
-      "vnum": 3014,
-      "keywords": "hero herb",
-      "short": "英雄藥草",
-      "long": "一束英雄藥草掉在地上，葉子厚實，能回復較多傷勢。",
-      "item_type": 26,
-      "extra_flags": 64,
-      "wear_flags": 1,
-      "values": [
-        49,
-        "cure critical",
-        "cure critical",
-        "cure critical"
-      ],
-      "weight": 1,
-      "cost": 50000,
-      "affects": [],
-      "extra_descriptions": [],
       "script": null
     },
     {
@@ -8397,106 +8337,6 @@
       "cost": 50,
       "affects": [],
       "extra_descriptions": [],
-      "script": null
-    },
-    {
-      "vnum": 3040,
-      "keywords": "scroll identify",
-      "short": "物品鑑定卷軸",
-      "long": "一卷物品鑑定卷軸被人忘在這兒。",
-      "item_type": 2,
-      "extra_flags": 64,
-      "wear_flags": 1,
-      "values": [
-        12,
-        "identify",
-        "",
-        ""
-      ],
-      "weight": 1,
-      "cost": 2000,
-      "affects": [],
-      "extra_descriptions": [
-        {
-          "keywords": "卷軸 scroll identify",
-          "description": "卷軸上畫著一個大大的問號，四周寫滿細小的咒文。\n讀了它，就能看出手上的東西是什麼來歷。\n"
-        }
-      ],
-      "script": null
-    },
-    {
-      "vnum": 3041,
-      "keywords": "potion yellow",
-      "short": "偵測隱形藥水",
-      "long": "一瓶黃色藥水被人忘在這兒，瓶塞用蠟封著。",
-      "item_type": 10,
-      "extra_flags": 64,
-      "wear_flags": 1,
-      "values": [
-        12,
-        "detect invis",
-        "",
-        ""
-      ],
-      "weight": 1,
-      "cost": 400,
-      "affects": [],
-      "extra_descriptions": [
-        {
-          "keywords": "藥水 potion yellow",
-          "description": "瓶身綁著一張小標籤，寫著：『偵測隱形事物』。\n"
-        }
-      ],
-      "script": null
-    },
-    {
-      "vnum": 3042,
-      "keywords": "scroll continual light",
-      "short": "照明卷軸",
-      "long": "一卷邊角燒焦的照明卷軸被人丟在這兒。",
-      "item_type": 2,
-      "extra_flags": 64,
-      "wear_flags": 1,
-      "values": [
-        12,
-        "continual light",
-        "",
-        ""
-      ],
-      "weight": 4,
-      "cost": 2000,
-      "affects": [],
-      "extra_descriptions": [
-        {
-          "keywords": "卷軸 scroll",
-          "description": "卷軸上寫著：『照明術』，字是用會發亮的墨水寫的。\n"
-        }
-      ],
-      "script": null
-    },
-    {
-      "vnum": 3043,
-      "keywords": "potion red",
-      "short": "偵測藏匿藥水",
-      "long": "一瓶紅色藥水被人留在這兒，瓶子是補過的舊瓶。",
-      "item_type": 10,
-      "extra_flags": 64,
-      "wear_flags": 1,
-      "values": [
-        12,
-        "detect hidden",
-        "",
-        ""
-      ],
-      "weight": 1,
-      "cost": 400,
-      "affects": [],
-      "extra_descriptions": [
-        {
-          "keywords": "藥水 potion red",
-          "description": "瓶身綁著一張小標籤，寫著：『偵測藏匿事物』。\n"
-        }
-      ],
       "script": null
     },
     {
@@ -9540,106 +9380,6 @@
       "script": null
     },
     {
-      "vnum": 3161,
-      "keywords": "staff",
-      "short": "樸實之杖",
-      "long": "一根平淡無奇的手杖，杖頭纏著一圈麻繩。",
-      "item_type": 4,
-      "extra_flags": 66,
-      "wear_flags": 16385,
-      "values": [
-        17,
-        1,
-        1,
-        "cone of silence"
-      ],
-      "weight": 10,
-      "cost": 0,
-      "affects": [],
-      "extra_descriptions": [],
-      "script": null
-    },
-    {
-      "vnum": 3162,
-      "keywords": "wand",
-      "short": "樸實之杖",
-      "long": "一根平淡無奇的細杖，木頭被手汗磨得發亮。",
-      "item_type": 3,
-      "extra_flags": 66,
-      "wear_flags": 16385,
-      "values": [
-        11,
-        3,
-        3,
-        "mute"
-      ],
-      "weight": 3,
-      "cost": 0,
-      "affects": [],
-      "extra_descriptions": [],
-      "script": null
-    },
-    {
-      "vnum": 3163,
-      "keywords": "wand",
-      "short": "樸實之杖",
-      "long": "一根平淡無奇的細杖，尾端有一道燒焦的痕跡。",
-      "item_type": 3,
-      "extra_flags": 2,
-      "wear_flags": 16385,
-      "values": [
-        13,
-        2,
-        2,
-        "remove silence"
-      ],
-      "weight": 3,
-      "cost": 0,
-      "affects": [],
-      "extra_descriptions": [],
-      "script": null
-    },
-    {
-      "vnum": 3164,
-      "keywords": "wand",
-      "short": "魔杖",
-      "long": "一根平淡無奇的魔杖，裂縫用細銅絲綁著。",
-      "item_type": 3,
-      "extra_flags": 2,
-      "wear_flags": 16385,
-      "values": [
-        0,
-        0,
-        0,
-        ""
-      ],
-      "weight": 3,
-      "cost": 0,
-      "affects": [],
-      "extra_descriptions": [],
-      "script": null
-    },
-    {
-      "vnum": 3165,
-      "keywords": "staff",
-      "short": "魔棒",
-      "long": "一根平淡無奇的魔棒，握柄纏著舊布條。",
-      "item_type": 4,
-      "extra_flags": 2,
-      "wear_flags": 16385,
-      "values": [
-        0,
-        0,
-        0,
-        ""
-      ],
-      "weight": 3,
-      "cost": 0,
-      "affects": [],
-      "extra_descriptions": [],
-      "script": null
-    },
-    {
       "vnum": 3166,
       "keywords": "narcotic drug",
       "short": "麻醉藥",
@@ -9648,8 +9388,8 @@
       "extra_flags": 0,
       "wear_flags": 1,
       "values": [
-        0,
-        0,
+        1,
+        "",
         0,
         0
       ],
@@ -9671,7 +9411,7 @@
         0,
         10,
         10,
-        "breathe water"
+        "breathe"
       ],
       "weight": 3,
       "cost": 0,
@@ -10544,8 +10284,8 @@
       "extra_flags": 4,
       "wear_flags": 1,
       "values": [
-        -1,
         1,
+        "",
         0,
         1
       ],
@@ -11007,24 +10747,6 @@
     {
       "cmd": "G",
       "rare": 1,
-      "obj_vnum": 3040,
-      "color": null,
-      "level": null,
-      "limit": 500,
-      "comment": "Give identify scroll."
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3041,
-      "color": null,
-      "level": null,
-      "limit": 500,
-      "comment": "Give potion of see invisible."
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
       "obj_vnum": 3170,
       "color": null,
       "level": null,
@@ -11039,33 +10761,6 @@
       "level": null,
       "limit": 500,
       "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3043,
-      "color": null,
-      "level": null,
-      "limit": 500,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3164,
-      "color": null,
-      "level": null,
-      "limit": 500,
-      "comment": "wand"
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3165,
-      "color": null,
-      "level": null,
-      "limit": 500,
-      "comment": "staff"
     },
     {
       "cmd": "G",
@@ -13040,33 +12735,6 @@
       "mob_vnum": 3076,
       "limit": 1,
       "room_vnum": 3077,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 0,
-      "obj_vnum": 3012,
-      "color": null,
-      "level": null,
-      "limit": 0,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 0,
-      "obj_vnum": 3013,
-      "color": null,
-      "level": null,
-      "limit": 0,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 0,
-      "obj_vnum": 3014,
-      "color": null,
-      "level": null,
-      "limit": 0,
       "comment": ""
     },
     {

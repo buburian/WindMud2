@@ -6,7 +6,7 @@
 """
 import random
 
-from . import affects, fight, objects, scripts, zones   # 坑：fight → combat → death → fight 繞一圈，所以用 fight.stop_fighting，不 from import
+from . import affects, fight, meals, objects, scripts, zones   # 坑：fight → combat → death → fight 繞一圈，所以用 fight.stop_fighting，不 from import
 from .characters import Position, characters
 
 
@@ -40,3 +40,4 @@ def player_dies(player):
     player.room = zones.home(player)
     player.hp = 1.0
     player.position = Position.STANDING
+    meals.cancel(player)

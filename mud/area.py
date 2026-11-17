@@ -232,6 +232,14 @@ WEAR_SLOTS = {
 }
 LIGHT_ITEM_TYPE = 1                         # 物品種類 1 照明用具：不在 wear_flags 裡，放在光源的位置
 WEAPON_ITEM_TYPE = 5                        # 物品種類 5 武器
+# 會放技能的物品（設計文件 §3.8）：卷軸、藥水的 values 第 2～4 個，魔杖、魔棒的第 4 個寫技能的 key；魔杖、魔棒第 3 個是剩幾次
+SCROLL_ITEM_TYPE = 2                        # 物品種類 2 卷軸：recite
+WAND_ITEM_TYPE = 3                          # 物品種類 3 魔杖：拿在持握位置 zap
+STAFF_ITEM_TYPE = 4                         # 物品種類 4 魔棒：拿在持握位置 brandish
+POTION_ITEM_TYPE = 10                       # 物品種類 10 藥水：quaff
+PILL_ITEM_TYPE = 26                         # 物品種類 26 藥錠：eat，跟藥水一樣馬上放技能（設計文件 §3.9：藥錠不算食物）
+SKILL_ITEM_TYPES = (SCROLL_ITEM_TYPE, WAND_ITEM_TYPE, STAFF_ITEM_TYPE, POTION_ITEM_TYPE, PILL_ITEM_TYPE)
+CHARGED_ITEM_TYPES = (WAND_ITEM_TYPE, STAFF_ITEM_TYPE)    # 有次數的（values 第 3 個是剩幾次，到 0 就碎掉）
 CONTAINER_ITEM_TYPE = 15                    # 物品種類 15 容器：get 東西 容器 可以從裡面拿
 BOAT_ITEM_TYPE = 22                         # 物品種類 22 船隻：背包裡有船才進得去要船的水（terrain.py）
 
@@ -252,7 +260,16 @@ ITEM_TYPE_NAMES = {
 }
 CORPSE_NPC_ITEM_TYPE = 23                   # 物品種類 23 怪物屍體：生物死掉時遊戲做出來的（objects.make_corpse），裡面放掉落的物品
 TRASH_ITEM_TYPE = 13                        # 物品種類 13 垃圾：spec_janitor 會撿
-DRINK_CON_ITEM_TYPE = 17                    # 物品種類 17 液體容器：spec_janitor 會撿
+DRINK_CON_ITEM_TYPE = 17                    # 物品種類 17 液體容器：drink、fill（values：容量、現在多少、液體）；spec_janitor 會撿
+FOOD_ITEM_TYPE = 19                         # 物品種類 19 食物：eat（values：可以吃幾口、buff 技能）
+FOUNTAIN_ITEM_TYPE = 25                     # 物品種類 25 噴泉：drink 喝不完、fill 裝水（values 第 3 個是液體）
+# 液體種類（手冊的液體種類表，有測試比對）：號碼 → (名字, 喝了坐滿 10 秒放的 buff 技能，"" 是沒有，設計文件 §3.9)
+# C 版每種液體還有醉、飽、不渴的數字，新系統不會餓、不會渴，不用
+LIQUIDS = {
+    0: ("清水", ""), 1: ("啤酒", ""), 2: ("葡萄酒", ""), 3: ("麥酒", ""), 4: ("黑麥啤酒", ""), 5: ("威士忌", ""),
+    6: ("檸檬汁", ""), 7: ("燒酒", ""), 8: ("特產名酒", ""), 9: ("發霉泥汁", ""), 10: ("牛奶", ""), 11: ("茶", ""),
+    12: ("咖啡", ""), 13: ("鮮血", ""), 14: ("鹽水", ""), 15: ("可樂", ""),
+}
 
 
 class WeaponKind(enum.IntEnum):
@@ -1047,7 +1064,7 @@ def check_object(where, o, problems):
     if wear & WearFlag.WIELD and wear & WearFlag.SHIELD:
         problems.append(f"{where}的 wear_flags {o['wear_flags']!r} 同時有 8192 主手和 512 副手：武器只能放做出來的那一手，"
                         f"主手武器寫 8192，副手武器寫 512")
-    # values：4 個，意思看物品種類；法術類物品的部分要寫法術名稱，所以可以是字串
+    # values：4 個，意思看物品種類；會放技能的物品要寫技能的 key、食物第 2 個是 buff 技能，所以可以是字串
     if "values" in o and not (isinstance(o["values"], list) and len(o["values"]) == 4
                               and all(is_int(v) or isinstance(v, str) for v in o["values"])):
         problems.append(f"{where}的 values 要寫 4 個數字或字串，不能是 {o['values']!r}")
@@ -1056,6 +1073,10 @@ def check_object(where, o, problems):
     elif o.get("item_type") == CONTAINER_ITEM_TYPE and "values" in o and is_int(o["values"][2]) and not is_key(o["values"][2]):
         problems.append(f"{where}的鑰匙（values 第 3 個）要是 0 以下（不用鑰匙）或鑰匙的遊戲號碼"
                         f"（{MIN_VNUM} 以上，1～99 是保留的），不能是 {o['values'][2]!r}")
+    elif o.get("item_type") in SKILL_ITEM_TYPES and "values" in o:
+        check_skill_item(where, o["item_type"], o["values"], problems)
+    elif o.get("item_type") in (FOOD_ITEM_TYPE, DRINK_CON_ITEM_TYPE, FOUNTAIN_ITEM_TYPE) and "values" in o:
+        check_meal_item(where, o["item_type"], o["values"], problems)
     if "affects" in o:
         if not isinstance(o["affects"], list):
             problems.append(f"{where}的 affects 要寫成 […]，不能是 {o['affects']!r}")
@@ -1069,6 +1090,49 @@ def check_object(where, o, problems):
     if o.get("script") is not None:
         check_object_script(f"{where}的 script ", o["script"], problems)
 
+
+
+def skill_slots(item_type):
+    """會放技能的物品，values 裡寫技能的位置（從 0 數）：魔杖、魔棒是第 4 個，卷軸、藥水是第 2～4 個。"""
+    return (3,) if item_type in CHARGED_ITEM_TYPES else (1, 2, 3)
+
+
+def check_skill_item(where, item_type, values, problems):
+    """會放技能的物品（設計文件 §3.8，使用者定的）：技能的位置寫技能的 key（"" 是沒有），至少要寫一個（沒寫的用了沒作用）；
+    魔杖、魔棒的第 2、3 個（最多幾次、剩幾次）是 0 以上的整數。法術還沒有對應技能的物品先不要放進區域檔。
+    """
+    from .skills import SKILLS              # 坑：skills 會 import 很多模組，area 是最底層，在函式裡才 import
+    slots = skill_slots(item_type)
+    for i in slots:
+        if values[i] != "" and values[i] not in SKILLS:
+            problems.append(f"{where}的 values 第 {i + 1} 個要寫技能的 key（{'、'.join(SKILLS)}）或 \"\"，不能是 {values[i]!r}")
+    if all(values[i] == "" for i in slots):
+        problems.append(f"{where}沒有寫技能（values 第 {'4' if item_type in CHARGED_ITEM_TYPES else '2～4'} 個），用了沒作用")
+    if item_type in CHARGED_ITEM_TYPES:
+        for i, what in ((1, "最多幾次"), (2, "剩幾次")):
+            if not (is_int(values[i]) and values[i] >= 0):
+                problems.append(f"{where}的 values 第 {i + 1} 個（{what}）要是 0 以上的整數，不能是 {values[i]!r}")
+
+
+def check_meal_item(where, item_type, values, problems):
+    """吃喝的東西（設計文件 §3.9）：食物第 1 個是可以吃幾口（1 以上），第 2 個是 buff 技能的 key（"" 是沒有）；
+    液體容器第 1 個是容量（0 以上），第 2 個是現在多少（0 到容量）；液體容器、噴泉第 3 個是液體種類（LIQUIDS）。
+    """
+    from .skills import SKILLS              # 坑：skills 會 import 很多模組，area 是最底層，在函式裡才 import
+    if item_type == FOOD_ITEM_TYPE:
+        if not (is_int(values[0]) and values[0] >= 1):
+            problems.append(f"{where}的 values 第 1 個（可以吃幾口）要是 1 以上的整數，不能是 {values[0]!r}")
+        buffs = [k for k, s in SKILLS.items() if s.kind == "buff"]
+        if values[1] != "" and values[1] not in buffs:
+            problems.append(f"{where}的 values 第 2 個要寫增益技能的 key（{'、'.join(buffs)}）或 \"\"，不能是 {values[1]!r}")
+        return
+    if item_type == DRINK_CON_ITEM_TYPE:
+        if not (is_int(values[0]) and values[0] >= 0):
+            problems.append(f"{where}的 values 第 1 個（容量）要是 0 以上的整數，不能是 {values[0]!r}")
+        elif not (is_int(values[1]) and 0 <= values[1] <= values[0]):
+            problems.append(f"{where}的 values 第 2 個（現在有多少）要是 0～{values[0]} 的整數，不能是 {values[1]!r}")
+    if not (is_int(values[2]) and values[2] in LIQUIDS):
+        problems.append(f"{where}的 values 第 3 個（液體種類）要是 0～{max(LIQUIDS)}（手冊的液體種類表），不能是 {values[2]!r}")
 
 
 def check_weapon(where, o, problems):
@@ -1252,15 +1316,19 @@ def is_ratio(value):
             and math.isfinite(value) and value > 0)
 
 
+def extra_descriptions(eds):
+    """區域檔（已經檢查過的）房間或物品的 extra_descriptions → [(小寫的名字們, 描述)]。
+    名字用空白隔開（例如 "牌子 sign"），存成小寫，英文比對時不分大小寫。
+    """
+    return [([k.lower() for k in ed["keywords"].split()], ed["description"]) for ed in eds]
+
+
 def build_room(r):
     """把一個（已經檢查過的）房間變成 Room。"""
     exits = {d: e["to_room"] for d, e in r["exits"].items()}
     exit_descriptions = {d: e["description"] for d, e in r["exits"].items()}
-    # 名字用空白隔開（例如 "牌子 sign"），存成小寫，英文比對時不分大小寫
-    extra_descriptions = [([k.lower() for k in ed["keywords"].split()], ed["description"])
-                          for ed in r["extra_descriptions"]]
-    room = Room(r["vnum"], r["name"], r["description"], exits,
-                RoomFlag(parse_flags(r["room_flags"])), Sector(r["sector"]), exit_descriptions, extra_descriptions)
+    room = Room(r["vnum"], r["name"], r["description"], exits, RoomFlag(parse_flags(r["room_flags"])), Sector(r["sector"]),
+                exit_descriptions, extra_descriptions(r["extra_descriptions"]))
     # 有門的出口：-1、0 是不用鑰匙
     room.doors = {d: Door(e["keywords"].split(), Locks(e["locks"]), e["key"] if e["key"] > 0 else None)
                   for d, e in r["exits"].items() if e["locks"] != Locks.NO_DOOR}

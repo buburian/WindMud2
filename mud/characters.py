@@ -40,6 +40,8 @@ class Character:
         self.affects = []                   # 身上的效果（affects.Affect），放上去的順序
         self.gold = 0                       # 金幣：玩家存進存檔；生物只有別人 give 給牠的（不存，死掉還沒放進屍體）
         self.arrived = 0                    # 進現在這個房間的先後（arrive()）：好幾個生物的腳本照這個順序跑
+        self.meals = {}                     # 吃喝之後還在等的（meals.py）：{"eat" 或 "drink": [還要幾秒, buff 技能]}，不存檔
+        self.meal_bonus = {}                # 吃喝坐滿 10 秒後回得快的（meals.py）：{"hp" 等: 倍數}，stats.regen 看它，不存檔
 
     def send(self, text):
         """送文字給這個角色看。NPC 沒有連線，所以什麼都不做；玩家（Player）會改成寫到連線。"""

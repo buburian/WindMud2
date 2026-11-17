@@ -20,7 +20,7 @@ from mud.players import Player
 
 # 測試區域的物品：(號碼 − 100, 名字, keywords, item_type, wear_flags, extra_flags, values, 重量, affects)
 OBJECTS = [
-    (1, "藥水", "potion 藥水", 10, "1", 0, [5, "cure light", "", ""], 1, []),
+    (1, "藥水", "potion 藥水", 10, "1", 0, [5, "fly", "", ""], 1, []),
     (2, "長劍", "sword 長劍", 5, "1|8192", 0, [2, 0, 0, 3], 5, [{"location": 1, "modifier": 2}]),     # 力量 +2、重砍
     (3, "盾牌", "shield 盾牌", 9, "1|512", 0, [0, 0, 0, 0], 4, []),
     (4, "匕首", "dagger 匕首", 5, "1|512", 0, [1, 0, 0, 2], 3, []),                                     # 副手武器、戳刺

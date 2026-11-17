@@ -238,8 +238,42 @@ def test_cli_refuses_to_overwrite(tmp_path, capsys):
 @pytest.mark.skipif(not MIDGAARD.exists(), reason="找不到 mud_design 的 area2json 輸出")
 def test_midgaard_converts_without_problems(tmp_path):
     data, report = areaconvert.convert(json.loads(MIDGAARD.read_text(encoding="utf-8")), "midgaard.json")
-    assert (len(data["rooms"]), len(data["mobiles"]), len(data["objects"])) == (179, 89, 132)
+    assert (len(data["rooms"]), len(data["mobiles"]), len(data["objects"])) == (179, 89, 120)    # 12 件法術還沒有技能（含 3 個藥錠）
     assert data["area"]["header"]["vnums"] == [3000, 3399]
     assert not any(r["cmd"] == "E" for r in data["resets"])
     assert all(e["to_room"] // 100 in (30, 31, 32) for r in data["rooms"] for e in r["exits"].values())
+    assert problems_of(tmp_path, data) == []
+
+
+# ---- 會放技能的物品（設計文件 §3.8）----
+
+def test_spells_become_skills(tmp_path):
+    objs = [old_obj(3001, item_type=(10, "potion"), wear=("take",), values=(12, "fly", "", "")),
+            old_obj(3002, item_type=(3, "wand"), wear=("take", "hold"), values=(0, 10, 10, "breathe water"))]
+    data, report = areaconvert.convert(old_area(two_rooms(), objects=objs), "new.json")
+    assert [o["values"] for o in data["objects"]] == [[12, "fly", "", ""], [0, 10, 10, "breathe"]]
+    assert "物品 3002 物品3002的法術 breathe water 換成技能 breathe" in report.changed
+    assert problems_of(tmp_path, data) == []
+
+
+@pytest.mark.parametrize("values, why", [((12, "fly", "identify", ""), "法術 identify 還沒有對應的技能"),
+                                         ((12, "", "", ""), "沒有寫法術")])
+def test_items_without_skills_are_dropped_with_their_resets(tmp_path, values, why):
+    mob = old_mob(3001)
+    objs = [old_obj(3001, item_type=(2, "scroll"), wear=("take",), values=values), old_obj(3002)]
+    resets = [M(3001, 3001), {"cmd": "G", "rare": 0, "obj_vnum": 3001, "limit": 1, "comment": ""}, E(3001),
+              {"cmd": "O", "if_flag": 0, "obj_vnum": 3001, "limit": 1, "room_vnum": 3001, "comment": ""},
+              {"cmd": "P", "if_flag": 0, "obj_vnum": 3002, "limit": 1, "container_vnum": 3001, "comment": ""}]
+    data, report = areaconvert.convert(old_area(two_rooms(), mobiles=[mob], objects=objs, resets=resets), "new.json")
+    assert [o["vnum"] for o in data["objects"]] == [3002]
+    assert [r["cmd"] for r in data["resets"]] == ["M"]                 # G、E、O 和放進它的 P 都拿掉
+    assert data["mobiles"][0]["drops"] == []
+    assert f"物品 3001 物品3001（{why}，整件拿掉，連同放它的重置）" in report.dropped
+    assert problems_of(tmp_path, data) == []
+
+
+def test_food_becomes_one_bite(tmp_path):
+    food = old_obj(3001, item_type=(19, "food"), wear=("take",), values=(40, 0, 0, 1))
+    data, _ = areaconvert.convert(old_area(two_rooms(), objects=[food]), "new.json")
+    assert data["objects"][0]["values"] == [1, "", 0, 1]              # 毒（第 4 個）不做，照留
     assert problems_of(tmp_path, data) == []

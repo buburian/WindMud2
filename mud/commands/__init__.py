@@ -1,7 +1,7 @@
 """處理玩家輸入的指令：照 COMMANDS 的順序，找第一個用輸入開頭的指令。"""
 from .. import act, pager, scripts
 from ..characters import Position as P
-from . import combat, doors, imm, items, skills, social, system
+from . import combat, doors, imm, item_skills, items, meals, skills, social, system
 from . import help as help_command          # 不叫 help：名字會蓋掉 Python 內建的 help()
 
 # 指令表：(指令, 函式, 最低姿勢)。輸入的字照這個順序比對，第一個用它開頭的指令就是答案（c 會找到 chat）。
@@ -53,6 +53,15 @@ COMMANDS = [
     ("recall", system.do_recall, P.STANDING),   # rec（re 還是 reply）；回到返回點，打架中、休息、睡覺不能用（使用者要的）
     ("/", system.do_recall, P.STANDING),        # recall 的另一個名字（照 C 版）
     ("socials", social.do_socials, P.DEAD),     # so；列出全部的表情動作（動作本身不是指令，見 run()）
+    # 會放技能的物品（設計文件 §3.8）：最低姿勢照 C 版，打架中可以用
+    ("quaff", item_skills.do_quaff, P.RESTING),     # qua（q、qu 還是 quit）
+    ("recite", item_skills.do_recite, P.RESTING),   # reci（rec 是 recall）
+    ("zap", item_skills.do_zap, P.RESTING),         # z
+    ("brandish", item_skills.do_brandish, P.RESTING),   # b
+    # 吃喝（設計文件 §3.9）：睡著不能（最低姿勢照 C 版），打架中不能吃喝由指令擋（藥錠可以）
+    ("eat", meals.do_eat, P.RESTING),           # 要打全名（ea 是 east）
+    ("drink", meals.do_drink, P.RESTING),       # dri（d 是 down、dr 是 drop）
+    ("fill", meals.do_fill, P.RESTING),         # fi（f 是 flee）
 ]
 
 # 管理員（imm）才找得到的指令，接在 COMMANDS 後面找，原本的縮寫都不受影響

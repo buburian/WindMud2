@@ -11,6 +11,9 @@
 - 生物：tier 先寫 normal、姿勢一律站著（C 版讀了就丟）、等級最少 1、種族照開頭比對手冊的表。
 - 重置 E（生物穿裝備）：那件物品變成那隻生物掉落表裡 100% 掉落的白色裝備（不是裝備就不寫顏色），重置拿掉。
 - 物品的加成（舊的屬性代號意思不一樣）、生物的 K 行、actions、fight_actions、C 版的腳本都不轉。
+- 卷軸、藥水、魔杖、魔棒、藥錠（設計文件 §3.8）：法術照 SPELL_SKILLS 換成技能的 key；有一個換不了、或一個都沒寫，
+  整件不轉，放它的重置（G、O、P）、掉落表（E）也拿掉。技能做好再把法術加進 SPELL_SKILLS。
+- 食物（設計文件 §3.9）：values 第 1 個（C 版的飽足度）改成可以吃 1 口，第 2 個改成 ""（沒有 buff）。不會餓，毒也不做。
 """
 import argparse
 import json
@@ -37,6 +40,9 @@ WEAPON_WORDS = {
     "spear": WeaponKind.SPEAR,
 }
 FALLBACK_WEAPON = WeaponKind.LONGSWORD
+FOOD_BITES = 1                              # 食物轉過來可以吃幾口（設計文件 §3.9：C 版一次吃完）
+# C 版的法術 → 我們的技能 key（設計文件 §3.8）：有對應技能的才寫，沒寫的法術那件物品就不轉
+SPELL_SKILLS = {"fly": "fly", "breathe water": "breathe"}
 
 
 class Report:
@@ -79,6 +85,8 @@ def convert(old, name, vnums=None):
     fill_doors(rooms, report)
     mobiles = {m["vnum"]: convert_mobile(m, report) for m in old["mobiles"]}
     objects = {o["vnum"]: convert_object(o, report) for o in old["objects"]}
+    gone = {v for v, o in objects.items() if o is None}      # 不轉的物品（法術還沒有技能）：放它的重置、掉落表也拿掉
+    objects = {v: o for v, o in objects.items() if o is not None}
     for shop in old["shops"]:
         keeper = mobiles.get(shop["keeper_vnum"])
         if keeper is None:
@@ -97,7 +105,7 @@ def convert(old, name, vnums=None):
         mob["special"] = s["function"]
         if s["function"] in NOT_YET:
             report.kept.append(f"生物 {mob['vnum']} {mob['short']}的 special {s['function']}（先不做）")
-    resets = convert_resets(old["resets"], rooms, mobiles, objects, report)
+    resets = convert_resets(old["resets"], rooms, mobiles, objects, report, gone)
     header = old["area"]["header"] if old.get("area") else None
     numbered = header and header["level_min"] is not None and header["level_max"] is not None
     levels = [header["level_min"], header["level_max"]] if numbered else list(LEVELS_ALL)
@@ -195,6 +203,12 @@ def convert_object(o, report):
     extra = flags(o["extra_flags"], ExtraFlag, f"{where}的 extra_flags ", report)
     wear = flags(o["wear_flags"], WearFlag, f"{where}的 wear_flags ", report)
     item_type, values = o["item_type"]["value"], list(o["values"])
+    if item_type in area.SKILL_ITEM_TYPES:
+        values = spells_to_skills(where, item_type, values, report)
+        if values is None:
+            return None
+    elif item_type == area.FOOD_ITEM_TYPE:      # 一口吃完（C 版），沒有 buff
+        values[0], values[1] = FOOD_BITES, ""
     if item_type not in area.ITEM_TYPE_NAMES:
         report.kept.append(f"{where}的種類 {item_type}（手冊的表沒有，照寫）")
     if item_type == area.WEAPON_ITEM_TYPE:
@@ -222,11 +236,29 @@ def convert_object(o, report):
             "affects": [], "extra_descriptions": [dict(ed) for ed in o["extra_descriptions"]], "script": None}
 
 
-def convert_resets(old, rooms, mobiles, objects, report):
-    """照順序轉。E 變成前面那筆 M 的生物的掉落表；D 指到沒有門的出口就拿掉。"""
+def spells_to_skills(where, item_type, values, report):
+    """會放技能的物品：法術換成技能的 key（SPELL_SKILLS）。有一個換不了、或一個都沒寫，回傳 None（整件不轉），寫進報告。"""
+    slots = area.skill_slots(item_type)
+    spells = [str(values[i]).strip() for i in slots]
+    missing = [s for s in spells if s and s not in SPELL_SKILLS]
+    if missing or not any(spells):
+        why = f"法術 {'、'.join(missing)} 還沒有對應的技能" if missing else "沒有寫法術"
+        report.dropped.append(f"{where}（{why}，整件拿掉，連同放它的重置）")
+        return None
+    for i, spell in zip(slots, spells):
+        values[i] = SPELL_SKILLS.get(spell, "")
+    report.changed.append(f"{where}的法術 {'、'.join(s for s in spells if s)} 換成技能 "
+                          f"{'、'.join(SPELL_SKILLS[s] for s in spells if s)}")
+    return values
+
+
+def convert_resets(old, rooms, mobiles, objects, report, gone=frozenset()):
+    """照順序轉。E 變成前面那筆 M 的生物的掉落表；D 指到沒有門的出口就拿掉。放不轉的物品（gone）的 G、O、P、E 也拿掉。"""
     out, last_mob = [], None
     for r in old:
         cmd = r["cmd"]
+        if cmd in ("G", "O", "P", "E") and (r.get("obj_vnum") in gone or r.get("container_vnum") in gone):
+            continue                        # 物品不轉，報告裡已經寫了
         if cmd == "*":
             out.append({"cmd": "*", "comment": r["comment"]})
         elif cmd == "M":

@@ -181,7 +181,7 @@
       "wear_flags": 1,
       "values": [
         5,
-        "cure light",
+        "fly",
         "",
         ""
       ],
@@ -263,7 +263,7 @@
       "wear_flags": 1,
       "values": [
         10,
-        0,
+        "",
         0,
         0
       ],
