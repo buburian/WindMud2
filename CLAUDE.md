@@ -26,6 +26,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```sh
 uv run python -m mud                              # 預設 127.0.0.1:4000
 uv run python -m mud --port 4055 --host 0.0.0.0   # 給別台電腦連
+./serve.sh                                        # 0.0.0.0:8080，掛掉 5 秒後自動重開（PORT=、HOST= 可以換）；開機不到 10 秒就結束不重開
 uv run pytest                                     # 全部測試
 uv run pytest tests/test_telnet.py::test_encode   # 單一測試
 uv run python -m mud.areacheck                    # 檢查 areas/ 全部的區域檔（有問題時結束代碼 1）
