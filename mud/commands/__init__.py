@@ -1,7 +1,7 @@
 """處理玩家輸入的指令：照 COMMANDS 的順序，找第一個用輸入開頭的指令。"""
 from .. import act, pager, scripts
 from ..characters import Position as P
-from . import combat, doors, imm, item_skills, items, meals, skills, social, system
+from . import combat, doors, imm, item_skills, items, meals, shops, skills, social, system
 from . import help as help_command          # 不叫 help：名字會蓋掉 Python 內建的 help()
 
 # 指令表：(指令, 函式, 最低姿勢)。輸入的字照這個順序比對，第一個用它開頭的指令就是答案（c 會找到 chat）。
@@ -62,6 +62,11 @@ COMMANDS = [
     ("eat", meals.do_eat, P.RESTING),           # 要打全名（ea 是 east）
     ("drink", meals.do_drink, P.RESTING),       # dri（d 是 down、dr 是 drop）
     ("fill", meals.do_fill, P.RESTING),         # fi（f 是 flee）
+    # 商店（設計文件 §3.7）：最低姿勢照 C 版
+    ("list", shops.do_list, P.STANDING),        # li（l、lo 還是 look）
+    ("buy", shops.do_buy, P.STANDING),          # bu（b 是 brandish）
+    ("sell", shops.do_sell, P.STANDING),        # se
+    ("value", shops.do_value, P.STANDING),      # v
 ]
 
 # 管理員（imm）才找得到的指令，接在 COMMANDS 後面找，原本的縮寫都不受影響

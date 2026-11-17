@@ -44,6 +44,7 @@ class Obj:
         self.base = {}                      # 裝備基本值：武器 dmg_min、dmg_max，護具 ac（equipment.base_values）
         self.contains = []                  # 裡面的物品（屍體）
         self.timer = None                   # 還剩幾次 OBJ_TICKS 就消失；None 是不會消失
+        self.for_sale = False               # 店裡賣的（重置 G 給店主的，shops.py）：賣不完，買到的是複製品。不存檔
         self.weight = 0                     # 重量（區域檔的 weight）
         self.cost = 0                       # 價格（區域檔的 cost）：裝備以外的物品的基本價格（base_price）
         self.take = False                  # 撿不撿得起來（wear_flags 有 1 take）；屍體撿不起來
@@ -146,10 +147,11 @@ def meal_parts(proto):
 
 
 def base_price(obj):
-    """商店的基本價格（區域製作手冊物品的 cost）：裝備是實際用掉的點數（每一項加成 × 單價加起來，負的抵掉），最低 1，灰色是 1；
-    其他物品是 cost。scavenger 挑最值錢的、janitor 撿便宜的用它（商店還沒做）。
+    """商店的基本價格（設計文件 §3.7，區域製作手冊物品的 cost）：裝備是實際用掉的點數（每一項加成 × 單價加起來，負的抵掉），最低 1，灰色是 1；
+    其他物品是 cost。沒有穿戴部位、或沒有顏色（放出它的地方顏色寫 null：手冊說不是裝備）的都算其他物品
+    （使用者 2026-11-17 定的：火把、燈籠、許可狀這種拿在手上、沒有點數的東西照 cost）。商店、scavenger、janitor 用它。
     """
-    if obj.slot is None:
+    if obj.slot is None or obj.color is None:
         return obj.cost
     if obj.color == ItemColor.GRAY:
         return 1

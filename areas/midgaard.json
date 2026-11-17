@@ -5570,7 +5570,7 @@
           8
         ],
         "profit_buy": 150,
-        "profit_sell": 100,
+        "profit_sell": 85,
         "open_hour": 9,
         "close_hour": 17
       },
@@ -5606,7 +5606,7 @@
           9
         ],
         "profit_buy": 110,
-        "profit_sell": 90,
+        "profit_sell": 80,
         "open_hour": 8,
         "close_hour": 21
       },

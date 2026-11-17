@@ -124,12 +124,15 @@ def reset_door(zone, area, r):
 
 
 def reset_give(area, r, mob, rng):
-    """G：給前面那筆 M 這一次放出來的生物一件物品，放進牠的背包。level 是 null 就用那隻生物的等級。limit 不用（C 版沒用到）。"""
+    """G：給前面那筆 M 這一次放出來的生物一件物品，放進牠的背包。level 是 null 就用那隻生物的等級。limit 不用（C 版沒用到）。
+    給店主的就是店裡賣的東西（for_sale，賣不完，shops.py）。
+    """
     if mob is None or not appears(r, rng):
         return
     level = mob.level if r["level"] is None else r["level"]
     obj = objects.create(r["obj_vnum"], level, r["color"], rng)
     if obj is not None:
+        obj.for_sale = mob.shopkeeper
         mob.carrying.insert(0, obj)
 
 

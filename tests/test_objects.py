@@ -165,11 +165,12 @@ def test_base_price_of_things_is_the_cost(monkeypatch):
 
 
 @pytest.mark.parametrize("affects, color, price", [
-    # 裝備是實際用掉的點數：每一項 × 單價加起來（負的抵掉），最低 1；灰色是 1（cost 不看）
+    # 裝備是實際用掉的點數：每一項 × 單價加起來（負的抵掉），最低 1；灰色是 1（cost 不看）；沒有顏色的照 cost
     ([{"location": 1, "modifier": 2}, {"location": 9, "modifier": 3}], "white", 2 * equipment.price("str", 10) + 3),
     ([{"location": 9, "modifier": 3}, {"location": 6, "modifier": -5}], "white", 1),
-    ([{"location": 16, "modifier": 4}], None, 1),                   # 龍焰抗性不算點數
+    ([{"location": 16, "modifier": 4}], "white", 1),                # 龍焰抗性不算點數
     ([{"location": 9, "modifier": 3}], "gray", 1),
+    ([{"location": 9, "modifier": 3}], None, 999),                  # 沒有顏色：不是裝備，照 cost（使用者定的）
 ])
 def test_base_price_of_equipment_is_the_points(monkeypatch, affects, color, price):
     s = sword(101, affects)

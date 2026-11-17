@@ -12,6 +12,7 @@ class Npc(Character):
         self.vnum = None                    # 遊戲號碼（區域檔的生物才有），重置的 limit 用它數
         self.keywords = []                  # 玩家用來指定牠的名字（小寫）
         self.shopkeeper = False             # 店主（區域檔的 shop 不是 null）：死掉時身上的東西不放進屍體（照 C 版）
+        self.shop = None                    # 區域檔的 shop（倍率、收什麼、開店時間），商店用（shops.py）
         self.long = ""                      # 站著時在房間裡看到的那一行
         self.description = ""               # 用 look 看牠時的描述
         self.level = 1
@@ -66,6 +67,7 @@ def spawn(vnum, proto, room, rng):
     npc.act = ActFlag(parse_flags(proto["act"]))
     npc.affected_by = AffectFlag(parse_flags(proto["affected_by"]))
     npc.shopkeeper = proto["shop"] is not None
+    npc.shop = proto["shop"]
     npc.special, npc.special_ratio, npc.poison_ratio = proto["special"], proto["special_ratio"], proto["poison_ratio"]
     npc.base_panel, npc.mix = stats.mob_stats(npc.level, npc.tier, npc.attack, npc.defense, npc.archetype)
     recompute(npc)
