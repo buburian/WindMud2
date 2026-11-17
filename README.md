@@ -87,6 +87,38 @@ journalctl -u windmud -f          # 一直看新的紀錄，Ctrl+C 離開
 - 不要同時開 `./serve.sh`，port 會撞在一起。
 - 伺服器自己的紀錄照樣寫在 `logs/`。
 
+### 自動部署（Linux）
+
+push 到 master 以後，正式機自己更新、重開伺服器：
+
+1. GitHub Action（`.github/workflows/test.yml`）跑全部測試和區域檔檢查，都過了就把 `release` 分支推到這個 commit。
+2. 正式機每分鐘跑一次 `deploy/update.sh`（`windmud-update.timer`），去 GitHub 看 `release` 分支：
+   - 有新版：`git merge --ff-only`、`uv sync`、`sudo systemctl restart windmud`，等 30 秒內 port 8080 開起來。
+   - 開不起來：退回原本的版本再重開，那個版本記下來不再試；修好再 push 新的 commit 就會再更新。
+
+正式機不用開任何 port，GitHub 上也不用放金鑰（主機的 SSH 有鎖 IP，GitHub 連不進去，所以由主機自己去拿）。
+
+裝一次（要先照上面裝好 `windmud.service`；跑伺服器的帳號 sudo 要不用打密碼）：
+
+```sh
+sudo cp deploy/windmud-update.service deploy/windmud-update.timer /etc/systemd/system/
+sudo nano /etc/systemd/system/windmud-update.service    # 把「你的帳號」換掉，路徑跟 windmud.service 一樣
+sudo systemctl daemon-reload
+sudo systemctl enable --now windmud-update.timer
+```
+
+平常用：
+
+```sh
+journalctl -u windmud-update -f          # 看部署：「更新 … → …」「開起來了」，失敗也寫在這裡
+systemctl list-timers windmud-update     # 下一次什麼時候看
+sudo systemctl stop windmud-update.timer # 暫停自動部署（start 恢復）
+```
+
+- 每次 push 到 master、測試通過，就會重開一次伺服器，線上的人會斷線（會先存檔）。
+- 不要在正式機上直接改 git 裡的檔：更新會失敗（不會蓋掉你改的），journal 會每分鐘說一次失敗。
+- GitHub 網頁只看得到測試結果；有沒有真的更新到正式機，看 journal。
+
 ## 連線
 
 伺服器只講 Big5。Mac 的終端機維持 UTF-8，中間用 cocot 把 UTF-8 和 Big5 互相轉換。
