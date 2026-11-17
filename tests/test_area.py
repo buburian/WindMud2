@@ -21,9 +21,9 @@ def room(vnum, room_flags=0, sector=0, **exits):
 
 
 def test_test_area_numbers_are_full_game_numbers():
-    # 測試區域的範圍是 100～199，房間直接寫遊戲號碼 101、102
+    # 測試區域的範圍是 100～199，房間直接寫遊戲號碼 101、102（世界裡還有秋風城）
     zones.load(AREAS)
-    assert set(zones.world.rooms) == {101, 102}
+    assert {r for r in zones.world.rooms if r < 1000} == {101, 102}
     assert zones.world.rooms[101].exits == {"north": 102}
     assert zones.world.rooms[102].exits == {"south": 101}
 
@@ -234,7 +234,8 @@ def test_exit_to_missing_room_is_an_error(tmp_path, to_room):
 
 def test_failed_load_keeps_old_rooms(tmp_path):
     zones.load(AREAS)
+    before = set(zones.world.rooms)
     write(tmp_path, "a.json", [room(101, north=109)])
     with pytest.raises(ValueError):
         zones.load(tmp_path)
-    assert set(zones.world.rooms) == {101, 102}
+    assert set(zones.world.rooms) == before and {101, 102, 3001} <= before

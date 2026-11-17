@@ -190,6 +190,7 @@ def world(tmp_path, monkeypatch):
     rooms = [make_room(101, north=102), make_room(102, south=101)]
     resets = [{"cmd": "M", "rare": 0, "mob_vnum": v, "limit": 1, "room_vnum": 102, "comment": ""} for v in (101, 102)]
     write_json(tmp_path, "a.json", make_area("a.json", rooms, (100, 199), mobiles=mobiles, resets=resets))
+    monkeypatch.setattr(zones, "START_ROOM", 101)           # 這裡的區域沒有秋風城：起始房間用 101
     zones.load(tmp_path)
     yield tmp_path
     characters.clear()

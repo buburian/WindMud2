@@ -25,8 +25,9 @@ class FakeWriter:
 
 
 @pytest.fixture
-def folder(tmp_path):
+def folder(tmp_path, monkeypatch):
     # 世界：101 往北是動態區域的 201。動態區域：201 往南回 101、往北 202。副本：301、302 南北相連。
+    monkeypatch.setattr(zones, "START_ROOM", 101)           # 這裡的區域沒有秋風城：起始房間用 101
     write_area(tmp_path, "world.json", [make_room(101, north=201)], vnums=(100, 199))
     write_area(tmp_path, "dyn.json", [make_room(201, south=101, north=202), make_room(202, south=201)],
                vnums=(200, 299), kind="dynamic")

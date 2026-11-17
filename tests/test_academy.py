@@ -146,11 +146,11 @@ def test_walk_through_the_academy_and_graduate(academy):
         assert worn == {"wield": (202, "purple", 1), "body": (203, "purple", 1)}
 
         assert do(p, "n").startswith("【畢業廳】")
-        out = do(p, "say 畢業")                                     # 院長收回鑰匙、送回 101
-        assert "院長說：『恭喜你畢業了，Ming！外面的世界很大，好好冒險吧。』\r\n\r\n【測試房間（南）】" in out   # 新房間的畫面另起一段
+        out = do(p, "say 畢業")                                     # 院長收回鑰匙、送到秋風城的神殿大廳 3001
+        assert "院長說：『恭喜你畢業了，Ming！外面的世界很大，好好冒險吧。』\r\n\r\n【秋風城神殿大廳】" in out   # 新房間的畫面另起一段
         assert p.room is zones.start_room() and not zones.is_student(p) and p.carrying == []
         data = save.load_data("Ming")                               # 傳送出來就自動存好了（使用者要的）
-        assert data["room"] == 101 and data["vars"] == {"academy": {}}
+        assert data["room"] == 3001 and data["vars"] == {"academy": {}}
         assert save.player_from(data, FakeWriter()).room is zones.start_room()   # 畢業了：照存的房間
     asyncio.run(main())
 
@@ -193,8 +193,9 @@ def test_students_who_die_go_back_to_the_start_of_the_academy(academy):
     asyncio.run(main())
 
 
-def test_without_the_academy_new_characters_are_not_students(tmp_path):
+def test_without_the_academy_new_characters_are_not_students(tmp_path, monkeypatch):
     write_json(tmp_path, "a.json", make_area("a.json", [make_room(101)], vnums=(100, 199)))
+    monkeypatch.setattr(zones, "START_ROOM", 101)           # 這裡的區域沒有秋風城：起始房間用 101
     zones.load(tmp_path)
     try:
         p = Player("Ming", FakeWriter(), None)

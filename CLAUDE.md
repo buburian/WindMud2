@@ -285,7 +285,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     沒有 `area.name`，之後遊戲要用 header 的資料自己組出顯示的名稱；
     `room_flags`（數字或字串）、`sector`（整數）不是 `{"value": …, "names": …}` 這種 dict；沒有 `overridden_exits`。
     `areas/test.json` 是測試區域（世界區域，`type` 是 `world`）：號碼範圍 `[100, 199]`，房間 101（南）、102（北）南北相連；
-    起始房間 `config.START_ROOM` 是 101。之後會照使用者的指示繼續改格式。`area`、每個房間、每隻生物、每個物品和每筆重置的欄位**一個都不能少**，
+    起始房間 `config.START_ROOM` 是秋風城的神殿大廳 3001（`areas/midgaard.json`，見下面「秋風城」）。之後會照使用者的指示繼續改格式。`area`、每個房間、每隻生物、每個物品和每筆重置的欄位**一個都不能少**，
     巢狀欄位也要有範例值（`extra_descriptions` 放一筆；`script`：房間 102 用 `areas/test/鐘聲.lua`、生物 101 用 `商人.lua`、物品 102 是物品的舊格式；生物 101「測試商人」的每個欄位都有值，生物 102「測試坐騎」示範 null／空的寫法；生物 103「野兔」是練功用的 1 級一般怪，重置放 3 隻在房間 102（使用者要的）；
     物品 101～104 是藥水、長劍、箱子、麵包（重置用到 101、103、104），物品 102「測試長劍」每個欄位都有值；物品 105～109 是給 `oload` 試裝備用的（盾牌、匕首（副手）、大劍（雙手）、戒指、皮甲，都沒寫 affects，給顏色就抽隨機屬性；不在重置裡，使用者同意加的）；
     `resets` 每種指令各一筆；房間 101 往北、房間 102 往南的出口是同一扇木門（門兩邊都要寫），給 `D` 的範例用）：使用者靠它看系統還缺哪些功能。
@@ -373,9 +373,11 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   `builder_area/` 也放了一樣的一份給編輯器。新角色建好就進自己那一份（`zones.instance(ACADEMY_FILE, 名字)`）。
   - 「家」是 `zones.home(player)`：學生（`zones.is_student()`：有學院的區域檔，而且 `player.vars["academy"]["student"]`）是學院的第一間 `ACADEMY_START`，其他人是 `start_room()`。
     建角（`login.create()` 先 `enroll()`）、讀檔（`save.player_from()`：學生一律回家，其他人房間不在世界才回家）、玩家死掉（`death.player_dies()`）都用它。
-  - 畢業是院長的腳本拿掉 `student`（`config.ACADEMY_STUDENT`，名字兩邊要一樣），再 `transfer(101)`。程式裡沒有別的畢業判斷。
+  - 畢業是院長的腳本拿掉 `student`（`config.ACADEMY_STUDENT`，名字兩邊要一樣），再 `transfer(3001)`（秋風城的神殿大廳，學院的 recall 也是）。程式裡沒有別的畢業判斷。
     腳本的 `transfer` 送玩家就存檔（使用者要的，`script_api.transfer()`），所以畢業馬上存進去。
   - 房間的描述就是教學（`{Y【教學】{x` 那幾行），改教學內容改區域檔就好。
+- **秋風城**（`areas/midgaard.json`，世界區域，號碼範圍 `[3000, 3399]`，使用者 2026-11-17 放進來的）：舊版 midgaard 用 `mud.areaconvert` 轉的，文字改寫成龍焚之夜一百年後、百廢待舉的樣子（世界觀在 mud_design 的 `design/世界觀.md`，改文字前先看）。`builder_area/midgaard.json` 是編輯器那份，兩份現在一樣。
+  坑：起始房間 `START_ROOM` 是 3001，自己做區域檔的測試裡沒有它：會用到 `zones.start_room()` 的（玩家死掉、建角、讀檔找不到房間、走進動態區域）要 `monkeypatch.setattr(zones, "START_ROOM", 101)`。
 - **tick 和戰鬥的 loop**（使用者定的；C 版是全遊戲一個鐘，我們不照它）：
   - tick loop：世界和全部動態區域**共用一個**（世界 tick，`zones.start()` 開始），每次先做世界、再做每個動態區域；
     **副本每份自己一個**（建立時開始，釋放時結束）。間隔 `TICK_SECONDS` 固定 1 秒（使用者 2026-11-04 從 30 秒改成 1 秒，不加亂數）。

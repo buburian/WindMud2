@@ -47,6 +47,7 @@ def world(tmp_path, monkeypatch):
     monkeypatch.setattr(combat, "rng", Always(0.5))
     monkeypatch.setattr(save, "PLAYER_DIR", str(tmp_path / "players"))
     write_json(tmp_path, "a.json", make_area("a.json", [make_room(101, north=102), make_room(102, south=101)], (100, 199)))
+    monkeypatch.setattr(zones, "START_ROOM", 101)           # 這裡的區域沒有秋風城：起始房間用 101
     zones.load(tmp_path)
     yield zones.world
     characters.clear()

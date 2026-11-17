@@ -15,7 +15,7 @@
       ],
       "type": "instance"
     },
-    "recall": 101,
+    "recall": 3001,
     "no_teleport": null,
     "clan_recall": null,
     "gem": null
@@ -435,7 +435,7 @@
       "mob_vnum": 203,
       "limit": 1,
       "room_vnum": 207,
-      "comment": "院長：說「畢業」送回 101"
+      "comment": "院長：說「畢業」送到秋風城的神殿 3001"
     }
   ]
 }
