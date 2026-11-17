@@ -372,6 +372,46 @@
       "affects": [],
       "extra_descriptions": [],
       "script": null
+    },
+    {
+      "vnum": 110,
+      "keywords": "ring",
+      "short": "拾取綁定戒指",
+      "long": "一枚拾取綁定戒指在地上閃閃發光。",
+      "item_type": 9,
+      "extra_flags": 1024,
+      "wear_flags": "1|2",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 111,
+      "keywords": "ring",
+      "short": "裝備綁定戒指",
+      "long": "一枚裝備綁定戒指在地上閃閃發光。",
+      "item_type": 9,
+      "extra_flags": 2048,
+      "wear_flags": "1|2",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
     }
   ],
   "resets": [

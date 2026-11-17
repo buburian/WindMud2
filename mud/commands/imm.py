@@ -136,11 +136,18 @@ def apply_text(location, n):
     return f"{Apply(location).name}({int(location)}) {n:+}"
 
 
+def bind_text(obj):
+    if obj.bind is None:
+        return "無"
+    return f"{objects.BIND_NAMES[obj.bind]}（{'綁住了' if objects.bound(obj) else '還沒綁'}）"
+
+
 def obj_text(obj):
     """ostat 的內容：全部欄位，數字留小數（imm 看的，不四捨五入成整數）。"""
     kind = f"{obj.item_type} {ITEM_TYPE_NAMES.get(obj.item_type, '？')}"
     lines = [f"號碼 {obj.vnum if obj.vnum is not None else '無'}  名字 {obj.name}  keywords {' '.join(obj.keywords)}",
-             f"種類 {kind}  等級 {obj.level}  顏色 {obj.color or '無'}  重量 {obj.weight}  撿得起來 {'是' if obj.take else '否'}"]
+             f"種類 {kind}  等級 {obj.level}  顏色 {obj.color or '無'}  重量 {obj.weight}  撿得起來 {'是' if obj.take else '否'}"
+             f"  綁定 {bind_text(obj)}"]
     if obj.slot is not None:
         where = "主手＋副手（雙手）" if obj.slot == TWO_HANDED else SLOT_NAMES[obj.slot]
         line = f"部位 {obj.slot}（{where}）"

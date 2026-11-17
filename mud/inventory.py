@@ -5,8 +5,10 @@
 生物不穿裝備（使用者說的）；生物撿東西不檢查負重、件數（生物沒有主屬性）。
 """
 from . import objects, stats
+from .area import ExtraFlag
 from .act import TO_CHAR, TO_ROOM, compose, notify
 from .equipment import TWO_HANDED
+from .players import Player
 
 # 裝備欄的部位，照 C 版 where_name 的順序和名稱（eq 照這個順序列）。戒指兩個；頸、手腕各一件（手冊：手腕當作一雙）
 SLOTS = (
@@ -99,6 +101,20 @@ def room_for(ch, obj, out):
     return reason is None
 
 
+def can_let_go(ch, obj):
+    """ch 能不能丟掉、給人 obj（照 C 版 can_drop_obj，設計文件 §3.10 的綁定）：只擋玩家，imm 不擋。
+    容器裡有綁住的東西也不行（我們加的：不然把整個容器給人就繞過了）。
+    """
+    if not isinstance(ch, Player) or ch.imm:
+        return True
+    return not any(objects.bound(o) for o in [obj, *everything_in(obj)])
+
+
+def everything_in(obj):
+    """obj 裡面的東西，連容器裡的容器裡的都算。"""
+    return [x for o in obj.contains for x in [o, *everything_in(o)]]
+
+
 def where(ch, obj):
     """obj 穿在 ch 的哪個部位（雙手武器是 wield），沒穿是 None。"""
     return next((pos for pos, o in ch.equipment.items() if o is obj), None)
@@ -172,6 +188,8 @@ def wear(ch, obj, replace, out):
         take_off(ch, o, out, check=False)
     ch.carrying.remove(obj)
     ch.equipment[positions[0]] = obj
+    if obj.bind == ExtraFlag.BIND_EQUIP:    # 裝備後綁定：穿上那一刻綁住（設計文件 §3.10；只有玩家穿得上）
+        obj.bound = True
     mine, theirs = WEAPON_WORDS if offhand_weapon or obj.slot == TWO_HANDED else WEAR_WORDS[positions[0]]
     out.add(mine, t=objects.short(obj))
     out.add(theirs, TO_ROOM, t=objects.short(obj))

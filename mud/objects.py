@@ -11,7 +11,7 @@ from . import area, equipment, names
 from .act import notify
 from .area import (CHANCE_MAX, CHARGED_ITEM_TYPES, CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE, DRINK_CON_ITEM_TYPE, FOOD_ITEM_TYPE,
                    FOUNTAIN_ITEM_TYPE, LIGHT_ITEM_TYPE, SKILL_ITEM_TYPES, WEAPON_ITEM_TYPE, Apply, Attack, ContainerFlag,
-                   ItemColor, WeaponKind, WearFlag, parse_flags, skill_slots, wear_slots)
+                   ExtraFlag, ItemColor, WeaponKind, WearFlag, parse_flags, skill_slots, wear_slots)
 from .characters import Position
 from .color import colorize
 from .players import online_players
@@ -25,6 +25,7 @@ DECAY = "腐爛變成了灰塵。"                    # timer 到了的訊息（
 COLOR_CODES = {ItemColor.GRAY: "{D", ItemColor.WHITE: "{W", ItemColor.BLUE: "{B", ItemColor.PURPLE: "{M", ItemColor.ORANGE: "{y"}
 OTHER_CODE = "{G"
 ENGLISH, FLOOR, RESET = colorize("{C"), colorize("{W"), colorize("{x")    # 地上那一行亮白（使用者選的，跟生物一樣）
+BIND_NAMES = {ExtraFlag.BIND_PICKUP: "拾取後綁定", ExtraFlag.BIND_EQUIP: "裝備後綁定"}   # 綁定的兩種（設計文件 §3.10）
 
 protos = {}                                 # 遊戲號碼 → 區域檔的物品（zones.load 填，跨檔案也找得到）
 
@@ -63,6 +64,10 @@ class Obj:
         self.capacity = None                # 液體容器：容量（values 第 1 個）
         self.amount = None                  # 液體容器：現在有多少（values 第 2 個），每喝少 1
         self.liquid = None                  # 液體容器、噴泉：液體種類（values 第 3 個，area.LIQUIDS）
+        # 綁定（設計文件 §3.10，bound()）：bind 是 BIND_NAMES 的一種或 None（extra_flags 1024、2048）；
+        # bound 是裝備後綁定的穿上過了沒（拾取後綁定不用記：到了玩家身上一定是綁著的）
+        self.bind = None
+        self.bound = False
 
     def is_weapon(self):
         return self.weapon_kind is not None
@@ -89,6 +94,7 @@ def create(vnum, level, color, rng=random):
     obj.vnum, obj.level, obj.color = vnum, level, color
     obj.weight, obj.cost = proto["weight"], proto["cost"]
     obj.take = bool(parse_flags(proto["wear_flags"]) & WearFlag.TAKE)
+    obj.bind = next((b for b in BIND_NAMES if parse_flags(proto["extra_flags"]) & b), None)
     slot = obj.slot = equipment.best_slot(*wear_slots(proto))
     if proto["item_type"] == CONTAINER_ITEM_TYPE:
         # 鑰匙跟出口的 key 一樣寫完整的遊戲號碼（0 以下是沒有鑰匙）
@@ -197,6 +203,11 @@ def short(obj):
     return colorize(COLOR_CODES.get(obj.color, OTHER_CODE)) + obj.name + english_tail(obj) + RESET
 
 
+def bound(obj):
+    """綁住了沒（設計文件 §3.10）：拾取後綁定的一定是（玩家拿到就綁，沒有拿著卻沒綁的時候），裝備後綁定的要穿上過。"""
+    return obj.bind == ExtraFlag.BIND_PICKUP or obj.bound
+
+
 def inside(container):
     """容器、屍體裡有什麼（look in 和打死生物後看屍體共用，照 C 版 act_info.c）：每件一行、前面空 5 格。
 
@@ -234,7 +245,7 @@ def weight(obj):
 
 
 FIELDS = ("vnum", "name", "long", "item_type", "level", "color", "base", "weight", "take", "slot")
-LATER_FIELDS = {"key": None, "seal": 0, "cost": 0}     # 後來才加的欄位：舊存檔沒有，用這個值
+LATER_FIELDS = {"key": None, "seal": 0, "cost": 0, "bound": False}    # 後來才加的欄位：舊存檔沒有，用這個值
 
 
 def to_data(obj):
@@ -245,6 +256,7 @@ def to_data(obj):
                 attack=None if obj.attack is None else int(obj.attack),
                 container=None if obj.container is None else int(obj.container), key=obj.key, seal=obj.seal, cost=obj.cost,
                 hours=obj.hours, skills=list(obj.skills), charges=obj.charges, contains=[to_data(o) for o in obj.contains],
+                bind=None if obj.bind is None else int(obj.bind), bound=obj.bound,
                 **{k: getattr(obj, k) for k in MEAL_FIELDS})
     return data
 
@@ -258,6 +270,7 @@ def from_data(data):
     obj.weapon_kind = None if data["weapon_kind"] is None else WeaponKind(data["weapon_kind"])
     obj.attack = None if data["attack"] is None else Attack(data["attack"])
     obj.container = None if data.get("container") is None else ContainerFlag(data["container"])
+    obj.bind = None if data.get("bind") is None else ExtraFlag(data["bind"])    # 舊存檔沒有：不綁
     for k, default in LATER_FIELDS.items():
         setattr(obj, k, data.get(k, default))
     if "hours" in data:

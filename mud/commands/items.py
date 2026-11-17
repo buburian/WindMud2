@@ -113,24 +113,33 @@ def pick_up(ch, obj, source, container, out):
 
 
 def do_drop(ch, arg):
-    """drop <東西>、drop all：放到地上（新的在前；不會消失，區域物件釋放時跟著不見）。"""
+    """drop <東西>、drop all：放到地上（新的在前；不會消失，區域物件釋放時跟著不見）。
+    綁住的東西丟不掉（照 C 版 nodrop：drop all 靜靜跳過，一件都沒丟就是「你沒有攜帶任何東西。」）。
+    """
     words = arg.split()
     if not words:
         ch.send("你想丟掉什麼物品？\n")
         return
     out = inventory.Lines(ch)
     if is_all(words[0]):
-        if not ch.carrying:
+        dropping = [o for o in ch.carrying if inventory.can_let_go(ch, o)]
+        if not dropping:
             out.add("你沒有攜帶任何東西。")
-        for obj in list(ch.carrying):
+        for obj in dropping:
             put_down(ch, obj, out)
     else:
         obj = objects.find(ch.carrying, words[0])
         if obj is None:
             out.add("你沒有這樣東西。")
+        elif not inventory.can_let_go(ch, obj):
+            out.add(CANT_DROP)
         else:
             put_down(ch, obj, out)
     out.send()
+
+
+CANT_DROP = "你無法丟掉這樣東西。"          # 綁住的東西（照 C 版 nodrop 的那句）
+CANT_GIVE = "你無法讓它離開你。"
 
 
 def put_down(ch, obj, out):
@@ -143,8 +152,8 @@ def put_down(ch, obj, out):
 def do_give(ch, arg):
     """give <東西> <名字>：把背包裡的東西給同房間的人（玩家或生物）。give <數量> coins <名字>：給金幣。
 
-    照 C 版 act_obj.c 的 do_give（使用者定的）：店主不收東西；對方是玩家要放得下（件數、負重）；給完幫給的人存檔
-    （C 版是 do_save，防止當機時東西變兩份；我們不印 do_save 的「Ok.」）。無法丟棄、看不看得到、任務物品還沒做。
+    照 C 版 act_obj.c 的 do_give（使用者定的）：綁住的給不出去（照 C 版 nodrop）；店主不收東西；對方是玩家要放得下（件數、負重）；
+    給完幫給的人存檔（C 版是 do_save，防止當機時東西變兩份；我們不印 do_save 的「Ok.」）。看不看得到、任務物品還沒做。
     """
     words = arg.split()
     if len(words) < 2:
@@ -160,6 +169,9 @@ def do_give(ch, arg):
     victim = find_in_room(ch, words[1])
     if victim is None:
         ch.send("他們不在這裡。\n")
+        return
+    if not inventory.can_let_go(ch, obj):
+        ch.send(CANT_GIVE + "\n")
         return
     out, name = inventory.Lines(ch), objects.short(obj)
     if getattr(victim, "shopkeeper", False):          # 店主不收（C 版：沒有腳本的店主）
@@ -286,16 +298,24 @@ def do_remove(ch, arg):
 
 def do_inventory(ch, arg):
     """inventory（i、inv）：背包裡的東西，每件一行前面空 5 格（照 C 版），最後是件數和負重（使用者選的）。"""
-    lines = ["你目前所攜帶的東西有："] + ([f"     {objects.short(o)}" for o in ch.carrying] or ["     空無一物。"])
+    lines = ["你目前所攜帶的東西有："] + ([f"     {objects.short(o)}{bound_tag(o)}" for o in ch.carrying] or ["     空無一物。"])
     if inventory.is_player(ch):
         lines.append(f"（{len(ch.carrying)}/{stats.CARRY_COUNT} 件，"
                      f"負重 {stats.shown(inventory.carry_weight(ch))}/{stats.shown(stats.carry_limit(ch))}）")
     ch.send("\n".join(lines) + "\n")
 
 
+def bound_tag(obj):
+    """inventory、equipment 裡綁住的東西名字後面加「（綁定）」（設計文件 §3.10）；別的地方的名字不加。"""
+    return BOUND_TAG if objects.bound(obj) else ""
+
+
+BOUND_TAG = "（綁定）"
+
+
 def do_equipment(ch, arg):
     """equipment（eq）：穿在身上的，照部位的順序（照 C 版 where_name），空的不列。"""
-    rows = [f" 【 {inventory.label(pos, ch.equipment[pos])} 】 {objects.short(ch.equipment[pos])}"
+    rows = [f" 【 {inventory.label(pos, ch.equipment[pos])} 】 {objects.short(ch.equipment[pos])}{bound_tag(ch.equipment[pos])}"
             for pos, _ in inventory.SLOTS if pos in ch.equipment]
     ch.send("\n".join(["你現在正在使用：", "", *(rows or ["沒有裝備。"])]) + "\n")
 
@@ -330,4 +350,6 @@ def identify(obj):
         lines.append(f"防護力：【{stats.shown(obj.base['ac'])}】")
     if obj.affects:
         lines.append("加成：" + "、".join(f"{STAT_NAMES[a.name.lower()]} {n:+}" for a, n in obj.affects))
+    if obj.bind is not None:
+        lines.append(f"綁定：【{objects.BIND_NAMES[obj.bind]}】，{'已經綁住了' if objects.bound(obj) else '還沒綁住'}。")
     return lines

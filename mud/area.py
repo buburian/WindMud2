@@ -210,7 +210,7 @@ class WearFlag(enum.IntFlag):
 
 
 class ExtraFlag(enum.IntFlag):
-    """物品的特性旗標（extra_flags）。1～256 照 C 版，512 是新系統加的。"""
+    """物品的特性旗標（extra_flags）。1～256 照 C 版，512 以後是新系統加的。"""
     GLOW = 1                                # 發亮
     HUM = 2                                 # 低鳴
     DARK = 4                                # 黑暗
@@ -221,6 +221,8 @@ class ExtraFlag(enum.IntFlag):
     NODROP = 128                            # 無法丟棄
     BLESS = 256                             # 祝福
     TWO_HANDED = 512                        # 雙手：武器同時佔主手和副手，點數上限是兩格加起來
+    BIND_PICKUP = 1024                      # 拾取後綁定：到了玩家身上就不能丟、不能給（設計文件 §3.10）
+    BIND_EQUIP = 2048                       # 裝備後綁定：穿上那一刻才綁（設計文件 §3.10）
 
 
 # 穿戴位置 → equipment.py 的部位（點數上限用）。TAKE 不是位置。
@@ -1044,7 +1046,7 @@ def check_objects(name, data, vnums, problems):
 
 def check_object(where, o, problems):
     """檢查一個物品（號碼以外的部分）。大多只看寫法：數字代表什麼（種類、旗標、values…）還沒檢查，
-    例外是主手、副手不能同時寫，和武器的種類、拿法、攻擊方式（check_weapon）。"""
+    例外是主手、副手不能同時寫，兩種綁定不能同時寫，和武器的種類、拿法、攻擊方式（check_weapon）。"""
     for k in ("keywords", "short"):
         if k in o and not (isinstance(o[k], str) and o[k].strip()):
             problems.append(f"{where}的 {k} 不能是空的")
@@ -1064,6 +1066,12 @@ def check_object(where, o, problems):
     if wear & WearFlag.WIELD and wear & WearFlag.SHIELD:
         problems.append(f"{where}的 wear_flags {o['wear_flags']!r} 同時有 8192 主手和 512 副手：武器只能放做出來的那一手，"
                         f"主手武器寫 8192，副手武器寫 512")
+    try:
+        extra = parse_flags(o.get("extra_flags"))
+    except ValueError:
+        extra = 0
+    if extra & ExtraFlag.BIND_PICKUP and extra & ExtraFlag.BIND_EQUIP:     # 設計文件 §3.10：只能寫一個
+        problems.append(f"{where}的 extra_flags {o['extra_flags']!r} 同時有 1024 拾取後綁定和 2048 裝備後綁定：只能寫一個")
     # values：4 個，意思看物品種類；會放技能的物品要寫技能的 key、食物第 2 個是 buff 技能，所以可以是字串
     if "values" in o and not (isinstance(o["values"], list) and len(o["values"]) == 4
                               and all(is_int(v) or isinstance(v, str) for v in o["values"])):

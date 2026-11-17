@@ -56,6 +56,7 @@ uv run python -m mud.areaconvert 舊.json builder_area/新.json   # 舊區域（
   `tests/test_object_resets.py` 測重置 G、O、P、R、生物身上的東西進屍體（店主的消失）、test.json 載入後商人身上的東西和箱子裡的麵包；
   `tests/test_containers.py` 測容器的 open、close、lock、unlock、找的順序、鑰匙、關著不能拿、封印、存檔帶容器狀態、門用真的鑰匙。
   `tests/test_give.py` 測 give（給東西、給金幣、店主不收、放不下、1 級不能給金幣、給完存檔、log）。
+  `tests/test_bind.py` 測綁定（每一條拿到東西的路、drop、drop all、give 的順序、容器裡有綁住的、imm 和生物不擋、可以賣、裝備後綁定、穿不上不綁、（綁定）、examine、ostat、存檔、舊存檔、區域檔檢查）。
   `tests/test_scripts.py` 測 Lua 腳本：沙箱（拿不到的名字、碰不到 Python、指令數上限、記憶體）、開機檢查的每一條、10 個觸發時機、每個函式、vars、wait、出錯的提醒
   （wait 用假的 `scripts.schedule`，自己呼叫 `later.run()`；區域檔和 .lua 用 `build()` 寫進 `tmp_path`）。
   `tests/test_again.py` 測 `!`（重複、Enter 不記、`!` 開頭都算、分頁中、腳本看到真的指令）。
@@ -337,6 +338,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     起始房間 `config.START_ROOM` 是秋風城的神殿大廳 3001（`areas/midgaard.json`，見下面「秋風城」）。之後會照使用者的指示繼續改格式。`area`、每個房間、每隻生物、每個物品和每筆重置的欄位**一個都不能少**，
     巢狀欄位也要有範例值（`extra_descriptions` 放一筆；`script`：房間 102 用 `areas/test/鐘聲.lua`、生物 101 用 `商人.lua`、物品 102 是物品的舊格式；生物 101「測試商人」的每個欄位都有值，生物 102「測試坐騎」示範 null／空的寫法；生物 103「野兔」是練功用的 1 級一般怪，重置放 3 隻在房間 102（使用者要的）；
     物品 101～104 是藥水、長劍、箱子、麵包（重置用到 101、103、104），物品 102「測試長劍」每個欄位都有值；物品 105～109 是給 `oload` 試裝備用的（盾牌、匕首（副手）、大劍（雙手）、戒指、皮甲，都沒寫 affects，給顏色就抽隨機屬性；不在重置裡，使用者同意加的）；
+    物品 110、111 是拾取後綁定、裝備後綁定的戒指（給 `oload` 試綁定，不在重置裡，使用者同意加的）；
     `resets` 每種指令各一筆；房間 101 往北、房間 102 往南的出口是同一扇木門（門兩邊都要寫），給 `D` 的範例用）：使用者靠它看系統還缺哪些功能。
     房間的文字可以用顏色代碼。
     **每個欄位的意思和新系統的實作進度寫在 `docs/區域製作手冊.md`**：改區域檔格式、或做了新的區域功能時，
@@ -638,6 +640,13 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     score、mstat 的主屬性顯示角色 ＋ 裝備、效果加的（`extra_primaries()`，四捨五入顯示）；flee 的 DEX 只算角色 ＋ 裝備（`gear_primaries()`）。
   - 存檔多 `carrying`、`equipment`（`objects.to_data()`），讀檔先放回裝備再 `recompute()`；舊存檔沒有就是空的。死掉不掉東西。
   - imm 的 `oload <號碼> [等級] [顏色]`（`commands/imm.py`，`ol`）：撿得起來放自己背包，撿不起來放地上（同房間看得到，照 C 版）；不檢查件數、負重。
+  - **綁定**（設計文件 §3.10，使用者 2026-11-17 定的，規則在玩家角色手冊「綁定」）：`Obj.bind`（`ExtraFlag.BIND_PICKUP`／`BIND_EQUIP`，`create()` 從 extra_flags 讀；兩個都寫 `check_object()` 擋）、
+    `Obj.bound`（裝備後綁定穿上過，`inventory.wear()` 穿上成功才設），兩個都存檔（舊存檔是不綁）。
+    `objects.bound()`：拾取後綁定的**一定算綁著**（玩家拿到就綁，沒有拿著卻沒綁的時候），所以 get、屍體、自動拾取、buy、give、腳本 give_item 都不用另外加程式，新的拿到東西的路也一樣。
+    `inventory.can_let_go()`（照 C 版 can_drop_obj）擋 drop（「你無法丟掉這樣東西。」，drop all 靜靜跳過）和 give（「你無法讓它離開你。」，找到人之後、店主拒絕之前）：
+    只擋玩家、imm 不擋；容器裡（連容器裡的容器）有綁住的也擋（我們加的）。sell、腳本的 take_item 不擋。
+    「（綁定）」只加在 inventory、equipment（`items.bound_tag()`），不要加進 `objects.short()`（每句訊息、list、地上那一行都用它）。
+    之後做 put（放進容器）、死亡掉東西時，綁住的要擋（設計文件 §3.10）。
   - `examine`（`ex`，`commands/items.py` 的 `identify()`）：**只看背包和身上的**（使用者要的），句型照 C 版 identify，每種東西只列有的行。
     imm 的 `ostat <名字>`（`os`：背包、身上、地上、地上屍體裡，照這個順序）／`ostat <號碼>`（區域檔的寫法）、`mstat <名字>`（`m`：同房間的生物或玩家）：
     全部資料，數字留小數。名稱用 `area.ITEM_TYPE_NAMES`、`WEAPON_KIND_NAMES`、`ATTACK_NAMES`（手冊的表，有測試）、`equipment.STAT_NAMES`、`SLOT_NAMES`、`COLOR_NAMES`。
