@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 專案概況
 
 最小的 MUD telnet 伺服器原型，程式碼在 `mud/` 套件，網路用標準庫 asyncio。
+要 **Python 3.12 以上**（`pyproject.toml` 的 `requires-python`）：3.11 沒有 `值 in Enum類別` 的寫法，3.10 沒有 `enum.StrEnum`（2026-11-17 每個版本跑過全部測試）。
 執行期依賴是 rich（畫面上的紀錄顯示）和 lupa（Lua 腳本，`uv add` 加的）；開發依賴是 pytest（`pyproject.toml` 的 dev group）。
 
 ## 參考資料（唯讀，不可修改）
@@ -16,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 待辦
 
-使用者說要做、但之後再做的事，一件一個 Markdown 檔放在 `todo/`（使用者選的：不開 GitHub issue，本機 gh 的帳號沒有這個 repo 的權限）。開始新工作前先看一下有沒有相關的。
+使用者說要做、但之後再做的事，一件一個 Markdown 檔放在 `todo/`（使用者選的：不開 GitHub issue，本機 gh 的帳號沒有這個 repo 的權限）。開始新工作前先看一下有沒有相關的。做完就刪掉那個檔（使用者要的）。
 
 ## 指令
 
@@ -61,6 +62,7 @@ uv run python -m mud.areaconvert 舊.json builder_area/新.json   # 舊區域（
   `tests/test_light.py` 測黑暗和光源（很暗的四個條件、光源在身上／地上／背包、精靈和 imm、look 的每一種、找不到人、撿不到、「某人」、走進來、對面的門、燒完、燈籠放光源位置、存檔的 hours、暗處不自動拾取）；
   `tests/test_terrain.py` 測地形（每一種擋法、船、飛行、現在站的房間也算、生物不受限制、飛和游的訊息、flee 不挑走不過去的出口、窒息）和飛翔術、水中呼吸術；
   `tests/test_safe.py` 測安全區（kill、use 傷害技能擋下來而且不扣消耗、增益技能照用）。
+  `tests/test_socials.py` 測表情動作（真的 socials.json 檢查得過、check() 的每條規則、縮寫、沒對象／對別人／對自己、遠遠地、找不到、睡著、生物的反應、廣播、很暗、socials 指令、生物也能做）和說話結尾的表情。
   `tests/test_recall.py` 測 recall（起始房間、自己的返回點、副本的 recall 先、no_recall、找不到、已經在那裡、打架中和休息、旁人的訊息、on_enter、存檔）；學生不能用的在 `test_academy.py`。
   坑：日夜照現實時間算，原野、水、空中的房間大約 12 分鐘有 5 分鐘是暗的：用到這些房間的測試要 `monkeypatch.setattr(weather, "current", weather.Weather(hour=12))`。
   `tests/test_affects.py` 測身上的效果（覆蓋和疊加、暫時加減屬性、每 3 tick 跳、矮人的堅韌、扣死給誰經驗、時間到、死掉、存檔、score 最下面那段、affect、mstat、`config +showbuff` 的每一種訊息、生物的 affected_by），自己呼叫 `affects.tick()`。
@@ -211,6 +213,11 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   **`recall`**（`rec`，也可以打 `/`，最低姿勢 STANDING，所以打架中、休息、睡覺不能用；規則在玩家角色手冊「回城」，使用者 2026-11-17 定的）：
   `system.do_recall()`，回到 `zones.recall_room()`：所在區域檔寫了 `recall` 就用它（通常是副本：送回入口），沒寫就用 `Player.recall`（自己的返回點，存檔，None 是 `START_ROOM`；改返回點的方法之後做）。
   no_recall 房間、學生（`zones.is_student()`）不能用；不扣 MV；訊息照 C 版；到了跟腳本的 transfer 一樣觸發 on_enter(actor, nil)。
+  **表情動作（socials，使用者 2026-11-17 要的，規則在玩家角色手冊「表情動作」）**：資料在 `socials/socials.json`（`config.SOCIAL_FILE`，格式寫在 `socials.py` 開頭），
+  `__main__` 開機時 `socials.load()`，有問題就停止開機（跟 help 一樣；檢查只有一份 `socials.check()`，打全名會先找到指令的動作算錯）。
+  動作不是指令：`run()` 找不到指令才呼叫 `commands/social.social()`，所以指令的縮寫優先。生物的反應亂數是 `social.rng`（測試換掉）。
+  說話結尾的表情 `socials.adverb()` 加在 say、chat、tell、reply 的動詞前面（「你愉快地說」），對照表也在 socials.json。
+  坑：沒呼叫 `socials.load()` 的測試、伺服器，動作和表情都是空的（跟 helps 一樣）。
   **`flee`**（`f`，最低姿勢 FIGHTING，規則在玩家角色手冊「戰鬥」）：機率 `stats.flee_chance()` ＝ min(80%, 10% ＋ 70% × DEX ÷ 55)，DEX 是自己的 ＋ 裝備加的（使用者定的）。
   檢查：沒在打架 → 還在等（`cooldowns["flee"]`，失敗設 `FLEE_WAIT_TICKS` 2，`skills.tick()` 減）→ 開著的出口（關著的門不算）→ 骰 `rng.random()`。
   成功：`rng.choice(出口)` → `escape()`：`death.stop_all()`（自己和打自己的都停手）→ `system.move(ch, 方向, leave=…)`（`leave` 是原本房間看到的那句）。不扣經驗。
@@ -391,6 +398,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     腳本的 `transfer` 送玩家就存檔（使用者要的，`script_api.transfer()`），所以畢業馬上存進去。
   - 房間的描述就是教學（`{Y【教學】{x` 那幾行），改教學內容改區域檔就好。
 - **秋風城**（`areas/midgaard.json`，世界區域，號碼範圍 `[3000, 3399]`，使用者 2026-11-17 放進來的）：舊版 midgaard 用 `mud.areaconvert` 轉的，文字改寫成龍焚之夜一百年後、百廢待舉的樣子（世界觀在 mud_design 的 `design/世界觀.md`，改文字前先看）。`builder_area/midgaard.json` 是編輯器那份，兩份現在一樣。
+  生物的平常動作（舊版 C 的 actions：有玩家走進來就招呼、每 30 秒做一件事，跟任務無關）用 Lua 寫在 `areas/midgaard/`（`builder_area/midgaard/` 一樣一份），
+  25 個檔、28 隻生物，文字照龍焚之夜一百年後重寫；叫、唱歌、喵、微笑用表情動作（`me:command("bark")`）。打架中不做（`me:is_fighting()`，照 C 版）。
   坑：起始房間 `START_ROOM` 是 3001，自己做區域檔的測試裡沒有它：會用到 `zones.start_room()` 的（玩家死掉、建角、讀檔找不到房間、走進動態區域）要 `monkeypatch.setattr(zones, "START_ROOM", 101)`。
 - **tick 和戰鬥的 loop**（使用者定的；C 版是全遊戲一個鐘，我們不照它）：
   - tick loop：世界和全部動態區域**共用一個**（世界 tick，`zones.start()` 開始），每次先做世界、再做每個動態區域；
@@ -620,7 +629,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `commanding` 是正在打指令的人的堆疊（`command()` 推進來）：`act.notify()` 送給還在裡面的人時當作指令的回覆、不補 prompt
     （生物的腳本在他說話的當下回話，才不會有兩個 prompt；指令跑完 `command()` 補一個）。
   - **`docs/Lua任務教學.md`**（使用者要的，從手冊獨立出來，只講怎麼做任務）：例子都實際跑過。改了腳本的函式、訊息、規則時，教學裡的例子和畫面也要跟著對。
-  - `script_api.py`：給腳本的名字和函式（`me`、`room`、`actor` 的欄位和方法、`random`、`dice`（擲骰子 "4d6+2"，面數沒寫是 6）、`hour`、vars、號碼換算、`transfer`、`load_mob`、`mob:use`…）。
+  - `script_api.py`：給腳本的名字和函式（`me`、`room`、`actor` 的欄位和方法（含 `is_fighting()`）、`random`、`dice`（擲骰子 "4d6+2"，面數沒寫是 6）、`hour`、vars、號碼換算、`transfer`、`load_mob`、`mob:use`…）。
     `give_item`：主人是生物、給的是別人時，訊息跟 give 一樣（`items.GIVEN_TO_YOU`、`GIVEN_SEEN`，使用者要的）；房間的腳本不說話。
     判定「算腳本出錯」就丟 `ScriptError`。玩家的 vars 在 `player.vars[區域檔名][名字]`（存檔），生物、房間的在自己的 `vars`。
   - 觸發的地方：`commands.command()`（on_command，`quit` 不觸發）、`system.move()`（on_enter）、`do_say()`（**只有玩家說的**，使用者選的：生物之間對話用 tell）、`do_tell()`（找不到線上玩家才找同房間的生物，on_tell）、

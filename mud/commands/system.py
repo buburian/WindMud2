@@ -2,7 +2,7 @@
 import logging
 import re
 
-from .. import affects, light, objects, save, scripts, stats, terrain, weather, zones
+from .. import affects, light, objects, save, scripts, socials, stats, terrain, weather, zones
 from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act, compose, notify
 from ..area import DIRECTIONS, REVERSE, MobTier, RoomFlag
 from ..characters import SEX_FEMALE, SEX_MALE, Position, arrive, characters, find_in_room, in_room
@@ -246,10 +246,11 @@ def do_chat(ch, arg):
     if not arg:
         ch.send("要說什麼？\n")
     else:
-        act("{M你聊天：$t{x", ch, t=arg, to=TO_CHAR)
+        how = socials.adverb(arg)           # 結尾的表情：「愉快地聊天」（照 C 版，表在 socials.json）
+        act("{M你" + how + "聊天：$t{x", ch, t=arg, to=TO_CHAR)
         for other in online_players():     # chat 是全服頻道，自己走訪在線的玩家，有房間後也不受影響
             if other is not ch:
-                act("{M$n 聊天：$t{x", ch, vch=other, t=arg, to=TO_VICT)
+                act("{M$n " + how + "聊天：$t{x", ch, vch=other, t=arg, to=TO_VICT)
 
 
 def do_tell(ch, arg):
@@ -269,7 +270,7 @@ def do_tell(ch, arg):
             ch.send("沒有找到你想說話的對象。\n")
             return
     if isinstance(victim, Npc):             # tell 生物：觸發牠的 on_tell
-        act("{G你告訴$N：$t{x", ch, vch=victim, t=msg, to=TO_CHAR)
+        act("{G你" + socials.adverb(msg) + "告訴$N：$t{x", ch, vch=victim, t=msg, to=TO_CHAR)
         scripts.fire_owner(victim, "on_tell", ch, ch, msg)
         return
     tell(ch, victim, msg)
@@ -287,9 +288,10 @@ def do_reply(ch, arg):
 
 
 def tell(ch, victim, msg):
-    """tell 和 reply 共用：雙方各看到一句，對方之後可以用 reply 回你。"""
-    act("{G你告訴$N：$t{x", ch, vch=victim, t=msg, to=TO_CHAR)
-    act("{G$n告訴你：$t{x", ch, vch=victim, t=msg, to=TO_VICT)
+    """tell 和 reply 共用：雙方各看到一句，對方之後可以用 reply 回你。結尾的表情：「愉快地告訴」（照 C 版）。"""
+    how = socials.adverb(msg)
+    act("{G你" + how + "告訴$N：$t{x", ch, vch=victim, t=msg, to=TO_CHAR)
+    act("{G$n" + how + "告訴你：$t{x", ch, vch=victim, t=msg, to=TO_VICT)
     victim.reply = ch
 
 
@@ -509,12 +511,15 @@ def do_stand(ch, arg):
 
 
 def do_say(ch, arg):
-    """說話：同房間醒著的人聽得到（亮白色，照 C 版）。玩家打的字用 $t 帶進去，不會被當成顏色代碼。"""
+    """說話：同房間醒著的人聽得到（亮白色，照 C 版）。玩家打的字用 $t 帶進去，不會被當成顏色代碼。
+    結尾的表情（:) 這種）照 C 版變成「你愉快地說」（socials.adverb()，表在 socials.json，使用者要的）。
+    """
     if not arg:
         ch.send("你想說些什麼呢？\n")
         return
-    act("{W你說：『$t』{x", ch, t=arg, to=TO_CHAR)
-    act("{W$n說：『$t』{x", ch, t=arg, to=TO_ROOM)
+    how = socials.adverb(arg)
+    act("{W你" + how + "說：『$t』{x", ch, t=arg, to=TO_CHAR)
+    act("{W$n" + how + "說：『$t』{x", ch, t=arg, to=TO_ROOM)
     if not isinstance(ch, Npc):             # 腳本的 on_say(actor, text)：只有玩家說的會觸發（使用者選的，生物之間對話用 tell）
         scripts.fire(ch.room, "on_say", ch, ch, arg)
 

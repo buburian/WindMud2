@@ -610,6 +610,18 @@ def test_actor_fields(tmp_path, later):
     assert room.vars == {"s": "Ming1physhumantrue", "m": "nilfalse"}
 
 
+def test_is_fighting(tmp_path, later):
+    code = 'function on_say(actor, text)\n  room.vars.f = tostring(actor:is_fighting()) .. tostring(me:is_fighting())\nend'
+    room = build(tmp_path, {"m.lua": code}, mobs=[mob(101, "商人", "merchant", "m.lua")], resets=[M(101)])
+    ming = person("Ming")
+    say(ming, "say 嗨")
+    assert room.vars["f"] == "falsefalse"
+    merchant = next(c for c in characters if isinstance(c, Npc))
+    ming.fighting, merchant.fighting = merchant, ming
+    say(ming, "say 嗨")
+    assert room.vars["f"] == "truetrue"
+
+
 def test_items_and_doors(tmp_path, later):
     code = ('function on_say(actor, text)\n'
             '  if text == "給" then actor:give_item(105, 3) end\n'

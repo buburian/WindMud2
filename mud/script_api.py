@@ -127,6 +127,7 @@ def character_fields(r, ch):
         "race": str(ch.race) if player and ch.race else None,
         "vars": vars_of(store),
         "is_player": method(ch, lambda: player),
+        "is_fighting": method(ch, lambda: ch.fighting is not None),     # 正在打架（照 C 版，生物打架時不打招呼、不做平常的動作）
         "has_item": method(ch, lambda n: any(o.vnum == number(n) for o in ch.carrying)),
         "wears_item": method(ch, lambda n: any(o.vnum == number(n) for o in ch.equipment.values())),
         "tell": method(ch, lambda t: deliver(ch, colorize_text(t))),

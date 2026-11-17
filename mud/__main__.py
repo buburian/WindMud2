@@ -3,8 +3,8 @@ import argparse
 import asyncio
 import logging
 
-from . import helps, zones
-from .config import AREA_DIR, ENCODING, HELP_FILE, START_ROOM
+from . import helps, socials, zones
+from .config import AREA_DIR, ENCODING, HELP_FILE, SOCIAL_FILE, START_ROOM
 from .log import setup
 from .server import handle
 
@@ -29,6 +29,11 @@ async def main():
         helps.load(HELP_FILE)
     except ValueError as e:
         log.error(f"說明檔載入失敗：{e}")
+        raise SystemExit(1)
+    try:
+        socials.load(SOCIAL_FILE)
+    except ValueError as e:
+        log.error(f"表情動作載入失敗：{e}")
         raise SystemExit(1)
     zones.start()
     server = await asyncio.start_server(handle, args.host, args.port)

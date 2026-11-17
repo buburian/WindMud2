@@ -5215,7 +5215,10 @@
       "sex": 1,
       "position": 7,
       "drops": [],
-      "script": null,
+      "script": {
+        "file": "巫師.lua",
+        "timer": 30
+      },
       "shop": {
         "buy_types": [
           2,
@@ -5258,7 +5261,10 @@
           "tiers": null
         }
       ],
-      "script": null,
+      "script": {
+        "file": "麵包店老闆.lua",
+        "timer": null
+      },
       "shop": {
         "buy_types": [],
         "profit_buy": 110,
@@ -5296,7 +5302,10 @@
           "tiers": null
         }
       ],
-      "script": null,
+      "script": {
+        "file": "雜貨店老闆.lua",
+        "timer": null
+      },
       "shop": {
         "buy_types": [
           1,
@@ -5340,7 +5349,10 @@
           "tiers": null
         }
       ],
-      "script": null,
+      "script": {
+        "file": "武器店老闆.lua",
+        "timer": null
+      },
       "shop": {
         "buy_types": [
           5
@@ -5380,7 +5392,10 @@
           "tiers": null
         }
       ],
-      "script": null,
+      "script": {
+        "file": "護甲店老闆.lua",
+        "timer": null
+      },
       "shop": {
         "buy_types": [
           9
@@ -5420,7 +5435,10 @@
           "tiers": null
         }
       ],
-      "script": null,
+      "script": {
+        "file": "小偷.lua",
+        "timer": 30
+      },
       "shop": null,
       "special": "spec_thief",
       "special_ratio": null,
@@ -5445,7 +5463,10 @@
       "sex": 1,
       "position": 7,
       "drops": [],
-      "script": null,
+      "script": {
+        "file": "船長.lua",
+        "timer": null
+      },
       "shop": {
         "buy_types": [
           22
@@ -5478,7 +5499,10 @@
       "sex": 1,
       "position": 7,
       "drops": [],
-      "script": null,
+      "script": {
+        "file": "水手.lua",
+        "timer": 30
+      },
       "shop": null,
       "special": null,
       "special_ratio": null,
@@ -5503,7 +5527,10 @@
       "sex": 1,
       "position": 7,
       "drops": [],
-      "script": null,
+      "script": {
+        "file": "寵物店男孩.lua",
+        "timer": 30
+      },
       "shop": {
         "buy_types": [],
         "profit_buy": 100,
@@ -5534,7 +5561,10 @@
       "sex": 1,
       "position": 7,
       "drops": [],
-      "script": null,
+      "script": {
+        "file": "珠寶店老闆.lua",
+        "timer": null
+      },
       "shop": {
         "buy_types": [
           8
@@ -5567,7 +5597,10 @@
       "sex": 1,
       "position": 7,
       "drops": [],
-      "script": null,
+      "script": {
+        "file": "毛皮店老闆.lua",
+        "timer": 30
+      },
       "shop": {
         "buy_types": [
           9
@@ -5607,7 +5640,10 @@
           "tiers": null
         }
       ],
-      "script": null,
+      "script": {
+        "file": "執法者.lua",
+        "timer": null
+      },
       "shop": null,
       "special": "spec_executioner",
       "special_ratio": null,
@@ -5632,7 +5668,10 @@
       "sex": 1,
       "position": 7,
       "drops": [],
-      "script": null,
+      "script": {
+        "file": "行醫者.lua",
+        "timer": null
+      },
       "shop": null,
       "special": "spec_cast_adept",
       "special_ratio": null,
@@ -6316,7 +6355,10 @@
       "sex": 1,
       "position": 7,
       "drops": [],
-      "script": null,
+      "script": {
+        "file": "清潔工.lua",
+        "timer": 30
+      },
       "shop": null,
       "special": "spec_janitor",
       "special_ratio": null,
@@ -6341,7 +6383,10 @@
       "sex": 1,
       "position": 7,
       "drops": [],
-      "script": null,
+      "script": {
+        "file": "野狗.lua",
+        "timer": 30
+      },
       "shop": null,
       "special": "spec_fido",
       "special_ratio": null,
@@ -6373,7 +6418,10 @@
           "tiers": null
         }
       ],
-      "script": null,
+      "script": {
+        "file": "無賴漢.lua",
+        "timer": null
+      },
       "shop": null,
       "special": null,
       "special_ratio": null,
@@ -6398,7 +6446,10 @@
       "sex": 1,
       "position": 7,
       "drops": [],
-      "script": null,
+      "script": {
+        "file": "醉漢.lua",
+        "timer": 30
+      },
       "shop": null,
       "special": null,
       "special_ratio": null,
@@ -6423,7 +6474,10 @@
       "sex": 2,
       "position": 7,
       "drops": [],
-      "script": null,
+      "script": {
+        "file": "乞丐.lua",
+        "timer": 30
+      },
       "shop": null,
       "special": null,
       "special_ratio": null,
@@ -6448,7 +6502,10 @@
       "sex": 1,
       "position": 7,
       "drops": [],
-      "script": null,
+      "script": {
+        "file": "野貓.lua",
+        "timer": 30
+      },
       "shop": null,
       "special": "spec_fido",
       "special_ratio": null,
@@ -6510,7 +6567,10 @@
           "tiers": null
         }
       ],
-      "script": null,
+      "script": {
+        "file": "城市守衛.lua",
+        "timer": null
+      },
       "shop": null,
       "special": "spec_guard",
       "special_ratio": null,
@@ -6572,7 +6632,10 @@
           "tiers": null
         }
       ],
-      "script": null,
+      "script": {
+        "file": "城市守衛.lua",
+        "timer": null
+      },
       "shop": null,
       "special": "spec_guard",
       "special_ratio": null,
@@ -6616,7 +6679,10 @@
           "tiers": null
         }
       ],
-      "script": null,
+      "script": {
+        "file": "城市守衛.lua",
+        "timer": null
+      },
       "shop": null,
       "special": "spec_guard",
       "special_ratio": null,
@@ -7055,7 +7121,10 @@
       "sex": 0,
       "position": 7,
       "drops": [],
-      "script": null,
+      "script": {
+        "file": "麻雀.lua",
+        "timer": 30
+      },
       "shop": null,
       "special": null,
       "special_ratio": null,
@@ -7080,7 +7149,10 @@
       "sex": 0,
       "position": 7,
       "drops": [],
-      "script": null,
+      "script": {
+        "file": "鴨子.lua",
+        "timer": 30
+      },
       "shop": null,
       "special": null,
       "special_ratio": null,
@@ -7437,7 +7509,10 @@
       "sex": 1,
       "position": 7,
       "drops": [],
-      "script": null,
+      "script": {
+        "file": "售票員.lua",
+        "timer": 30
+      },
       "shop": {
         "buy_types": [],
         "profit_buy": 150,
@@ -7643,7 +7718,10 @@
       "sex": 2,
       "position": 7,
       "drops": [],
-      "script": null,
+      "script": {
+        "file": "毛皮店老闆娘.lua",
+        "timer": 30
+      },
       "shop": null,
       "special": null,
       "special_ratio": null,
@@ -7693,7 +7771,10 @@
       "sex": 1,
       "position": 7,
       "drops": [],
-      "script": null,
+      "script": {
+        "file": "野狗.lua",
+        "timer": 30
+      },
       "shop": null,
       "special": null,
       "special_ratio": null,
@@ -7775,7 +7856,10 @@
       "sex": 1,
       "position": 7,
       "drops": [],
-      "script": null,
+      "script": {
+        "file": "帶信的男童.lua",
+        "timer": null
+      },
       "shop": {
         "buy_types": [
           5

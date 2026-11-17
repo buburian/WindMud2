@@ -1,7 +1,7 @@
 """處理玩家輸入的指令：照 COMMANDS 的順序，找第一個用輸入開頭的指令。"""
 from .. import act, pager, scripts
 from ..characters import Position as P
-from . import combat, doors, imm, items, skills, system
+from . import combat, doors, imm, items, skills, social, system
 from . import help as help_command          # 不叫 help：名字會蓋掉 Python 內建的 help()
 
 # 指令表：(指令, 函式, 最低姿勢)。輸入的字照這個順序比對，第一個用它開頭的指令就是答案（c 會找到 chat）。
@@ -52,6 +52,7 @@ COMMANDS = [
     ("!", system.do_again, P.DEAD),             # 重複上一個指令：command() 先換掉（again()），還沒打過指令才會跑到這裡
     ("recall", system.do_recall, P.STANDING),   # rec（re 還是 reply）；回到返回點，打架中、休息、睡覺不能用（使用者要的）
     ("/", system.do_recall, P.STANDING),        # recall 的另一個名字（照 C 版）
+    ("socials", social.do_socials, P.DEAD),     # so；列出全部的表情動作（動作本身不是指令，見 run()）
 ]
 
 # 管理員（imm）才找得到的指令，接在 COMMANDS 後面找，原本的縮寫都不受影響
@@ -154,7 +155,8 @@ def run(ch, line, verb, arg):
         if name == "quit" or not scripts.fire(ch.room, "on_command", ch, ch, name or verb, arg):
             found = lookup(verb, getattr(ch, "imm", False))
             if found is None:
-                ch.send("什麼？\n")
+                if not social.social(ch, verb, arg):    # 不是指令：是表情動作就做（照 C 版，指令的縮寫優先）
+                    ch.send("什麼？\n")
             elif ch.position < found[1]:        # 姿勢不夠，例如睡著時 look
                 ch.send(REFUSALS[ch.position] + "\n")
             elif found[0](ch, arg) is False:
