@@ -1,0 +1,40 @@
+# MUD 伺服器的 systemd 服務（只有 Linux 能用）。跟 serve.sh 一樣：開在 0.0.0.0:8080，掛掉 5 秒後重開。
+# 裝法見 README.md「用 systemd 管理（Linux）」。
+# 「你的帳號」要換成跑伺服器的帳號：User=、WorkingDirectory=、ExecStart= 三個地方。
+# 坑：systemd 的註解要自己一行，寫在設定後面會被當成值的一部分。
+
+[Unit]
+Description=WindMud 伺服器
+After=network.target
+# 開機就掛（區域檔、說明檔寫錯，port 被占用）不要一直重開：60 秒內啟動超過 4 次，就停在 failed，不再重開。
+# 掛掉到重開是「跑了幾秒 ＋ 等 5 秒」。60 秒內湊滿 5 次，就是連續 4 次都跑不到 10 秒就掛，跟 serve.sh 的 10 秒差不多。
+# 開機就掛不到 1 秒：第一次啟動和重開 3 次都掛，第 4 次重開就被擋下（serve.sh 是第一次就停）。
+# 擋下之後：修好錯誤，sudo systemctl reset-failed windmud，再 start。
+# 手動 start、restart 也算次數：1 分鐘內重開太多次也會被擋下（伺服器停著），一樣 reset-failed 再 start。
+StartLimitIntervalSec=60
+StartLimitBurst=4
+
+[Service]
+Type=simple
+User=你的帳號
+WorkingDirectory=/home/你的帳號/mud_server
+# uv 要寫完整路徑（systemd 不會去 ~/.local/bin 找）。用 which uv 看在哪裡。
+ExecStart=/home/你的帳號/.local/bin/uv run python -m mud --host 0.0.0.0 --port 8080
+Restart=on-failure
+RestartSec=5
+# 關伺服器用 SIGINT（跟按 Ctrl+C 一樣）：伺服器關掉每條連線、存好線上玩家的檔再結束，結束代碼 0。
+# systemd 預設的 SIGTERM 會讓 Python 馬上結束，玩家不會存檔。
+KillSignal=SIGINT
+# SIGINT 只送給 uv（mixed），uv 會轉給 python，python 剛好收到一次。
+# 坑：不要改成 control-group。它會送給 uv 和 python 各一次，uv 又轉一次，python 收到兩次（uv 0.13.6，Linux 和 macOS 實測）；
+# 第二次會在關機途中丟 KeyboardInterrupt，可能打斷存檔。
+KillMode=mixed
+# 最多等 30 秒，還沒結束就 SIGKILL 全部（這樣玩家就沒存到）。平常 1 秒內就結束。
+TimeoutStopSec=30
+# 畫面上的紀錄送到 journal（journalctl -u windmud 看），每行前面寫 windmud；伺服器自己也照樣寫 logs/。
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=windmud
+
+[Install]
+WantedBy=multi-user.target

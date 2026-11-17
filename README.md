@@ -34,6 +34,7 @@ uv run python -m mud
 - 按 Ctrl+C 關閉。
 - 正式開給別人連、掛掉要自動重開：`./serve.sh`（開在 `0.0.0.0:8080`，掛掉 5 秒後重開；`PORT=4000 ./serve.sh` 換 port）。
   開機不到 10 秒就結束（區域檔寫錯、port 被占用）不會一直重開，會停下來讓你看錯誤。
+  Linux 主機也可以交給 systemd 管，見下面的「用 systemd 管理（Linux）」。
 - 視窗會顯示誰登入、誰離線，同時存到 `logs/`。檔名是「日期_編號」，例如 `2026-11-05_001.log`；一個檔滿 5MB 換下一個編號，最多留 30 個檔。
 
 開機時會先檢查這些東西，有問題就**不開機**，視窗印出第一個問題和總共幾個：
@@ -51,6 +52,40 @@ uv run python -m mud
 檔案最後多一個空行，問名字之前就空一行。
 
 **改了程式、區域檔、說明檔、表情動作或登入畫面，都要重開伺服器才會生效。**
+
+### 用 systemd 管理（Linux）
+
+Linux 主機可以把伺服器交給 systemd：開機自動開，掛掉 5 秒後重開，用 `systemctl` 開關。
+設定檔是 `deploy/windmud.service`，跑的指令跟 `./serve.sh` 一樣（`0.0.0.0:8080`）。
+
+裝一次：
+
+```sh
+uv sync                                          # 用要跑伺服器的帳號，先裝好 Python 和套件
+which uv                                         # 記下 uv 在哪裡（通常是 ~/.local/bin/uv）
+sudo cp deploy/windmud.service /etc/systemd/system/
+sudo nano /etc/systemd/system/windmud.service    # 把「你的帳號」換掉；uv 不在 ~/.local/bin 就改 ExecStart 的路徑
+sudo systemctl daemon-reload
+sudo systemctl enable --now windmud              # 開機自動開，現在也開起來
+```
+
+平常用：
+
+```sh
+sudo systemctl start windmud      # 開
+sudo systemctl stop windmud       # 關（先存好線上玩家的檔）
+sudo systemctl restart windmud    # 重開（改了程式、區域檔…以後）
+systemctl status windmud          # 有沒有在跑、最後幾行紀錄
+journalctl -u windmud -f          # 一直看新的紀錄，Ctrl+C 離開
+```
+
+- `systemctl stop` 送的是 SIGINT，跟按 Ctrl+C 一樣：伺服器關掉每條連線、存好線上玩家的檔再結束，1 秒內就好，紀錄裡看得到「離線」。
+  等了很久（最多 30 秒）才停，就是訊號沒送到伺服器，玩家沒存到。
+- 換 port：改 `/etc/systemd/system/windmud.service` 裡的 `--port 8080`，再 `sudo systemctl daemon-reload`、`sudo systemctl restart windmud`。改了這個檔都要 `daemon-reload`。
+- 開機就掛（區域檔寫錯、port 被占用）：重開 3 次都掛就停下來，不再重開。用 `journalctl -u windmud` 看錯誤，修好以後 `sudo systemctl reset-failed windmud` 再 `start`。
+  1 分鐘內 start、restart 超過 4 次也會被擋下（伺服器停著），一樣 `reset-failed` 再 `start`。
+- 不要同時開 `./serve.sh`，port 會撞在一起。
+- 伺服器自己的紀錄照樣寫在 `logs/`。
 
 ## 連線
 
