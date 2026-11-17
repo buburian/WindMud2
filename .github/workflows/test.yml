@@ -15,6 +15,12 @@ concurrency:
 permissions:
   contents: write                           # 推 release 分支
 
+env:
+  # 坑：uv 要固定版本，快取的名字也要帶版本。Linux 的 Python 3.15 沒有 lupa 現成的 wheel，每次都要編譯（約 3 分鐘），靠快取跳過；
+  # 但換了 uv 版本，舊版存的快取它不認、會重編，快取名字又沒變，GitHub 不會存新的，之後每次都重編（0.13.8 → 0.13.9 碰過）。
+  # 要升級 uv 就改這裡，第一次會重編、存新的快取。
+  UV_VERSION: "0.13.9"
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -25,7 +31,10 @@ jobs:
           fetch-depth: 0
       - uses: astral-sh/setup-uv@v6
         with:
+          version: ${{ env.UV_VERSION }}
           enable-cache: true
+          cache-suffix: uv-${{ env.UV_VERSION }}
+          cache-dependency-glob: uv.lock     # 套件換了版本也存一份新的
       - name: 安裝 Python 和套件
         run: uv sync --locked
       - name: 全部測試
