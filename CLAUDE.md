@@ -28,12 +28,15 @@ uv run python -m mud.areacheck areas/test.json    # 只檢查一個區域檔
 uv run python -m mud.builder                      # 區域編輯器，瀏覽器開 http://127.0.0.1:1234（區域檔存在 builder_area/）
 ```
 
-- `tests/test_telnet.py` 是 `Telnet` 狀態機的單元測試；`tests/test_commands.py` 測指令縮寫比對、tell、reply 和 quit；`tests/test_color.py` 測顏色代碼；`tests/test_act.py` 測 `act()` 的代換和送給誰；
+- `tests/test_telnet.py` 是 `Telnet` 狀態機的單元測試；`tests/test_commands.py` 測指令縮寫比對、tell、reply、quit 和 look（`look 名字` 的描述、11 句受傷狀態、打量、方向先於角色）；`tests/test_color.py` 測顏色代碼；`tests/test_act.py` 測 `act()` 的代換和送給誰；
   `tests/test_log.py` 測紀錄檔的編號、換檔和刪舊檔；`tests/test_area.py` 測區域載入，也比對手冊的數字表跟程式的定義；`tests/test_areacheck.py` 測區域檔檢查的每條規則；
   要自己做區域檔的測試，用 `tests/area_helpers.py` 做出完整的檔案再改欄位（直接 `from area_helpers import …`）；
   `tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit；另一個測試讓 tick 和幾場戰鬥一直跑，確認玩家打字照樣馬上回應。
   `tests/test_login.py` 也開真的伺服器，測建立角色、密碼、名字規則、存檔、斷線存檔、重複登入接手。`tests/test_imm.py` 測 imm 指令、advance、train；`tests/test_position.py` 測姿勢、rest／sleep／stand、睡覺時能用的指令、say、who、save。`tests/test_resets.py` 測生物的重置（M、limit、rare、tier_roll、時機、look）。`tests/test_doors.py` 測門（兩邊都要寫的檢查、走路、open／close／lock／unlock、對面看得到、look、重置 D、副本各自的門）。
-  `tests/test_objects.py` 測物品（固定、隨機裝備、掉落表、屍體、slay、look 和 look in、屍體消失、區域物件釋放後不見）。
+  `tests/test_objects.py` 測物品（固定、隨機裝備、掉落表、屍體、slay、look 和 look in、屍體消失、區域物件釋放後不見、基本價格 `base_price()`、cost 存檔）。
+  `tests/test_behavior.py` 測生物平常的行為（走動的出口和機率、scavenger、主動攻擊和半身人的不起眼、生物回血、wimpy），亂數換成 `behavior.rng`；
+  `tests/test_specials.py` 測 special（打架用的時間、傷害 × 倍率、招式名稱、劇毒，janitor、fido，名字的表跟手冊比對），`damage.strike` 換成固定值、`fight.hit` 不打。
+  坑：有跑世界 tick、房間裡有站著又沒有 sentinel 的生物的測試，生物會自己走（真的亂數），要把 `behavior.rng` 換掉（`test_server.py` 的 `Never`）。
   `tests/test_damage.py` 把傷害公式、`strike()` 的每一下、經驗值跟 balance.py 比對（用同一個種子）；`tests/test_combat.py` 測 kill、訊息、
   一回合合成一段、打死生物、經驗值和升級、玩家被打死、存檔的經驗值（`fight.TICK_SECONDS` 改很大、自己呼叫 `tick()`，亂數換成 `Always`）。
   `tests/test_skills.py` 把技能的資料、消耗、說明的數字、技能那一下跟 balance.py 比對，也測 use 的每種拒絕（沒過不會開打）、開打、把旁邊的生物拉進來、訊息、冷卻、扣 MV／MP、打死、skills 指令
@@ -50,13 +53,13 @@ uv run python -m mud.builder                      # 區域編輯器，瀏覽器�
   `tests/test_config.py` 測 config（列出、開關 autoloot 和 showbuff、lines 的範圍、存檔）；`tests/test_pager.py` 測分頁（假指令 many 送很多行：每個按鍵、打別的指令、別人的訊息、quit、出錯）。
   `tests/test_academy.py` 用真的 `areas/` 測教學學院：一人一份、一路走到畢業（技能教官照公會教 use、掉落、穿上、`say 畢業`）、學生重新登入和死掉回學院、沒有學院的區域檔時。
   `tests/test_flee.py` 測 flee（DEX 的機率、戰鬥中不能走、成功、失敗要等、關著的門、沒有出口）。
-  `tests/test_affects.py` 測身上的效果（覆蓋和疊加、暫時加減屬性、每 3 tick 跳、矮人的堅韌、扣死給誰經驗、時間到、死掉、存檔、score 最下面那段、affect、mstat、`config +showbuff` 的每一種訊息），自己呼叫 `affects.tick()`。
+  `tests/test_affects.py` 測身上的效果（覆蓋和疊加、暫時加減屬性、每 3 tick 跳、矮人的堅韌、扣死給誰經驗、時間到、死掉、存檔、score 最下面那段、affect、mstat、`config +showbuff` 的每一種訊息、生物的 affected_by），自己呼叫 `affects.tick()`。
   `tests/test_examine.py` 測 exam 的每一行、ostat、mstat、物品種類和武器種類的名稱表（跟手冊比對）、地上那一行接英文名字。
   `tests/test_help.py` 檢查真的 `help/help.json`（每個指令都有說明）、`helps.check()` 的每條規則、help 的三種畫面、縮寫、imm 的分類。
   要登入的測試先用 `tests/player_helpers.py` 的 `make_player_file()` 存好角色（密碼 `PASSWORD`），存檔資料夾用 monkeypatch 把 `save.PLAYER_DIR` 指到 `tmp_path`。
   `tests/test_stats.py` 比對種族、公會、裸裝屬性、MP／MV 跟玩家角色手冊、balance.py；`test_equipment.py`、`test_stats.py` 讀 balance.py 用 `tests/balance_loader.py`
   （唯讀：不寫 .pyc、不改 mud_design；找不到 mud_design 才跳過）。
-  `tests/test_builder.py` 用 port 0 開真的區域編輯器（資料夾是 `tmp_path`），用 urllib 打 API；也比對網頁的數字表跟 `area.py` 的定義、手冊的表。
+  `tests/test_builder.py` 用 port 0 開真的區域編輯器（資料夾是 `tmp_path`），用 urllib 打 API；也比對網頁的數字表跟 `area.py` 的定義、手冊的表，special 選單的兩組跟 `specials.py` 的分法。
   `tests/test_weather.py` 測天氣（時間、日夜、天空一次只走一格、送給誰、weather 指令）；`tests/test_clock.py` 測定時器；`tests/test_zones.py` 測區域物件（動態區域、副本的建立和釋放、tick）；`tests/test_fight.py` 測戰鬥 loop 和時間軸的出手順序。
   用到房間的測試要自己先 `zones.load(areas 資料夾)`：`zones.world` 是全域的，不要依賴別的測試先載入過。
   角色的 `room` 是 Room 物件：載入之後再把角色放進 `zones.world.rooms[101]` 這種房間（重新載入後舊的 Room 就不是世界裡的了）。
@@ -144,7 +147,9 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     **重複登入**（使用者選的，照 C 版）：已經在線上又用對的密碼登入，舊連線收到訊息並斷線，新連線接手同一個 Player（換 `writer`），站在原地。
   - `Npc`（生物）：`send()` 什麼都不做，所以送給 NPC 的訊息等於沒送。區域檔的生物由 `npcs.spawn()` 做出來（重置的 `M`）：
     `name` 是區域檔的 `short`，另外存 `vnum`（遊戲號碼）、`keywords`、`long`、`description`、`level`、`tier`（骰過 `tier_roll`，`roll_tier()`）、
-    `attack`／`defense`／`archetype`（代號，算屬性用）、`act`（`area.ActFlag`）。姿勢照區域檔的 `position`（C 版讀了就丟，我們用它），寫錯就站著。
+    `attack`／`defense`／`archetype`（代號，算屬性用）、`special`、`special_ratio`、`poison_ratio`（照區域檔存，null 用的時候才換成預設，見下面「生物的行為」）、
+    `unnoticed`（半身人的不起眼）、`act`（`area.ActFlag`）、`affected_by`（`area.AffectFlag`：照 C 版一直帶著，不是 `Affect`，
+    不會消失、`affect clear` 拿不掉；`affects.has_flag()` 也看它，mstat 看得到；現在只是記號）。姿勢照區域檔的 `position`（C 版讀了就丟，我們用它），寫錯就站著。
     **出現時就算好全部屬性**：`stats.mob_stats(level, tier, attack, defense, archetype)` 照 balance.py 的 `Model.area_mob()`
     （等級 ＋ 種類的裝備完整度和進度加成 → 攻擊類型 → 原型 → 攻防傾向），存在 `npc.base_panel`（SECONDARY_KEYS、dmg_dragon、mp、mv、wpn、ac；
     `npc.panel` ＝ 它 ＋ 身上的效果，`npcs.recompute()`；測試直接設 `panel` 沒有 `base_panel` 的生物不要放效果）、
@@ -194,7 +199,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   **`kill <名字>`**（`commands/combat.py`，`k`，最低姿勢 FIGHTING 照 C 版）：開打同房間的生物，牠自動還手；**不可以打玩家**（使用者要的，自己也不行）。
   **`flee`**（`f`，最低姿勢 FIGHTING，規則在玩家角色手冊「戰鬥」）：機率 `stats.flee_chance()` ＝ min(80%, 10% ＋ 70% × DEX ÷ 55)，DEX 是自己的 ＋ 裝備加的（使用者定的）。
   檢查：沒在打架 → 還在等（`cooldowns["flee"]`，失敗設 `FLEE_WAIT_TICKS` 2，`skills.tick()` 減）→ 開著的出口（關著的門不算）→ 骰 `rng.random()`。
-  成功：`rng.choice(出口)` → `death.stop_all()`（自己和打自己的都停手）→ `system.move(ch, 方向, leave=…)`（`leave` 是原本房間看到的那句）。不扣經驗。
+  成功：`rng.choice(出口)` → `escape()`：`death.stop_all()`（自己和打自己的都停手）→ `system.move(ch, 方向, leave=…)`（`leave` 是原本房間看到的那句）。不扣經驗。
+  wimpy 的生物逃跑也用 `escape()`（出口用 `behavior.exits()`）。
   **找同房間的角色一律用 `characters.find_in_room()`**（使用者定的：kill、slay、use，**之後要找生物的指令都用它**，不要另外寫比對）：
   名字跟指令一樣只要打開頭（任何一個 `names()` 用輸入開頭，英文不分大小寫）；`3.dog` 是第 3 個對得上的（照 C 版 number_argument，`0.dog`、`3.` 找不到）；
   順序照 look 畫面（`characters.in_room()`：生物在前、玩家在後，look 也用它），自己排最後（自己也找得到）。
@@ -239,6 +245,10 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   `look 東西或方向`（照 C 版的順序）：先找房間的 `extra_descriptions`（名字要整個字一樣，英文不分大小寫），
   再當成方向（`n`、`no`、`north` 都算北）顯示出口的 `description`，**不是**隔壁房間的描述。
   沒出口或出口沒描述 →「那裡沒有什麼特別的東西。」；都對不上 →「在這裡找不到你要看的東西。」
+  **`look 名字`**（`look_at()`，照 C 版 show_char_to_char_1，使用者 2026-11-16 選的三樣，規則在玩家角色手冊「看別人」）：方向也對不上才用 `find_in_room()` 找角色
+  （C 版最先找；名字只比開頭，放前面的話 `look d`、`look n` 會變成看人）。對方 `TO_VICT`、旁人 `TO_NOTVICT` 送「$n對…仔細地上下打量了一番。」（看自己不送）→
+  描述（生物的 `description` 用 `block()`，可以用顏色代碼；沒寫是「你看不出來$M有任何特殊的地方。」）→ 有 `panel` 才有受傷狀態（`condition()`，`CONDITIONS` 11 句照 C 版）。
+  C 版的種族那行、裝備、偷看背包不做。
 - **區域**（`area.py`、`areas/`）：`area.py` 只管區域檔的格式、檢查和 `build_room()`；開機後真的在跑的區域在 `zones.py`（見下面「區域物件」）。
   **規則只有一份：`check_files()`**，照手冊檢查每一個欄位（欄位要剛好，少了或多了都算錯），把所有問題收集起來。
   `zones.load()` 先呼叫它，有問題就報第一個（加上總數）並停止開機，原本的區域物件不動；沒問題才建房間。
@@ -302,6 +312,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     代號同 mud_design 的 STAT_KEYS），16 是龍焰抗性（不算點數，區域作者另外給，設計文件 §5.5）；C 版的 6 性別拿掉了。
     舊區域的 location 數字意思不同，轉檔工具只沿用文字、不帶屬性過來。
     special 的吐息（`spec_breath_*`）算龍焰傷害、施法（`spec_cast_*`）和 `spec_poison` 算法術傷害，是普通攻擊以外額外多打的（使用者定的，設計文件 §4.1）。
+    `special` 只能寫 `area.SPECIALS`（手冊表的 21 個，`check_mobile()` 擋）；`special_ratio`、`poison_ratio` 是小數倍率（使用者選的，null 是 1.8、0.3，`is_ratio()`）。
     **生物做事只留 special 和腳本**（使用者定的）：舊版的 `actions`、`fight_actions` 拿掉了，寫了是不認得的欄位，不要加回來；舊區域重寫時用腳本寫。
     生物的 `level` 照寫的值，不隨機加減（不照 C 版的 ±1），想要變化用 `tier_roll`。
     武器傷害（`values` 第 2、3 格）、護具防護力（第 1、3 格）由裝備等級算（設計文件 §3.3），作者寫 0；檢查不管這幾格，
@@ -365,11 +376,11 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
 - **tick 和戰鬥的 loop**（使用者定的；C 版是全遊戲一個鐘，我們不照它）：
   - tick loop：世界和全部動態區域**共用一個**（世界 tick，`zones.start()` 開始），每次先做世界、再做每個動態區域；
     **副本每份自己一個**（建立時開始，釋放時結束）。間隔 `TICK_SECONDS` 固定 1 秒（使用者 2026-11-04 從 30 秒改成 1 秒，不加亂數）。
-    **定時做的事都用「每幾個 tick 做一次」定義**（使用者定的）：數字在 `config.py`（`ROUND_TICKS` 2、`HOUR_TICKS` 30、`REGEN_TICKS` 30、`AREA_TICKS` 60、`OBJ_TICKS` 30、`AFFECT_PULSE_TICKS` 3、`RELEASE_TICKS` 1200），
-    表在玩家角色手冊「定時做的事」，改數字要一起改表。每個區域物件一次 tick 要做的事寫在 `Zone.tick()`，用 `self.ticks % N == 0`：
-    世界每 `HOUR_TICKS` 走一次天氣、每 `REGEN_TICKS`（30）所有在線玩家回復一次（`stats.regen()`，照姿勢：站 10%、休息 20%、睡 30%，
-    戰鬥中不回）、每個 tick 數技能的冷卻（`skills.tick()`）、走身上的效果（`affects.tick()`）；動態區域、副本數要不要釋放。世界的變換（NPC 行動……）之後加在這裡。
-    **掛在角色身上的定時事情（回復、技能冷卻、身上的效果）放世界 tick、全部角色一起做**：副本的 loop 跟世界節拍不同步，放各區域的 tick 會走來走去多做或少做。
+    **定時做的事都用「每幾個 tick 做一次」定義**（使用者定的）：數字在 `config.py`（`ROUND_TICKS` 2、`HOUR_TICKS` 30、`REGEN_TICKS` 30、`AREA_TICKS` 60、`OBJ_TICKS` 30、`AFFECT_PULSE_TICKS` 3、`RELEASE_TICKS` 1200、
+    `MOBILE_TICKS` 5、`SPECIAL_TICKS` 6），表在玩家角色手冊「定時做的事」，改數字要一起改表。每個區域物件一次 tick 要做的事寫在 `Zone.tick()`，用 `self.ticks % N == 0`：
+    世界每 `HOUR_TICKS` 走一次天氣、每 `REGEN_TICKS`（30）在線玩家和全部生物回復一次（`stats.regen()`，照姿勢：站 10%、休息 20%、睡 30%，
+    戰鬥中不回）、每個 tick 數技能的冷卻（`skills.tick()`）、走身上的效果（`affects.tick()`）、生物的行為（`behavior.tick()`）；動態區域、副本數要不要釋放。
+    **掛在角色身上的定時事情（回復、技能冷卻、身上的效果、生物的行為）放世界 tick、全部角色一起做**：副本的 loop 跟世界節拍不同步，放各區域的 tick 會走來走去多做或少做。
   - **天氣**（`weather.py`，tick 的第一個功能）：**全遊戲一個**（`weather.current`），只由世界 tick 走時間（每 `HOUR_TICKS` 呼叫一次 `weather.tick()`），
     副本的 tick 不動它。照 C 版的 `weather_update()`：每 30 tick（30 秒）是遊戲裡 1 小時（一天 24 小時、一個月 35 天、一年 17 個月），
     開機時從現實時間算出來，重開機後接得上。日夜（`Sunlight`）在 6、7、19、20 點改變並通知。
@@ -399,8 +410,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
       `tests/test_damage.py` 用同一個種子比對每一下，改它時不能多叫或少叫一次亂數。空手的玩家、生物每一下 ±20%（照模擬）；**玩家那隻手拿武器時，武器值 ＝ 下限 ＋ (上限 − 下限) × 亂數，放在 ±20% 那一格、不再 ±20%**（mud_design 確認的；balance.py 沒有拿武器的函數，`test_gear.py` 比對公式）。
       生物的攻擊類型是 `npc.mix`，玩家是自己公會那一種；武器基本傷害生物是 `panel["wpn"]`，玩家是那隻手的武器（`damage.weapon_in()`）。拿武器時訊息的「直拳」換成武器的攻擊方式（`area.ATTACK_NAMES`，手冊的表，有測試）。
       技能用同一個 `strike()`，多給 `kind`（技能的公會）：一定是這個類型、不骰類型。
-    - `combat.hit()` ＝ `strike()` ＋ `land()`；`land(battle, ch, victim, dmg, crit, attack)` 是打出去的一下（平砍和技能共用），回傳目標死了沒：扣 HP、C 版 dam_message 的訊息（程度看傷害佔 HP 上限幾 %，`SEVERITY` 表；自己那句亮綠、被打亮青、同房間的不上色，
-      玩家用「直拳」，生物沒有武器名稱，爆擊加「爆擊！」；使用者選的）。HP ≤ 0：「$n已經斷氣，倒在地上死亡了!!」，
+    - `combat.hit()` ＝ `strike()` ＋ `land()`；`land(battle, ch, victim, dmg, crit, attack, named=False)` 是打出去的一下（平砍、技能、生物的 special 共用），回傳目標死了沒：扣 HP、C 版 dam_message 的訊息（程度看傷害佔 HP 上限幾 %，`SEVERITY` 表；自己那句亮綠、被打亮青、同房間的不上色，
+      玩家用「直拳」，生物沒有武器名稱（`named` 是 special 的招式：「巨龍使用灼熱龍燄攻擊你」），爆擊加「爆擊！」；使用者選的）。HP ≤ 0：「$n已經斷氣，倒在地上死亡了!!」，
       生物 → 打出最後一下的玩家拿經驗（`stats.gain_exp`，還沒組隊）→ `death.die()`；玩家 → 「你已經含恨死去了」→ `death.player_dies()`。
       HP 到 0 之後那段是 `slain(out, killer, victim)`：`out` 是有 `tell()` 的（`Fight`，或身上的效果那個 tick 的 `affects.Messages`），被持續扣血扣死也用它。
       亂數用 `combat.rng`（測試換掉）。一開始就記住 `ch.fight`：打死時 `die()` 會把它清掉。
@@ -424,14 +435,27 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
       use 指令對增益技能：沒打名字是自己，打了名字用 `find_in_room()`，只能放玩家（`ready()` 是冷卻、MV／MP、武器的檢查，兩種技能共用）。
       **餽贈**（`gift`，使用者定的，之後教學區的 NPC 送給玩家）：每 3 秒補 HP 上限的 10%、主屬性各 +3，3600 秒，死掉後還在；要用程式加、不扣消耗、沒有冷卻。
       **打中最低 `MIN_SKILL_DAMAGE` 1 點**（使用者定的，技能不是平砍；失手還是 0）。**持續傷害** `Skill.dot`（火球的燃燒：name、ratio 0.3、jumps 3、hurt 燒傷）：
-      第一發打中、目標沒死就 `dot_affect()`（每 3 tick 跳、共 jumps 次、每跳 ＝ 第一發 × ratio 最低 1，來源是技能 id），
+      第一發打中、目標沒死就 `dot_affect(source, dot, first)`（每 3 tick 跳、共 jumps 次、每跳 ＝ 第一發 × ratio 最低 1，來源是技能 id；生物的 spec_poison 也用它），
       走 `affects.pulse()` 的持續扣 HP（護盾、扣死、矮人照舊），`Affect.hurt` 有寫就每跳說「你被【燃燒】燒傷了.(6)」（`combat.damage_tail()` 跟戰鬥訊息共用）。
       **天護**（`aegis`，使用者定的）：護盾 HP 上限的 120%、10 秒，要用程式加、不扣消耗、沒有冷卻；`skills` 列出時寫「護盾 HP 上限的 120%」（`affects.parts(listing=True)`）。
       **NPC 直接呼叫 `skills.use(npc, SKILLS["gift"], 玩家)` 就能放**（不用學、不用在打架）。`skills` 指令的增益技能：那一行寫持續多久，做什麼放下一行（`system.wrap()`，不超過 79 格）。
       冷卻用 tick 數：世界每個 tick `skills.tick()` 減 1，所以實際等 5～6 秒。
       `weapon_ok()`：有限用武器的技能，主手要拿那種武器（空手不行）；技能那一下用主手的武器。還沒做：學習、技能書、補血、減益、打一群、怪物打架時用技能。
     - 坑：`fight` → `combat` → `death` → `fight` 繞一圈：這幾個模組互相都用 `from . import 模組`，不要 `from .fight import stop_fighting`、`from .combat import hit`。
-    - 還沒做：安全區、生物回血、生物主動攻擊、生物逃跑、C 版「快死了」「昏迷」（HP ≤ 0 就是死）。
+    - 還沒做：安全區（只有主動攻擊會看）、C 版「快死了」「昏迷」（HP ≤ 0 就是死）。
+  - **生物的行為**（設計文件 §4.11，使用者 2026-11-16 定案，規則在區域製作手冊 act、special）：
+    - `behavior.py`：世界 tick 每個 tick 呼叫 `behavior.tick(ticks)`（包在 `act.gathering()`，旁人一個 prompt）：每 `MOBILE_TICKS` 站著的生物 `idle()`
+      （平常的 special → scavenger 25% → 沒有 sentinel 的 20% 走一步，`system.move()`），然後 `aggress()`（先從在線玩家整理每間房能打的人：不是 imm、沒在打架；
+      aggressive、站著、不在 SAFE 房間的生物隨機挑一個 `fight.start_fight()`，沒有訊息）。`exits()`（走動、wimpy 共用）：門沒關、同一份區域物件、
+      **同一個區域檔**（使用者選的，世界的也是）、不是 NO_MOB，所以不會建出動態區域。半身人的不起眼：`npc.unnoticed[玩家] = (arrived, 不打)`，他離開房間 arrived 變了才重骰。
+      `wimpy(battle)`：回合結束 HP < 一半、25% → `commands.combat.escape()`。亂數 `behavior.rng`。
+    - `specials.py`：`FIGHTING`（名字 → 傷害類型、招式名稱）、`IDLE`（janitor、fido）、`NOT_YET`（6 個先不做，寫了沒作用）。
+      `Fight.join()` 記 `special_at[生物] = 現在 ＋ SPECIAL_TICKS`、`stop_fighting()` 拿掉；`Fight.tick()` 每個 tick 整段包在 `collecting()`：回合 → on_fight → `behavior.wimpy()` → `specials.fight()`。
+      `use()`：`damage.strike(生物, 對手, combat.rng, 類型, source=牠平常的攻擊類型)` × `special_ratio`（null 1.8），打中最低 1 → `land(..., named=True)`。
+      坑：`source` 一定要給（`per_hit` 的點數用它、減傷用類型）：生物只有自己攻擊類型的點數，只會物理的生物龍焰、法術點數是 0，不給的話吐息打 0（真的連線才看到，測試把 strike 換掉了看不出來）；spec_poison 咬中沒死 → `skills.dot_affect("spec_poison", POISON, 傷害)`（【劇毒】、毒傷、C 版的兩句）。
+      招式名稱（使用者選的）：吐息照 C 版（灼熱龍燄…），施法都是「法術」，咬人「利牙」。janitor 撿垃圾、液體容器、基本價格 < 10（`objects.base_price()`，裝備照點數）；fido 吃屍體、裡面的掉地上。
+    - 坑：`fight` → `behavior`、`specials` → `combat` → … → `fight` 繞一圈，都用 `from . import 模組`；用到 `commands` 的在函式裡才 import。
+    - 坑：原地改壞程式做變異測試時，還原後要刪 `mud/__pycache__` 裡那個模組的 .pyc（一樣長、同一秒寫回，Python 會一直用改壞的 .pyc）。
   - **身上的效果**（buff／debuff，`affects.py`，規則在玩家角色手冊「身上的效果」，設計文件 §2.6）：`ch.affects` 是 `Affect` 的清單，玩家和生物都有。
     `Affect`：`source`（哪個技能放的，**同一個來源只有一份**：`add()` 是覆蓋，不同來源就疊）、`name`、`duration`、`ticks`（還剩）、
     `elapsed`（放下去後幾個 tick，**跳的時間點看它、不看剩下的**：矮人每 tick 減 2，用剩下的會跳錯時間）、
@@ -467,6 +491,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - 讀檔時也回傳別的檔的房間名（`elsewhere`）、生物名（`elsewhere_mobiles`）、物品名（`elsewhere_objects`），給號碼旁的名字標籤用。
   - 前端 `static/`：`model.js` 是純資料操作，`editor.js` 是編輯畫面的外框和房間畫面，`files.js` 選檔畫面，`settings.js` 區域設定（含區域種類 `type` 的下拉選單），
     `ui.js` 小工具，`forms.js` 綁在區域檔物件上的表單欄位（改了直接寫回），`app.js` 用網址的 `#檔名` 換畫面。
+    數字欄位 `numberField` 預設只收整數（`parseNumber`）；要打小數的（生物的 `special_ratio`、`poison_ratio`）給 `parse: parseDecimal`。
     載入的 JSON 直接改，**沒動到的欄位原樣存回去**（例如 `"1|4"`、物品的 `script`）。
     房間、生物的 `script` 是兩格（`forms.js` 的 `scriptFields()`：`file`、`timer`，兩格都空著存成 null）；物品的只顯示（`scriptRow()`）。
     檢查腳本用 `check_files(..., script_root=編輯器的資料夾)`，所以 `.lua` 放在 `builder_area/區域檔名/`。
@@ -503,7 +528,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     關著的拿不出東西（「【X】關起來了。」）、`look in` 看不到（「它是蓋起來的。」）；封印著的撿不起來；可以封印又有密碼的打不開（封印的指令還沒做）。
   - **生物死掉**：屍體裡 ＝ 掉落表 ＋ 牠背包裡的；**店主（`npc.shopkeeper`）背包裡的直接消失**（使用者選的，照 C 版）。
   - `Obj`：`vnum`、`keywords`、`name`（short）、`long`、`item_type`、`level`、`color`、`affects`（`[(Apply, 數值)]`）、`base`（武器傷害範圍或 AC）、`contains`、`timer`、
-    `weight`、`take`（wear_flags 有 1；屍體沒有）、`slot`（`equipment.best_slot()`，跟點數上限同一個；雙手武器是 `TWO_HANDED`）、武器的 `weapon_kind`、`attack`。只放現在用得到的。
+    `weight`、`cost`（存檔，舊存檔是 0）、`take`（wear_flags 有 1；屍體沒有）、`slot`（`equipment.best_slot()`，跟點數上限同一個；雙手武器是 `TWO_HANDED`）、武器的 `weapon_kind`、`attack`。只放現在用得到的。
+    `base_price(obj)` 是商店的基本價格（手冊物品的 cost）：不是裝備是 `cost`，灰色 1，其他裝備 ＝ Σ 加成 × `equipment.price()`、最低 1（scavenger、janitor 用）。
     **沒有全遊戲的物品名單**：放在 `room.contents`（地上，新的在前）、`obj.contains`（屍體裡）、角色的 `carrying`、`equipment`；
     地上的在區域物件釋放、重新載入時房間不要了就跟著不見（使用者要的，有測試）。
   - `find(objs, name)` 跟找生物同一個規則（`names.py`）。`to_data()`／`from_data()` 是存檔用的，整件存（區域檔改了身上的照舊）。

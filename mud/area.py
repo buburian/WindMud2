@@ -245,6 +245,8 @@ ITEM_TYPE_NAMES = {
     25: "噴泉", 26: "藥錠",
 }
 CORPSE_NPC_ITEM_TYPE = 23                   # 物品種類 23 怪物屍體：生物死掉時遊戲做出來的（objects.make_corpse），裡面放掉落的物品
+TRASH_ITEM_TYPE = 13                        # 物品種類 13 垃圾：spec_janitor 會撿
+DRINK_CON_ITEM_TYPE = 17                    # 物品種類 17 液體容器：spec_janitor 會撿
 
 
 class WeaponKind(enum.IntEnum):
@@ -330,7 +332,14 @@ TIMER_MAX = 3600                            # on_timer 最多每幾秒（timer �
 MOBILE_KEYS = ("vnum", "keywords", "short", "long", "description", "level", "tier", "tier_roll",
                "attack", "defense", "archetype", "act", "affected_by", "alignment",
                "race", "sex", "position",
-               "drops", "script", "shop", "special")
+               "drops", "script", "shop", "special", "special_ratio", "poison_ratio")
+# special 能寫的名字（手冊 special 那節的表，有測試比對）：要做什麼寫在 specials.py，有幾個寫了還沒作用
+SPECIALS = (
+    "spec_guard", "spec_executioner", "spec_cast_adept", "spec_janitor", "spec_fido", "spec_thief", "spec_mayor",
+    "spec_repairman", "spec_breath_any", "spec_breath_acid", "spec_breath_fire", "spec_breath_frost", "spec_breath_gas",
+    "spec_breath_lightning", "spec_cast_mage", "spec_cast_cleric", "spec_cast_undead", "spec_cast_psionicist",
+    "spec_cast_judge", "spec_cast_ghost", "spec_poison",
+)
 DROP_KEYS = ("obj_vnum", "color", "chance", "tiers")    # 掉落表的一行
 SHOP_KEYS = ("buy_types", "profit_buy", "profit_sell", "open_hour", "close_hour")
 OBJECT_KEYS = ("vnum", "keywords", "short", "long", "item_type", "extra_flags", "wear_flags",
@@ -1173,7 +1182,7 @@ def check_strs(where, obj, keys, problems):
 
 
 def check_mobile(where, m, problems):
-    """檢查一隻生物（號碼以外的部分）。只看寫法：數字代表什麼（旗標、性別、種族…）還沒檢查。"""
+    """檢查一隻生物（號碼以外的部分）。大多只看寫法：數字代表什麼（旗標、性別、種族…）還沒檢查；special 要是表裡的名字。"""
     for k in ("keywords", "short"):
         if k in m and not (isinstance(m[k], str) and m[k].strip()):
             problems.append(f"{where}的 {k} 不能是空的")
@@ -1195,8 +1204,17 @@ def check_mobile(where, m, problems):
         if "buy_types" in shop and not (isinstance(shop["buy_types"], list) and all(is_int(t) for t in shop["buy_types"])):
             problems.append(f"{where}的 shop 的 buy_types 要是整數的清單，不能是 {shop['buy_types']!r}")
         check_ints(f"{where}的 shop ", shop, ("profit_buy", "profit_sell", "open_hour", "close_hour"), problems)
-    if m.get("special") is not None and not (isinstance(m["special"], str) and m["special"].strip()):
-        problems.append(f"{where}的 special 要是 null 或函式名稱，不能是 {m['special']!r}")
+    if m.get("special") is not None and m["special"] not in SPECIALS:
+        problems.append(f"{where}的 special 要是 null 或手冊 special 表裡的名字，不能是 {m['special']!r}")
+    for k in ("special_ratio", "poison_ratio"):     # 倍率（使用者選的小數，例如 2.5）：null 是預設的 1.8、0.3
+        if m.get(k) is not None and not is_ratio(m[k]):
+            problems.append(f"{where}的 {k} 要是 null 或大於 0 的數字（例如 2.5），不能是 {m[k]!r}")
+
+
+def is_ratio(value):
+    """倍率的寫法：大於 0 的數字，整數、小數都可以（true／false、NaN、無限大不行）。"""
+    return (isinstance(value, (int, float)) and not isinstance(value, bool)
+            and math.isfinite(value) and value > 0)
 
 
 def build_room(base, r):

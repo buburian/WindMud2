@@ -1,7 +1,7 @@
 import asyncio
 from pathlib import Path
 
-from mud import fight, save, weather, zones
+from mud import behavior, fight, save, weather, zones
 from mud.characters import SEX_NEUTRAL, characters
 from mud.config import ENCODING
 from mud.fight import start_fight
@@ -117,6 +117,16 @@ async def look_while_loops_run(hits):
     zones.stop()
 
 
+class Never:
+    """生物行為的骰子：永遠不中（不走動、不撿東西）。"""
+
+    def random(self):
+        return 0.99
+
+    def choice(self, seq):
+        return seq[0]
+
+
 def test_loops_do_not_block_players(monkeypatch, tmp_path):
     monkeypatch.setattr(save, "PLAYER_DIR", tmp_path)
     monkeypatch.setattr(zones, "TICK_SECONDS", 0.01)
@@ -126,5 +136,6 @@ def test_loops_do_not_block_players(monkeypatch, tmp_path):
     monkeypatch.setattr(fight, "hit", lambda ch, victim, hand: hits.append(ch.name))
     ticks = []
     monkeypatch.setattr(weather, "tick", lambda: ticks.append(1))   # 天氣訊息會插進 look 的回應，這裡只記次數
+    monkeypatch.setattr(behavior, "rng", Never())                    # 生物的行為照跑，但野兔走過來的訊息會插進 look 的回應
     asyncio.run(asyncio.wait_for(look_while_loops_run(hits), timeout=5))
     assert ticks                                                     # 世界 tick 也一直在跑

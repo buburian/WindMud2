@@ -329,7 +329,7 @@ export function newMobile(vnum) {
     vnum, keywords: "新生物", short: "新生物", long: "", description: "", level: 1,
     tier: "normal", tier_roll: null, attack: null, defense: null, archetype: null, act: 0, affected_by: 0,
     alignment: 0, race: "human", sex: 0, position: 7, drops: [], script: null,
-    shop: null, special: null,
+    shop: null, special: null, special_ratio: null, poison_ratio: null,
   };
 }
 

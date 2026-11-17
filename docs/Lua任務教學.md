@@ -822,7 +822,8 @@ end
 
 ### 忘了檢查是不是玩家
 
-`on_enter`、`on_tell`、`on_death` 的人都可能是生物，生物走進房間也會觸發 `on_enter`。沒檢查的話：
+`on_enter`、`on_tell`、`on_death` 的人都可能是生物，生物走進房間也會觸發 `on_enter`。
+沒有 sentinel 的生物會自己走動（見區域製作手冊的 [act](區域製作手冊.md#act行為旗標)），所以這很常發生。沒檢查的話：
 
 - `actor.vars` 是那隻生物自己的變數，任務的判斷會亂掉。
 - 生物的 `guild`、`race` 是 `nil`，拿來接字串會出錯。

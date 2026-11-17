@@ -13,7 +13,7 @@ from area_helpers import make_area, make_mobile, make_object, make_room, write_a
 from mud.area import (
     Apply, Archetype, AreaType, AttackType, Defense, ExtraFlag, ItemColor, Locks, MobTier, RoomFlag, Sector, WearFlag,
 )
-from mud import area
+from mud import area, specials
 from mud.builder.server import make_server
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -290,3 +290,13 @@ def test_page_tables_with_several_columns_match_manual():
 def test_page_specials_match_manual():
     section = MANUAL.read_text(encoding="utf-8").split("### special（特殊程式）", 1)[1].split("\n## ", 1)[0]
     assert sorted(tables_js("SPECIALS")) == sorted(set(re.findall(r"spec_\w+", section)))
+
+
+def test_page_special_groups_match_server():
+    # 選單的兩組跟伺服器的分法一樣：「戰鬥」是 specials.FIGHTING，「平常」是平常的加上先不做的
+    text = (STATIC / "tables.js").read_text(encoding="utf-8")
+    block = re.search(r"export const SPECIALS = \[(.*?)\n\];", text, re.S)[1]
+    kinds = re.findall(r'\["(spec_\w+)", "[^"]*", "([^"]*)"\]', block)
+    assert len(kinds) == len(area.SPECIALS)
+    assert {name for name, kind in kinds if kind == "戰鬥"} == set(specials.FIGHTING)
+    assert {name for name, kind in kinds if kind == "平常"} == set(specials.IDLE) | set(specials.NOT_YET)

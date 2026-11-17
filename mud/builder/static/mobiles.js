@@ -8,7 +8,7 @@ import * as M from "./model.js";
 import { placesOf } from "./resets.js";
 import * as T from "./tables.js";
 import {
-  checkbox, confirmDialog, field, h, icon, numberText, parseNumber, selectArrow, textInput, toast,
+  checkbox, confirmDialog, field, h, icon, numberText, parseDecimal, parseNumber, selectArrow, textInput, toast,
 } from "./ui.js";
 
 const TABS = [["basic", "基本資料"], ["drops", "掉落表"]];
@@ -95,7 +95,12 @@ function basicTab(ctx, mob) {
     h("div", { class: "stack sep" },
       flagsField({ legend: "行為旗標", code: "act", obj: mob, key: "act", table: T.ACT, done }),
       flagsField({ legend: "身上的效果", code: "affected_by", obj: mob, key: "affected_by", table: T.AFFECTED, done }),
-      specialField(mob, done)),
+      specialField(mob, done),
+      h("div", { class: "row" },
+        numberField({ id: "mob-special-ratio", label: "special 的傷害倍率", code: "special_ratio", obj: mob, key: "special_ratio",
+          tip: "只有戰鬥中才動作的 special 用到；空白是 1.8", parse: parseDecimal, done }),
+        numberField({ id: "mob-poison-ratio", label: "中毒的倍率", code: "poison_ratio", obj: mob, key: "poison_ratio",
+          tip: "只有 spec_poison 用到；空白是 0.3", parse: parseDecimal, done }))),
     shopSection(ctx, mob),
     scriptFields({ id: "mob-script", owner: mob, done }));
 }

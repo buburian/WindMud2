@@ -58,13 +58,14 @@ def reduction(d, kind):
     return eff(res, _ref(d, f"res_{kind}"), RESIST_BASE)
 
 
-def per_hit(a, d, kind, weapon_value=None):
+def per_hit(a, d, kind, weapon_value=None, source=None):
     """a 打 d 一下 kind 類型、打中、還沒浮動和爆擊的傷害。
 
     武器基本傷害：weapon_value 是玩家這一下的武器值（拿武器時）；沒給就是 panel 的 wpn（生物的武器基本傷害，玩家沒有是 0）。
+    source：傷害點數用哪一種（生物的 special：跟牠平砍一樣的點數，只有減傷照 kind，設計文件 §4.11）；沒給就是 kind。
     """
     wpn = a.panel.get("wpn", 0.0) if weapon_value is None else weapon_value
-    points = a.panel.get(f"dmg_{kind}", 0.0) + wpn
+    points = a.panel.get(f"dmg_{source or kind}", 0.0) + wpn
     return points * (1.0 - reduction(d, kind)) * LEVEL_MOD ** (a.level - d.level)
 
 
@@ -74,13 +75,14 @@ def attack_mix(ch):
     return mix if mix else {str(ch.guild): 1.0}
 
 
-def strike(a, d, rng, kind=None, hand=0):
+def strike(a, d, rng, kind=None, hand=0, source=None):
     """a 打 d 一下：回傳 (傷害, 有沒有爆擊)，沒打中是 (0.0, False)。
 
     亂數的順序跟 balance.py 的 _strike_once 一樣（同一個種子結果一樣，有測試）：
     混合型先骰類型（沒打中也骰）→ 命中 → ±20% 浮動 → 爆擊。
     kind：技能用，這一下一定是這個類型（技能的公會），不骰類型；平砍不給。
     hand：哪隻手（0 主手、1 副手）。那隻手拿武器：武器值 ＝ 下限 ＋ (上限 − 下限) × 亂數，放在 ±20% 那一格（亂數次數不變）。
+    source：傷害點數用哪一種（生物的 special，見 per_hit）；亂數的用法不變。
     """
     mix = {kind: 1.0} if kind else attack_mix(a)
     kinds = list(mix)
@@ -101,7 +103,7 @@ def strike(a, d, rng, kind=None, hand=0):
         low, high = weapon.base["dmg_min"], weapon.base["dmg_max"]
         dmg = per_hit(a, d, kind, low + (high - low) * rng.random())
     else:
-        dmg = per_hit(a, d, kind) * (1.0 + DMG_VAR * (2.0 * rng.random() - 1.0))
+        dmg = per_hit(a, d, kind, source=source) * (1.0 + DMG_VAR * (2.0 * rng.random() - 1.0))
     crit = rng.random() < crit_chance(a)
     if crit:
         dmg *= crit_mult(a)

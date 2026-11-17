@@ -153,6 +153,40 @@ def test_not_equipment_has_no_affects(monkeypatch):
     assert (o.name, o.affects, o.base) == ("治療藥水", [], {})
 
 
+# ---- 商店的基本價格（區域製作手冊物品的 cost）：scavenger、janitor 用 ----
+
+def test_base_price_of_things_is_the_cost(monkeypatch):
+    p = potion(1)
+    p.update(cost=25)
+    monkeypatch.setattr(objects, "protos", {101: p})
+    o = objects.create(101, 10, None)
+    assert o.cost == 25 and objects.base_price(o) == 25
+
+
+@pytest.mark.parametrize("affects, color, price", [
+    # 裝備是實際用掉的點數：每一項 × 單價加起來（負的抵掉），最低 1；灰色是 1（cost 不看）
+    ([{"location": 1, "modifier": 2}, {"location": 9, "modifier": 3}], "white", 2 * equipment.price("str", 10) + 3),
+    ([{"location": 9, "modifier": 3}, {"location": 6, "modifier": -5}], "white", 1),
+    ([{"location": 16, "modifier": 4}], None, 1),                   # 龍焰抗性不算點數
+    ([{"location": 9, "modifier": 3}], "gray", 1),
+])
+def test_base_price_of_equipment_is_the_points(monkeypatch, affects, color, price):
+    s = sword(1, affects)
+    s.update(cost=999)
+    monkeypatch.setattr(objects, "protos", {101: s})
+    assert objects.base_price(objects.create(101, 10, color, random.Random(1))) == pytest.approx(price)
+
+
+def test_cost_is_saved(monkeypatch):
+    p = potion(1)
+    p.update(cost=25)
+    monkeypatch.setattr(objects, "protos", {101: p})
+    data = objects.to_data(objects.create(101, 10, None))
+    assert objects.from_data(data).cost == 25
+    del data["cost"]                                                # 舊存檔沒有 cost
+    assert objects.from_data(data).cost == 0
+
+
 def test_slots_for_two_handed_offhand_weapon_and_shield(monkeypatch):
     great = sword(1)
     great.update(extra_flags=512, values=[8, 0, 0, 3])              # 大劍：雙手

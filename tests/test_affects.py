@@ -170,6 +170,22 @@ def test_has_flag(world):
     assert affects.has_flag(p, AffectFlag.BLIND) and not affects.has_flag(p, AffectFlag.INVISIBLE)
 
 
+def test_mobile_keeps_its_affected_by(world):
+    # 區域檔的 affected_by 放到生物身上（照 C 版：一直帶著，不會消失，affect clear 也拿不掉；現在只是記號）
+    proto = make_mobile(1)
+    proto.update(tier_roll=None, position=7, attack=None, defense=None, archetype=None, drops=[], shop=None,
+                 affected_by="1|8")
+    npc = npcs.spawn(101, proto, zones.world.rooms[101], random.Random(0), 100)
+    assert npc.affected_by == AffectFlag.BLIND | AffectFlag.DETECT_INVIS
+    assert affects.has_flag(npc, AffectFlag.BLIND) and not affects.has_flag(npc, AffectFlag.INVISIBLE)
+    ming = person("Ming", imm=True)
+    assert "\r\nact 0  affected_by 9（失明、看得到隱形）  姿勢 STANDING" in say(ming, "mstat mob1")
+    say(ming, "affect mob1 clear")
+    ticks(100)
+    assert affects.has_flag(npc, AffectFlag.DETECT_INVIS) and npc.affects == []
+    assert creature().affected_by == AffectFlag(0)
+
+
 # ---- 持續加減 ----
 
 def test_first_jump_is_on_the_third_tick(world):

@@ -8,7 +8,7 @@ from collections import Counter
 
 from .. import affects, death, equipment, inventory, names, objects, skills, stats
 from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act, notify
-from ..area import ATTACK_NAMES, ITEM_TYPE_NAMES, WEAPON_KIND_NAMES, AffectFlag, Apply, ItemColor
+from ..area import AFFECT_FLAG_NAMES, ATTACK_NAMES, ITEM_TYPE_NAMES, WEAPON_KIND_NAMES, AffectFlag, Apply, ItemColor
 from ..characters import Position, find_in_room
 from ..config import TICK_SECONDS
 from ..equipment import SLOT_NAMES, TWO_HANDED
@@ -210,12 +210,18 @@ def npc_lines(npc):
                       f"（{'、'.join(d['tiers']) if d['tiers'] else '全部種類'}）" for d in npc.drops) or "沒有"
     lines = [f"號碼 {npc.vnum}  名字 {npc.name}  keywords {' '.join(npc.keywords)}",
              f"等級 {npc.level}  種類 {npc.tier}  攻擊 {mix}  攻防 {npc.defense or '標準'}  原型 {npc.archetype or '標準'}",
-             f"act {int(npc.act)}  " + where_lines(npc)]
+             f"act {int(npc.act)}  affected_by {flags_text(npc.affected_by)}  " + where_lines(npc)]
     if npc.panel:
         lines.append(f"HP {npc.hp:.1f}/{npc.panel['hp']:.1f}  MP {npc.panel.get('mp', 0):.1f}  MV {npc.panel.get('mv', 0):.1f}")
         lines += panel_lines(npc.panel)
     lines.append(f"掉落表 {drops}")
     return lines
+
+
+def flags_text(flags):
+    """mstat 的 affected_by：「9（失明、看得到隱形）」；0 就是「0」。表外的位元只算在數字裡。"""
+    words = "、".join(AFFECT_FLAG_NAMES[f] for f in AffectFlag if f in flags)
+    return f"{int(flags)}（{words}）" if words else str(int(flags))
 
 
 def player_lines(p):

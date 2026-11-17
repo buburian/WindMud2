@@ -23,10 +23,10 @@ export function areaField({ id, label, code, obj, key, rows = 3, done }) {
   }) });
 }
 
-// 數字：打的不是整數就照打的存，讓檢查報錯
-export function numberField({ id, label, code, obj, key, style, tip, done }) {
+// 數字：打的不是整數就照打的存，讓檢查報錯（parse 換成 parseDecimal 就可以打小數）
+export function numberField({ id, label, code, obj, key, style, tip, done, parse = parseNumber }) {
   return field({ id, label, code, style, tip, input: textInput({
-    id, value: numberText(obj[key]), oninput: (e) => { obj[key] = parseNumber(e.target.value); done(); },
+    id, value: numberText(obj[key]), oninput: (e) => { obj[key] = parse(e.target.value); done(); },
   }) });
 }
 

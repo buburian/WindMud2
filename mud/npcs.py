@@ -1,6 +1,6 @@
 """NPC（生物）：沒有連線的角色。區域檔的生物由 spawn() 做出來（resets.py 的 M）。"""
 from . import scripts, stats
-from .area import CHANCE_MAX, ActFlag, MobTier, parse_flags, resolve
+from .area import CHANCE_MAX, ActFlag, AffectFlag, MobTier, parse_flags, resolve
 from .characters import Character, Position, arrive, characters
 
 
@@ -18,11 +18,15 @@ class Npc(Character):
         self.tier = None                    # MobTier：骰過 tier_roll 之後的種類
         self.attack = self.defense = self.archetype = None   # 區域檔的代號（屬性已經照它們算好在 panel）
         self.act = ActFlag(0)
+        self.affected_by = AffectFlag(0)    # 區域檔的 affected_by：牠身上一直帶著的旗標（照 C 版，不會消失；現在只是記號）
         self.base_panel = {}                # 出現時算好的全部屬性（stats.mob_stats()）；直接建的（測試）沒有
         self.panel = {}                     # 現在的全部屬性 ＝ base_panel ＋ 身上的效果（recompute()）
         self.mix = {}                       # 攻擊類型比例，例如 {"dragon": 0.7, "phys": 0.3}
         self.hp = self.mp = self.mv = 0.0   # 現在的 HP、MP、MV（出現時補滿；怪物的 MP、MV 是 0）
         self.drops = []                     # 掉落表（區域檔的 drops，obj_vnum 換成遊戲號碼）：死掉時 objects.make_corpse() 照它骰
+        # special（specials.py）：區域檔的名字和兩個倍率，倍率照存（null 用的時候才換成預設的 1.8、0.3）
+        self.special = self.special_ratio = self.poison_ratio = None
+        self.unnoticed = {}                 # 半身人的「不起眼」骰過的玩家 → (那時他的 arrived, 不打)：他離開這間房 arrived 就變了（behavior.py）
         # 腳本（scripts.py）：script 是 scripts.Script；vars 是牠身上的變數（死掉就沒了）
         self.script, self.timer, self.timer_left, self.waiting, self.vars = None, None, 0, 0, {}
 
@@ -61,7 +65,9 @@ def spawn(vnum, proto, room, rng, base):
     npc.level, npc.tier = proto["level"], roll_tier(proto, rng)
     npc.attack, npc.defense, npc.archetype = proto["attack"], proto["defense"], proto["archetype"]
     npc.act = ActFlag(parse_flags(proto["act"]))
+    npc.affected_by = AffectFlag(parse_flags(proto["affected_by"]))
     npc.shopkeeper = proto["shop"] is not None
+    npc.special, npc.special_ratio, npc.poison_ratio = proto["special"], proto["special_ratio"], proto["poison_ratio"]
     npc.base_panel, npc.mix = stats.mob_stats(npc.level, npc.tier, npc.attack, npc.defense, npc.archetype)
     recompute(npc)
     npc.hp, npc.mp, npc.mv = npc.panel["hp"], npc.panel["mp"], npc.panel["mv"]

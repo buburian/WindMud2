@@ -71,8 +71,8 @@ def clear(ch):
 
 
 def has_flag(ch, flag):
-    """ch 身上有沒有帶著 flag（AffectFlag）的效果。"""
-    return any(flag in a.flags for a in ch.affects)
+    """ch 身上有沒有 flag（AffectFlag）：生物一直帶著的（區域檔的 affected_by），或身上的效果帶著的。"""
+    return flag in getattr(ch, "affected_by", AffectFlag(0)) or any(flag in a.flags for a in ch.affects)
 
 
 def changed(ch):

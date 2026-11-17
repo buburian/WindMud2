@@ -56,14 +56,14 @@ def attack_name(ch, hand):
     return ATTACK_NAMES[weapon.attack] if weapon is not None else BARE_HAND
 
 
-def land(battle, ch, victim, dmg, crit, attack=BARE_HAND):
-    """打出去的一下（平砍和技能共用）：扣 HP、三句訊息放進 battle、打死了就處理死掉和經驗值。回傳 victim 死了沒。
+def land(battle, ch, victim, dmg, crit, attack=BARE_HAND, named=False):
+    """打出去的一下（平砍、技能、生物的 special 共用）：扣 HP、三句訊息放進 battle、打死了就處理死掉和經驗值。回傳 victim 死了沒。
 
-    attack：玩家用什麼打的（訊息裡的「使用直拳」「使用重擊」）。
+    attack：用什麼打的（訊息裡的「使用直拳」「使用重擊」）。玩家一定寫；生物只有 named（special 的招式）才寫。
     """
     taken, broken = affects.absorb(victim, dmg)     # 先扣護盾，扣完才扣 HP（使用者定的）
     victim.hp -= dmg - taken
-    for to, fmt in messages(ch, victim, dmg, crit, attack, taken):
+    for to, fmt in messages(ch, victim, dmg, crit, attack, taken, named):
         battle.tell(compose(fmt, ch, victim, to=to))
     battle.tell(affects.broken_messages(victim, broken))
     if victim.hp > 0:
@@ -103,16 +103,17 @@ def loot(out, player, corpse):
     out.tell(lines.pairs())
 
 
-def messages(ch, victim, dmg, crit, attack=BARE_HAND, absorbed=0.0):
+def messages(ch, victim, dmg, crit, attack=BARE_HAND, absorbed=0.0, named=False):
     """C 版的三句：[(送給誰, 句子)]。護盾吸收了的話，數字後面加「（吸收 5）」（使用者選的），三句都加。
 
     你使用直拳攻擊野狗，對它造成輕微的擦傷.(3)  ／  野狗攻擊你，對你造成普通的擦傷.(5)
     照 C 版：自己那句亮綠、被打那句亮青，程度照傷害佔對方 HP 上限的 % 上色，後面的「.(3)」回到一般顏色；
-    同房間的人那句不上色。生物沒有武器名稱，寫「$n攻擊」；沒打中是「但是失手了」；傷害 ≤ 10 用「.」，其他「!」。
+    同房間的人那句不上色。生物沒有武器名稱，寫「$n攻擊」，special 的招式才寫（named：「巨龍使用灼熱龍燄攻擊你」）；
+    沒打中是「但是失手了」；傷害 ≤ 10 用「.」，其他「!」。
     """
     words, code = severity(dmg, victim.panel["hp"]) if dmg > 0 else (MISS, "{c")
     tail = damage_tail(dmg, absorbed)
-    weapon = f"使用{attack}" if isinstance(ch, Player) else ""
+    weapon = f"使用{attack}" if named or isinstance(ch, Player) else ""
 
     def result(whom):                       # 「爆擊！對它造成」＋程度；沒打中只有「但是失手了」
         return (CRIT if crit else "") + (f"對{whom}造成" if dmg > 0 else "")

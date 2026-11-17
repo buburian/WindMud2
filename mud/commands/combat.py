@@ -54,7 +54,11 @@ def do_flee(ch, arg):
         if waits is not None:
             waits["flee"] = FLEE_WAIT_TICKS
         return
-    direction = rng.choice(exits)
-    death.stop_all(ch)                      # 他和打他的人都停手（照 C 版 stop_fighting 的 fBoth）
+    escape(ch, rng.choice(exits))
+
+
+def escape(ch, direction):
+    """逃跑成功（玩家的 flee、wimpy 的生物，behavior.wimpy）：他和打他的人都停手（照 C 版 stop_fighting 的 fBoth），往 direction 跑掉。"""
+    death.stop_all(ch)
     ch.send("你從戰鬥中逃跑了!!\n")
     system.move(ch, direction, leave="$n往$t邊逃竄(Flee)了!!。")

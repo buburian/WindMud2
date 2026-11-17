@@ -287,6 +287,75 @@ def test_npc_can_walk(world, dog):
         assert p.writer.data == "\r\n野狗朝北離開。\r\n\r\n> ".encode(ENCODING)
 
 
+# ---- look 角色（照 C 版 show_char_to_char_1，使用者選的三樣：描述、受傷狀態、旁邊的人看到打量） ----
+
+def test_look_at_a_mobile(world):
+    ming, hua, bob = world["小明"], world["阿華"], world["Bob"]
+    commands.command(ming, "look merchant")
+    # areas/test.json 的測試商人：區域檔的描述，接著受傷狀態（剛出現，HP 是滿的）
+    want = "這是測試區域的商人，臉上一直掛著笑容。\r\n測試商人十分的健康，完整。\r\n\r\n> "
+    assert ming.writer.data == want.encode(ENCODING)
+    for p in (hua, bob):
+        assert p.writer.data == "\r\n小明對測試商人仔細地上下打量了一番。\r\n\r\n> ".encode(ENCODING)
+
+
+def test_look_at_a_player(world):
+    ming, hua, bob = world["小明"], world["阿華"], world["Bob"]
+    bob.position = Position.SLEEPING        # 睡著的人看不到打量（跟其他同房間的事一樣）
+    commands.command(ming, "look 阿華")
+    # 玩家沒有描述（照 C 版那句）；直接建的玩家沒有屬性，所以沒有受傷狀態
+    assert ming.writer.data == "你看不出來他有任何特殊的地方。\r\n\r\n> ".encode(ENCODING)
+    assert hua.writer.data == "\r\n小明對你仔細地上下打量了一番。\r\n\r\n> ".encode(ENCODING)
+    assert bob.writer.data == b""
+
+
+def test_look_at_yourself(world):
+    ming, hua = world["小明"], world["阿華"]
+    commands.command(ming, "look 小明")
+    assert ming.writer.data == "你看不出來他有任何特殊的地方。\r\n\r\n> ".encode(ENCODING)
+    assert hua.writer.data == b""           # 看自己不打量
+
+
+def test_directions_come_before_characters(world, dog):
+    # 名字只比開頭：look d 還是往下看（101 往下沒有出口），要看野狗打 look dog（使用者核准的順序：東西 → 方向 → 角色）
+    dog.keywords = ["dog"]
+    ming = world["小明"]
+    commands.command(ming, "look d")
+    assert ming.writer.data == "那裡沒有什麼特別的東西。\r\n\r\n> ".encode(ENCODING)
+    ming.writer.data = b""
+    commands.command(ming, "look dog")
+    # 直接建的野狗：沒有描述、沒有屬性（沒有受傷狀態）
+    assert ming.writer.data == "你看不出來它有任何特殊的地方。\r\n\r\n> ".encode(ENCODING)
+
+
+def test_look_at_the_second_one(world, dog):
+    # n.名字 照 look 畫面的順序；生物的描述可以用顏色代碼（跟房間描述一樣，使用者定的）
+    second = Npc("野狗", SEX_NEUTRAL, zones.world.rooms[101])
+    dog.keywords = second.keywords = ["dog"]
+    second.description = "一隻{R紅眼睛{x的野狗。"
+    characters.append(second)
+    ming = world["小明"]
+    commands.command(ming, "look 2.dog")
+    assert ming.writer.data == "一隻\x1b[31;1m紅眼睛\x1b[0m的野狗。\r\n\r\n> ".encode(ENCODING)
+
+
+@pytest.mark.parametrize("hp, want", [
+    (1000, "十分的健康，完整。"), (999, "有少許的瘀青。"), (900, "有少許的瘀青。"), (899, "帶著一些瘀青。"),
+    (800, "帶著一些瘀青。"), (799, "有一些小傷口。"), (700, "有一些小傷口。"), (699, "有幾處明顯的傷口。"),
+    (600, "有幾處明顯的傷口。"), (599, "佈滿很多明顯的傷口。"), (500, "佈滿很多明顯的傷口。"), (499, "開始大量的出血，不止。"),
+    (400, "開始大量的出血，不止。"), (399, "身上都是鮮紅的血液。"), (300, "身上都是鮮紅的血液。"), (299, "腸子流了出來。"),
+    (200, "腸子流了出來。"), (199, "快要死了。"), (100, "快要死了。"), (99, "瀕臨死亡。"), (0, "瀕臨死亡。"),
+])
+def test_look_shows_how_hurt(world, hp, want):
+    # HP 剩幾 %（大於等於，照 C 版的 11 句）；HP 上限 1000，所以 999 是 99.9%。encode 也確認每句都轉得成 Big5
+    wolf = Npc("野狼", SEX_NEUTRAL, zones.world.rooms[101])
+    wolf.keywords, wolf.panel, wolf.hp = ["wolf"], {"hp": 1000.0}, float(hp)
+    characters.append(wolf)
+    ming = world["小明"]
+    commands.command(ming, "look wolf")
+    assert ming.writer.data == f"你看不出來它有任何特殊的地方。\r\n野狼{want}\r\n\r\n> ".encode(ENCODING)
+
+
 # ---- 有屬性的玩家：prompt 和 score（使用者選的樣子） ----
 
 def stat_player(race="orc", guild="phys"):

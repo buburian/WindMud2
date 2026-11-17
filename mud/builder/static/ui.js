@@ -68,6 +68,13 @@ export function parseNumber(text) {
   return /^-?\d+$/.test(t) ? Number(t) : text;
 }
 
+// 小數也可以（生物的 special_ratio、poison_ratio 寫 2.5 這種倍率）：空的存 null，其他照打的存（讓檢查報錯）
+export function parseDecimal(text) {
+  const t = text.trim();
+  if (t === "") return null;
+  return /^-?\d+(\.\d+)?$/.test(t) ? Number(t) : text;
+}
+
 // 描述類的文字：顯示時拿掉最後一個換行；存回時不是空的才補一個換行（跟現有檔案一樣）
 export function plainText(v) {
   if (typeof v !== "string") return numberText(v);

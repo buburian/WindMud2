@@ -20,7 +20,7 @@ def make_mobile(vnum):
         "drops": [{"obj_vnum": 1, "color": "orange", "chance": 100, "tiers": ["boss"]}],
         "script": None,                     # 腳本要另外寫 .lua 檔（write_lua），所以預設沒有
         "shop": {"buy_types": [8], "profit_buy": 100, "profit_sell": 100, "open_hour": 0, "close_hour": 23},
-        "special": "spec_guard",
+        "special": "spec_guard", "special_ratio": 2.5, "poison_ratio": 0.4,
     }
 
 

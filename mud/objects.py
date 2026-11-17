@@ -44,7 +44,8 @@ class Obj:
         self.contains = []                  # 裡面的物品（屍體）
         self.timer = None                   # 還剩幾次 OBJ_TICKS 就消失；None 是不會消失
         self.weight = 0                     # 重量（區域檔的 weight）
-        self.take = False                   # 撿不撿得起來（wear_flags 有 1 take）；屍體撿不起來
+        self.cost = 0                       # 價格（區域檔的 cost）：裝備以外的物品的基本價格（base_price）
+        self.take = False                  # 撿不撿得起來（wear_flags 有 1 take）；屍體撿不起來
         self.slot = None                    # 穿在哪個部位（equipment.best_slot：跟點數上限同一個；雙手武器是 TWO_HANDED），不是裝備是 None
         self.weapon_kind = None             # 武器才有：area.WeaponKind（values 第 1 個）
         self.attack = None                  # 武器才有：area.Attack（values 第 4 個，戰鬥訊息的「使用重砍攻擊」）
@@ -75,7 +76,7 @@ def create(vnum, level, color, rng=random):
         return None
     obj = Obj(proto["short"], proto["long"], proto["item_type"], proto["keywords"].lower().split())
     obj.vnum, obj.level, obj.color = vnum, level, color
-    obj.weight = proto["weight"]
+    obj.weight, obj.cost = proto["weight"], proto["cost"]
     obj.take = bool(parse_flags(proto["wear_flags"]) & WearFlag.TAKE)
     slot = obj.slot = equipment.best_slot(*wear_slots(proto))
     if proto["item_type"] == CONTAINER_ITEM_TYPE:
@@ -98,6 +99,17 @@ def create(vnum, level, color, rng=random):
     obj.affects = [(Apply[stat.upper()], n) for stat, n in rolled["affixes"].items()]
     obj.name = rolled["name"] + obj.name
     return obj
+
+
+def base_price(obj):
+    """商店的基本價格（區域製作手冊物品的 cost）：裝備是實際用掉的點數（每一項加成 × 單價加起來，負的抵掉），最低 1，灰色是 1；
+    其他物品是 cost。scavenger 挑最值錢的、janitor 撿便宜的用它（商店還沒做）。
+    """
+    if obj.slot is None:
+        return obj.cost
+    if obj.color == ItemColor.GRAY:
+        return 1
+    return max(1, sum(n * equipment.price(a.name.lower(), obj.level) for a, n in obj.affects if a != Apply.NONE))
 
 
 def make_corpse(npc, rng=random):
@@ -170,7 +182,7 @@ def weight(obj):
 
 
 FIELDS = ("vnum", "name", "long", "item_type", "level", "color", "base", "weight", "take", "slot")
-LATER_FIELDS = {"key": None, "seal": 0}     # 後來才加的欄位：舊存檔沒有，用這個值
+LATER_FIELDS = {"key": None, "seal": 0, "cost": 0}     # 後來才加的欄位：舊存檔沒有，用這個值
 
 
 def to_data(obj):
@@ -179,7 +191,7 @@ def to_data(obj):
     data.update(keywords=" ".join(obj.keywords), affects=[[int(a), n] for a, n in obj.affects],
                 weapon_kind=None if obj.weapon_kind is None else int(obj.weapon_kind),
                 attack=None if obj.attack is None else int(obj.attack),
-                container=None if obj.container is None else int(obj.container), key=obj.key, seal=obj.seal,
+                container=None if obj.container is None else int(obj.container), key=obj.key, seal=obj.seal, cost=obj.cost,
                 contains=[to_data(o) for o in obj.contains])
     return data
 

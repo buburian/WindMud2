@@ -15,7 +15,7 @@ import json
 import logging
 from pathlib import Path
 
-from . import affects, area, fight, objects, resets, scripts, skills, stats, weather
+from . import affects, area, behavior, fight, objects, resets, scripts, skills, stats, weather
 from .area import AreaType
 from .characters import characters
 from .clock import cancel, every
@@ -53,7 +53,8 @@ class Zone:
             self.rooms[room.vnum] = room
 
     def tick(self):
-        """這個區域物件一次 tick 要做的事。都要做：重置、地上物品的 timer。世界：每個 tick 數技能冷卻、走身上的效果，每 HOUR_TICKS 走一次天氣；動態區域、副本：沒有玩家太久就釋放。
+        """這個區域物件一次 tick 要做的事。都要做：重置、地上物品的 timer。世界：每個 tick 數技能冷卻、走身上的效果、生物的行為，
+        每 HOUR_TICKS 走一次天氣，每 REGEN_TICKS 回復；動態區域、副本：沒有玩家太久就釋放。
         世界的變換之後加在這裡，用「每幾個 tick 做一次」（self.ticks % N == 0）。"""
         self.ticks += 1
         scripts.tick(self)                  # 腳本的 on_timer（坑：跟 objects.update 一樣要在下面兩個 return 前面）
@@ -65,13 +66,14 @@ class Zone:
         if self.kind == AreaType.WORLD:
             skills.tick()                   # 技能的冷卻：掛在角色身上，跟回復一樣所有在線玩家一起數
             affects.tick()                  # 身上的效果：全部角色（玩家和生物，副本裡的也是）一起走
+            behavior.tick(self.ticks)       # 生物的行為：走動、撿東西、主動攻擊（副本裡的也是，設計文件 §4.11）
             if self.ticks % HOUR_TICKS == 0:
                 weather.tick()              # 全遊戲一個天氣，只由世界 tick 走時間
             if self.ticks % REGEN_TICKS == 0:
-                # 回復掛在角色身上，所有在線玩家一起回（副本裡的也是）：放在各區域的 tick 會因為節拍不同步，走來走去多回或少回
-                for p in online_players():
-                    if p.panel:
-                        stats.regen(p)
+                # 回復掛在角色身上，在線玩家和全部生物一起回（副本裡的也是）：放在各區域的 tick 會因為節拍不同步，走來走去多回或少回
+                for c in list(characters):
+                    if getattr(c, "panel", None):
+                        stats.regen(c)
             return
         if any(p.room.zone is self for p in online_players()):
             self.empty_ticks = 0

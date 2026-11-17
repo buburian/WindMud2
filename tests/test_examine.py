@@ -166,7 +166,7 @@ def test_mstat_a_mobile(world):
     text = say(p, "m dog")
     assert "號碼 101  名字 野狗  keywords dog 野狗" in text
     assert "等級 5  種類 normal  攻擊 phys 100%  攻防 標準  原型 標準" in text
-    assert "act 0  姿勢 STANDING  房間 102  正在打 無" in text
+    assert "act 0  affected_by 0  姿勢 STANDING  房間 102  正在打 無" in text
     assert f"HP {dog.hp:.1f}/{dog.panel['hp']:.1f}" in text
     assert f"物理傷害 {dog.panel['dmg_phys']:.2f}" in text and f"武器基本傷害 {dog.panel['wpn']:.2f}" in text
     assert "掉落表 沒有" in text

@@ -3,7 +3,7 @@ import logging
 import re
 
 from .. import affects, objects, save, scripts, stats, weather, zones
-from ..act import TO_CHAR, TO_ROOM, TO_VICT, act
+from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act
 from ..area import DIRECTIONS, REVERSE, MobTier
 from ..characters import SEX_FEMALE, SEX_MALE, Position, arrive, characters, find_in_room, in_room
 from ..color import colorize
@@ -31,7 +31,12 @@ def do_look(ch, arg):
             return
     direction = next((d for d in DIRECTIONS if d.startswith(target)), None)
     if direction is None:
-        ch.send("在這裡找不到你要看的東西。\n")
+        # 最後才找房間裡的角色（C 版最先找）：名字只比開頭，放在方向前面的話 look d、look n 會變成看 d、n 開頭的生物
+        victim = find_in_room(ch, words[0])
+        if victim is None:
+            ch.send("在這裡找不到你要看的東西。\n")
+        else:
+            look_at(ch, victim)
         return
     text = room.exit_descriptions.get(direction)
     ch.send(block(text) if text else "那裡沒有什麼特別的東西。\n")    # 沒寫描述，或那個方向沒有出口
@@ -56,6 +61,40 @@ def look_in(ch, name):
         ch.send("它是蓋起來的。\n")             # 照 C 版
         return
     ch.send(objects.inside(obj))
+
+
+# look 角色的受傷狀態（照 C 版 show_char_to_char_1）：(HP 剩幾 % 以上, 接在名字後面的那句)；都不到是 DYING
+CONDITIONS = [
+    (100, "十分的健康，完整。"), (90, "有少許的瘀青。"), (80, "帶著一些瘀青。"), (70, "有一些小傷口。"),
+    (60, "有幾處明顯的傷口。"), (50, "佈滿很多明顯的傷口。"), (40, "開始大量的出血，不止。"),
+    (30, "身上都是鮮紅的血液。"), (20, "腸子流了出來。"), (10, "快要死了。"),
+]
+DYING = "瀕臨死亡。"
+
+
+def condition(c):
+    """c 的受傷狀態那句（不含名字）：HP 剩幾 %（100 × HP ÷ HP 上限）照 CONDITIONS 查。"""
+    top = c.panel["hp"]
+    percent = 100 * c.hp / top if top > 0 else -1     # 照 C 版：上限是 0 當作 -1
+    return next((text for floor, text in CONDITIONS if percent >= floor), DYING)
+
+
+def look_at(ch, victim):
+    """look 角色（照 C 版 show_char_to_char_1，使用者選的三樣）：對方和旁邊的人看到打量、描述、受傷狀態。
+
+    看自己不送打量。沒寫描述（玩家都沒有）照 C 版說看不出來；生物的描述可以用顏色代碼（跟房間描述一樣，使用者定的）。
+    沒有屬性的角色（測試直接建的）沒有受傷狀態那行。
+    """
+    if victim is not ch:
+        act("$n對你仔細地上下打量了一番。", ch, victim, to=TO_VICT)
+        act("$n對$N仔細地上下打量了一番。", ch, victim, to=TO_NOTVICT)
+    text = getattr(victim, "description", "")
+    if text:
+        ch.send(block(text))
+    else:
+        act("你看不出來$M有任何特殊的地方。", ch, victim, to=TO_CHAR)
+    if getattr(victim, "panel", None):
+        act("$N" + condition(victim), ch, victim, to=TO_CHAR)
 
 
 def block(text):

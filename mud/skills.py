@@ -183,16 +183,17 @@ def use(ch, skill, victim):
             if combat.land(battle, ch, victim, dmg, crit, skill.name):
                 return                      # 打死了：不留持續傷害
         if skill.dot and first is not None:
-            affects.add(victim, dot_affect(skill, first))
+            affects.add(victim, dot_affect(skill.id, skill.dot, first))
 
 
-def dot_affect(skill, first):
-    """打中後留在目標身上的持續傷害（例如火球的燃燒）：每 AFFECT_PULSE_TICKS 跳一次、共 jumps 次，
-    每跳 ＝ 第一發的傷害 × ratio，放下去時算好（最低 MIN_SKILL_DAMAGE）。來源是技能的 id：再中一次就重新燒。
+def dot_affect(source, d, first):
+    """打中後留在目標身上的持續傷害（火球的燃燒、生物 spec_poison 的劇毒）：每 AFFECT_PULSE_TICKS 跳一次、共 jumps 次，
+    每跳 ＝ 第一發的傷害 × ratio，放下去時算好（最低 MIN_SKILL_DAMAGE）。來源是技能的 id（special 是名字）：再中一次就重新算。
+    d 是 name、ratio、jumps、hurt，可以再寫 off（消失時的那句，沒寫用共用的）。
     """
-    d = skill.dot
-    return affects.Affect(source=skill.id, name=d["name"], duration=d["jumps"] * AFFECT_PULSE_TICKS,
-                          periodic={"hp": -max(MIN_SKILL_DAMAGE, first * d["ratio"])}, hurt=d["hurt"])
+    return affects.Affect(source=source, name=d["name"], duration=d["jumps"] * AFFECT_PULSE_TICKS,
+                          periodic={"hp": -max(MIN_SKILL_DAMAGE, first * d["ratio"])}, hurt=d["hurt"],
+                          off_message=d.get("off", ""))
 
 
 def make_affect(skill):

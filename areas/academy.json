@@ -205,7 +205,9 @@
         "timer": null
       },
       "shop": null,
-      "special": null
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
     },
     {
       "vnum": 2,
@@ -238,7 +240,9 @@
         "timer": null
       },
       "shop": null,
-      "special": null
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
     },
     {
       "vnum": 3,
@@ -264,7 +268,9 @@
         "timer": null
       },
       "shop": null,
-      "special": null
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
     },
     {
       "vnum": 4,
@@ -290,7 +296,9 @@
         "timer": null
       },
       "shop": null,
-      "special": null
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
     }
   ],
   "objects": [

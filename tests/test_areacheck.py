@@ -142,7 +142,17 @@ RULES = [
     pytest.param(lambda d: mob(d).update(script={"file": "", "timer": None}), "file 要寫 .lua 的檔名", id="生物 script"),
     pytest.param(lambda d: mob(d)["shop"].update(buy_types="8"), "buy_types 要是整數的清單", id="生物 shop buy_types"),
     pytest.param(lambda d: mob(d)["shop"].update(open_hour=None), "open_hour 要是整數", id="生物 shop 時間"),
-    pytest.param(lambda d: mob(d).update(special=""), "special 要是 null 或函式名稱", id="生物 special"),
+    pytest.param(lambda d: mob(d).update(special=""), "special 要是 null 或手冊 special 表裡的名字，不能是 ''", id="生物 special"),
+    pytest.param(lambda d: mob(d).update(special="spec_breath_fier"), "不能是 'spec_breath_fier'", id="生物 special 寫錯字"),
+    pytest.param(lambda d: mob(d).pop("special_ratio"), "生物 1 少了欄位 special_ratio", id="生物少 special_ratio"),
+    pytest.param(lambda d: mob(d).pop("poison_ratio"), "生物 1 少了欄位 poison_ratio", id="生物少 poison_ratio"),
+    pytest.param(lambda d: mob(d).update(special_ratio=0), "special_ratio 要是 null 或大於 0 的數字（例如 2.5），不能是 0",
+                 id="生物 special_ratio 0"),
+    pytest.param(lambda d: mob(d).update(special_ratio="2.5"), "special_ratio 要是 null 或大於 0 的數字", id="生物 special_ratio 字串"),
+    pytest.param(lambda d: mob(d).update(special_ratio=True), "special_ratio 要是 null 或大於 0 的數字", id="生物 special_ratio true"),
+    pytest.param(lambda d: mob(d).update(poison_ratio=-0.3), "poison_ratio 要是 null 或大於 0 的數字（例如 2.5），不能是 -0.3",
+                 id="生物 poison_ratio 負數"),
+    pytest.param(lambda d: mob(d).update(poison_ratio=float("nan")), "poison_ratio 要是 null 或大於 0 的數字", id="生物 poison_ratio NaN"),
     # 物品：這次只檢查寫法
     pytest.param(lambda d: d.pop("objects"), "少了欄位 objects", id="少了 objects"),
     pytest.param(lambda d: d.update(objects={}), "objects 要寫成 […]", id="objects 不是清單"),
@@ -252,8 +262,16 @@ def test_reference_instance_is_known(tmp_path):
 
 def test_mobile_parts_can_be_null(tmp_path):
     data = good_area()
-    mob(data).update(script=None, shop=None, special=None, drops=[],
+    mob(data).update(script=None, shop=None, special=None, special_ratio=None, poison_ratio=None, drops=[],
                      tier_roll=None, attack=None, defense=None, archetype=None)
+    assert problems_of(tmp_path, data) == []
+
+
+@pytest.mark.parametrize("ratio", [2, 2.5, 0.05])
+def test_mobile_ratios_can_be_whole_or_decimal(tmp_path, ratio):
+    # 倍率是小數倍率（使用者選的）：整數也可以
+    data = good_area()
+    mob(data).update(special="spec_poison", special_ratio=ratio, poison_ratio=ratio)
     assert problems_of(tmp_path, data) == []
 
 
