@@ -1,0 +1,13 @@
+# 每分鐘跑一次 windmud-update.service（deploy/update.sh）：看 GitHub 有沒有測試通過的新版。裝法見 README.md「自動部署（Linux）」。
+
+[Unit]
+Description=每分鐘看 GitHub 有沒有 WindMud 的新版
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+# 預設會為了省電把時間往後挪最多 1 分鐘，這裡要準一點
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target

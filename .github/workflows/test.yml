@@ -1,0 +1,38 @@
+# push 到 master 就跑全部測試和區域檔檢查；都過了，把 release 分支推到這個 commit。
+# 正式機每分鐘看 release 分支，有新的就自己更新、重開（deploy/update.sh，README「自動部署（Linux）」）。
+name: 測試
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# 一次只跑一個：release 才會照順序往前走
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write                           # 推 release 分支
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: 安裝 Python 和套件
+        run: uv sync --locked
+      - name: 全部測試
+        run: uv run pytest -q
+      - name: 檢查區域檔
+        run: uv run python -m mud.areacheck
+      # 不用 --force：release 只會往前走。重跑舊的 commit 會推不上去（失敗），正式機也不會退回舊版
+      - name: 標成可以上線（推 release 分支）
+        if: github.ref == 'refs/heads/master'
+        run: git push origin HEAD:refs/heads/release

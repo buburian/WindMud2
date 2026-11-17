@@ -1,0 +1,21 @@
+# MUD 伺服器的自動更新（deploy/update.sh），windmud-update.timer 每分鐘叫它一次。只有 Linux 能用。
+# GitHub 的 release 分支有測試通過的新版，就拉下來、重開 windmud。裝法見 README.md「自動部署（Linux）」。
+# 「你的帳號」要換成跑伺服器的帳號（跟 windmud.service 一樣）：User=、WorkingDirectory=、ExecStart= 三個地方。
+# 坑：systemd 的註解要自己一行，寫在設定後面會被當成值的一部分。
+
+[Unit]
+Description=WindMud 自動更新
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# 用跑伺服器的帳號，不要用 root：root 跑 git 會把檔案變成 root 的。重開 windmud 用 sudo，這個帳號的 sudo 要不用打密碼。
+User=你的帳號
+WorkingDirectory=/home/你的帳號/mud_server
+ExecStart=/home/你的帳號/mud_server/deploy/update.sh
+# git 要密碼時不要卡住等人打（repo 是公開的，本來就不用）
+Environment=GIT_TERMINAL_PROMPT=0
+# 平常幾十秒就好（拉下來、uv sync、重開、等開起來）；卡住超過 10 分鐘就算失敗
+TimeoutStartSec=10min
+SyslogIdentifier=windmud-update
