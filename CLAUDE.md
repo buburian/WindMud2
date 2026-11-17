@@ -587,7 +587,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `commanding` 是正在打指令的人的堆疊（`command()` 推進來）：`act.notify()` 送給還在裡面的人時當作指令的回覆、不補 prompt
     （生物的腳本在他說話的當下回話，才不會有兩個 prompt；指令跑完 `command()` 補一個）。
   - **`docs/Lua任務教學.md`**（使用者要的，從手冊獨立出來，只講怎麼做任務）：例子都實際跑過。改了腳本的函式、訊息、規則時，教學裡的例子和畫面也要跟著對。
-  - `script_api.py`：給腳本的名字和函式（`me`、`room`、`actor` 的欄位和方法、`random`、`hour`、vars、號碼換算、`transfer`、`load_mob`、`mob:use`…）。
+  - `script_api.py`：給腳本的名字和函式（`me`、`room`、`actor` 的欄位和方法、`random`、`dice`（擲骰子 "4d6+2"，面數沒寫是 6）、`hour`、vars、號碼換算、`transfer`、`load_mob`、`mob:use`…）。
     `give_item`：主人是生物、給的是別人時，訊息跟 give 一樣（`items.GIVEN_TO_YOU`、`GIVEN_SEEN`，使用者要的）；房間的腳本不說話。
     判定「算腳本出錯」就丟 `ScriptError`。玩家的 vars 在 `player.vars[區域檔名][名字]`（存檔），生物、房間的在自己的 `vars`。
   - 觸發的地方：`commands.command()`（on_command，`quit` 不觸發）、`system.move()`（on_enter）、`do_say()`（**只有玩家說的**，使用者選的：生物之間對話用 tell）、`do_tell()`（找不到線上玩家才找同房間的生物，on_tell）、

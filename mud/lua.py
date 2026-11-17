@@ -224,12 +224,13 @@ def base_env():
 
 
 def check_env():
-    """開機檢查跑最外層用的環境：跟真的一樣的安全函式，me、room、actor、random、hour 是假的替身。"""
+    """開機檢查跑最外層用的環境：跟真的一樣的安全函式，me、room、actor、random、dice、hour 是假的替身。"""
     env = base_env()
     m = rt().m
     for k in ("me", "room", "actor"):
         env[k] = m.stub()
     env["random"] = rt().lua.eval("function(a, b) return a end")
+    env["dice"] = rt().lua.eval("function(text) return 0 end")
     env["hour"] = rt().lua.eval("function() return 0 end")
     return env
 

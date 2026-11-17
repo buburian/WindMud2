@@ -735,6 +735,43 @@ def test_echo_skips_sleepers(tmp_path, later):
     assert "大家好" in (h := plain(hua)) and "除了他" in h and plain(lin) == ""
 
 
+class Highest:
+    """假的亂數：每顆骰子都骰到最大，記下骰了哪些。"""
+
+    def __init__(self):
+        self.rolls = []
+
+    def randint(self, a, b):
+        self.rolls.append((a, b))
+        return b
+
+
+@pytest.mark.parametrize("text, want, rolls", [
+    ("4d6+2", 26, [(1, 6)] * 4),
+    ("4d+2", 26, [(1, 6)] * 4),                     # 面數沒寫是 6（使用者要的）
+    ("5d3+1", 16, [(1, 3)] * 5),
+    ("d20", 20, [(1, 20)]),                         # 次數沒寫是 1
+    ("d", 6, [(1, 6)]),                             # 兩個都沒寫：1 顆 6 面骰
+    ("2d4-1", 7, [(1, 4)] * 2),
+    ("3D6", 18, [(1, 6)] * 3),
+    (" 4d6 + 2 ", 26, [(1, 6)] * 4),                # 空白不管
+])
+def test_dice(tmp_path, later, monkeypatch, text, want, rolls):
+    rng = Highest()
+    monkeypatch.setattr(script_api, "rng", rng)
+    room = build(tmp_path, {"r.lua": f'function on_say(actor, text) room.vars.r = dice("{text}") end'}, {101: ("r.lua", None)})
+    say(person("Ming"), "say 嗨")
+    assert room.vars == {"r": want} and rng.rolls == rolls
+
+
+@pytest.mark.parametrize("arg", ['"4x6"', '"0d6"', '"101d6"', '"4d0"', '"4d1001"', '"4d6+"', '"４d6"', "4"])
+def test_dice_mistakes_are_errors(tmp_path, later, caplog, arg):
+    room = build(tmp_path, {"r.lua": f"function on_say(actor, text)\n  room.vars.r = dice({arg})\nend"}, {101: ("r.lua", None)})
+    with caplog.at_level(logging.WARNING):
+        say(person("Ming"), "say 嗨")
+    assert "a/r.lua:2: dice 要寫「次數d面數+加減」" in caplog.text and room.vars == {}
+
+
 def test_random_and_hour(tmp_path, later, monkeypatch):
     class R:
         def randint(self, a, b):

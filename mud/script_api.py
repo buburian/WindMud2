@@ -8,6 +8,7 @@
 import logging
 import math
 import random
+import re
 
 from . import lua
 from .area import MIN_VNUM, DoorState, ItemColor, check_fixed_item
@@ -32,6 +33,7 @@ def env(r):
     room = scripts.room_of(r.owner)
     e["room"] = e["me"] if room is r.owner else handle_of(r, room)
     e["random"] = lua.wrap(lambda a, b: roll(a, b))
+    e["dice"] = lua.wrap(lambda text: dice(text))
     e["hour"] = lua.wrap(game_hour)
     return e
 
@@ -311,6 +313,24 @@ def roll(a, b):
     if any(isinstance(x, bool) or not isinstance(x, int) for x in (a, b)) or a > b:
         raise ScriptError(f"random 要給兩個整數（小的在前），不能是 {lua_repr(a)}、{lua_repr(b)}")
     return rng.randint(a, b)
+
+
+DICE = re.compile(r"([0-9]*)[dD]([0-9]*)([+-][0-9]+)?")   # 次數d面數+加減；只收半形數字（全形的 int() 也認得，不要）
+DICE_SIDES = 6                              # 面數沒寫是 6（使用者要的：4d+2 就是 4d6+2）
+DICE_MAX_COUNT = 100                        # 一次最多骰幾顆
+DICE_MAX_SIDES = 1000                       # 骰子最多幾面
+
+
+def dice(text):
+    """擲骰子（使用者要的）：dice("4d6+2") 是骰 4 次 6 面骰再加 2。面數沒寫是 6（"4d+2"）、次數沒寫是 1（"d20"）、
+    加減可以不寫或寫 -（"2d4-1"），中間的空白不管。寫錯算腳本出錯。"""
+    m = DICE.fullmatch(text.replace(" ", "")) if isinstance(text, str) else None
+    count = int(m[1] or 1) if m else 0
+    sides = int(m[2] or DICE_SIDES) if m else 0
+    if not (1 <= count <= DICE_MAX_COUNT and 1 <= sides <= DICE_MAX_SIDES):
+        raise ScriptError(f"dice 要寫「次數d面數+加減」，例如 \"4d6+2\"、\"4d+2\"（面數沒寫是 {DICE_SIDES}），"
+                          f"次數 1～{DICE_MAX_COUNT}、面數 1～{DICE_MAX_SIDES}，不能是 {lua_repr(text)}")
+    return sum(rng.randint(1, sides) for _ in range(count)) + int(m[3] or 0)
 
 
 def game_hour():
