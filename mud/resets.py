@@ -10,7 +10,7 @@ import random
 
 from . import doors, objects, scripts
 from .act import notify
-from .area import CHANCE_MAX, DIRECTIONS, ActFlag, DoorState, parse_flags, resolve
+from .area import CHANCE_MAX, DIRECTIONS, ActFlag, DoorState, parse_flags
 from .characters import Position, characters
 from .npcs import Npc, spawn
 from .players import online_players
@@ -22,15 +22,14 @@ RESET_AGE = 15                              # 有玩家時 age 到這個數字�
 FOOTSTEPS = "你聽到一陣腳步聲。"              # 有玩家時，重置前 1 分鐘（age 14）送給區域裡醒著的玩家
 SURE_RARE = 10                              # 出現機率 rare 0～10 一定出現；大於 10 是 (rare − 10) ÷ 10000
 
-mobiles = {}                                # 遊戲號碼 → (那個區域檔的 area_number, 區域檔的生物)（zones.load 填，跨檔案也找得到）
+mobiles = {}                                # 遊戲號碼 → 區域檔的生物（zones.load 填，跨檔案也找得到）
 
 
 class AreaReset:
     """一個區域檔在一個區域物件裡：重置要用的資料，和它自己的時間（age）。房間的 room.area 指到這裡。"""
 
-    def __init__(self, name, base, data):
+    def __init__(self, name, data):
         self.name = name                    # 檔名
-        self.base = base                    # area_number
         self.data = data                    # 讀好、檢查過的區域檔
         self.age = 0                        # 上次重置後過了幾次 update（C 版的 pArea->age）
 
@@ -58,7 +57,7 @@ def reset_zone(zone, rng=random):
 
 
 def reset_area(zone, area, protos, rng=random):
-    """照順序做區域檔的 resets（照 C 版 reset_area）。protos 是 mobiles 這種表：遊戲號碼 → (area_number, 區域檔的生物)。
+    """照順序做區域檔的 resets（照 C 版 reset_area）。protos 是 mobiles 這種表：遊戲號碼 → 區域檔的生物。
 
     G 對「前面最近的那一筆 M 這一次放出來的生物」做事：那筆 M 沒放出生物，後面的 G 也不做。
     """
@@ -94,8 +93,8 @@ def appears(r, rng):
 
 def reset_mobile(zone, area, r, protos, rng):
     """M：生物放進房間。出現機率沒骰到、或已經有 limit 隻就不放。回傳放出來的生物（之後的 G 用），沒放是 None。"""
-    vnum, room_vnum = resolve(area.base, r["mob_vnum"]), resolve(area.base, r["room_vnum"])
-    base, proto = protos.get(vnum, (None, None))
+    vnum, room_vnum = r["mob_vnum"], r["room_vnum"]
+    proto = protos.get(vnum)
     room = zone.rooms.get(room_vnum)
     if proto is None or room is None:       # 號碼存不存在還沒檢查：先記 log 跳過
         log.warning(f"{area.name} 的 M 放不了：生物 {vnum} 或房間 {room_vnum} 不在{zone.name}裡")
@@ -108,7 +107,7 @@ def reset_mobile(zone, area, r, protos, rng):
                 and (c.room is room if sentinel else c.room.zone is zone))
     if count >= r["limit"]:
         return None
-    return spawn(vnum, proto, room, rng, base)
+    return spawn(vnum, proto, room, rng)
 
 
 def reset_door(zone, area, r):
@@ -116,7 +115,7 @@ def reset_door(zone, area, r):
 
     房間不在這個區域物件、或那個方向沒有門：還沒檢查，先記 log 跳過。
     """
-    room_vnum = resolve(area.base, r["room_vnum"])
+    room_vnum = r["room_vnum"]
     room = zone.rooms.get(room_vnum)
     if room is None or r["direction"] not in room.doors:
         log.warning(f"{area.name} 的 D 設不了：房間 {room_vnum} 不在{zone.name}裡，或往 {r['direction']} 沒有門")
@@ -129,7 +128,7 @@ def reset_give(area, r, mob, rng):
     if mob is None or not appears(r, rng):
         return
     level = mob.level if r["level"] is None else r["level"]
-    obj = objects.create(resolve(area.base, r["obj_vnum"]), level, r["color"], rng)
+    obj = objects.create(r["obj_vnum"], level, r["color"], rng)
     if obj is not None:
         mob.carrying.insert(0, obj)
 
@@ -141,7 +140,7 @@ def players_in(zone, area):
 
 def reset_object(zone, area, r, rng):
     """O：物品放進房間地上。區域檔的房間裡沒有玩家、房間地上也還沒有這件物品（同號碼）時才放（照 C 版）。"""
-    vnum, room_vnum = resolve(area.base, r["obj_vnum"]), resolve(area.base, r["room_vnum"])
+    vnum, room_vnum = r["obj_vnum"], r["room_vnum"]
     room = zone.rooms.get(room_vnum)
     if room is None:
         log.warning(f"{area.name} 的 O 放不了：房間 {room_vnum} 不在{zone.name}裡")
@@ -164,7 +163,7 @@ def objects_in(zone):
 
 def reset_put(zone, area, r, rng):
     """P：物品放進容器（zone 裡第一件 container_vnum 的物品）。容器裡還沒有這件物品時才放（照 WindSrc：有玩家也放）。"""
-    vnum, container_vnum = resolve(area.base, r["obj_vnum"]), resolve(area.base, r["container_vnum"])
+    vnum, container_vnum = r["obj_vnum"], r["container_vnum"]
     container = next((o for o in objects_in(zone) if o.vnum == container_vnum), None)
     if container is None:
         log.warning(f"{area.name} 的 P 放不了：{zone.name}裡沒有容器 {container_vnum}")
@@ -181,7 +180,7 @@ def reset_exits(zone, area, r, rng):
 
     出口、出口的描述、門一起換。對面的房間不動，所以走過去再走回來不一定回得來（舊版做迷宮用的）。
     """
-    room = zone.rooms.get(resolve(area.base, r["room_vnum"]))
+    room = zone.rooms.get(r["room_vnum"])
     if room is None:
         log.warning(f"{area.name} 的 R 做不了：房間 {r['room_vnum']} 不在{zone.name}裡")
         return

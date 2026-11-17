@@ -138,9 +138,9 @@ def test_every_season_has_all_four_skies():
 @pytest.fixture
 def world(tmp_path):
     # 房間 101 在室外、102 在室內（room_flags 8 是 INDOORS）
-    indoor = make_room(2, south=1)
+    indoor = make_room(102, south=101)
     indoor["room_flags"] = 8
-    write_area(tmp_path, "a.json", [make_room(1, north=2), indoor])
+    write_area(tmp_path, "a.json", [make_room(101, north=102), indoor])
     zones.load(tmp_path)
     yield zones.world
     characters.clear()
@@ -191,9 +191,9 @@ def test_w_is_still_west():
 
 def test_only_the_world_tick_moves_the_weather(tmp_path, monkeypatch):
     # 全遊戲一個天氣：世界的 tick 走時間，動態區域、副本的 tick 不動它
-    write_area(tmp_path, "world.json", [make_room(1, north=201)], area_number=100)
-    write_area(tmp_path, "dyn.json", [make_room(1, south=101)], area_number=200, kind="dynamic")
-    write_area(tmp_path, "inst.json", [make_room(1)], area_number=300, kind="instance")
+    write_area(tmp_path, "world.json", [make_room(101, north=201)], vnums=(100, 199))
+    write_area(tmp_path, "dyn.json", [make_room(201, south=101)], vnums=(200, 299), kind="dynamic")
+    write_area(tmp_path, "inst.json", [make_room(301)], vnums=(300, 399), kind="instance")
     zones.load(tmp_path)
     monkeypatch.setattr(zones, "HOUR_TICKS", 1)     # 每個 tick 都是一小時，一次就看得出來
     ticks = []

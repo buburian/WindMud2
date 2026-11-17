@@ -2,7 +2,7 @@
 
 API（內容都是 JSON）：
 - GET  /api/areas                 檔案清單
-- POST /api/areas                 新增區域檔 {"file", "title", "area_number"}
+- POST /api/areas                 新增區域檔 {"file", "title", "vnums": [最小, 最大]}
 - GET  /api/areas/<檔名>          {"data": 內容, "problems": [...], "elsewhere": {遊戲號碼: 房間名},
                                    "elsewhere_mobiles": {遊戲號碼: 生物名}, "elsewhere_objects": {遊戲號碼: 物品名}}
                                    （elsewhere 是別的檔裡的）
@@ -37,16 +37,17 @@ def dump(data):
     return json.dumps(data, indent=2, ensure_ascii=False)
 
 
-def new_area(name, title, area_number):
-    """新的區域檔：一間「新房間」，其他欄位用手冊的預設值。"""
+def new_area(name, title, vnums):
+    """新的區域檔：一間「新房間」（號碼是範圍的最小值），其他欄位用手冊的預設值。範圍寫錯也照存，讓檢查報錯。"""
+    first = vnums[0] if isinstance(vnums, list) and vnums and area.is_int(vnums[0]) else area.MIN_VNUM
     return {
         "schema_version": 1,
         "file": name,
         "area": {
-            "header": {"levels": [1, 1], "author": "", "title": title, "area_number": area_number, "type": "world"},
+            "header": {"levels": [1, 1], "author": "", "title": title, "vnums": vnums, "type": "world"},
             "recall": None, "no_teleport": None, "clan_recall": None, "gem": None,
         },
-        "rooms": [{"vnum": 1, "name": "新房間", "description": "", "room_flags": 0, "sector": 0,
+        "rooms": [{"vnum": first, "name": "新房間", "description": "", "room_flags": 0, "sector": 0,
                    "exits": {}, "extra_descriptions": [], "script": None}],
         "mobiles": [],
         "objects": [],
@@ -95,7 +96,7 @@ class Builder:
                 if not NAME.fullmatch(path.name):
                     raise ValueError("檔名只能用英文字母、數字、_、-")
                 data = json.loads(path.read_text(encoding="utf-8"))
-                item.update(title=data["area"]["header"]["title"], area_number=data["area"]["header"]["area_number"],
+                item.update(title=data["area"]["header"]["title"], vnums=data["area"]["header"]["vnums"],
                             rooms=len(data["rooms"]))
             except (OSError, ValueError, KeyError, TypeError) as e:
                 item["error"] = f"讀不到：{e}"
@@ -111,15 +112,12 @@ class Builder:
         for path in self.others(name):
             data = area.read_json(path, [])
             try:
-                base = data["area"]["header"]["area_number"]
                 items = list(data[kind])
             except (KeyError, TypeError):
                 continue
-            if not area.is_int(base):
-                continue
             for r in items:
                 if isinstance(r, dict) and area.is_int(r.get("vnum")) and isinstance(r.get(label), str):
-                    names.setdefault(base + r["vnum"], r[label])
+                    names.setdefault(r["vnum"], r[label])
         return names
 
     def read(self, name):
@@ -148,7 +146,7 @@ class Builder:
         path = self.path(name if isinstance(name, str) else "")
         if path.exists():
             raise Problem(HTTPStatus.CONFLICT, f"{name} 已經有了")
-        path.write_text(dump(new_area(name, body.get("title", ""), body.get("area_number"))), encoding="utf-8")
+        path.write_text(dump(new_area(name, body.get("title", ""), body.get("vnums"))), encoding="utf-8")
         log.info(f"新增 {name}")
         return {"file": name}
 

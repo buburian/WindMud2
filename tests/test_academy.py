@@ -194,7 +194,7 @@ def test_students_who_die_go_back_to_the_start_of_the_academy(academy):
 
 
 def test_without_the_academy_new_characters_are_not_students(tmp_path):
-    write_json(tmp_path, "a.json", make_area("a.json", [make_room(1)], 100))
+    write_json(tmp_path, "a.json", make_area("a.json", [make_room(101)], vnums=(100, 199)))
     zones.load(tmp_path)
     try:
         p = Player("Ming", FakeWriter(), None)

@@ -45,18 +45,18 @@ class FakeRng:
 def world(tmp_path, monkeypatch):
     """a.json（世界 100）：101 有一隻 1 級的野狗（站著、act 0）。b.json 是別的世界區域檔（301），d.json 是動態區域（201）。"""
     monkeypatch.setattr(fight, "TICK_SECONDS", 1000)
-    dog = make_mobile(1)
+    dog = make_mobile(101)
     dog.update(short="野狗", keywords="dog", level=1, tier="normal", tier_roll=None, attack=None, defense=None,
                archetype=None, act=0, position=7, sex=0, long="", drops=[], shop=None, special=None)
-    rooms = [make_room(1, north=2, east=301, south=3, west=201, up=4), make_room(2, south=1), make_room(3, north=1),
-             make_room(4, down=1)]
+    rooms = [make_room(101, north=102, east=301, south=103, west=201, up=104), make_room(102, south=101),
+             make_room(103, north=101), make_room(104, down=101)]
     rooms[2]["room_flags"] = int(RoomFlag.NO_MOB)
     for r, d in ((rooms[0], "up"), (rooms[3], "down")):
         r["exits"][d].update(locks=1, keywords="木門 door")
-    reset = [{"cmd": "M", "rare": 0, "mob_vnum": 1, "limit": 1, "room_vnum": 1, "comment": ""}]
-    write_json(tmp_path, "a.json", make_area("a.json", rooms, 100, mobiles=[dog], resets=reset))
-    write_area(tmp_path, "b.json", [make_room(1, west=101)], area_number=300)
-    write_area(tmp_path, "d.json", [make_room(1, east=101)], area_number=200, kind="dynamic")
+    reset = [{"cmd": "M", "rare": 0, "mob_vnum": 101, "limit": 1, "room_vnum": 101, "comment": ""}]
+    write_json(tmp_path, "a.json", make_area("a.json", rooms, (100, 199), mobiles=[dog], resets=reset))
+    write_area(tmp_path, "b.json", [make_room(301, west=101)], vnums=(300, 399))
+    write_area(tmp_path, "d.json", [make_room(201, east=101)], vnums=(200, 299), kind="dynamic")
     zones.load(tmp_path)
     yield zones.world
     characters.clear()

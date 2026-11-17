@@ -13,10 +13,10 @@ const UNUSED_TIP = "C 版讀了沒用到";
 const isObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const textOf = (v) => (typeof v === "string" ? v : numberText(v));
 
-// 號碼指到的東西：{ num: 顯示的號碼, name: 名字, missing: 找不到 }。這個檔的寫檔案號碼，別的檔寫完整號碼
+// 號碼指到的東西：{ num: 顯示的號碼, name: 名字, missing: 找不到 }。這個檔、別的檔都是完整的遊戲號碼
 function lookup(ctx, kind, number) {
   const { state } = ctx;
-  const t = M.gameNumber(state.data, number);
+  const t = M.gameNumber(number);
   if (t === null) return { num: number === null || number === undefined ? "?" : textOf(number), name: "號碼不對", missing: true };
   const item = M.findByNumber(state.data, kind, t);
   if (item) return { num: numberText(item.vnum), name: textOf(kind === "rooms" ? item.name : item.short), missing: false, item };
@@ -259,7 +259,7 @@ function outside(e) {
 export function openAddMenu(ctx, anchor) {
   closeAddMenu();
   const { state } = ctx;
-  const first = (kind) => (M.sortedList(M.listOf(state.data, kind))[0] || { vnum: 1 }).vnum;
+  const first = (kind) => M.firstNumber(state.data, kind);
   const add = (cmd) => {
     closeAddMenu();
     const room = state.selected ? state.selected.vnum : first("rooms");

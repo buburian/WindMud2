@@ -10,7 +10,7 @@ import random
 from . import equipment, names
 from .act import notify
 from .area import (CHANCE_MAX, CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE, WEAPON_ITEM_TYPE, Apply, Attack, ContainerFlag,
-                   ItemColor, WeaponKind, WearFlag, parse_flags, resolve, wear_slots)
+                   ItemColor, WeaponKind, WearFlag, parse_flags, wear_slots)
 from .characters import Position
 from .color import colorize
 from .players import online_players
@@ -80,10 +80,10 @@ def create(vnum, level, color, rng=random):
     obj.take = bool(parse_flags(proto["wear_flags"]) & WearFlag.TAKE)
     slot = obj.slot = equipment.best_slot(*wear_slots(proto))
     if proto["item_type"] == CONTAINER_ITEM_TYPE:
-        # 鑰匙的換算跟出口的 key 一樣（−1、0 是沒有鑰匙）；area_number ＝ 遊戲號碼 − 檔案號碼
+        # 鑰匙跟出口的 key 一樣寫完整的遊戲號碼（0 以下是沒有鑰匙）
         _, flags, key, seal = (int(v) if str(v).lstrip("-").isdecimal() else 0 for v in proto["values"])
         obj.container = ContainerFlag(flags & sum(ContainerFlag))
-        obj.key = resolve(vnum - proto["vnum"], key) if key > 0 else None
+        obj.key = key if key > 0 else None
         obj.seal = seal
     if proto["item_type"] == WEAPON_ITEM_TYPE:      # 區域檢查保證武器的種類、攻擊方式是對的
         obj.weapon_kind, obj.attack = WeaponKind(int(proto["values"][0])), Attack(int(proto["values"][3]))

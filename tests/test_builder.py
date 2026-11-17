@@ -46,24 +46,33 @@ def call(url, method="GET", body=None):
 
 def test_new_area_has_no_problems(builder):
     base, folder = builder
-    status, result, _ = call(f"{base}/api/areas", "POST", {"file": "new.json", "title": "新區域", "area_number": 200})
+    status, result, _ = call(f"{base}/api/areas", "POST", {"file": "new.json", "title": "新區域", "vnums": [3000, 3399]})
     assert status == 201 and result == {"file": "new.json"}
     status, result, _ = call(f"{base}/api/areas/new.json")
     assert status == 200
     assert result["problems"] == []
     assert result["data"]["file"] == "new.json"
-    assert result["data"]["area"]["header"]["area_number"] == 200
+    assert result["data"]["area"]["header"]["vnums"] == [3000, 3399]
     assert result["data"]["area"]["header"]["type"] == "world"
-    assert [r["name"] for r in result["data"]["rooms"]] == ["新房間"]
+    assert [(r["vnum"], r["name"]) for r in result["data"]["rooms"]] == [(3000, "新房間")]   # 第一間是範圍的最小值
     _, listing, _ = call(f"{base}/api/areas")
-    assert listing == [{"file": "new.json", "title": "新區域", "area_number": 200, "rooms": 1}]
+    assert listing == [{"file": "new.json", "title": "新區域", "vnums": [3000, 3399], "rooms": 1}]
+
+
+def test_new_area_with_bad_range_still_saves(builder):
+    # 範圍寫錯也照存，讓檢查報錯（跟其他欄位一樣）
+    base, folder = builder
+    status, _, _ = call(f"{base}/api/areas", "POST", {"file": "new.json", "title": "", "vnums": [50, 10]})
+    assert status == 201
+    _, result, _ = call(f"{base}/api/areas/new.json")
+    assert any("area.header.vnums 要寫 [最小, 最大]" in p for p in result["problems"])
 
 
 def test_create_existing_file_is_refused(builder):
     base, folder = builder
-    write_area(folder, "a.json", [make_room(1)])
+    write_area(folder, "a.json", [make_room(101)])
     before = (folder / "a.json").read_bytes()
-    status, result, _ = call(f"{base}/api/areas", "POST", {"file": "a.json", "title": "x", "area_number": 300})
+    status, result, _ = call(f"{base}/api/areas", "POST", {"file": "a.json", "title": "x", "vnums": [300, 399]})
     assert status == 409 and "已經有了" in result["error"]
     assert (folder / "a.json").read_bytes() == before
 
@@ -80,16 +89,16 @@ def test_save_keeps_test_json_byte_for_byte(builder):
 
 def test_save_with_problems_still_saves(builder):
     base, folder = builder
-    data = make_area("a.json", [make_room(1, north=7)])
+    data = make_area("a.json", [make_room(101, north=107)])
     status, result, _ = call(f"{base}/api/areas/a.json", "PUT", data)
     assert status == 200
-    assert result["problems"] == ["a.json：房間 1 往 north 的出口指到不存在的房間 107"]
+    assert result["problems"] == ["a.json：房間 101 往 north 的出口指到不存在的房間 107"]
     assert json.loads((folder / "a.json").read_text(encoding="utf-8")) == data
 
 
 def test_check_does_not_write(builder):
     base, folder = builder
-    status, result, _ = call(f"{base}/api/areas/a.json/check", "POST", make_area("a.json", [make_room(1, north=7)]))
+    status, result, _ = call(f"{base}/api/areas/a.json/check", "POST", make_area("a.json", [make_room(101, north=107)]))
     assert status == 200 and len(result["problems"]) == 1
     assert not (folder / "a.json").exists()
 
@@ -97,31 +106,34 @@ def test_check_does_not_write(builder):
 def test_check_ignores_saved_copy_of_same_file(builder):
     # 硬碟上的舊版不能拿來對照，不然每間房都會跟它「重複」
     base, folder = builder
-    write_area(folder, "a.json", [make_room(1, north=2), make_room(2, south=1)])
-    data = make_area("a.json", [make_room(1, north=2), make_room(2, south=1)])
+    write_area(folder, "a.json", [make_room(101, north=102), make_room(102, south=101)])
+    data = make_area("a.json", [make_room(101, north=102), make_room(102, south=101)])
     assert call(f"{base}/api/areas/a.json/check", "POST", data)[1]["problems"] == []
 
 
 def test_check_uses_other_files(builder):
     base, folder = builder
-    write_area(folder, "b.json", [make_room(1)], area_number=200)
-    ok = make_area("a.json", [make_room(1, north=201)])
+    write_area(folder, "b.json", [make_room(201)], vnums=(200, 299))
+    ok = make_area("a.json", [make_room(101, north=201)])
     assert call(f"{base}/api/areas/a.json/check", "POST", ok)[1]["problems"] == []
-    bad = make_area("a.json", [make_room(1, north=202)])
+    bad = make_area("a.json", [make_room(101, north=202)])
     assert call(f"{base}/api/areas/a.json/check", "POST", bad)[1]["problems"] == [
-        "a.json：房間 1 往 north 的出口指到不存在的房間 202"]
+        "a.json：房間 101 往 north 的出口指到不存在的房間 202"]
+    overlap = make_area("a.json", [make_room(101)], vnums=(100, 250))      # 別的檔的範圍也拿來對照
+    assert call(f"{base}/api/areas/a.json/check", "POST", overlap)[1]["problems"] == [
+        "a.json：area.header.vnums 的範圍 100～250 跟 b.json 的 200～299 重疊"]
 
 
 def test_read_gives_room_names_of_other_files(builder):
     base, folder = builder
-    write_area(folder, "a.json", [make_room(1)])
-    write_area(folder, "b.json", [make_room(1), make_room(2)], area_number=200,
-               mobiles=[make_mobile(5)], objects=[make_object(7)])
+    write_area(folder, "a.json", [make_room(101)])
+    write_area(folder, "b.json", [make_room(201), make_room(202)], vnums=(200, 299),
+               mobiles=[make_mobile(205)], objects=[make_object(207)])
     write_json(folder, "broken.json", {"rooms": "壞掉"})        # 看不懂的檔略過，不會讓整個讀取失敗
     _, result, _ = call(f"{base}/api/areas/a.json")
-    assert result["elsewhere"] == {"201": "房間1", "202": "房間2"}
-    assert result["elsewhere_mobiles"] == {"205": "生物5"}
-    assert result["elsewhere_objects"] == {"207": "物品7"}
+    assert result["elsewhere"] == {"201": "房間201", "202": "房間202"}
+    assert result["elsewhere_mobiles"] == {"205": "生物205"}
+    assert result["elsewhere_objects"] == {"207": "物品207"}
 
 
 def test_listing_marks_unreadable_files(builder):
@@ -140,7 +152,7 @@ def test_bad_file_names_are_refused(builder, name):
                               ("POST", f"/api/areas/{name}/check", {})]:
         status, result, _ = call(base + url, method, body)
         assert status == 400 and "檔名" in result["error"], (method, url)
-    status, result, _ = call(f"{base}/api/areas", "POST", {"file": name.replace("%2F", "/"), "title": "", "area_number": 1})
+    status, result, _ = call(f"{base}/api/areas", "POST", {"file": name.replace("%2F", "/"), "title": "", "vnums": [100, 199]})
     assert status == 400
 
 

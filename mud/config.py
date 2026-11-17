@@ -7,10 +7,10 @@ PAGE_LINES_MAX = 60   # 每頁最多幾行（照 C 版：打更大的設成這�
 PROMPT = "> "          # 沒有屬性的角色用的 prompt（測試直接建的角色）；玩家的 prompt 顯示 HP、MP、MV（Player.prompt()）
 AREA_DIR = "areas"   # 區域檔的資料夾，跟 logs/ 同一層
 HELP_FILE = "help/help.json"   # help 指令的說明檔（helps.py），跟 areas/ 同一層
-START_ROOM = 101     # 登入後站的房間（遊戲裡的號碼：測試區域 100 ＋ 房間 1），要在世界區域裡
+START_ROOM = 101     # 登入後站的房間（測試區域的第一間），要在世界區域裡
 # 教學學院（副本，使用者要的）：新角色建好先進自己那一份，沒畢業前登入、死掉都回第一間（zones.home）
 ACADEMY_FILE = "academy.json"
-ACADEMY_START = 201  # 學院的第一間（學院 200 ＋ 房間 1）
+ACADEMY_START = 201  # 學院的第一間
 ACADEMY_STUDENT = "student"   # 還沒畢業的記號：玩家腳本變數 vars["academy"]["student"]，院長的腳本在畢業時拿掉（名字要一樣）
 # 定時做的事都用「每幾個 tick」定義（表在玩家角色手冊「定時做的事」）
 TICK_SECONDS = 1             # 一個 tick 幾秒：世界 tick（世界和全部動態區域共用）、每份副本的 tick、每場戰鬥的 loop

@@ -22,7 +22,7 @@ export function listItems(ctx) {
 
 export function add(ctx) {
   const obj = M.addThing(ctx.state.data, "objects");
-  if (!obj) return toast("物品號碼 1～99 都用完了");
+  if (!obj) return toast(M.noVnumText(ctx.state.data, "物品"));
   Object.assign(ctx.state, { obj, objTab: "basic", thingDraft: null, thingError: null });
   ctx.rebuild();
 }
@@ -50,13 +50,12 @@ export function render(ctx) {
       h("button", { type: "button", class: "btn", onclick: () => add(ctx) }, icon("plus", 18), "新增物品")));
     return;
   }
-  const number = M.roomNumber(state.data, obj);
   ui.thingTitle = h("h1", { class: "insp-title" }, textOf(obj.short));
   const tab = { basic: basicTab, affects: affectsTab, extra: extraTab }[state.objTab] || basicTab;
   ui.panel.replaceChildren(
     h("div", { class: "panel-head" },
       h("div", { class: "insp-names" },
-        h("span", { class: "eyebrow" }, `物品 ${numberText(obj.vnum)}` + (number !== null ? ` · 遊戲裡 ${number} 號` : "")),
+        h("span", { class: "eyebrow" }, `物品 ${numberText(obj.vnum)}`),
         ui.thingTitle,
         placesOf(ctx, "objects", obj)),
       h("button", { type: "button", class: "btn btn-text btn-danger", onclick: () => remove(ctx) }, "刪除物品")),

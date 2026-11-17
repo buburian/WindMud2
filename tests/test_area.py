@@ -10,8 +10,8 @@ AREAS = Path(__file__).resolve().parent.parent / "areas"
 MANUAL = Path(__file__).resolve().parent.parent / "docs" / "區域製作手冊.md"
 
 
-def write(folder, name, rooms, area_number=100):
-    write_area(folder, name, rooms, area_number)
+def write(folder, name, rooms, vnums=(100, 199)):
+    write_area(folder, name, rooms, vnums)
 
 
 def room(vnum, room_flags=0, sector=0, **exits):
@@ -20,8 +20,8 @@ def room(vnum, room_flags=0, sector=0, **exits):
     return r
 
 
-def test_test_area_numbers_are_area_number_plus_vnum():
-    # 測試區域的 area_number 是 100：房間 1、2 在遊戲裡是 101、102
+def test_test_area_numbers_are_full_game_numbers():
+    # 測試區域的範圍是 100～199，房間直接寫遊戲號碼 101、102
     zones.load(AREAS)
     assert set(zones.world.rooms) == {101, 102}
     assert zones.world.rooms[101].exits == {"north": 102}
@@ -38,7 +38,7 @@ def test_test_area_descriptions():
 
 
 def test_missing_field_is_a_clear_error(tmp_path):
-    r = room(1)
+    r = room(101)
     del r["extra_descriptions"]
     write(tmp_path, "a.json", [r])
     with pytest.raises(ValueError, match="少了欄位 extra_descriptions"):
@@ -54,7 +54,7 @@ def test_test_area_flags_and_sector():
 
 def test_flags_and_sector_are_stored_with_names(tmp_path):
     # 記憶體裡存的不只是數字，印出來看得到名字
-    write(tmp_path, "a.json", [room(1, room_flags="1|4", sector=3)])
+    write(tmp_path, "a.json", [room(101, room_flags="1|4", sector=3)])
     zones.load(tmp_path)
     assert repr(zones.world.rooms[101].room_flags) == "<RoomFlag.DARK|NO_MOB: 5>"
     assert zones.world.rooms[101].sector is area.Sector.FOREST
@@ -102,6 +102,12 @@ def test_attacks_match_manual():
     assert pairs == [(a.value, area.ATTACK_NAMES[a]) for a in area.Attack]
 
 
+def test_mob_races_match_manual():
+    # 手冊的種族表一列放三組（名稱、中文）
+    rows = manual_table("### race（種族）")
+    assert list(area.MOB_RACES) == [row[i].lower() for row in rows for i in (0, 2, 4) if row[i]]
+
+
 def test_area_types_match_manual():
     # 手冊「三種區域」表的第一欄就是區域檔裡寫的 type
     assert [row[0] for row in manual_table("## 三種區域")] == [t.value for t in area.AreaType]
@@ -129,80 +135,106 @@ def test_parse_flags_rejects_everything_else(value):
 
 
 def test_bad_room_flags_in_file_is_an_error(tmp_path):
-    write(tmp_path, "a.json", [room(1, room_flags="1|x")])
+    write(tmp_path, "a.json", [room(101, room_flags="1|x")])
     with pytest.raises(ValueError, match="room_flags"):
         zones.load(tmp_path)
 
 
 @pytest.mark.parametrize("sector", ["0", "1|2", -1, True, 1.5, None])
 def test_sector_must_be_one_integer(tmp_path, sector):
-    write(tmp_path, "a.json", [room(1, sector=sector)])
+    write(tmp_path, "a.json", [room(101, sector=sector)])
     with pytest.raises(ValueError, match="sector"):
         zones.load(tmp_path)
 
 
-def test_exit_100_or_more_is_a_full_number(tmp_path):
-    # 出口寫 100 以上就是完整號碼，可以通到別的區域
-    write(tmp_path, "a.json", [room(1, north=201)], area_number=100)
-    write(tmp_path, "b.json", [room(1, south=101)], area_number=200)
+def test_exit_outside_the_range_links_to_another_file(tmp_path):
+    # 號碼在自己的範圍外就是外連：通到別的區域檔
+    write(tmp_path, "a.json", [room(101, north=201)], vnums=(100, 199))
+    write(tmp_path, "b.json", [room(201, south=101)], vnums=(200, 299))
     zones.load(tmp_path)
     assert zones.world.rooms[101].exits == {"north": 201}
     assert zones.world.rooms[201].exits == {"south": 101}
 
 
-@pytest.mark.parametrize("vnum", [0, 100])
-def test_room_number_must_be_1_to_99(tmp_path, vnum):
+def test_room_number_must_be_in_the_range(tmp_path):
+    write(tmp_path, "a.json", [room(250)])
+    with pytest.raises(ValueError, match="房間 250 的號碼 250 不在這個檔的範圍 100～199"):
+        zones.load(tmp_path)
+
+
+@pytest.mark.parametrize("vnum", [0, 50, 99])
+def test_game_numbers_1_to_99_are_reserved(tmp_path, vnum):
     write(tmp_path, "a.json", [room(vnum)])
-    with pytest.raises(ValueError, match="1～99"):
+    with pytest.raises(ValueError, match=f"房間號碼要寫完整的遊戲號碼（100 以上，1～99 是保留的），不能是 {vnum}"):
         zones.load(tmp_path)
 
 
-@pytest.mark.parametrize("area_number", [0, 50])
-def test_game_numbers_1_to_99_are_reserved(tmp_path, area_number):
-    # area_number 0 → 房間 1 變 1；area_number 50 → 房間 1 變 51：都落在保留的 1～99
-    write(tmp_path, "a.json", [room(1)], area_number=area_number)
-    with pytest.raises(ValueError, match="保留"):
-        zones.load(tmp_path)
+def test_more_than_99_rooms_in_one_file(tmp_path):
+    # 跟 C 版一樣，一個檔可以放超過 99 間（舊版的秋風城有 179 間）
+    rooms = [room(v, north=v + 1) for v in range(1000, 1149)] + [room(1149, north=1000)]
+    write(tmp_path, "a.json", rooms, vnums=(1000, 1199))
+    zones.load(tmp_path)
+    assert len(zones.world.rooms) == 150
 
 
-def test_missing_area_number_is_an_error(tmp_path):
-    data = make_area("a.json", [room(1)])
-    del data["area"]["header"]["area_number"]
+def test_missing_vnums_is_an_error(tmp_path):
+    data = make_area("a.json", [room(101)])
+    del data["area"]["header"]["vnums"]
     write_json(tmp_path, "a.json", data)
-    with pytest.raises(ValueError, match="area_number"):
+    with pytest.raises(ValueError, match="area.header 少了欄位 vnums"):
+        zones.load(tmp_path)
+
+
+@pytest.mark.parametrize("vnums", [[100], [199, 100], [50, 150], [100, 199, 300], "100-199", [100.0, 199], None])
+def test_vnums_must_be_a_range(tmp_path, vnums):
+    data = make_area("a.json", [room(101)])
+    data["area"]["header"]["vnums"] = vnums
+    write_json(tmp_path, "a.json", data)
+    with pytest.raises(ValueError, match="area.header.vnums 要寫 \\[最小, 最大\\] 兩個整數，最小不能小於 100"):
+        zones.load(tmp_path)
+
+
+def test_ranges_must_not_overlap(tmp_path):
+    write(tmp_path, "a.json", [room(101)], vnums=(100, 199))
+    write(tmp_path, "b.json", [room(201)], vnums=(150, 250))
+    with pytest.raises(ValueError, match="b.json：area.header.vnums 的範圍 150～250 跟 a.json 的 100～199 重疊"):
         zones.load(tmp_path)
 
 
 def test_load_reports_first_problem_and_how_many(tmp_path):
     # 有好幾個問題時，開機訊息是第一個問題，再加上總數和查看全部的指令
-    write(tmp_path, "a.json", [room(1, sector=99, north=9)])
+    write(tmp_path, "a.json", [room(101, sector=99, north=109)])
     with pytest.raises(ValueError, match="sector.*共 2 個問題.*mud.areacheck"):
         zones.load(tmp_path)
 
 
-def test_exit_number_below_1_is_an_error(tmp_path):
-    write(tmp_path, "a.json", [room(1, north=0)])
-    with pytest.raises(ValueError, match="出口號碼"):
+@pytest.mark.parametrize("to_room", [0, 9])
+def test_exit_to_reserved_number_is_an_error(tmp_path, to_room):
+    write(tmp_path, "a.json", [room(101, north=to_room)])
+    with pytest.raises(ValueError, match=f"往 north 的出口的 to_room 要寫完整的遊戲號碼（100 以上，1～99 是保留的），不能是 {to_room}"):
         zones.load(tmp_path)
 
 
-def test_duplicate_game_number_is_an_error(tmp_path):
-    # 兩個區域的 area_number 一樣，房間 1 都會變成 101
-    write(tmp_path, "a.json", [room(1)])
-    write(tmp_path, "b.json", [room(1)])
-    with pytest.raises(ValueError, match="重複"):
-        zones.load(tmp_path)
+def test_same_numbers_in_overlapping_files(tmp_path):
+    # 兩個檔的範圍一樣：範圍重疊，房間 101 也重複
+    write(tmp_path, "a.json", [room(101)])
+    write(tmp_path, "b.json", [room(101)])
+    problems = area.check_files(sorted(tmp_path.glob("*.json")))
+    assert problems[tmp_path / "b.json"] == ["b.json：area.header.vnums 的範圍 100～199 跟 a.json 的 100～199 重疊",
+                                             "b.json：房間 101 跟 a.json 重複"]
 
 
-def test_exit_to_missing_room_is_an_error(tmp_path):
-    write(tmp_path, "a.json", [room(1, north=9)])
-    with pytest.raises(ValueError, match="不存在"):
+@pytest.mark.parametrize("to_room", [109, 5000])
+def test_exit_to_missing_room_is_an_error(tmp_path, to_room):
+    # 範圍裡（109）、範圍外（5000，外連）都要真的有那間房
+    write(tmp_path, "a.json", [room(101, north=to_room)])
+    with pytest.raises(ValueError, match=f"房間 101 往 north 的出口指到不存在的房間 {to_room}"):
         zones.load(tmp_path)
 
 
 def test_failed_load_keeps_old_rooms(tmp_path):
     zones.load(AREAS)
-    write(tmp_path, "a.json", [room(1, north=9)])
+    write(tmp_path, "a.json", [room(101, north=109)])
     with pytest.raises(ValueError):
         zones.load(tmp_path)
     assert set(zones.world.rooms) == {101, 102}

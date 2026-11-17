@@ -25,7 +25,7 @@ class FakeWriter:
 @pytest.fixture
 def ming(tmp_path, monkeypatch):
     monkeypatch.setattr(save, "PLAYER_DIR", tmp_path / "players")
-    write_json(tmp_path, "a.json", make_area("a.json", [make_room(1)], 100))
+    write_json(tmp_path, "a.json", make_area("a.json", [make_room(101)], (100, 199)))
     zones.load(tmp_path)
     make_player_file("Ming")
     p = save.player_from(save.load_data("Ming"), FakeWriter())

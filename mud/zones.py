@@ -42,12 +42,12 @@ class Zone:
         self.empty_ticks = 0                # 連續幾個 tick 沒有玩家
         self.released = False
 
-    def add_area(self, name, base, data):
+    def add_area(self, name, data):
         """把一個區域檔（已經檢查過）建進這個區域物件：房間，和重置要用的資料。"""
-        reset = resets.AreaReset(name, base, data)
+        reset = resets.AreaReset(name, data)
         self.areas.append(reset)
         for r in data["rooms"]:
-            room = area.build_room(base, r)
+            room = area.build_room(r)
             room.zone, room.area = self, reset
             scripts.attach_room(room, name, r)
             self.rooms[room.vnum] = room
@@ -86,7 +86,7 @@ class Zone:
 world = None                # 世界區域（Zone）
 dynamic = {}                # 動態區域的檔名 → 現在有建立的那一份（Zone）
 instances = {}              # (副本的檔名, 擁有者) → 那一份副本（Zone）
-templates = {}              # 動態區域、副本的檔名 → (AreaType, area_number, 讀好的區域檔)
+templates = {}              # 動態區域、副本的檔名 → (AreaType, 讀好的區域檔)
 dynamic_rooms = {}          # 動態區域的房間遊戲號碼 → 檔名：走到這些號碼時要找到（或建立）那個動態區域
 world_task = None           # 世界 tick
 
@@ -109,19 +109,18 @@ def load(directory):
     entries = [(path, json.loads(path.read_text(encoding="utf-8"))) for path in paths]
     scripts.load(entries)                   # 建房間之前先讀好腳本（建房間、放生物時要接上）
     for path, data in entries:
-        header = data["area"]["header"]
-        kind, base = AreaType(header["type"]), header["area_number"]
+        kind = AreaType(data["area"]["header"]["type"])
         for m in data["mobiles"]:           # 生物用遊戲號碼收成一張表：M 可以放別的區域檔的生物
-            new_mobiles[area.resolve(base, m["vnum"])] = (base, m)   # base：掉落表的 obj_vnum 用牠自己那個檔換算
+            new_mobiles[m["vnum"]] = m
         for o in data["objects"]:           # 物品也是：掉落表可以掉別的區域檔的物品
-            new_objects[area.resolve(base, o["vnum"])] = o
+            new_objects[o["vnum"]] = o
         if kind == AreaType.WORLD:
-            new_world.add_area(path.name, base, data)
+            new_world.add_area(path.name, data)
             continue
-        new_templates[path.name] = (kind, base, data)
+        new_templates[path.name] = (kind, data)
         if kind == AreaType.DYNAMIC:
             for r in data["rooms"]:
-                new_dynamic_rooms[base + r["vnum"]] = path.name
+                new_dynamic_rooms[r["vnum"]] = path.name
     stop()
     world, templates, dynamic_rooms = new_world, new_templates, new_dynamic_rooms
     resets.mobiles, objects.protos = new_mobiles, new_objects
@@ -259,7 +258,7 @@ def release(zone):
 
 
 def _build(name):
-    kind, base, data = templates[name]
+    kind, data = templates[name]
     zone = Zone(kind, name)
-    zone.add_area(name, base, data)
+    zone.add_area(name, data)
     return zone

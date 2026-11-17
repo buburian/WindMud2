@@ -27,9 +27,8 @@ REPORT_EVERY = 60                           # 同一個錯（同一個檔、同�
 class Script:
     """一個 .lua 檔（好幾個主人可以用同一個檔，變數各自分開）。"""
 
-    def __init__(self, area, base, file, code, functions):
+    def __init__(self, area, file, code, functions):
         self.area = area                    # 區域檔名，不含 .json（腳本資料夾、玩家 vars 都用它）
-        self.base = base                    # 那個區域檔的 area_number（號碼規則）
         self.file = file
         self.name = f"{area}/{file}"        # 錯誤訊息裡的名字
         self.code = code
@@ -76,7 +75,6 @@ def load(entries):
     library.clear()
     mob_scripts.clear()
     for path, data in entries:
-        base = data["area"]["header"]["area_number"]
         for kind in ("rooms", "mobiles"):
             for x in data[kind]:
                 s = x["script"]
@@ -86,9 +84,9 @@ def load(entries):
                 if key not in library:
                     code = (path.parent / path.stem / s["file"]).read_text(encoding="utf-8")
                     found, _ = lua.functions(code, f"{path.stem}/{s['file']}", lua.check_env())
-                    library[key] = Script(path.stem, base, s["file"], code, found)
+                    library[key] = Script(path.stem, s["file"], code, found)
                 if kind == "mobiles":
-                    mob_scripts[base + x["vnum"]] = (library[key], s["timer"])
+                    mob_scripts[x["vnum"]] = (library[key], s["timer"])
 
 
 def attach(owner, script, timer):

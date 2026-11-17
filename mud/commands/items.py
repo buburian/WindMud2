@@ -10,7 +10,6 @@ from .. import inventory, objects, save, scripts, stats
 from ..act import TO_NOTVICT, TO_ROOM, TO_VICT
 from ..characters import find_in_room
 from ..npcs import Npc
-from ..script_api import Vnum
 from ..area import ATTACK_NAMES, CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE, ITEM_TYPE_NAMES, WEAPON_KIND_NAMES, ContainerFlag
 from ..equipment import COLOR_NAMES, SLOT_NAMES, STAT_NAMES, TWO_HANDED
 
@@ -182,7 +181,7 @@ def do_give(ch, arg):
     out.send()
     keep(ch)
     if isinstance(victim, Npc):             # 腳本的 on_give(actor, item, gold)：給完以後
-        scripts.fire_owner(victim, "on_give", ch, ch, Vnum(obj.vnum), 0)
+        scripts.fire_owner(victim, "on_give", ch, ch, obj.vnum, 0)
 
 
 GIVEN_TO_YOU = "$n把【$t】拿給你。"           # 給東西：收到的人看到的（照 C 版；腳本的 give_item 也用，使用者要的）

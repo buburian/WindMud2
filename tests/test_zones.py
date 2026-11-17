@@ -27,11 +27,11 @@ class FakeWriter:
 @pytest.fixture
 def folder(tmp_path):
     # 世界：101 往北是動態區域的 201。動態區域：201 往南回 101、往北 202。副本：301、302 南北相連。
-    write_area(tmp_path, "world.json", [make_room(1, north=201)], area_number=100)
-    write_area(tmp_path, "dyn.json", [make_room(1, south=101, north=2), make_room(2, south=1)],
-               area_number=200, kind="dynamic")
-    write_area(tmp_path, "inst.json", [make_room(1, north=2), make_room(2, south=1)],
-               area_number=300, kind="instance")
+    write_area(tmp_path, "world.json", [make_room(101, north=201)], vnums=(100, 199))
+    write_area(tmp_path, "dyn.json", [make_room(201, south=101, north=202), make_room(202, south=201)],
+               vnums=(200, 299), kind="dynamic")
+    write_area(tmp_path, "inst.json", [make_room(301, north=302), make_room(302, south=301)],
+               vnums=(300, 399), kind="instance")
     zones.load(tmp_path)
     yield tmp_path
     characters.clear()

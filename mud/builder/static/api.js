@@ -20,7 +20,7 @@ async function request(method, url, body) {
 const areaUrl = (file) => `/api/areas/${encodeURIComponent(file)}`;
 
 export const listAreas = () => request("GET", "/api/areas");
-export const createArea = (file, title, area_number) => request("POST", "/api/areas", { file, title, area_number });
+export const createArea = (file, title, vnums) => request("POST", "/api/areas", { file, title, vnums });
 export const readArea = (file) => request("GET", areaUrl(file));
 export const saveArea = (file, data) => request("PUT", areaUrl(file), data);
 export const checkArea = (file, data) => request("POST", `${areaUrl(file)}/check`, data);

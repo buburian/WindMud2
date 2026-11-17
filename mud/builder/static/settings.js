@@ -10,12 +10,14 @@ export function openSettings({ data, roomChip, onDone }) {
   const area = data.area;
   const header = area.header;
   const levels = Array.isArray(header.levels) ? header.levels : [];
+  const vnums = Array.isArray(header.vnums) ? header.vnums : [];
   const inputs = {
     title: textInput({ id: "area-title", value: textOf(header.title) }),
     author: textInput({ id: "area-author", value: textOf(header.author) }),
     min: textInput({ id: "area-level-min", value: numberText(levels[0]) }),
     max: textInput({ id: "area-level-max", value: numberText(levels[1]) }),
-    number: textInput({ id: "area-number", value: numberText(header.area_number) }),
+    vmin: textInput({ id: "area-vnum-min", value: numberText(vnums[0]) }),
+    vmax: textInput({ id: "area-vnum-max", value: numberText(vnums[1]) }),
     type: selectInput({ id: "area-type", value: header.type, options: AREA_TYPES }),
     recall: textInput({ id: "area-recall", value: numberText(area.recall) }),
   };
@@ -38,7 +40,7 @@ export function openSettings({ data, roomChip, onDone }) {
     if (changed("title")) set(header, "title", inputs.title.value);
     if (changed("author")) set(header, "author", inputs.author.value);
     if (changed("min") || changed("max")) set(header, "levels", [parseNumber(inputs.min.value), parseNumber(inputs.max.value)]);
-    if (changed("number")) set(header, "area_number", parseNumber(inputs.number.value));
+    if (changed("vmin") || changed("vmax")) set(header, "vnums", [parseNumber(inputs.vmin.value), parseNumber(inputs.vmax.value)]);
     if (changed("type")) set(header, "type", inputs.type.value);
     if (changed("recall")) set(area, "recall", parseNumber(inputs.recall.value));
     for (const r of rules) if (r.input.checked !== r.was) set(area, r.rule.key, r.input.checked ? 1 : null);
@@ -59,8 +61,13 @@ export function openSettings({ data, roomChip, onDone }) {
           field({ id: "area-level-min", label: "最低等級", input: inputs.min, style: "flex: 0 0 96px" }),
           h("span", { "aria-hidden": "true", style: "color: var(--ink2)" }, "～"),
           field({ id: "area-level-max", label: "最高等級", input: inputs.max, style: "flex: 0 0 96px" }),
-          h("span", { class: "code" }, "levels")),
-        field({ id: "area-number", label: "區域號碼", code: "area_number", input: inputs.number })),
+          h("span", { class: "code" }, "levels"))),
+      h("div", { class: "row" },
+        h("div", { class: "row", style: "flex: 0 0 auto; gap: 8px" },
+          field({ id: "area-vnum-min", label: "最小號碼", input: inputs.vmin, style: "flex: 0 0 96px" }),
+          h("span", { "aria-hidden": "true", style: "color: var(--ink2)" }, "～"),
+          field({ id: "area-vnum-max", label: "最大號碼", input: inputs.vmax, style: "flex: 0 0 96px" }),
+          h("span", { class: "code" }, "vnums"))),
       h("div", { class: "row" },
         field({ id: "area-type", label: "區域種類", code: "type", input: inputs.type, extra: selectArrow(), style: "flex: 0 0 220px" })),
       h("div", { class: "row", style: "gap: 12px" },

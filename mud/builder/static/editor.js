@@ -323,7 +323,7 @@ function renderList() {
 
 function addRoom() {
   const room = M.addRoom(state.data);
-  if (!room) return toast("房間號碼 1～99 都用完了");
+  if (!room) return toast(M.noVnumText(state.data, "房間"));
   Object.assign(state, { selected: room, exitDir: null, vnumDraft: null, vnumError: null });
   rebuild();
 }
@@ -331,7 +331,7 @@ function addRoom() {
 // 從選到的房間往 dir 加一間新房（兩邊接好），並選它
 function grow(dir) {
   const room = M.addRoomTowards(state.data, state.selected, dir);
-  if (!room) return toast("房間號碼 1～99 都用完了");
+  if (!room) return toast(M.noVnumText(state.data, "房間"));
   Object.assign(state, { selected: room, exitDir: null, vnumDraft: null, vnumError: null });
   rebuild();
 }
@@ -417,7 +417,7 @@ function laneLabel(p, d, offset, exit, [ex, ey]) {
     : { ...at(p.x, p.y, ex, ey + (offset > 0 ? 6 : -6)), transform: offset > 0 ? "translate(-50%, 0)" : "translate(-50%, -100%)" };
   const room = M.exitRoom(state.data, exit);
   if (room) return h("button", { type: "button", class: "lane-label", style, onclick: () => select(room) }, numberText(room.vnum));
-  const t = M.target(state.data, exit);
+  const t = M.target(exit);
   const missing = t === null || state.elsewhere[t] === undefined;
   return h("span", { class: "lane-label" + (missing ? " lane-missing" : ""), style }, t === null ? "?" : String(t));
 }
@@ -469,7 +469,7 @@ function roomTile(room, style, current, wide) {
 
 // 通到別的區域（寫完整號碼和房間名），或號碼不對、找不到的出口
 function farTile(exit, style, wide) {
-  const t = M.target(state.data, exit);
+  const t = M.target(exit);
   const name = t === null ? undefined : state.elsewhere[t];
   return h("div", { class: "tile tile-far" + (name === undefined ? " tile-missing" : "") + (wide ? " tile-wide" : ""), style },
     h("span", { class: "tile-num" }, t === null ? "?" : String(t)),
@@ -637,13 +637,12 @@ function renderInspector() {
     ui.inspector.replaceChildren();
     return;
   }
-  const number = M.roomNumber(state.data, room);
   ui.title = h("h1", { class: "insp-title" }, textOf(room.name));
   const render = { basic: basicTab, exits: exitsTab, flags: flagsTab, extra: extraTab, resets: (r) => RR.resetsTab(ctx, r) }[state.tab];
   ui.inspector.replaceChildren(
     h("div", { class: "insp-head" },
       h("div", { class: "insp-names" },
-        h("span", { class: "eyebrow" }, `房間 ${numberText(room.vnum)}` + (number !== null ? ` · 遊戲裡 ${number} 號` : "")),
+        h("span", { class: "eyebrow" }, `房間 ${numberText(room.vnum)}`),
         ui.title),
       h("button", { type: "button", class: "btn btn-text btn-danger", onclick: removeRoom }, "刪除房間")),
     h("div", { class: "tabs", role: "tablist" }, TABS.map(([key, label]) =>
@@ -703,7 +702,7 @@ function roomChip(number) {
 // 號碼旁的名字標籤（kind 是 rooms、mobiles、objects）：這個檔或別的檔找得到是綠色，找不到是紅色
 function thingChip(kind, number) {
   if (number === null || number === undefined || number === "") return null;
-  const t = M.gameNumber(state.data, number);
+  const t = M.gameNumber(number);
   if (t === null) return chip("bad", "號碼不對");
   const what = { rooms: "房間", mobiles: "生物", objects: "物品" }[kind];
   const item = M.findByNumber(state.data, kind, t);
@@ -715,7 +714,7 @@ function thingChip(kind, number) {
 function exitLabel(exit) {
   const other = M.exitRoom(state.data, exit);
   if (other) return `房間 ${numberText(other.vnum)}`;
-  const t = M.target(state.data, exit);
+  const t = M.target(exit);
   return t === null ? "?" : String(t);
 }
 

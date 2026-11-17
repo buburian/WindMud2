@@ -33,24 +33,24 @@ def obj(vnum, short, keywords, item_type, values=(0, 0, 0, 0), wear="1"):
 
 
 OBJECTS = [
-    obj(1, "寶箱", "chest 寶箱", 15, (50, 1 + 4 + 8, 4, 0)),          # 可以關、關著、鎖著，鑰匙是物品 4
-    obj(2, "袋子", "bag 袋子", 15, (50, 1, -1, 0)),                    # 可以關、開著、沒有鎖
-    obj(3, "木盒", "crate 木盒", 15, (50, 0, -1, 0)),                  # 關不起來
-    obj(4, "鑰匙", "key 鑰匙", 18),
-    obj(5, "藥水", "potion 藥水", 10, (5, "cure light", "", "")),
-    obj(6, "項鍊", "necklace 項鍊", 9, wear="1|4"),
-    obj(7, "封箱", "sealed 封箱", 15, (50, 16 + 4 + 1, -1, 1234)),     # 可以封印、有密碼、關著
-    obj(8, "封印盒", "seal 封印盒", 15, (50, 32, -1, 0)),               # 封印著：撿不起來
+    obj(101, "寶箱", "chest 寶箱", 15, (50, 1 + 4 + 8, 104, 0)),      # 可以關、關著、鎖著，鑰匙是物品 104
+    obj(102, "袋子", "bag 袋子", 15, (50, 1, -1, 0)),                  # 可以關、開著、沒有鎖
+    obj(103, "木盒", "crate 木盒", 15, (50, 0, -1, 0)),                # 關不起來
+    obj(104, "鑰匙", "key 鑰匙", 18),
+    obj(105, "藥水", "potion 藥水", 10, (5, "cure light", "", "")),
+    obj(106, "項鍊", "necklace 項鍊", 9, wear="1|4"),
+    obj(107, "封箱", "sealed 封箱", 15, (50, 16 + 4 + 1, -1, 1234)),   # 可以封印、有密碼、關著
+    obj(108, "封印盒", "seal 封印盒", 15, (50, 32, -1, 0)),             # 封印著：撿不起來
 ]
 
 
 @pytest.fixture
 def room(tmp_path):
     """房間 101 往北是木門（鑰匙是物品 104，一開始開著），通到 102。"""
-    rooms = [make_room(1, north=2), make_room(2, south=1)]
+    rooms = [make_room(101, north=102), make_room(102, south=101)]
     for r, d in ((rooms[0], "north"), (rooms[1], "south")):
-        r["exits"][d].update(locks=1, keywords="木門 door", key=4)
-    write_json(tmp_path, "a.json", make_area("a.json", rooms, 100, objects=OBJECTS))
+        r["exits"][d].update(locks=1, keywords="木門 door", key=104)
+    write_json(tmp_path, "a.json", make_area("a.json", rooms, (100, 199), objects=OBJECTS))
     zones.load(tmp_path)
     yield zones.world.rooms[101]
     characters.clear()

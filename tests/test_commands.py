@@ -251,7 +251,7 @@ def test_sign_is_only_in_its_own_room(world):
 
 def test_look_direction_without_description(online, tmp_path):
     # 有出口但沒寫描述（make_room 的出口描述是空字串）
-    write_area(tmp_path, "a.json", [make_room(1, north=2), make_room(2)])
+    write_area(tmp_path, "a.json", [make_room(101, north=102), make_room(102)])
     stand_in(tmp_path, online)
     ming = online["小明"]
     commands.command(ming, "look n")
@@ -260,8 +260,8 @@ def test_look_direction_without_description(online, tmp_path):
 
 def test_things_come_before_directions(online, tmp_path):
     # 照 C 版：名字跟方向撞在一起時，先看東西
-    r = make_room(1)
-    r["exits"]["north"] = make_exit(1, "往北看。\n")
+    r = make_room(101)
+    r["exits"]["north"] = make_exit(101, "往北看。\n")
     r["extra_descriptions"] = [{"keywords": "north 北牆", "description": "北牆上刻著字。\n"}]
     write_area(tmp_path, "a.json", [r])
     stand_in(tmp_path, online)

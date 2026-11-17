@@ -18,7 +18,7 @@ from mud.config import ENCODING
 from mud.npcs import Npc
 from mud.players import Player
 
-# 測試區域的物品：(檔案號碼, 名字, keywords, item_type, wear_flags, extra_flags, values, 重量, affects)
+# 測試區域的物品：(號碼 − 100, 名字, keywords, item_type, wear_flags, extra_flags, values, 重量, affects)
 OBJECTS = [
     (1, "藥水", "potion 藥水", 10, "1", 0, [5, "cure light", "", ""], 1, []),
     (2, "長劍", "sword 長劍", 5, "1|8192", 0, [2, 0, 0, 3], 5, [{"location": 1, "modifier": 2}]),     # 力量 +2、重砍
@@ -46,17 +46,17 @@ def world(tmp_path, monkeypatch):
     """世界：房間 101、102 南北相連，102 有一隻野狗；物品 101～110（上面的表）。"""
     monkeypatch.setattr(fight, "TICK_SECONDS", 1000)
     objs = []
-    for vnum, short, keywords, item_type, wear, extra, values, weight, affects in OBJECTS:
-        o = make_object(vnum)
+    for n, short, keywords, item_type, wear, extra, values, weight, affects in OBJECTS:
+        o = make_object(100 + n)
         o.update(short=short, keywords=keywords, item_type=item_type, wear_flags=wear, extra_flags=extra, values=values,
                  weight=weight, affects=affects, long=f"一個{short}放在這裡。")
         objs.append(o)
-    dog = make_mobile(1)
+    dog = make_mobile(101)
     dog.update(short="野狗", keywords="dog 野狗", level=5, tier="normal", tier_roll=None, attack=None, defense=None,
                archetype=None, act=0, position=7, sex=0, long="", drops=[])
-    rooms = [make_room(1, north=2), make_room(2, south=1)]
-    reset = [{"cmd": "M", "rare": 0, "mob_vnum": 1, "limit": 1, "room_vnum": 2, "comment": ""}]
-    write_json(tmp_path, "a.json", make_area("a.json", rooms, 100, mobiles=[dog], resets=reset, objects=objs))
+    rooms = [make_room(101, north=102), make_room(102, south=101)]
+    reset = [{"cmd": "M", "rare": 0, "mob_vnum": 101, "limit": 1, "room_vnum": 102, "comment": ""}]
+    write_json(tmp_path, "a.json", make_area("a.json", rooms, (100, 199), mobiles=[dog], resets=reset, objects=objs))
     zones.load(tmp_path)
     yield tmp_path
     characters.clear()

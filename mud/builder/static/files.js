@@ -23,7 +23,7 @@ export async function showFiles() {
     return;
   }
   list.append(h("div", { class: "file-row file-row-head", "aria-hidden": "true" },
-    h("span", null, "區域名稱"), h("span", null, "檔名"), h("span", null, "區域號碼"), h("span", null, "房間")));
+    h("span", null, "區域名稱"), h("span", null, "檔名"), h("span", null, "號碼範圍"), h("span", null, "房間")));
   for (const item of items) {
     if (item.error) {
       list.append(h("div", { class: "file-row" },
@@ -32,7 +32,7 @@ export async function showFiles() {
       list.append(h("a", { class: "file-row", href: "#" + encodeURIComponent(item.file) },
         h("span", { class: "file-title" }, String(item.title ?? "")),
         h("span", { class: "file-name" }, item.file),
-        h("span", null, String(item.area_number ?? "")),
+        h("span", null, rangeText(item.vnums)),
         h("span", null, String(item.rooms))));
     }
   }
@@ -41,10 +41,14 @@ export async function showFiles() {
   }
 }
 
+// header.vnums 顯示成「3000～3399」；寫錯的照原樣
+const rangeText = (v) => (Array.isArray(v) && v.length === 2 ? `${v[0]}～${v[1]}` : JSON.stringify(v ?? ""));
+
 function newFileDialog() {
   const fileInput = textInput({ id: "new-file" });
   const titleInput = textInput({ id: "new-title" });
-  const numberInput = textInput({ id: "new-number" });
+  const minInput = textInput({ id: "new-vnum-min" });
+  const maxInput = textInput({ id: "new-vnum-max" });
   const fileField = h("div", { style: "flex: 1 1 0; min-width: 0" });
   const showFileField = (error) => fileField.replaceChildren(
     field({ id: "new-file", label: "檔名", code: "file", input: fileInput, error }));
@@ -54,7 +58,7 @@ function newFileDialog() {
     let name = fileInput.value.trim();
     if (name && !name.endsWith(".json")) name += ".json";
     try {
-      await api.createArea(name, titleInput.value, parseNumber(numberInput.value));
+      await api.createArea(name, titleInput.value, [parseNumber(minInput.value), parseNumber(maxInput.value)]);
     } catch (e) {
       showFileField(e.message);
       fileInput.focus();
@@ -70,8 +74,12 @@ function newFileDialog() {
     body: [
       fileField,
       h("div", { class: "row" },
-        field({ id: "new-title", label: "區域名稱", code: "title", input: titleInput }),
-        field({ id: "new-number", label: "區域號碼", code: "area_number", input: numberInput, style: "flex: 0 0 160px" })),
+        field({ id: "new-title", label: "區域名稱", code: "title", input: titleInput })),
+      h("div", { class: "row", style: "gap: 8px" },
+        field({ id: "new-vnum-min", label: "最小號碼", input: minInput, style: "flex: 0 0 120px" }),
+        h("span", { "aria-hidden": "true", style: "color: var(--ink2)" }, "～"),
+        field({ id: "new-vnum-max", label: "最大號碼", input: maxInput, style: "flex: 0 0 120px" }),
+        h("span", { class: "code" }, "vnums")),
     ],
     footer: [
       h("button", { type: "button", class: "btn btn-text", onclick: () => close() }, "取消"),

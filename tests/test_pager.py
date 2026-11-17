@@ -37,7 +37,7 @@ def ming(tmp_path, monkeypatch):
     monkeypatch.setattr(save, "PLAYER_DIR", tmp_path / "players")
     monkeypatch.setattr(commands, "COMMANDS", commands.COMMANDS + [("many", do_many, Position.DEAD),
                                                                    ("boom", do_boom, Position.DEAD)])
-    write_json(tmp_path, "a.json", make_area("a.json", [make_room(1)], 100))
+    write_json(tmp_path, "a.json", make_area("a.json", [make_room(101)], (100, 199)))
     zones.load(tmp_path)
     make_player_file("Ming")
     p = save.player_from(save.load_data("Ming"), FakeWriter())
@@ -100,7 +100,7 @@ def test_q_stops_paging(ming):
 def test_typing_a_command_stops_paging_and_runs_it(ming):
     do(ming, "many 45")
     out = do(ming, "look")                                                        # 使用者選的：結束分頁，照常執行
-    assert out.startswith("【房間1】") and out.endswith(normal_prompt(ming)) and ming.pages is None
+    assert out.startswith("【房間101】") and out.endswith(normal_prompt(ming)) and ming.pages is None
 
 
 def test_page_size_is_the_players_setting(ming):

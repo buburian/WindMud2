@@ -9,7 +9,10 @@
       ],
       "author": "WindMud2",
       "title": "教學學院",
-      "area_number": 200,
+      "vnums": [
+        200,
+        299
+      ],
       "type": "instance"
     },
     "recall": 101,
@@ -19,7 +22,7 @@
   },
   "rooms": [
     {
-      "vnum": 1,
+      "vnum": 201,
       "name": "學院大門",
       "description": "你站在教學學院的大門口，石砌的拱門上刻著「學而時習之」。\n往北是學院的走廊。\n{Y【教學】{x打 look（或 l）可以再看一次四周。\n{Y【教學】{x打 north（或 n）往北走。\n",
       "room_flags": 8,
@@ -30,14 +33,14 @@
           "keywords": "",
           "locks": 0,
           "key": -1,
-          "to_room": 2
+          "to_room": 202
         }
       },
       "extra_descriptions": [],
       "script": null
     },
     {
-      "vnum": 2,
+      "vnum": 202,
       "name": "走廊",
       "description": "一條安靜的走廊，牆上掛著歷屆畢業生的名牌。\n北邊是一扇鐵門，東邊是儲藏室的木門，往南回到大門。\n{Y【教學】{x北邊的鐵門鎖著，鑰匙放在東邊的儲藏室。\n{Y【教學】{x打 open east 打開木門，再打 east（或 e）走進去。\n",
       "room_flags": 8,
@@ -47,29 +50,29 @@
           "description": "一扇厚重的鐵門，門上有個銅色的鑰匙孔。\n",
           "keywords": "鐵門 iron",
           "locks": 1,
-          "key": 1,
-          "to_room": 4
+          "key": 201,
+          "to_room": 204
         },
         "east": {
           "description": "儲藏室的木門，門縫裡飄出灰塵的味道。\n",
           "keywords": "木門 wooden",
           "locks": 1,
           "key": -1,
-          "to_room": 3
+          "to_room": 203
         },
         "south": {
           "description": "往南看，是學院的大門。\n",
           "keywords": "",
           "locks": 0,
           "key": -1,
-          "to_room": 1
+          "to_room": 201
         }
       },
       "extra_descriptions": [],
       "script": null
     },
     {
-      "vnum": 3,
+      "vnum": 203,
       "name": "儲藏室",
       "description": "堆滿木箱和舊掃帚的小房間，空氣裡有灰塵的味道。\n往西回到走廊。\n{Y【教學】{x打 get key 把地上的鑰匙撿起來，打 inventory（或 i）看背包。\n{Y【教學】{x回到走廊（west 或 w）以後，打 unlock north 開鎖，再打 open north 開門。\n",
       "room_flags": 8,
@@ -80,14 +83,14 @@
           "keywords": "木門 wooden",
           "locks": 1,
           "key": -1,
-          "to_room": 2
+          "to_room": 202
         }
       },
       "extra_descriptions": [],
       "script": null
     },
     {
-      "vnum": 4,
+      "vnum": 204,
       "name": "技能教室",
       "description": "擺滿書架的教室，黑板上寫滿了各種招式的名字。\n往北是教官室，往南回到走廊。\n{Y【教學】{x打 skills（或 sk）看你會的技能：傷害、要花多少 MV 或 MP、多久才能再用一次。\n{Y【教學】{x放技能打 use 技能 目標：劍之公會是 use smash dummy，杖之公會是 use fireball dummy。\n",
       "room_flags": 8,
@@ -98,21 +101,21 @@
           "keywords": "",
           "locks": 0,
           "key": -1,
-          "to_room": 5
+          "to_room": 205
         },
         "south": {
           "description": "往南看，是走廊的鐵門。\n",
           "keywords": "鐵門 iron",
           "locks": 1,
-          "key": 1,
-          "to_room": 2
+          "key": 201,
+          "to_room": 202
         }
       },
       "extra_descriptions": [],
       "script": null
     },
     {
-      "vnum": 5,
+      "vnum": 205,
       "name": "教官室",
       "description": "寬敞的房間，牆上掛滿了木劍和盾牌。\n往北是訓練場，往南回到技能教室。\n{Y【教學】{x教官送你的「餽贈」會慢慢補血、讓你變強。打 score 看最下面，就看得到身上的效果。\n{Y【教學】{x打 wear sword 把教官給的長劍拿在手上，打 equipment（或 eq）看身上穿了什麼。\n{Y【教學】{x準備好了就往北走進訓練場。\n",
       "room_flags": 8,
@@ -123,21 +126,21 @@
           "keywords": "",
           "locks": 0,
           "key": -1,
-          "to_room": 6
+          "to_room": 206
         },
         "south": {
           "description": "往南看，是技能教室。\n",
           "keywords": "",
           "locks": 0,
           "key": -1,
-          "to_room": 4
+          "to_room": 204
         }
       },
       "extra_descriptions": [],
       "script": null
     },
     {
-      "vnum": 6,
+      "vnum": 206,
       "name": "訓練場",
       "description": "鋪著沙土的訓練場，中間插著一個稻草人。\n北邊是一扇沉重的石門，往南回到教官室。\n{Y【教學】{x打 kill dummy（或 k dummy）打稻草人，也可以用技能開打（use 技能 dummy）。打倒它，北邊的石門就會打開。\n{Y【教學】{x打的時候看最下面的 HP，打不過可以打 flee 逃跑。\n{Y【教學】{x打倒以後打 get armor corpse 把它掉的護甲拿出來，再打 wear armor 穿上。\n",
       "room_flags": 8,
@@ -148,21 +151,21 @@
           "keywords": "石門 stone",
           "locks": 4,
           "key": -1,
-          "to_room": 7
+          "to_room": 207
         },
         "south": {
           "description": "往南看，是教官室。\n",
           "keywords": "",
           "locks": 0,
           "key": -1,
-          "to_room": 5
+          "to_room": 205
         }
       },
       "extra_descriptions": [],
       "script": null
     },
     {
-      "vnum": 7,
+      "vnum": 207,
       "name": "畢業廳",
       "description": "掛著紅色布幔的大廳，院長站在講台後面微笑。\n往南回到訓練場。\n{Y【教學】{x學會了就對院長說：say 畢業，院長會送你到外面的世界。\n",
       "room_flags": 8,
@@ -173,7 +176,7 @@
           "keywords": "石門 stone",
           "locks": 4,
           "key": -1,
-          "to_room": 6
+          "to_room": 206
         }
       },
       "extra_descriptions": [],
@@ -182,7 +185,7 @@
   ],
   "mobiles": [
     {
-      "vnum": 1,
+      "vnum": 201,
       "keywords": "instructor",
       "short": "教官",
       "long": "教官/instructor/雙手抱胸站在這裡。\n",
@@ -210,7 +213,7 @@
       "poison_ratio": null
     },
     {
-      "vnum": 2,
+      "vnum": 202,
       "keywords": "dummy",
       "short": "稻草人",
       "long": "一個稻草人/dummy/插在沙地上。\n",
@@ -229,7 +232,7 @@
       "position": 7,
       "drops": [
         {
-          "obj_vnum": 3,
+          "obj_vnum": 203,
           "color": "purple",
           "chance": 10000,
           "tiers": null
@@ -245,7 +248,7 @@
       "poison_ratio": null
     },
     {
-      "vnum": 3,
+      "vnum": 203,
       "keywords": "dean",
       "short": "院長",
       "long": "院長/dean/站在講台後面。\n",
@@ -273,7 +276,7 @@
       "poison_ratio": null
     },
     {
-      "vnum": 4,
+      "vnum": 204,
       "keywords": "teacher",
       "short": "技能教官",
       "long": "技能教官/teacher/站在黑板前面。\n",
@@ -303,7 +306,7 @@
   ],
   "objects": [
     {
-      "vnum": 1,
+      "vnum": 201,
       "keywords": "key",
       "short": "銅鑰匙",
       "long": "一把銅鑰匙掉在地上。",
@@ -323,7 +326,7 @@
       "script": null
     },
     {
-      "vnum": 2,
+      "vnum": 202,
       "keywords": "sword",
       "short": "長劍",
       "long": "一把長劍插在地上。",
@@ -343,7 +346,7 @@
       "script": null
     },
     {
-      "vnum": 3,
+      "vnum": 203,
       "keywords": "armor",
       "short": "護甲",
       "long": "一件護甲丟在地上。",
@@ -371,7 +374,7 @@
     {
       "cmd": "D",
       "if_flag": 0,
-      "room_vnum": 2,
+      "room_vnum": 202,
       "direction": "east",
       "state": 1,
       "comment": "儲藏室的木門關著"
@@ -379,7 +382,7 @@
     {
       "cmd": "D",
       "if_flag": 0,
-      "room_vnum": 2,
+      "room_vnum": 202,
       "direction": "north",
       "state": 2,
       "comment": "往技能教室的鐵門鎖著"
@@ -387,41 +390,41 @@
     {
       "cmd": "O",
       "if_flag": 0,
-      "obj_vnum": 1,
+      "obj_vnum": 201,
       "color": null,
       "level": 1,
       "limit": 0,
-      "room_vnum": 3,
+      "room_vnum": 203,
       "comment": "儲藏室地上的銅鑰匙"
     },
     {
       "cmd": "M",
       "rare": 0,
-      "mob_vnum": 4,
+      "mob_vnum": 204,
       "limit": 1,
-      "room_vnum": 4,
+      "room_vnum": 204,
       "comment": "技能教官：教 skills、use"
     },
     {
       "cmd": "M",
       "rare": 0,
-      "mob_vnum": 1,
+      "mob_vnum": 201,
       "limit": 1,
-      "room_vnum": 5,
+      "room_vnum": 205,
       "comment": "教官：走進來就放餽贈、給長劍"
     },
     {
       "cmd": "M",
       "rare": 0,
-      "mob_vnum": 2,
+      "mob_vnum": 202,
       "limit": 1,
-      "room_vnum": 6,
+      "room_vnum": 206,
       "comment": "稻草人：打倒它石門就打開"
     },
     {
       "cmd": "D",
       "if_flag": 0,
-      "room_vnum": 6,
+      "room_vnum": 206,
       "direction": "north",
       "state": 2,
       "comment": "往畢業廳的石門鎖著"
@@ -429,9 +432,9 @@
     {
       "cmd": "M",
       "rare": 0,
-      "mob_vnum": 3,
+      "mob_vnum": 203,
       "limit": 1,
-      "room_vnum": 7,
+      "room_vnum": 207,
       "comment": "院長：說「畢業」送回 101"
     }
   ]

@@ -44,12 +44,12 @@ def world(tmp_path, monkeypatch):
     """房間 101 有一隻 1 級的野狗（站著、不會走），special 由各測試設定。"""
     monkeypatch.setattr(fight, "TICK_SECONDS", 1000)
     monkeypatch.setattr(fight, "hit", lambda ch, victim, hand: None)     # 平砍不打：只看 special
-    dog = make_mobile(1)
+    dog = make_mobile(101)
     dog.update(short="野狗", keywords="dog", level=1, tier="normal", tier_roll=None, attack=None, defense=None,
                archetype=None, act=int(ActFlag.SENTINEL), position=7, sex=0, long="", drops=[], shop=None, special=None,
                special_ratio=None, poison_ratio=None)
-    reset = [{"cmd": "M", "rare": 0, "mob_vnum": 1, "limit": 1, "room_vnum": 1, "comment": ""}]
-    write_json(tmp_path, "a.json", make_area("a.json", [make_room(1)], 100, mobiles=[dog], resets=reset))
+    reset = [{"cmd": "M", "rare": 0, "mob_vnum": 101, "limit": 1, "room_vnum": 101, "comment": ""}]
+    write_json(tmp_path, "a.json", make_area("a.json", [make_room(101)], (100, 199), mobiles=[dog], resets=reset))
     zones.load(tmp_path)
     yield zones.world
     characters.clear()

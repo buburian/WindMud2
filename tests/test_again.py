@@ -27,10 +27,10 @@ def do_many(ch, arg):
 def ming(tmp_path, monkeypatch):
     monkeypatch.setattr(save, "PLAYER_DIR", tmp_path / "players")
     monkeypatch.setattr(commands, "COMMANDS", commands.COMMANDS + [("many", do_many, Position.DEAD)])
-    rooms = [make_room(1, north=2), make_room(2, south=1)]
+    rooms = [make_room(101, north=102), make_room(102, south=101)]
     rooms[1]["script"] = {"file": "r.lua", "timer": None}
     write_lua(tmp_path, "a.json", "r.lua", 'function on_command(actor, cmd, arg) room.vars.last = cmd end')
-    write_json(tmp_path, "a.json", make_area("a.json", rooms, 100))
+    write_json(tmp_path, "a.json", make_area("a.json", rooms, (100, 199)))
     zones.load(tmp_path)
     make_player_file("Ming")
     p = save.player_from(save.load_data("Ming"), FakeWriter())
@@ -51,11 +51,11 @@ def test_bang_before_any_command(ming):
 
 
 def test_bang_repeats_the_last_command(ming):
-    assert do(ming, "look").startswith("【房間1】")
-    assert do(ming, "!").startswith("【房間1】")
+    assert do(ming, "look").startswith("【房間101】")
+    assert do(ming, "!").startswith("【房間101】")
     do(ming, "n")
     assert ming.room.vnum == 102
-    do(ming, "!")                                                       # 再一次 north：房間 2 往北沒有出口
+    do(ming, "!")                                                       # 再一次 north：房間 102 往北沒有出口
     assert ming.room.vnum == 102 and zones.world.rooms[102].vars["last"] == "north"   # 腳本看到的是真的指令
 
 
@@ -63,8 +63,8 @@ def test_enter_and_bang_are_not_remembered(ming):
     do(ming, "look")
     do(ming, "")                                                        # 只按 Enter：不算
     do(ming, "!")
-    assert ming.last_line == "look" and do(ming, "!").startswith("【房間1】")
-    assert do(ming, "!xyz").startswith("【房間1】")                     # 「!」開頭的都算（照 C 版）
+    assert ming.last_line == "look" and do(ming, "!").startswith("【房間101】")
+    assert do(ming, "!xyz").startswith("【房間101】")                     # 「!」開頭的都算（照 C 版）
 
 
 def test_bang_while_paging(ming):

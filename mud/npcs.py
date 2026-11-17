@@ -1,6 +1,6 @@
 """NPC（生物）：沒有連線的角色。區域檔的生物由 spawn() 做出來（resets.py 的 M）。"""
 from . import scripts, stats
-from .area import CHANCE_MAX, ActFlag, AffectFlag, MobTier, parse_flags, resolve
+from .area import CHANCE_MAX, ActFlag, AffectFlag, MobTier, parse_flags
 from .characters import Character, Position, arrive, characters
 
 
@@ -51,15 +51,14 @@ def roll_tier(proto, rng):
     return MobTier(proto["tier"])
 
 
-def spawn(vnum, proto, room, rng, base):
-    """照區域檔的生物 proto（已經檢查過）做一隻放進 room，加進 characters。base 是牠那個區域檔的 area_number。
+def spawn(vnum, proto, room, rng):
+    """照區域檔的生物 proto（已經檢查過）做一隻放進 room，加進 characters。
 
     名字是 short；姿勢照區域檔的 position（C 版讀了就丟，我們用它，可以做睡著的生物），不是合法的值就站著。
-    掉落表的 obj_vnum 用牠自己那個檔的 base 換算（M 可以放別的檔的生物，所以不是放牠的那個檔）。
     """
     npc = Npc(proto["short"], proto["sex"], room)
     npc.vnum = vnum
-    npc.drops = [{**line, "obj_vnum": resolve(base, line["obj_vnum"])} for line in proto["drops"]]
+    npc.drops = [dict(line) for line in proto["drops"]]
     npc.keywords = proto["keywords"].lower().split()
     npc.long, npc.description = proto["long"], proto["description"]
     npc.level, npc.tier = proto["level"], roll_tier(proto, rng)

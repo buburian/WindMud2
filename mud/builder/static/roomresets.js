@@ -9,7 +9,7 @@ import { field, h, icon, numberText, selectArrow } from "./ui.js";
 const RARE_TIP = "0～10 一定會出現；大於 10 不一定會出現，機率大約 (rare − 10) ÷ 10000";
 
 function first(data, kind) {
-  return (M.sortedList(M.listOf(data, kind))[0] || { vnum: 1 }).vnum;
+  return M.firstNumber(data, kind);
 }
 
 function heading(title, code, ...right) {

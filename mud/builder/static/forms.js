@@ -87,7 +87,7 @@ export function refField({ id, label, code, obj, key, chipOf, style = "flex: 0 0
 }
 
 // 生物、物品的號碼（kind 是 mobiles、objects）：打完才套用，這個檔裡指到它的地方一起改；
-// 號碼不對（不在 1～99、重複）就不套用，留著打的字並在欄位下面寫錯誤
+// 號碼不對（不在這個檔的範圍、重複）就不套用，留著打的字並在欄位下面寫錯誤
 export function vnumField({ ctx, kind, item, id, label }) {
   const { state } = ctx;
   const input = textInput({

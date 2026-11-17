@@ -11,7 +11,7 @@
 
 下面的遊戲畫面都是實際跑出來的。`>` 開頭的那行是玩家打的指令；每段最後的 prompt（`<HP 64/64 MP 28/28 MV 35/35>` 那行）省略了。
 生物、物品的 `keywords` 只寫英文，所以玩家指定牠們都打英文（`give bun elder`、`kill wolf`），畫面上顯示的是中文的 `short`（「村長」「包子」）。
-例子的區域檔都叫 `village.json`，`area_number` 是 300（所以檔案裡的生物 1，在遊戲裡是 301）。
+例子的區域檔都叫 `village.json`，號碼範圍是 `[300, 399]`。房間、生物、物品都寫完整的遊戲號碼，例如村長是生物 301、包子是物品 301。
 
 ## 目錄
 
@@ -211,10 +211,10 @@ end
 `actor:take_item(號碼)` 從他的背包拿走一件：拿到了是 `true`，背包裡沒有是 `false`。所以「檢查有沒有」和「拿走」可以一起做：
 
 ```lua
--- 村長.lua：在第 1 步的人說「交貨」，背包裡有包子（物品 1）就收下
+-- 村長.lua：在第 1 步的人說「交貨」，背包裡有包子（物品 301）就收下
 function on_say(actor, text)
   if text == "交貨" and actor.vars.bun == 1 then
-    if actor:take_item(1) then            -- 拿走一個包子：拿到了是 true，背包裡沒有是 false
+    if actor:take_item(301) then          -- 拿走一個包子：拿到了是 true，背包裡沒有是 false
       actor.vars.bun = "完成"
       me:command("say 就是這個味道！謝謝你。")
     else
@@ -241,7 +241,7 @@ end
 村長說：『就是這個味道！謝謝你。』
 ```
 
-- 號碼照[號碼規則](區域製作手冊.md#號碼規則)：腳本裡 1～99 是**這個區域檔**的（這裡的 1 是這個檔的物品 1），100 以上是完整號碼（別的區域的物品）。
+- 號碼照[號碼規則](區域製作手冊.md#號碼規則)寫完整的遊戲號碼：這裡的 301 是這個檔的物品 301，範圍外的號碼是別的區域的物品。寫 1～99（保留的號碼）算腳本出錯。
 - 只看背包裡的，穿在身上的拿不走。要看身上有沒有穿著，用 `actor:wears_item(號碼)`。
 - 只想看有沒有、不拿走，用 `actor:has_item(號碼)`。
 - 一次拿一件。要收好幾件，用下面 give 的寫法一件一件數比較簡單。
@@ -250,12 +250,12 @@ end
 
 玩家打 `give pelt tanner`（把狼皮給皮匠），皮匠的 `on_give(actor, item, gold)` 就會跑：
 
-- `item`：給的物品號碼（照號碼規則，自己區域的是 1～99）。給金幣時是 `nil`。
+- `item`：給的物品號碼（完整的遊戲號碼）。給金幣時是 `nil`。
 - `gold`：給的金幣數量。給東西時是 `0`。
 - 東西已經在 NPC 身上了才跑。
 
 ```lua
--- 皮匠.lua：收三張狼皮（物品 3）。actor.vars.pelt：nil 還沒接、1 在收、"完成" 收齊了
+-- 皮匠.lua：收三張狼皮（物品 303）。actor.vars.pelt：nil 還沒接、1 在收、"完成" 收齊了
 function on_say(actor, text)
   if text == "任務" and actor.vars.pelt == nil then
     actor.vars.pelt = 1
@@ -265,10 +265,10 @@ end
 
 -- 有人 give 東西給皮匠
 function on_give(actor, item, gold)
-  if item ~= 3 or actor.vars.pelt ~= 1 then
+  if item ~= 303 or actor.vars.pelt ~= 1 then
     return                                -- 不是狼皮，或沒在做這個任務：不理
   end
-  me:take_item(3)                         -- 收到的狼皮從皮匠身上拿掉，不然會一直堆在他身上
+  me:take_item(303)                       -- 收到的狼皮從皮匠身上拿掉，不然會一直堆在他身上
   local n = (actor.vars.pelts or 0) + 1   -- 收過幾張（第一次是 nil，當作 0）
   actor.vars.pelts = n
   if n < 3 then
@@ -308,7 +308,7 @@ end
 要注意：
 
 - 給錯的東西（上面的包子）、還沒接任務就給的狼皮，都留在皮匠身上，不會退回去。皮匠死掉時，這些東西會掉進屍體。
-- `me:take_item(3)` 是把皮匠身上的一張狼皮拿掉。不拿掉的話，收到的東西會一直堆在他身上。
+- `me:take_item(303)` 是把皮匠身上的一張狼皮拿掉。不拿掉的話，收到的東西會一直堆在他身上。
 - 區域檔有寫 `shop`（商店）的生物不收東西：玩家看到「村長拒絕拿【包子/bun】。」，`on_give` 也不會跑。任務 NPC 的 `shop` 寫 `null`。
 
 ## 打怪任務
@@ -418,8 +418,8 @@ function on_say(actor, text)
     me:command("say 才 " .. n .. " 隻，還不夠。")
   elseif step == 1 then
     actor.vars.wolf = "完成"
-    actor:give_item(2, actor.level, "blue")   -- 物品 2（長劍），等級跟他一樣，藍色
-    actor:give_item(1, 1)                     -- 物品 1（包子），等級 1，沒有顏色
+    actor:give_item(302, actor.level, "blue") -- 物品 302（長劍），等級跟他一樣，藍色
+    actor:give_item(301, 1)                   -- 物品 301（包子），等級 1，沒有顏色
     me:command("say 謝啦，這把長劍和包子送你。")
   end
 end
@@ -448,7 +448,7 @@ end
 -- 不好的寫法：沒寫等級
 function on_say(actor, text)
   if text == "任務" then
-    actor:give_item(2)                    -- 等級沒寫：算腳本出錯，東西不會給
+    actor:give_item(302)                  -- 等級沒寫：算腳本出錯，東西不會給
   end
 end
 ```
@@ -472,7 +472,7 @@ function on_say(actor, text)
     actor.vars.bun = 1
     me:command("say 再幫我買一個包子吧。")
   elseif text == "交貨" and actor.vars.bun == 1 then
-    if actor:take_item(1) then
+    if actor:take_item(301) then
       actor.vars.bun = nil                                    -- 清掉：可以再接一次
       actor.vars.bun_times = (actor.vars.bun_times or 0) + 1  -- 記做過幾次
       me:command("say 謝啦，這是你第 " .. actor.vars.bun_times .. " 次幫我買包子了。")
@@ -513,7 +513,7 @@ function on_say(actor, text)
       me:command("say 今天的包子已經送完了。")
     else
       room.vars.given = true              -- 記在房間：區域重置時才清掉
-      actor:give_item(1, 1)
+      actor:give_item(301, 1)
       me:command("say 拿去吧，趁熱吃。")
     end
   end
@@ -573,7 +573,7 @@ Hua 再問，要等到區域重置以後才拿得到：
 function on_say(actor, text)
   if text == "包子" and actor.vars.bun == 1 then
     actor.vars.bun = 2
-    actor:give_item(1, 1)                 -- 包子由師傅自己給：只有他的 actor 是玩家
+    actor:give_item(301, 1)               -- 包子由師傅自己給：只有他的 actor 是玩家
     me:command("say 村長的包子好了，拿去吧。")
     me:command("tell apprentice 補貨")    -- 用 tell 叫學徒（生物 say 的話不會觸發 on_say）
   end
@@ -744,11 +744,11 @@ end
 `actor:transfer(房號)` 把他送到那間房。不能送進副本。送的是玩家就馬上存檔。
 
 ```lua
--- 船夫.lua：打狼任務做完的人說「渡河」，送他到對岸（房間 5）
+-- 船夫.lua：打狼任務做完的人說「渡河」，送他到對岸（房間 305）
 function on_say(actor, text)
   if text == "渡河" and actor.vars.wolf == "完成" then
     me:command("say 坐穩了。")
-    actor:transfer(5)                     -- 送過去，會馬上存檔；送完他就不在這裡了，所以放最後
+    actor:transfer(305)                   -- 送過去，會馬上存檔；送完他就不在這裡了，所以放最後
   end
 end
 ```
@@ -828,7 +828,7 @@ end
 - `actor.vars` 是那隻生物自己的變數，任務的判斷會亂掉。
 - 生物的 `guild`、`race` 是 `nil`，拿來接字串會出錯。
 
-房間 2 的腳本 `歡迎.lua`：
+房間 302 的腳本 `歡迎.lua`：
 
 ```lua
 -- 不好的寫法：沒檢查 is_player()，生物走進來也會跑
@@ -837,7 +837,7 @@ function on_enter(actor, from)
 end
 ```
 
-野狗走進房間 2（遊戲號碼 302）時，線上的 imm 看到：
+野狗走進房間 302 時，線上的 imm 看到：
 
 ```
 [腳本出錯] village.json 房間 302：village/歡迎.lua:3: attempt to concatenate a nil value (field 'guild')
@@ -871,7 +871,7 @@ function on_say(actor, text)
     actor.vars.wolf = "完成"
     me:command("say 等等，我去拿獎勵。")
     wait(3)
-    actor:give_item(2, actor.level, "blue")   -- 他 3 秒內走掉，這行就不會跑：任務完成了，獎勵卻沒拿到
+    actor:give_item(302, actor.level, "blue") -- 他 3 秒內走掉，這行就不會跑：任務完成了，獎勵卻沒拿到
     me:command("say 這把長劍送你。")
   end
 end
@@ -885,7 +885,7 @@ end
 function on_say(actor, text)
   if text == "任務" and actor.vars.wolf == 1 then
     actor.vars.wolf = "完成"
-    actor:give_item(2, actor.level, "blue")
+    actor:give_item(302, actor.level, "blue")
     me:command("say 這把長劍送你。")
     wait(3)
     me:command("say 有空再來玩啊。")      -- 他走掉了也沒關係
@@ -952,7 +952,7 @@ end
 ### 其他
 
 - 生物、物品的 `keywords` 只寫英文。腳本裡叫生物、指定物品的指令也用英文名字（`tell apprentice`、`give bun ...`）。
-- 號碼：腳本裡 1～99 是自己這個區域檔的，100 以上是完整號碼。`on_give` 拿到的 `item` 也是這個寫法。
+- 號碼：腳本裡寫完整的遊戲號碼，`on_give` 拿到的 `item` 也是。寫 1～99（保留的號碼）算腳本出錯。
 - 寫在函式外面的程式，每次觸發都會跑一次。最外層只寫函式。
 - 有寫 `shop` 的 NPC 不收 `give`，`on_give` 不會跑。
 
@@ -979,26 +979,27 @@ areas/
 `village.json` 裡跟任務有關的部分（節錄，`…` 是省略的欄位，寫法照[區域製作手冊](區域製作手冊.md)）：
 
 ```json
+"area": {"header": {"title": "村子", "vnums": [300, 399], "type": "world", …}, …},
 "rooms": [
-  {"vnum": 1, "name": "村子廣場", "exits": {"east": {"to_room": 2, …}, "north": {"to_room": 3, …}}, "script": null, …},
-  {"vnum": 2, "name": "麵包店", "exits": {"west": {"to_room": 1, …}}, "script": null, …},
-  {"vnum": 3, "name": "森林小徑", "exits": {"south": {"to_room": 1, …}}, "script": null, …}
+  {"vnum": 301, "name": "村子廣場", "exits": {"east": {"to_room": 302, …}, "north": {"to_room": 303, …}}, "script": null, …},
+  {"vnum": 302, "name": "麵包店", "exits": {"west": {"to_room": 301, …}}, "script": null, …},
+  {"vnum": 303, "name": "森林小徑", "exits": {"south": {"to_room": 301, …}}, "script": null, …}
 ],
 "mobiles": [
-  {"vnum": 1, "keywords": "elder", "short": "村長", "shop": null, "script": {"file": "村長.lua", "timer": null}, …},
-  {"vnum": 2, "keywords": "baker", "short": "麵包師傅", "shop": null, "script": {"file": "麵包師傅.lua", "timer": null}, …},
-  {"vnum": 3, "keywords": "wolf", "short": "野狼", "shop": null, "script": {"file": "野狼.lua", "timer": null}, …}
+  {"vnum": 301, "keywords": "elder", "short": "村長", "shop": null, "script": {"file": "村長.lua", "timer": null}, …},
+  {"vnum": 302, "keywords": "baker", "short": "麵包師傅", "shop": null, "script": {"file": "麵包師傅.lua", "timer": null}, …},
+  {"vnum": 303, "keywords": "wolf", "short": "野狼", "shop": null, "script": {"file": "野狼.lua", "timer": null}, …}
 ],
 "objects": [
-  {"vnum": 1, "keywords": "bun", "short": "包子", "item_type": 19, "wear_flags": "1", "affects": [], …},
-  {"vnum": 2, "keywords": "sword", "short": "長劍", "item_type": 5, "wear_flags": "1|8192", "affects": [], …}
+  {"vnum": 301, "keywords": "bun", "short": "包子", "item_type": 19, "wear_flags": "1", "affects": [], …},
+  {"vnum": 302, "keywords": "sword", "short": "長劍", "item_type": 5, "wear_flags": "1|8192", "affects": [], …}
 ],
 "resets": [
-  {"cmd": "M", "rare": 0, "mob_vnum": 1, "limit": 1, "room_vnum": 1, "comment": "村長"},
-  {"cmd": "M", "rare": 0, "mob_vnum": 2, "limit": 1, "room_vnum": 2, "comment": "麵包師傅"},
-  {"cmd": "M", "rare": 0, "mob_vnum": 3, "limit": 3, "room_vnum": 3, "comment": "野狼"},
-  {"cmd": "M", "rare": 0, "mob_vnum": 3, "limit": 3, "room_vnum": 3, "comment": "野狼"},
-  {"cmd": "M", "rare": 0, "mob_vnum": 3, "limit": 3, "room_vnum": 3, "comment": "野狼"}
+  {"cmd": "M", "rare": 0, "mob_vnum": 301, "limit": 1, "room_vnum": 301, "comment": "村長"},
+  {"cmd": "M", "rare": 0, "mob_vnum": 302, "limit": 1, "room_vnum": 302, "comment": "麵包師傅"},
+  {"cmd": "M", "rare": 0, "mob_vnum": 303, "limit": 3, "room_vnum": 303, "comment": "野狼"},
+  {"cmd": "M", "rare": 0, "mob_vnum": 303, "limit": 3, "room_vnum": 303, "comment": "野狼"},
+  {"cmd": "M", "rare": 0, "mob_vnum": 303, "limit": 3, "room_vnum": 303, "comment": "野狼"}
 ]
 ```
 
@@ -1042,17 +1043,17 @@ function on_say(actor, text)
   elseif step == 3 then
     actor.vars.bun = "完成"
     actor.vars.wolves = nil                       -- 用不到了，清掉
-    actor:give_item(2, actor.level, "blue")       -- 獎勵：物品 2（長劍），等級跟他一樣，藍色
+    actor:give_item(302, actor.level, "blue")     -- 獎勵：物品 302（長劍），等級跟他一樣，藍色
     me:command("say 太好了！這把長劍送你，謝謝你幫了村子這麼多。")
   else
     me:command("say 謝謝你上次幫忙。")
   end
 end
 
--- give 東西給村長：在第 2 步給的是包子（物品 1）才算
+-- give 東西給村長：在第 2 步給的是包子（物品 301）才算
 function on_give(actor, item, gold)
-  if item == 1 and actor.vars.bun == 2 then
-    me:take_item(1)                               -- 收到的包子從村長身上拿掉
+  if item == 301 and actor.vars.bun == 2 then
+    me:take_item(301)                             -- 收到的包子從村長身上拿掉
     actor.vars.bun = 3
     actor.vars.wolves = 0
     me:command("say 就是這個味道！對了，北邊的森林最近野狼很多，幫我打倒 3 隻吧。")
@@ -1065,7 +1066,7 @@ end
 function on_say(actor, text)
   if text == "包子" and actor.vars.bun == 1 then
     actor.vars.bun = 2
-    actor:give_item(1, 1)                         -- 物品 1（包子），等級 1
+    actor:give_item(301, 1)                       -- 物品 301（包子），等級 1
     me:command("say 村長訂的包子，剛蒸好的，拿去吧。")
   end
 end

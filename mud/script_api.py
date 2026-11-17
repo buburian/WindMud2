@@ -3,14 +3,14 @@
 - me、room、actor 是 Lua 的表（handle）。方法都是綁好那個角色或房間的 Python 函式（腳本假造不了）；
   `actor:tell(x)`、`actor.tell(x)` 兩種寫法都可以。要把 handle 換回角色時用 lua.obj_of()。
 - 「算腳本出錯」的地方丟 ScriptError：lua.wrap() 會加上腳本的行號，這一次停掉（pcall 接不住）。
-- 號碼照號碼規則：1～99 是這個腳本所在的區域檔，100 以上是完整號碼；給腳本的號碼也換回這種寫法。
+- 號碼一律寫完整的遊戲號碼（號碼規則），給腳本的號碼也是；寫 1～99（保留的）算腳本出錯。
 """
 import logging
 import math
 import random
 
 from . import lua
-from .area import DoorState, ItemColor, check_fixed_item, resolve
+from .area import MIN_VNUM, DoorState, ItemColor, check_fixed_item
 from .config import ENCODING
 
 log = logging.getLogger(__name__)
@@ -22,10 +22,6 @@ DOOR_ACTIONS = {"open": DoorState.OPEN, "close": DoorState.CLOSED, "lock": DoorS
 
 class ScriptError(Exception):
     """算腳本出錯：訊息就是給區域作者看的話。"""
-
-
-class Vnum(int):
-    """觸發時給腳本的物品號碼（遊戲號碼）：to_lua() 換成這個腳本的寫法。"""
 
 
 def env(r):
@@ -41,25 +37,18 @@ def env(r):
 
 
 def to_lua(r, value):
-    """給 Lua 函式的參數：角色、房間換成 handle，物品號碼換成這個腳本的寫法，其他照原樣。"""
+    """給 Lua 函式的參數：角色、房間換成 handle，其他照原樣。"""
     from .characters import Character
     if isinstance(value, Character):
         return handle_of(r, value)
-    if isinstance(value, Vnum):
-        return script_number(r.script.base, int(value))
     return value
 
 
-def script_number(base, vnum):
-    """遊戲號碼 → 腳本的寫法：自己區域的是 1～99，別的區域是完整號碼。"""
-    return vnum - base if base < vnum <= base + 99 else vnum
-
-
-def number(r, n, what="號碼"):
-    """腳本寫的號碼 → 遊戲號碼（號碼規則）。"""
-    if isinstance(n, bool) or not isinstance(n, int) or n < 1:
-        raise ScriptError(f"{what}要是 1 以上的整數，不能是 {lua_repr(n)}")
-    return resolve(r.script.base, n)
+def number(n, what="號碼"):
+    """腳本寫的號碼：要是完整的遊戲號碼。寫 1～99（保留的，例如舊寫法的檔案號碼）算腳本出錯，不要安靜地找不到。"""
+    if isinstance(n, bool) or not isinstance(n, int) or n < MIN_VNUM:
+        raise ScriptError(f"{what}要寫完整的遊戲號碼（{MIN_VNUM} 以上，1～99 是保留的），不能是 {lua_repr(n)}")
+    return n
 
 
 def lua_repr(v):
@@ -136,12 +125,12 @@ def character_fields(r, ch):
         "race": str(ch.race) if player and ch.race else None,
         "vars": vars_of(store),
         "is_player": method(ch, lambda: player),
-        "has_item": method(ch, lambda n: any(o.vnum == number(r, n) for o in ch.carrying)),
-        "wears_item": method(ch, lambda n: any(o.vnum == number(r, n) for o in ch.equipment.values())),
+        "has_item": method(ch, lambda n: any(o.vnum == number(n) for o in ch.carrying)),
+        "wears_item": method(ch, lambda n: any(o.vnum == number(n) for o in ch.equipment.values())),
         "tell": method(ch, lambda t: deliver(ch, colorize_text(t))),
-        "transfer": method(ch, lambda n: transfer(r, ch, n)),
+        "transfer": method(ch, lambda n: transfer(ch, n)),
         "give_item": method(ch, lambda n, level=None, color=None: give_item(r, ch, n, level, color)),
-        "take_item": method(ch, lambda n: take_item(r, ch, n)),
+        "take_item": method(ch, lambda n: take_item(ch, n)),
         "read_var": method(ch, lambda area, name: read_var(ch, area, name)),
     }
     if isinstance(ch, Npc):
@@ -166,14 +155,14 @@ def read_var(ch, area, name):
     return ch.vars.get(str(area), {}).get(str(name))
 
 
-def transfer(r, ch, n):
+def transfer(ch, n):
     """送到那間房：不能送進副本（找不到就算出錯）。先停手，給他看新房間，玩家就存檔，再觸發那邊的 on_enter(actor, nil)。
 
     存檔是使用者要的：例如學院畢業送到 101，「畢業了」和人在哪裡馬上存進去。存檔失敗只記 log（跟 give 一樣）。
     """
     from . import death, inventory, save, scripts, zones
     from .commands.system import look
-    vnum = number(r, n, "房號")
+    vnum = number(n, "房號")
     target = zones.room_at(ch.room, vnum)
     if target is None:
         raise ScriptError(f"沒有房間 {vnum}，或那是副本（不能送進副本）")
@@ -195,10 +184,10 @@ def arrive(ch):
     characters.arrive(ch)
 
 
-def make_item(r, n, level, color):
+def make_item(n, level, color):
     """跟 oload 一樣：號碼、等級（一定要寫）、品質（顏色，不寫沒有隨機屬性）。固定裝備當下檢查點數上限。"""
     from . import objects
-    vnum = number(r, n)
+    vnum = number(n)
     if isinstance(level, bool) or not isinstance(level, int) or level < 1:
         raise ScriptError(f"等級一定要寫，要是 1 以上的整數，不能是 {lua_repr(level)}")
     if color is not None and color not in {c.value for c in ItemColor}:
@@ -220,7 +209,7 @@ def give_item(r, ch, n, level, color):
     from .act import TO_NOTVICT, TO_VICT, act
     from .commands.items import GIVEN_SEEN, GIVEN_TO_YOU
     from .npcs import Npc
-    obj = make_item(r, n, level, color)
+    obj = make_item(n, level, color)
     ch.carrying.insert(0, obj)
     giver = r.owner
     if isinstance(giver, Npc) and giver is not ch:
@@ -228,8 +217,8 @@ def give_item(r, ch, n, level, color):
         act(GIVEN_SEEN, giver, ch, t=objects.short(obj), to=TO_NOTVICT)
 
 
-def take_item(r, ch, n):
-    vnum = number(r, n)
+def take_item(ch, n):
+    vnum = number(n)
     obj = next((o for o in ch.carrying if o.vnum == vnum), None)
     if obj is None:
         return False
@@ -272,11 +261,11 @@ def destroy(npc):
 def room_fields(r, room):
     return {
         "vars": vars_of(room.vars),
-        "has_item": method(room, lambda n: any(o.vnum == number(r, n) for o in room.contents)),
+        "has_item": method(room, lambda n: any(o.vnum == number(n) for o in room.contents)),
         "echo": method(room, lambda t: echo(room, colorize_text(t))),
         "echo_except": method(room, lambda who, t: echo(room, colorize_text(t), lua.obj_of(who))),
-        "load_item": method(room, lambda n, level=None, color=None: room.contents.insert(0, make_item(r, n, level, color))),
-        "load_mob": method(room, lambda n: load_mob(r, room, n)),
+        "load_item": method(room, lambda n, level=None, color=None: room.contents.insert(0, make_item(n, level, color))),
+        "load_mob": method(room, lambda n: load_mob(room, n)),
         "door": method(room, lambda direction, action: door(room, direction, action)),
     }
 
@@ -290,18 +279,17 @@ def echo(room, text, skip=None):
             deliver(c, text)
 
 
-def load_mob(r, room, n):
+def load_mob(room, n):
     """放一隻生物（跟重置的 M 一樣骰 tier_roll，牠的 on_born 會跑）。不管 M 的 limit，但同一個區域物件、同號碼最多 MAX_LOADED_MOBS 隻。"""
     from . import npcs, resets
     from .characters import characters
-    vnum = number(r, n)
+    vnum = number(n)
     if vnum not in resets.mobiles:
         raise ScriptError(f"沒有生物 {vnum}")
     here = sum(1 for c in characters if isinstance(c, npcs.Npc) and c.vnum == vnum and c.room is not None and c.room.zone is room.zone)
     if here >= MAX_LOADED_MOBS:
         raise ScriptError(f"生物 {vnum} 已經有 {here} 隻了（同號碼最多 {MAX_LOADED_MOBS} 隻）")
-    base, proto = resets.mobiles[vnum]
-    npcs.spawn(vnum, proto, room, rng, base)
+    npcs.spawn(vnum, resets.mobiles[vnum], room, rng)
 
 
 def door(room, direction, action):

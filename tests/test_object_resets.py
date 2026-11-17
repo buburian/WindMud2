@@ -55,8 +55,8 @@ def obj(vnum, short, keywords, item_type, values, wear="1"):
     return o
 
 
-OBJECTS = [obj(1, "藥水", "potion", 10, [5, "cure light", "", ""]), obj(2, "箱子", "box", 15, [50, 1, -1, 0]),
-           obj(3, "麵包", "bread", 19, [10, 0, 0, 0]), obj(4, "長劍", "sword", 5, [2, 0, 0, 3], "1|8192")]
+OBJECTS = [obj(101, "藥水", "potion", 10, [5, "cure light", "", ""]), obj(102, "箱子", "box", 15, [50, 1, -1, 0]),
+           obj(103, "麵包", "bread", 19, [10, 0, 0, 0]), obj(104, "長劍", "sword", 5, [2, 0, 0, 3], "1|8192")]
 
 
 def M(mob_vnum, room_vnum, limit=1, rare=0):
@@ -77,8 +77,9 @@ def P(obj_vnum, container_vnum, level=1):
 
 
 def load(folder, reset_list, mobiles=(), rooms=None, rng=None):
-    rooms = rooms or [make_room(1, north=2), make_room(2, south=1)]
-    write_json(folder, "a.json", make_area("a.json", rooms, 100, mobiles=list(mobiles), resets=reset_list, objects=OBJECTS))
+    rooms = rooms or [make_room(101, north=102), make_room(102, south=101)]
+    write_json(folder, "a.json", make_area("a.json", rooms, vnums=(100, 199), mobiles=list(mobiles), resets=reset_list,
+                                           objects=OBJECTS))
     zones.load(folder)
     return zones.world.areas[0]
 
@@ -98,7 +99,7 @@ def names(objs):
 # ---- G ----
 
 def test_give_to_the_mobile_just_placed(folder):
-    load(folder, [M(1, 1), G(1), G(4, level=7, color="white")], [mob(1, level=5)])
+    load(folder, [M(101, 101), G(101), G(104, level=7, color="white")], [mob(101, level=5)])
     [m] = npcs()
     potion, sword = m.carrying[1], m.carrying[0]
     assert (potion.name, potion.level) == ("藥水", 5)                     # level 是 null：生物的等級
@@ -107,7 +108,7 @@ def test_give_to_the_mobile_just_placed(folder):
 
 def test_give_only_when_the_mobile_was_placed(folder):
     # 第二次重置：生物已經滿了（limit 1），M 沒放出來，後面的 G 也不做
-    area = load(folder, [M(1, 1), G(1)], [mob(1)])
+    area = load(folder, [M(101, 101), G(101)], [mob(101)])
     again(area)
     [m] = npcs()
     assert names(m.carrying) == ["藥水"]
@@ -115,7 +116,7 @@ def test_give_only_when_the_mobile_was_placed(folder):
 
 @pytest.mark.parametrize("roll, given", [(0, True), (4999, True), (5000, False)])
 def test_give_rare(folder, roll, given):
-    area = load(folder, [M(1, 1), G(1, rare=5010)], [mob(1)])         # 大約 50%
+    area = load(folder, [M(101, 101), G(101, rare=5010)], [mob(101)])         # 大約 50%
     for m in npcs():
         characters.remove(m)
     again(area, FixedRng(roll))
@@ -126,7 +127,7 @@ def test_give_rare(folder, roll, given):
 # ---- O ----
 
 def test_object_on_the_floor_once(folder):
-    area = load(folder, [O(2, 2)])
+    area = load(folder, [O(102, 102)])
     room = zones.world.rooms[102]
     assert names(room.contents) == ["箱子"]
     again(area)
@@ -134,7 +135,7 @@ def test_object_on_the_floor_once(folder):
 
 
 def test_object_waits_until_nobody_is_around(folder):
-    area = load(folder, [O(2, 2)])
+    area = load(folder, [O(102, 102)])
     room = zones.world.rooms[102]
     room.contents.clear()
     p = Player("Ming", None, zones.world.rooms[101])                       # 區域檔的房間裡有玩家：不放
@@ -149,7 +150,7 @@ def test_object_waits_until_nobody_is_around(folder):
 # ---- P ----
 
 def test_put_into_the_container(folder):
-    area = load(folder, [O(2, 2), P(3, 2)])
+    area = load(folder, [O(102, 102), P(103, 102)])
     [box] = zones.world.rooms[102].contents
     assert names(box.contains) == ["麵包"]
     again(area)
@@ -162,24 +163,24 @@ def test_put_into_the_container(folder):
 
 
 def test_put_into_a_container_a_mobile_carries(folder):
-    load(folder, [M(1, 1), G(2), P(3, 2)], [mob(1)])
+    load(folder, [M(101, 101), G(102), P(103, 102)], [mob(101)])
     [m] = npcs()
     assert names(m.carrying[0].contains) == ["麵包"]
 
 
 def test_put_without_a_container(folder, caplog):
     with caplog.at_level(logging.WARNING):
-        load(folder, [P(3, 2)])
+        load(folder, [P(103, 102)])
     assert "沒有容器 102" in caplog.text
 
 
 # ---- R ----
 
 def test_randomize_exits(folder):
-    rooms = [make_room(1, north=2, east=3), make_room(2, south=1), make_room(3, west=1)]
+    rooms = [make_room(101, north=102, east=103), make_room(102, south=101), make_room(103, west=101)]
     rooms[0]["exits"]["north"].update(description="往北看。", locks=1, keywords="木門 door")
     rooms[1]["exits"]["south"].update(locks=1, keywords="木門 door")
-    r = {"cmd": "R", "if_flag": 0, "room_vnum": 1, "exit_count": 2, "comment": ""}
+    r = {"cmd": "R", "if_flag": 0, "room_vnum": 101, "exit_count": 2, "comment": ""}
     area = load(folder, [], rooms=rooms)
     room = zones.world.rooms[101]
     again(area, FixedRng())                                               # 亂數取最小：自己跟自己換，不變
@@ -195,7 +196,7 @@ def test_randomize_exits(folder):
 # ---- 生物身上的東西、死掉 ----
 
 def test_carried_things_go_into_the_corpse(folder):
-    load(folder, [M(1, 1), G(1)], [mob(1)])
+    load(folder, [M(101, 101), G(101)], [mob(101)])
     [m] = npcs()
     death.die(m)
     [corpse] = zones.world.rooms[101].contents
@@ -204,8 +205,8 @@ def test_carried_things_go_into_the_corpse(folder):
 
 def test_shopkeepers_things_are_gone(folder):
     # 照 C 版：店主身上的東西不放進屍體（防止殺店主複製東西，使用者選的）
-    shop = make_mobile(1)["shop"]
-    load(folder, [M(1, 1), G(1)], [mob(1, shop=shop)])
+    shop = make_mobile(101)["shop"]
+    load(folder, [M(101, 101), G(101)], [mob(101, shop=shop)])
     [m] = npcs()
     assert m.shopkeeper and names(m.carrying) == ["藥水"]
     death.die(m)
@@ -226,6 +227,6 @@ def test_the_test_area(folder):
 
 def test_give_follows_the_nearest_m(folder):
     # 第二筆 M 沒放出來（已經 1 隻了），後面的 G 是跟著它的：不做，也不能給到第一筆 M 的那隻
-    load(folder, [M(1, 1), M(1, 1), G(1)], [mob(1)])
+    load(folder, [M(101, 101), M(101, 101), G(101)], [mob(101)])
     [m] = npcs()
     assert m.carrying == []

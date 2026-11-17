@@ -182,14 +182,14 @@ def world(tmp_path, monkeypatch):
     monkeypatch.setattr(fight, "TICK_SECONDS", 1000)       # loop 不會自己跑
     monkeypatch.setattr(combat, "rng", Always(0.5))
     mobiles = []
-    for vnum, short, keywords in ((1, "野狗", "dog 野狗"), (2, "野貓", "cat 野貓")):
+    for vnum, short, keywords in ((101, "野狗", "dog 野狗"), (102, "野貓", "cat 野貓")):
         m = make_mobile(vnum)
         m.update(short=short, keywords=keywords, level=5, tier="normal", tier_roll=None, attack=None, defense=None,
                  archetype=None, act=0, position=7, sex=0, long="", drops=[])
         mobiles.append(m)
-    rooms = [make_room(1, north=2), make_room(2, south=1)]
-    resets = [{"cmd": "M", "rare": 0, "mob_vnum": v, "limit": 1, "room_vnum": 2, "comment": ""} for v in (1, 2)]
-    write_json(tmp_path, "a.json", make_area("a.json", rooms, 100, mobiles=mobiles, resets=resets))
+    rooms = [make_room(101, north=102), make_room(102, south=101)]
+    resets = [{"cmd": "M", "rare": 0, "mob_vnum": v, "limit": 1, "room_vnum": 102, "comment": ""} for v in (101, 102)]
+    write_json(tmp_path, "a.json", make_area("a.json", rooms, (100, 199), mobiles=mobiles, resets=resets))
     zones.load(tmp_path)
     yield tmp_path
     characters.clear()

@@ -10,8 +10,8 @@ ROOT = Path(__file__).resolve().parent.parent
 
 def good_area():
     # 兩間房南北相連、一隻生物、一個物品、每種重置指令各一筆，每個欄位都有，而且都寫對
-    return make_area("a.json", [make_room(1, north=2), make_room(2, south=1)], mobiles=[make_mobile(1)],
-                     objects=[make_object(1)], resets=make_resets())
+    return make_area("a.json", [make_room(101, north=102), make_room(102, south=101)], mobiles=[make_mobile(101)],
+                     objects=[make_object(101)], resets=make_resets())
 
 
 def problems_of(tmp_path, data):
@@ -63,27 +63,44 @@ RULES = [
                  "area.header.type 要寫 world、dynamic、instance 其中一個，不能是 'town'", id="type 寫錯"),
     pytest.param(lambda d: d["area"]["header"].update(type=[]), "area.header.type 要寫", id="type 是清單"),
     pytest.param(lambda d: d["area"]["header"].update(author=3), "author", id="author"),
-    pytest.param(lambda d: d["area"]["header"].update(area_number=0), "保留", id="area_number 0"),
-    pytest.param(lambda d: d["area"].update(recall=9), "area.recall 指到不存在的房間 109", id="recall 不存在"),
+    pytest.param(lambda d: d["area"]["header"].pop("vnums"), "area.header 少了欄位 vnums", id="少了 vnums"),
+    pytest.param(lambda d: d["area"]["header"].update(area_number=100), "多了不認得的欄位 area_number", id="舊的 area_number"),
+    pytest.param(lambda d: d["area"]["header"].update(vnums=[50, 150]),
+                 "area.header.vnums 要寫 [最小, 最大] 兩個整數，最小不能小於 100（1～99 是保留的）、不能大於最大，不能是 [50, 150]",
+                 id="vnums 用到保留的"),
+    pytest.param(lambda d: d["area"]["header"].update(vnums=[199, 100]), "area.header.vnums 要寫 [最小, 最大]", id="vnums 反了"),
+    pytest.param(lambda d: d["area"]["header"].update(vnums=100), "area.header.vnums 要寫 [最小, 最大]", id="vnums 只有一個"),
+    pytest.param(lambda d: d["area"].update(recall=109), "area.recall 指到不存在的房間 109", id="recall 不存在"),
+    pytest.param(lambda d: d["area"].update(recall=1),
+                 "area.recall 要寫完整的遊戲號碼（100 以上，1～99 是保留的），不能是 1", id="recall 保留的號碼"),
     pytest.param(lambda d: d["area"].update(recall="1"), "area.recall", id="recall 格式"),
     pytest.param(lambda d: d["area"].update(no_teleport=2), "no_teleport", id="no_teleport"),
     pytest.param(lambda d: d["area"].update(clan_recall=-1), "clan_recall", id="clan_recall"),
     pytest.param(lambda d: d["area"].update(gem=True), "gem", id="gem 不能是 true"),
-    pytest.param(lambda d: room(d).update(vnum=100), "1～99", id="vnum 太大"),
-    pytest.param(lambda d: room(d, 1).update(vnum=1), "在這個檔案裡重複", id="vnum 重複"),
+    pytest.param(lambda d: room(d).update(vnum=250), "a.json：房間 250 的號碼 250 不在這個檔的範圍 100～199（area.header.vnums）",
+                 id="vnum 在範圍外"),
+    pytest.param(lambda d: room(d).update(vnum=5), "房間號碼要寫完整的遊戲號碼（100 以上，1～99 是保留的），不能是 5",
+                 id="vnum 保留的號碼"),
+    pytest.param(lambda d: room(d, 1).update(vnum=101), "房間 101 在這個檔案裡重複", id="vnum 重複"),
     pytest.param(lambda d: room(d).update(name=" "), "name 不能是空的", id="name"),
     pytest.param(lambda d: room(d).update(description=None), "description", id="description"),
     pytest.param(lambda d: room(d).update(room_flags=2), "沒有的旗標 [2]", id="room_flags 沒有的旗標"),
     pytest.param(lambda d: room(d).update(room_flags="1|x"), "room_flags", id="room_flags 格式"),
     pytest.param(lambda d: room(d).update(sector=11), "sector", id="sector 太大"),
     pytest.param(lambda d: room(d).update(door_flags=[]), "多了不認得的欄位 door_flags", id="舊欄位"),
-    pytest.param(lambda d: room(d)["exits"].update(northeast=make_exit(2)), "出口方向", id="方向"),
+    pytest.param(lambda d: room(d)["exits"].update(northeast=make_exit(102)), "出口方向", id="方向"),
     pytest.param(lambda d: north(d).update(locks=9), "locks", id="locks"),
     pytest.param(lambda d: north(d).update(key=-2), "key", id="key"),
+    pytest.param(lambda d: north(d).update(key=5),
+                 "往 north 的出口的 key 要是 -1、0（不用鑰匙）或鑰匙的遊戲號碼（100 以上，1～99 是保留的），不能是 5",
+                 id="key 保留的號碼"),
     pytest.param(lambda d: north(d).update(keywords=None), "keywords", id="門的名字"),
     pytest.param(lambda d: north(d).pop("description"), "少了欄位 description", id="出口少欄位"),
-    pytest.param(lambda d: north(d).update(to_room=0), "出口號碼", id="to_room 0"),
-    pytest.param(lambda d: north(d).update(to_room=9), "不存在的房間 109", id="to_room 不存在"),
+    pytest.param(lambda d: north(d).update(to_room=0), "to_room 要寫完整的遊戲號碼", id="to_room 0"),
+    pytest.param(lambda d: north(d).update(to_room=2),
+                 "往 north 的出口的 to_room 要寫完整的遊戲號碼（100 以上，1～99 是保留的），不能是 2", id="to_room 保留的號碼"),
+    pytest.param(lambda d: north(d).update(to_room=109), "不存在的房間 109", id="to_room 不存在"),
+    pytest.param(lambda d: north(d).update(to_room=5000), "不存在的房間 5000", id="外連不存在"),
     pytest.param(lambda d: room(d).update(extra_descriptions=[{"keywords": " ", "description": ""}]),
                  "keywords 不能是空的", id="extra 名字空的"),
     pytest.param(lambda d: room(d).update(extra_descriptions=[{"keywords": "牌子"}]),
@@ -99,10 +116,12 @@ RULES = [
     # 生物：這次只檢查寫法，數字代表什麼還不檢查
     pytest.param(lambda d: d.pop("mobiles"), "少了欄位 mobiles", id="少了 mobiles"),
     pytest.param(lambda d: d.update(mobiles={}), "mobiles 要寫成 […]", id="mobiles 不是清單"),
-    pytest.param(lambda d: mob(d).update(vnum=100), "生物號碼 100 不在 1～99", id="生物 vnum 太大"),
-    pytest.param(lambda d: d["mobiles"].append(make_mobile(1)), "生物 1 在這個檔案裡重複", id="生物 vnum 重複"),
-    pytest.param(lambda d: mob(d).update(size=1), "生物 1 多了不認得的欄位 size", id="生物多欄位"),
-    pytest.param(lambda d: mob(d).pop("special"), "生物 1 少了欄位 special", id="生物少欄位"),
+    pytest.param(lambda d: mob(d).update(vnum=250), "生物 250 的號碼 250 不在這個檔的範圍 100～199", id="生物 vnum 在範圍外"),
+    pytest.param(lambda d: mob(d).update(vnum=1), "生物號碼要寫完整的遊戲號碼（100 以上，1～99 是保留的），不能是 1",
+                 id="生物 vnum 保留的號碼"),
+    pytest.param(lambda d: d["mobiles"].append(make_mobile(101)), "生物 101 在這個檔案裡重複", id="生物 vnum 重複"),
+    pytest.param(lambda d: mob(d).update(size=1), "生物 101 多了不認得的欄位 size", id="生物多欄位"),
+    pytest.param(lambda d: mob(d).pop("special"), "生物 101 少了欄位 special", id="生物少欄位"),
     pytest.param(lambda d: mob(d).update(hitroll=0), "多了不認得的欄位 hitroll", id="生物舊欄位"),   # 使用者刪掉的欄位
     pytest.param(lambda d: mob(d).update(keywords=" "), "keywords 不能是空的", id="生物 keywords"),
     pytest.param(lambda d: mob(d).update(short=""), "short 不能是空的", id="生物 short"),
@@ -115,7 +134,7 @@ RULES = [
     pytest.param(lambda d: mob(d).update(actions=[]), "多了不認得的欄位 actions", id="生物舊欄位 actions"),
     pytest.param(lambda d: mob(d).update(fight_actions=[]), "多了不認得的欄位 fight_actions", id="生物舊欄位 fight_actions"),
     pytest.param(lambda d: mob(d).update(exp=1), "多了不認得的欄位 exp", id="生物舊欄位 exp"),   # 經驗值照設計文件 §4.7 算
-    pytest.param(lambda d: mob(d).pop("tier"), "生物 1 少了欄位 tier", id="生物少 tier"),
+    pytest.param(lambda d: mob(d).pop("tier"), "生物 101 少了欄位 tier", id="生物少 tier"),
     pytest.param(lambda d: mob(d).update(tier="mob"),
                  "tier 要寫 trash、normal、elite、boss 其中一個，不能是 'mob'", id="生物 tier 寫錯"),
     pytest.param(lambda d: mob(d).update(tier=None), "tier 要寫", id="生物 tier 是 null"),   # 種類一定要寫
@@ -132,7 +151,8 @@ RULES = [
     pytest.param(lambda d: mob(d).update(tier_roll={"boss": 0.5}), "tier_roll 的 boss 要是 1～10000 的整數", id="生物 tier_roll 小數"),
     pytest.param(lambda d: mob(d).update(tier_roll=[]), "tier_roll 要是 null 或", id="生物 tier_roll 清單"),
     pytest.param(lambda d: mob(d).update(drops=None), "drops 要寫成 […]", id="生物 drops 是 null"),
-    pytest.param(lambda d: mob(d)["drops"][0].update(obj_vnum=0), "drops 第 1 行的 obj_vnum 要是物品號碼", id="生物 drops 物品"),
+    pytest.param(lambda d: mob(d)["drops"][0].update(obj_vnum=1),
+                 "drops 第 1 行的 obj_vnum 要寫完整的遊戲號碼（100 以上，1～99 是保留的），不能是 1", id="生物 drops 物品"),
     pytest.param(lambda d: mob(d)["drops"][0].update(color="gold"), "drops 第 1 行的 color 要是 null", id="生物 drops 顏色"),
     pytest.param(lambda d: mob(d)["drops"][0].update(chance=0), "drops 第 1 行的 chance 要是 1～10000", id="生物 drops 機率 0"),
     pytest.param(lambda d: mob(d)["drops"][0].update(chance=10001), "chance 要是 1～10000", id="生物 drops 機率太大"),
@@ -144,8 +164,8 @@ RULES = [
     pytest.param(lambda d: mob(d)["shop"].update(open_hour=None), "open_hour 要是整數", id="生物 shop 時間"),
     pytest.param(lambda d: mob(d).update(special=""), "special 要是 null 或手冊 special 表裡的名字，不能是 ''", id="生物 special"),
     pytest.param(lambda d: mob(d).update(special="spec_breath_fier"), "不能是 'spec_breath_fier'", id="生物 special 寫錯字"),
-    pytest.param(lambda d: mob(d).pop("special_ratio"), "生物 1 少了欄位 special_ratio", id="生物少 special_ratio"),
-    pytest.param(lambda d: mob(d).pop("poison_ratio"), "生物 1 少了欄位 poison_ratio", id="生物少 poison_ratio"),
+    pytest.param(lambda d: mob(d).pop("special_ratio"), "生物 101 少了欄位 special_ratio", id="生物少 special_ratio"),
+    pytest.param(lambda d: mob(d).pop("poison_ratio"), "生物 101 少了欄位 poison_ratio", id="生物少 poison_ratio"),
     pytest.param(lambda d: mob(d).update(special_ratio=0), "special_ratio 要是 null 或大於 0 的數字（例如 2.5），不能是 0",
                  id="生物 special_ratio 0"),
     pytest.param(lambda d: mob(d).update(special_ratio="2.5"), "special_ratio 要是 null 或大於 0 的數字", id="生物 special_ratio 字串"),
@@ -156,9 +176,10 @@ RULES = [
     # 物品：這次只檢查寫法
     pytest.param(lambda d: d.pop("objects"), "少了欄位 objects", id="少了 objects"),
     pytest.param(lambda d: d.update(objects={}), "objects 要寫成 […]", id="objects 不是清單"),
-    pytest.param(lambda d: obj(d).update(vnum=0), "物品號碼 0 不在 1～99", id="物品 vnum 0"),
-    pytest.param(lambda d: d["objects"].append(make_object(1)), "物品 1 在這個檔案裡重複", id="物品 vnum 重複"),
-    pytest.param(lambda d: obj(d).update(values_raw=[]), "物品 1 多了不認得的欄位 values_raw", id="物品多欄位"),
+    pytest.param(lambda d: obj(d).update(vnum=0), "物品號碼要寫完整的遊戲號碼（100 以上，1～99 是保留的），不能是 0", id="物品 vnum 0"),
+    pytest.param(lambda d: obj(d).update(vnum=300), "物品 300 的號碼 300 不在這個檔的範圍 100～199", id="物品 vnum 在範圍外"),
+    pytest.param(lambda d: d["objects"].append(make_object(101)), "物品 101 在這個檔案裡重複", id="物品 vnum 重複"),
+    pytest.param(lambda d: obj(d).update(values_raw=[]), "物品 101 多了不認得的欄位 values_raw", id="物品多欄位"),
     pytest.param(lambda d: obj(d).update(cost_per_day=0), "多了不認得的欄位 cost_per_day", id="物品舊欄位"),   # 使用者刪掉的欄位
     pytest.param(lambda d: obj(d).update(cost="0"), "cost 要是整數", id="物品 cost"),
     pytest.param(lambda d: obj(d).update(keywords=""), "keywords 不能是空的", id="物品 keywords"),
@@ -166,6 +187,9 @@ RULES = [
     pytest.param(lambda d: obj(d).update(wear_flags="1|x"), "wear_flags 看不懂", id="物品 wear_flags"),
     pytest.param(lambda d: obj(d).update(values=[0, 1, 4]), "values 要寫 4 個", id="物品 values 3 個"),
     pytest.param(lambda d: obj(d).update(values=[0, 1, 4, {}]), "values 要寫 4 個", id="物品 values 放 {}"),
+    pytest.param(lambda d: obj(d).update(item_type=15, values=[100, 1, 5, 0]),
+                 "物品 101 的鑰匙（values 第 3 個）要是 0 以下（不用鑰匙）或鑰匙的遊戲號碼（100 以上，1～99 是保留的），不能是 5",
+                 id="容器的鑰匙保留的號碼"),
     pytest.param(lambda d: obj(d)["affects"][0].pop("modifier"), "affects 第 1 項少了欄位 modifier", id="物品 affects"),
     pytest.param(lambda d: obj(d)["extra_descriptions"][0].update(keywords=" "), "keywords 不能是空的",
                  id="物品 extra 名字空的"),
@@ -176,11 +200,14 @@ RULES = [
     pytest.param(lambda d: d["resets"].append({"cmd": "X", "comment": ""}), "cmd 要是", id="不認得的 cmd"),
     pytest.param(lambda d: d["resets"].append(["M"]), "cmd 要是", id="重置不是 {…}"),
     pytest.param(lambda d: reset(d, "M").pop("limit"), "（M）少了欄位 limit", id="M 少欄位"),
-    pytest.param(lambda d: reset(d, "M").update(room_vnum=0), "room_vnum 號碼 0 不對", id="M 房間號碼"),
+    pytest.param(lambda d: reset(d, "M").update(room_vnum=0),
+                 "（M）的 room_vnum 要寫完整的遊戲號碼（100 以上，1～99 是保留的），不能是 0", id="M 房間號碼"),
+    pytest.param(lambda d: reset(d, "M").update(mob_vnum=1), "（M）的 mob_vnum 要寫完整的遊戲號碼", id="M 生物號碼"),
+    pytest.param(lambda d: reset(d, "O").update(obj_vnum=3), "（O）的 obj_vnum 要寫完整的遊戲號碼", id="O 物品號碼"),
     pytest.param(lambda d: reset(d, "G").update(rare="0"), "rare 要是整數", id="G rare"),
-    pytest.param(lambda d: d["resets"].append({"cmd": "E", "rare": 0, "obj_vnum": 2, "limit": 0, "wear_loc": 16, "comment": ""}),
+    pytest.param(lambda d: d["resets"].append({"cmd": "E", "rare": 0, "obj_vnum": 102, "limit": 0, "wear_loc": 16, "comment": ""}),
                  "cmd 要是", id="E 拿掉了"),   # 使用者說生物不穿裝備
-    pytest.param(lambda d: reset(d, "P").update(container_vnum=-1), "container_vnum 號碼 -1 不對", id="P 容器號碼"),
+    pytest.param(lambda d: reset(d, "P").update(container_vnum=-1), "（P）的 container_vnum 要寫完整的遊戲號碼", id="P 容器號碼"),
     pytest.param(lambda d: reset(d, "G").update(color="gold"), "（G）的 color 要是 null（不是裝備）或 gray", id="G 顏色"),
     pytest.param(lambda d: reset(d, "O").update(color=3), "（O）的 color 要是 null", id="O 顏色"),
     pytest.param(lambda d: reset(d, "P").pop("color"), "（P）少了欄位 color", id="P 少顏色"),
@@ -218,45 +245,60 @@ def test_not_json(tmp_path):
     assert "不是正確的 JSON" in area.check_files([path])[path][0]
 
 
-def test_cross_file_exit_and_duplicate(tmp_path):
-    a = write_area(tmp_path, "a.json", [make_room(1, north=201)], area_number=100)
-    b = write_area(tmp_path, "b.json", [make_room(1, south=101)], area_number=200)
-    c = write_area(tmp_path, "c.json", [make_room(1)], area_number=200)     # 201 跟 b.json 重複
+def test_cross_file_exit_overlap_and_duplicate(tmp_path):
+    a = write_area(tmp_path, "a.json", [make_room(101, north=201)], vnums=(100, 199))
+    b = write_area(tmp_path, "b.json", [make_room(201, south=101)], vnums=(200, 299))
+    c = write_area(tmp_path, "c.json", [make_room(201)], vnums=(200, 299))     # 範圍跟 b.json 重疊，201 也重複
     found = area.check_files([a, b, c], [a, b, c])
     assert found[a] == [] and found[b] == []
-    assert found[c] == ["c.json：房間 201 跟 b.json 重複"]
+    assert found[c] == ["c.json：area.header.vnums 的範圍 200～299 跟 b.json 的 200～299 重疊",
+                        "c.json：房間 201 跟 b.json 重複"]
+
+
+def test_overlap_with_reference_file(tmp_path):
+    # 只檢查 a.json 時，對照的檔案的範圍也要看；重疊算在要檢查的檔案頭上
+    a = write_area(tmp_path, "a.json", [make_room(101)], vnums=(100, 199))
+    b = write_area(tmp_path, "b.json", [make_room(201)], vnums=(150, 250))
+    assert area.check_files([a], [a, b])[a] == ["a.json：area.header.vnums 的範圍 100～199 跟 b.json 的 150～250 重疊"]
+
+
+def test_ranges_next_to_each_other_are_fine(tmp_path):
+    a = write_area(tmp_path, "a.json", [make_room(199, north=200)], vnums=(100, 199))
+    b = write_area(tmp_path, "b.json", [make_room(200, south=199)], vnums=(200, 299))
+    assert all(found == [] for found in area.check_files([a, b], [a, b]).values())
 
 
 def test_exit_into_instance_is_an_error(tmp_path):
     # 副本只能用 enter 進去：世界區域的出口不能通到副本裡
-    a = write_area(tmp_path, "a.json", [make_room(1, north=201)], area_number=100)
-    b = write_area(tmp_path, "b.json", [make_room(1)], area_number=200, kind="instance")
+    a = write_area(tmp_path, "a.json", [make_room(101, north=201)], vnums=(100, 199))
+    b = write_area(tmp_path, "b.json", [make_room(201)], vnums=(200, 299), kind="instance")
     found = area.check_files([a, b], [a, b])
-    assert found[a] == ["a.json：房間 1 往 north 的出口通到副本 b.json 的房間 201，副本不能走進去（要用 enter）"]
+    assert found[a] == ["a.json：房間 101 往 north 的出口通到副本 b.json 的房間 201，副本不能走進去（要用 enter）"]
     assert found[b] == []
 
 
 def test_exit_out_of_instance_is_an_error(tmp_path):
     # 副本只能用 recall 出來：副本的出口不能通到別的區域
-    a = write_area(tmp_path, "a.json", [make_room(1)], area_number=100)
-    b = write_area(tmp_path, "b.json", [make_room(1, south=101)], area_number=200, kind="instance")
+    a = write_area(tmp_path, "a.json", [make_room(101)], vnums=(100, 199))
+    b = write_area(tmp_path, "b.json", [make_room(201, south=101)], vnums=(200, 299), kind="instance")
     found = area.check_files([a, b], [a, b])
     assert found[a] == []
-    assert found[b] == ["b.json：房間 1 往 south 的出口通到 a.json 的房間 101，副本的出口不能通到別的區域（要用 recall 出來）"]
+    assert found[b] == ["b.json：房間 201 往 south 的出口通到 a.json 的房間 101，副本的出口不能通到別的區域（要用 recall 出來）"]
 
 
 def test_exits_inside_instance_and_into_dynamic_are_fine(tmp_path):
     # 副本裡自己的房間可以互通；動態區域可以從世界走進去、再走回來
-    a = write_area(tmp_path, "a.json", [make_room(1, north=201)], area_number=100)
-    b = write_area(tmp_path, "b.json", [make_room(1, south=101)], area_number=200, kind="dynamic")
-    c = write_area(tmp_path, "c.json", [make_room(1, north=2), make_room(2, south=301)], area_number=300, kind="instance")
+    a = write_area(tmp_path, "a.json", [make_room(101, north=201)], vnums=(100, 199))
+    b = write_area(tmp_path, "b.json", [make_room(201, south=101)], vnums=(200, 299), kind="dynamic")
+    c = write_area(tmp_path, "c.json", [make_room(301, north=302), make_room(302, south=301)], vnums=(300, 399),
+                   kind="instance")
     assert all(found == [] for found in area.check_files([a, b, c], [a, b, c]).values())
 
 
 def test_reference_instance_is_known(tmp_path):
     # 只檢查 a.json 時，也要從對照的檔案知道 b.json 是副本
-    a = write_area(tmp_path, "a.json", [make_room(1, north=201)], area_number=100)
-    b = write_area(tmp_path, "b.json", [make_room(1)], area_number=200, kind="instance")
+    a = write_area(tmp_path, "a.json", [make_room(101, north=201)], vnums=(100, 199))
+    b = write_area(tmp_path, "b.json", [make_room(201)], vnums=(200, 299), kind="instance")
     assert "副本不能走進去" in area.check_files([a], [a, b])[a][0]
 
 
@@ -278,7 +320,7 @@ def test_mobile_ratios_can_be_whole_or_decimal(tmp_path, ratio):
 def test_mobile_drops_color_and_tiers_can_be_null(tmp_path):
     # 不是裝備的物品不寫顏色；tiers 寫 null 是所有種類都會掉；一隻怪可以有好幾行
     data = good_area()
-    mob(data)["drops"].append({"obj_vnum": 2, "color": None, "chance": 10000, "tiers": None})
+    mob(data)["drops"].append({"obj_vnum": 102, "color": None, "chance": 10000, "tiers": None})
     assert problems_of(tmp_path, data) == []
 
 
@@ -289,34 +331,37 @@ def test_mobile_attack_one_or_main_and_sub(tmp_path, attack):
     assert problems_of(tmp_path, data) == []
 
 
-def test_mobile_game_number_below_100(tmp_path):
-    data = make_area("a.json", [make_room(50, north=51), make_room(51, south=50)], area_number=50,
-                     mobiles=[make_mobile(1)])
-    assert problems_of(tmp_path, data) == [
-        "a.json：生物 1 的遊戲號碼是 area_number 50 ＋ 1 ＝ 51，不能小於 100（1～99 是保留的）"]
+def test_more_than_99_of_each_in_one_file(tmp_path):
+    # 跟 C 版一樣，一個檔可以放超過 99 個房間、生物、物品（號碼都在範圍裡）
+    rooms = [make_room(v) for v in range(1000, 1150)]
+    data = make_area("a.json", rooms, vnums=(1000, 1199), mobiles=[make_mobile(v) for v in range(1000, 1120)],
+                     objects=[make_object(v) for v in range(1000, 1120)])
+    for m in data["mobiles"]:
+        m["drops"] = []
+    assert problems_of(tmp_path, data) == []
 
 
 def test_cross_file_mobile_duplicate(tmp_path):
-    # 生物跟房間分開算：a.json 的房間 101 和生物 101 可以同時存在；生物 160 兩個檔都有就算重複
-    a = write_area(tmp_path, "a.json", [make_room(1)], area_number=100, mobiles=[make_mobile(1), make_mobile(60)])
-    b = write_area(tmp_path, "b.json", [make_room(1)], area_number=150, mobiles=[make_mobile(10)])
+    # 生物跟房間分開算：a.json 的房間 101 和生物 101 可以同時存在；範圍重疊時生物 160 兩個檔都有就算重複
+    a = write_area(tmp_path, "a.json", [make_room(101)], vnums=(100, 199), mobiles=[make_mobile(101), make_mobile(160)])
+    b = write_area(tmp_path, "b.json", [make_room(201)], vnums=(150, 250), mobiles=[make_mobile(160)])
     found = area.check_files([a, b], [a, b])
     assert found[a] == []
-    assert found[b] == ["b.json：生物 160 跟 a.json 重複"]
+    assert found[b] == ["b.json：area.header.vnums 的範圍 150～250 跟 a.json 的 100～199 重疊", "b.json：生物 160 跟 a.json 重複"]
 
 
 def test_cross_file_object_duplicate(tmp_path):
-    # 物品也是自己算：a.json 的房間 101、物品 101 可以同時存在；物品 160 兩個檔都有就算重複
-    a = write_area(tmp_path, "a.json", [make_room(1)], area_number=100, objects=[make_object(1), make_object(60)])
-    b = write_area(tmp_path, "b.json", [make_room(1)], area_number=150, objects=[make_object(10)])
+    # 物品也是自己算：a.json 的房間 101、物品 101 可以同時存在；範圍重疊時物品 160 兩個檔都有就算重複
+    a = write_area(tmp_path, "a.json", [make_room(101)], vnums=(100, 199), objects=[make_object(101), make_object(160)])
+    b = write_area(tmp_path, "b.json", [make_room(201)], vnums=(150, 250), objects=[make_object(160)])
     found = area.check_files([a, b], [a, b])
     assert found[a] == []
-    assert found[b] == ["b.json：物品 160 跟 a.json 重複"]
+    assert found[b] == ["b.json：area.header.vnums 的範圍 150～250 跟 a.json 的 100～199 重疊", "b.json：物品 160 跟 a.json 重複"]
 
 
 def test_cli_one_file_looks_in_same_folder(tmp_path, capsys):
-    a = write_area(tmp_path, "a.json", [make_room(1, north=201)], area_number=100)
-    write_area(tmp_path, "b.json", [make_room(1)], area_number=200)
+    a = write_area(tmp_path, "a.json", [make_room(101, north=201)], vnums=(100, 199))
+    write_area(tmp_path, "b.json", [make_room(201)], vnums=(200, 299))
     assert areacheck.main([str(a)]) == 0                  # 201 在 b.json 裡，找得到
     out = capsys.readouterr().out
     assert "✓" in out and "b.json" not in out             # 只報 a.json
@@ -340,7 +385,7 @@ def test_cli_all_checks_areas_folder(monkeypatch, capsys):
 # ---- 固定裝備（物品寫了 affects）的點數上限，設計文件 §3.3 ----
 
 def fixed_area(objects, resets=(), mobiles=()):
-    return make_area("a.json", [make_room(1)], mobiles=list(mobiles), objects=list(objects), resets=list(resets))
+    return make_area("a.json", [make_room(101)], mobiles=list(mobiles), objects=list(objects), resets=list(resets))
 
 
 def armed(vnum, affects, wear="1|8192", extra=0):
@@ -351,7 +396,7 @@ def armed(vnum, affects, wear="1|8192", extra=0):
     return o
 
 
-M1 = {"cmd": "M", "rare": 0, "mob_vnum": 1, "limit": 1, "room_vnum": 1, "comment": ""}
+M1 = {"cmd": "M", "rare": 0, "mob_vnum": 101, "limit": 1, "room_vnum": 101, "comment": ""}
 
 
 def give(obj_vnum, color="white", level=None):
@@ -360,104 +405,104 @@ def give(obj_vnum, color="white", level=None):
 
 def test_fixed_item_over_cap_shows_the_math(tmp_path):
     # 1 級雙手武器：上限是主手＋副手；G 沒寫等級就用 M 那隻生物的等級（make_mobile 是 1 級）
-    sword = armed(1, [{"location": 1, "modifier": 2}, {"location": 13, "modifier": 18}], extra=512)
-    data = fixed_area([sword], [M1, give(1)], [make_mobile(1)])
+    sword = armed(101, [{"location": 1, "modifier": 2}, {"location": 13, "modifier": 18}], extra=512)
+    data = fixed_area([sword], [M1, give(101)], [make_mobile(101)])
     assert problems_of(tmp_path, data) == [
-        "a.json：resets 第 2 筆（G）放出物品 101「物品1」：加成點數 力量 +2 × 3.741 ＋ 攻速 +18 × 1 ＝ 25.482，"
+        "a.json：resets 第 2 筆（G）放出物品 101「物品101」：加成點數 力量 +2 × 3.741 ＋ 攻速 +18 × 1 ＝ 25.482，"
         "超過 1 級主手＋副手（雙手）、白色的上限 20.058 × 1 ＝ 20.058（設計文件 §3.3）"]
 
 
 def test_fixed_item_level_written_on_g_wins(tmp_path):
     # 同一把武器，G 寫 50 級：上限大很多，就沒問題
-    sword = armed(1, [{"location": 13, "modifier": 18}])
-    assert problems_of(tmp_path, fixed_area([sword], [M1, give(1, level=50)], [make_mobile(1)])) == []
-    assert problems_of(tmp_path, fixed_area([sword], [M1, give(1)], [make_mobile(1)])) != []
+    sword = armed(101, [{"location": 13, "modifier": 18}])
+    assert problems_of(tmp_path, fixed_area([sword], [M1, give(101, level=50)], [make_mobile(101)])) == []
+    assert problems_of(tmp_path, fixed_area([sword], [M1, give(101)], [make_mobile(101)])) != []
 
 
 def test_fixed_item_color_bonus(tmp_path):
     # 1 級主手上限 14.33：攻速 +16 白色超過，橘色（×1.4）就夠
-    sword = armed(1, [{"location": 13, "modifier": 16}])
-    assert problems_of(tmp_path, fixed_area([sword], [M1, give(1, "white")], [make_mobile(1)])) != []
-    assert problems_of(tmp_path, fixed_area([sword], [M1, give(1, "orange")], [make_mobile(1)])) == []
+    sword = armed(101, [{"location": 13, "modifier": 16}])
+    assert problems_of(tmp_path, fixed_area([sword], [M1, give(101, "white")], [make_mobile(101)])) != []
+    assert problems_of(tmp_path, fixed_area([sword], [M1, give(101, "orange")], [make_mobile(101)])) == []
 
 
 def test_negative_modifier_gives_points_back(tmp_path):
     # 負的加成抵掉點數：1 級主手上限 14.33，力量 +4（14.96）超過，再加敏捷 -1（-3.49）就不超過
-    over = armed(1, [{"location": 1, "modifier": 4}])
-    ok = armed(1, [{"location": 1, "modifier": 4}, {"location": 2, "modifier": -1}])
-    assert problems_of(tmp_path, fixed_area([over], [M1, give(1)], [make_mobile(1)])) != []
-    assert problems_of(tmp_path, fixed_area([ok], [M1, give(1)], [make_mobile(1)])) == []
+    over = armed(101, [{"location": 1, "modifier": 4}])
+    ok = armed(101, [{"location": 1, "modifier": 4}, {"location": 2, "modifier": -1}])
+    assert problems_of(tmp_path, fixed_area([over], [M1, give(101)], [make_mobile(101)])) != []
+    assert problems_of(tmp_path, fixed_area([ok], [M1, give(101)], [make_mobile(101)])) == []
 
 
 def test_offhand_weapon_uses_offhand_cap(tmp_path):
     # 副手武器（雙持）：點數上限跟盾牌一樣是副手的，1 級 5.73
-    dagger = armed(1, [{"location": 13, "modifier": 6}], wear="1|512")
-    found = problems_of(tmp_path, fixed_area([dagger], [M1, give(1)], [make_mobile(1)]))
+    dagger = armed(101, [{"location": 13, "modifier": 6}], wear="1|512")
+    found = problems_of(tmp_path, fixed_area([dagger], [M1, give(101)], [make_mobile(101)]))
     assert len(found) == 1 and "1 級副手、白色的上限 5.73" in found[0]
     dagger["affects"] = [{"location": 13, "modifier": 5}]
-    assert problems_of(tmp_path, fixed_area([dagger], [M1, give(1)], [make_mobile(1)])) == []
+    assert problems_of(tmp_path, fixed_area([dagger], [M1, give(101)], [make_mobile(101)])) == []
 
 
 @pytest.mark.parametrize("wear", ["1|512|8192", 8704])
 def test_wield_and_offhand_together_is_an_error(tmp_path, wear):
     # 武器只能放做出來的那一手：主手、副手都寫的話，會用主手的上限算點數，放到副手就多拿了點數
-    data = fixed_area([armed(1, [], wear=wear)])
+    data = fixed_area([armed(101, [], wear=wear)])
     assert problems_of(tmp_path, data) == [
-        f"a.json：物品 1 的 wear_flags {wear!r} 同時有 8192 主手和 512 副手：武器只能放做出來的那一手，"
+        f"a.json：物品 101 的 wear_flags {wear!r} 同時有 8192 主手和 512 副手：武器只能放做出來的那一手，"
         "主手武器寫 8192，副手武器寫 512"]
 
 
 @pytest.mark.parametrize("color, text", [(None, "沒寫顏色（null）的上限"), ("gray", "灰色的上限")])
 def test_fixed_item_gray_or_null_has_no_points(tmp_path, color, text):
-    sword = armed(1, [{"location": 6, "modifier": 1}])
-    found = problems_of(tmp_path, fixed_area([sword], [M1, give(1, color)], [make_mobile(1)]))
+    sword = armed(101, [{"location": 6, "modifier": 1}])
+    found = problems_of(tmp_path, fixed_area([sword], [M1, give(101, color)], [make_mobile(101)]))
     assert len(found) == 1 and text in found[0] and "× 0 ＝ 0" in found[0]
 
 
 def test_dragon_resistance_is_free(tmp_path):
     # 只給龍焰抗性的獎勵（設計文件 §5.5）：不算點數，灰色、null 也可以
-    ring = armed(1, [{"location": 16, "modifier": 500}], wear="1|2")
-    o = {"cmd": "O", "if_flag": 0, "obj_vnum": 1, "color": None, "level": 1, "limit": 0, "room_vnum": 1, "comment": ""}
+    ring = armed(101, [{"location": 16, "modifier": 500}], wear="1|2")
+    o = {"cmd": "O", "if_flag": 0, "obj_vnum": 101, "color": None, "level": 1, "limit": 0, "room_vnum": 101, "comment": ""}
     assert problems_of(tmp_path, fixed_area([ring], [o])) == []
 
 
 def test_fixed_item_in_drops_uses_mob_level(tmp_path):
-    helm = armed(1, [{"location": 6, "modifier": 10}], wear="1|16")    # 頭：1 級上限 5.73、20 級 13.9
-    weak, strong = make_mobile(1), make_mobile(2)
+    helm = armed(101, [{"location": 6, "modifier": 10}], wear="1|16")    # 頭：1 級上限 5.73、20 級 13.9
+    weak, strong = make_mobile(101), make_mobile(102)
     strong["level"] = 20
     for m in (weak, strong):
-        m["drops"] = [{"obj_vnum": 1, "color": "white", "chance": 100, "tiers": None}]
+        m["drops"] = [{"obj_vnum": 101, "color": "white", "chance": 100, "tiers": None}]
     found = problems_of(tmp_path, fixed_area([helm], mobiles=[weak, strong]))
-    assert len(found) == 1 and found[0].startswith("a.json：生物 1 的 drops 第 1 行放出物品 101")
+    assert len(found) == 1 and found[0].startswith("a.json：生物 101 的 drops 第 1 行放出物品 101")
 
 
 def test_two_handed_needs_wield(tmp_path):
     # 512 雙手只對有主手位置的物品有用：頭盔勾了也還是頭的上限
-    helm = armed(1, [{"location": 6, "modifier": 10}], wear="1|16", extra=512)
+    helm = armed(101, [{"location": 6, "modifier": 10}], wear="1|16", extra=512)
     helm["item_type"] = 9                   # 護具（不是武器，武器種類的檢查不管它）
-    o = {"cmd": "O", "if_flag": 0, "obj_vnum": 1, "color": "white", "level": 1, "limit": 0, "room_vnum": 1, "comment": ""}
+    o = {"cmd": "O", "if_flag": 0, "obj_vnum": 101, "color": "white", "level": 1, "limit": 0, "room_vnum": 101, "comment": ""}
     assert "1 級頭、白色的上限 5.73" in problems_of(tmp_path, fixed_area([helm], [o]))[0]
 
 
 def test_unplaced_fixed_item_is_not_checked(tmp_path):
     # 沒有地方放它，就不知道等級和顏色
-    sword = armed(1, [{"location": 13, "modifier": 999}])
+    sword = armed(101, [{"location": 13, "modifier": 999}])
     assert problems_of(tmp_path, fixed_area([sword])) == []
 
 
 def test_fixed_item_from_another_file(tmp_path):
-    # G 給的是 b.json 的物品（寫完整號碼 201）：用 b.json 的物品算，錯誤報在放它的 a.json
-    sword = armed(1, [{"location": 13, "modifier": 18}])
-    a = write_json(tmp_path, "a.json", fixed_area([], [M1, give(201)], [make_mobile(1)]))
-    b = write_area(tmp_path, "b.json", [make_room(1)], area_number=200, objects=[sword])
+    # G 給的是 b.json 的物品 201（範圍外，外連）：用 b.json 的物品算，錯誤報在放它的 a.json
+    sword = armed(201, [{"location": 13, "modifier": 18}])
+    a = write_json(tmp_path, "a.json", fixed_area([], [M1, give(201)], [make_mobile(101)]))
+    b = write_area(tmp_path, "b.json", [make_room(201)], vnums=(200, 299), objects=[sword])
     found = area.check_files([a, b], [a, b])
-    assert found[b] == [] and "放出物品 201「物品1」" in found[a][0]
+    assert found[b] == [] and "放出物品 201「物品201」" in found[a][0]
 
 
 # ---- 武器：種類、拿法、攻擊方式（設計文件 §3.3，手冊「武器種類」） ----
 
 def weapon(values, extra=0, item_type=5):
-    o = make_object(1)
+    o = make_object(101)
     o.update(values=values, extra_flags=extra, item_type=item_type, affects=[])
     return fixed_area([o])
 
@@ -475,26 +520,26 @@ def test_good_weapons(tmp_path, values, extra):
 @pytest.mark.parametrize("kind", [0, 12, -1, "長劍"])
 def test_weapon_kind_must_be_1_to_11(tmp_path, kind):
     assert problems_of(tmp_path, weapon([kind, 0, 0, 1])) == [
-        f"a.json：物品 1 的武器種類（values 第 1 個）要是 1～11，不能是 {kind!r}（見手冊的武器種類表）"]
+        f"a.json：物品 101 的武器種類（values 第 1 個）要是 1～11，不能是 {kind!r}（見手冊的武器種類表）"]
 
 
 def test_two_handed_kind_needs_512_and_one_handed_must_not(tmp_path):
     assert problems_of(tmp_path, weapon([9, 0, 0, 3], "1|64")) == [
-        "a.json：物品 1 是 9 戰斧（雙手），extra_flags '1|64' 要有 512 雙手"]
+        "a.json：物品 101 是 9 戰斧（雙手），extra_flags '1|64' 要有 512 雙手"]
     assert problems_of(tmp_path, weapon([2, 0, 0, 1], 512)) == [
-        "a.json：物品 1 是 2 長劍（單手），extra_flags 512 不能有 512 雙手"]
+        "a.json：物品 101 是 2 長劍（單手），extra_flags 512 不能有 512 雙手"]
 
 
 @pytest.mark.parametrize("attack, name", [(0, "重擊"), (10, "利牙"), (12, "吸取")])
 def test_mob_only_attacks(tmp_path, attack, name):
     assert problems_of(tmp_path, weapon([1, 0, 0, attack])) == [
-        f"a.json：物品 1 的攻擊方式 {attack}（{name}）只給怪物用，武器不能用"]
+        f"a.json：物品 101 的攻擊方式 {attack}（{name}）只給怪物用，武器不能用"]
 
 
 @pytest.mark.parametrize("attack", [14, -1, "stab"])
 def test_attack_must_be_0_to_13(tmp_path, attack):
     assert problems_of(tmp_path, weapon([1, 0, 0, attack])) == [
-        f"a.json：物品 1 的攻擊方式（values 第 4 個）要是 0～13，不能是 {attack!r}（見手冊的攻擊方式表）"]
+        f"a.json：物品 101 的攻擊方式（values 第 4 個）要是 0～13，不能是 {attack!r}（見手冊的攻擊方式表）"]
 
 
 def test_only_weapons_are_checked(tmp_path):

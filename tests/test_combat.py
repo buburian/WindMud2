@@ -44,12 +44,12 @@ def world(tmp_path, monkeypatch):
     """世界：房間 101、102 南北相連，102 有一隻 5 級的野狗（純物理）。"""
     monkeypatch.setattr(fight, "TICK_SECONDS", 1000)       # loop 不會自己跑：測試自己呼叫 tick()
     monkeypatch.setattr(combat, "rng", Always(0.5))
-    dog = make_mobile(1)
+    dog = make_mobile(101)
     dog.update(short="野狗", keywords="dog 野狗", level=5, tier="normal", tier_roll=None, attack=None, defense=None,
                archetype=None, act=0, position=7, sex=0, long="", drops=[])
-    rooms = [make_room(1, north=2), make_room(2, south=1)]
-    reset = [{"cmd": "M", "rare": 0, "mob_vnum": 1, "limit": 1, "room_vnum": 2, "comment": ""}]
-    write_json(tmp_path, "a.json", make_area("a.json", rooms, 100, mobiles=[dog], resets=reset))
+    rooms = [make_room(101, north=102), make_room(102, south=101)]
+    reset = [{"cmd": "M", "rare": 0, "mob_vnum": 101, "limit": 1, "room_vnum": 102, "comment": ""}]
+    write_json(tmp_path, "a.json", make_area("a.json", rooms, (100, 199), mobiles=[dog], resets=reset))
     zones.load(tmp_path)
     yield tmp_path
     characters.clear()

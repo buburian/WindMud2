@@ -42,11 +42,11 @@ class Always:
 
 @pytest.fixture
 def world(tmp_path, monkeypatch):
-    """房間 101、102（南北相連），房間 101 有一隻 1 級的一般怪「生物1」。"""
+    """房間 101、102（南北相連），房間 101 有一隻 1 級的一般怪「生物101」。"""
     monkeypatch.setattr(fight, "TICK_SECONDS", 1000)        # 戰鬥的 loop 不會自己跑
     monkeypatch.setattr(combat, "rng", Always(0.5))
     monkeypatch.setattr(save, "PLAYER_DIR", str(tmp_path / "players"))
-    write_json(tmp_path, "a.json", make_area("a.json", [make_room(1, north=2), make_room(2, south=1)], 100))
+    write_json(tmp_path, "a.json", make_area("a.json", [make_room(101, north=102), make_room(102, south=101)], (100, 199)))
     zones.load(tmp_path)
     yield zones.world
     characters.clear()
@@ -66,9 +66,9 @@ def person(name, room=101, race=stats.Race.HUMAN, imm=False):
 
 
 def creature(room=101):
-    proto = make_mobile(1)
+    proto = make_mobile(101)
     proto.update(tier_roll=None, position=7, attack=None, defense=None, archetype=None, drops=[], shop=None)
-    return npcs.spawn(101, proto, zones.world.rooms[room], random.Random(0), 100)
+    return npcs.spawn(101, proto, zones.world.rooms[room], random.Random(0))
 
 
 def plain(p):
@@ -172,15 +172,15 @@ def test_has_flag(world):
 
 def test_mobile_keeps_its_affected_by(world):
     # 區域檔的 affected_by 放到生物身上（照 C 版：一直帶著，不會消失，affect clear 也拿不掉；現在只是記號）
-    proto = make_mobile(1)
+    proto = make_mobile(101)
     proto.update(tier_roll=None, position=7, attack=None, defense=None, archetype=None, drops=[], shop=None,
                  affected_by="1|8")
-    npc = npcs.spawn(101, proto, zones.world.rooms[101], random.Random(0), 100)
+    npc = npcs.spawn(101, proto, zones.world.rooms[101], random.Random(0))
     assert npc.affected_by == AffectFlag.BLIND | AffectFlag.DETECT_INVIS
     assert affects.has_flag(npc, AffectFlag.BLIND) and not affects.has_flag(npc, AffectFlag.INVISIBLE)
     ming = person("Ming", imm=True)
-    assert "\r\nact 0  affected_by 9（失明、看得到隱形）  姿勢 STANDING" in say(ming, "mstat mob1")
-    say(ming, "affect mob1 clear")
+    assert "\r\nact 0  affected_by 9（失明、看得到隱形）  姿勢 STANDING" in say(ming, "mstat mob101")
+    say(ming, "affect mob101 clear")
     ticks(100)
     assert affects.has_flag(npc, AffectFlag.DETECT_INVIS) and npc.affects == []
     assert creature().affected_by == AffectFlag(0)
@@ -322,7 +322,7 @@ def test_hp_loss_kills_a_creature_out_of_a_fight(world):
     [corpse] = world.rooms[101].contents
     assert corpse.item_type == CORPSE_NPC_ITEM_TYPE
     text = plain(ming)
-    assert "生物1已經斷氣，倒在地上死亡了!!" in text and "經驗" not in text and ming.exp == 0   # 沒在打架：誰都不給經驗
+    assert "生物101已經斷氣，倒在地上死亡了!!" in text and "經驗" not in text and ming.exp == 0   # 沒在打架：誰都不給經驗
 
 
 def test_hp_loss_in_a_fight_counts_as_the_opponent_killing_it(world):
@@ -480,7 +480,7 @@ def test_affect_on_others(world):
 
 def test_affect_on_a_creature(world):
     ming, npc = person("Ming", imm=True), creature()
-    assert say(ming, "affect mob1 regen") == "你讓生物1身上多了【測試回復】（60 秒）。"
+    assert say(ming, "affect mob101 regen") == "你讓生物101身上多了【測試回復】（60 秒）。"
     assert npc.affects[0].periodic == {"hp": 10.0}
 
 
@@ -492,10 +492,10 @@ def test_affect_not_found_and_not_imm(world):
 def test_mstat_lists_affects(world):
     ming = person("Ming", imm=True)
     npc = creature()
-    assert say(ming, "mstat mob1").endswith("\r\n效果 無")
+    assert say(ming, "mstat mob101").endswith("\r\n效果 無")
     affects.add(npc, Affect(**commands.imm.TEST_EFFECTS["poison"]))
     affects.add(npc, Affect(**commands.imm.TEST_EFFECTS["blind"]))
-    assert say(ming, "mstat mob1").endswith("\r\n效果 測試毒：還有 60 秒，每 3 秒 HP -10；測試失明：還有 30 秒，失明")
+    assert say(ming, "mstat mob101").endswith("\r\n效果 測試毒：還有 60 秒，每 3 秒 HP -10；測試失明：還有 30 秒，失明")
     assert say(ming, "mstat ming").endswith("\r\n效果 無")
 
 
@@ -702,7 +702,7 @@ def test_showbuff_only_in_a_fight(world):
         return seen, raw(ming)
 
     seen, after = fighting((ming, npc), then=then)
-    assert "你的【滴】HP +10" in plain_of(seen) and "生物1的【滴】HP -1" in plain_of(seen)
+    assert "你的【滴】HP +10" in plain_of(seen) and "生物101的【滴】HP -1" in plain_of(seen)
     assert after == ""                                               # 打完了：不說
 
 
@@ -721,7 +721,7 @@ def test_showbuff_shows_everyone_in_your_fight_only(world):
         return plain_of(raw(ming)), plain_of(raw(hua)), raw(bao)
 
     mine, other, idle = fighting((ming, one), (hua, two), then=then)
-    assert mine == "\r\n生物1的【滴】HP -10\r\n\r\n" + plain_of(ming.prompt())   # 打牠的人看得到
+    assert mine == "\r\n生物101的【滴】HP -10\r\n\r\n" + plain_of(ming.prompt())   # 打牠的人看得到
     assert other == "" and idle == ""                                # 同一間房、別場的和沒打架的看不到
 
 
@@ -812,7 +812,7 @@ def test_showbuff_line_comes_before_the_death(world):
         return plain_of(raw(ming))
 
     text = fighting((ming, npc), then=then)
-    assert text.startswith("\r\n生物1的【滴】HP -10\r\n生物1已經斷氣，倒在地上死亡了!!\r\n") and text.count("<HP") == 1
+    assert text.startswith("\r\n生物101的【滴】HP -10\r\n生物101已經斷氣，倒在地上死亡了!!\r\n") and text.count("<HP") == 1
     assert npc not in characters
 
 
@@ -826,4 +826,4 @@ def test_messages_without_showbuff_are_unchanged(world):
         ticks(3)
         return plain_of(raw(ming))
 
-    assert fighting((ming, npc), then=then).startswith("\r\n生物1已經斷氣，倒在地上死亡了!!\r\n")
+    assert fighting((ming, npc), then=then).startswith("\r\n生物101已經斷氣，倒在地上死亡了!!\r\n")

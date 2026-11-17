@@ -77,18 +77,18 @@ def test_each_segment_has_its_own_budget():
 def check(tmp_path, rooms=(), mobiles=(), files=None, script_root=None):
     for name, code in (files or {}).items():
         write_lua(tmp_path, "a.json", name, code)
-    path = write_json(tmp_path, "a.json", make_area("a.json", list(rooms) or [make_room(1)], 100, mobiles=list(mobiles)))
+    path = write_json(tmp_path, "a.json", make_area("a.json", list(rooms) or [make_room(101)], (100, 199), mobiles=list(mobiles)))
     return area.check_files([path], script_root=script_root)[path]
 
 
-def scripted_room(file="x.lua", timer=None, vnum=1):
+def scripted_room(file="x.lua", timer=None, vnum=101):
     r = make_room(vnum)
     r["script"] = {"file": file, "timer": timer}
     return r
 
 
 def scripted_mob(file="x.lua", timer=None):
-    m = make_mobile(1)
+    m = make_mobile(101)
     m["script"] = {"file": file, "timer": timer}
     return m
 
@@ -96,19 +96,19 @@ def scripted_mob(file="x.lua", timer=None):
 def test_good_scripts_pass(tmp_path):
     files = {"x.lua": "local n = math.floor(1.5)\nfunction on_say(actor, text) me:command('say 嗨') end",
              "t.lua": "function on_timer() room:echo('鐘聲') end"}
-    assert check(tmp_path, [scripted_room(), scripted_room("t.lua", 60, vnum=2)], [scripted_mob()], files) == []
+    assert check(tmp_path, [scripted_room(), scripted_room("t.lua", 60, vnum=102)], [scripted_mob()], files) == []
 
 
 @pytest.mark.parametrize("file, code, want", [
-    ("x.lua", None, "房間 1的 script 的 file：找不到 a/x.lua"),
-    ("../x.lua", "", "房間 1的 script 的 file '../x.lua' 跑出 a/ 資料夾了"),
-    ("x.lua", "function on_say( end", "房間 1的腳本 a/x.lua:1: <name> or '...' expected near 'end'"),
-    ("x.lua", "boom()", "房間 1的腳本 a/x.lua:1: attempt to call a nil value (global 'boom')"),
-    ("x.lua", "wait(1)", "房間 1的腳本 最外層不能 wait"),
-    ("x.lua", "-- 😀\n", "房間 1的腳本 a/x.lua:1: 有轉不成 Big5 的字 '😀'"),
-    ("x.lua", "function on_sya() end", "房間 1的腳本 a/x.lua 有不認得的函式 on_sya"),
-    ("x.lua", "function on_death() end", "房間 1的腳本 a/x.lua 有不認得的函式 on_death（房間能用的是"),
-    ("x.lua", "function on_timer() end", "房間 1的腳本 a/x.lua 有 on_timer，script 的 timer 卻是 null"),
+    ("x.lua", None, "房間 101的 script 的 file：找不到 a/x.lua"),
+    ("../x.lua", "", "房間 101的 script 的 file '../x.lua' 跑出 a/ 資料夾了"),
+    ("x.lua", "function on_say( end", "房間 101的腳本 a/x.lua:1: <name> or '...' expected near 'end'"),
+    ("x.lua", "boom()", "房間 101的腳本 a/x.lua:1: attempt to call a nil value (global 'boom')"),
+    ("x.lua", "wait(1)", "房間 101的腳本 最外層不能 wait"),
+    ("x.lua", "-- 😀\n", "房間 101的腳本 a/x.lua:1: 有轉不成 Big5 的字 '😀'"),
+    ("x.lua", "function on_sya() end", "房間 101的腳本 a/x.lua 有不認得的函式 on_sya"),
+    ("x.lua", "function on_death() end", "房間 101的腳本 a/x.lua 有不認得的函式 on_death（房間能用的是"),
+    ("x.lua", "function on_timer() end", "房間 101的腳本 a/x.lua 有 on_timer，script 的 timer 卻是 null"),
 ])
 def test_bad_scripts(tmp_path, file, code, want):
     if code is not None and not file.startswith(".."):
@@ -122,7 +122,7 @@ def test_bad_scripts(tmp_path, file, code, want):
 
 def test_timer_needs_on_timer(tmp_path):
     problems = check(tmp_path, [scripted_room(timer=30)], files={"x.lua": "function on_say() end"})
-    assert problems == ["a.json：房間 1的 script 寫了 timer 30，腳本 a/x.lua 卻沒有 on_timer"]
+    assert problems == ["a.json：房間 101的 script 寫了 timer 30，腳本 a/x.lua 卻沒有 on_timer"]
 
 
 def test_not_utf8(tmp_path):
@@ -212,20 +212,20 @@ def mob(vnum, short, keywords, file=None, timer=None, **fields):
     return m
 
 
-def M(vnum, room=1):
+def M(vnum, room=101):
     return {"cmd": "M", "rare": 0, "mob_vnum": vnum, "limit": 9, "room_vnum": room, "comment": ""}
 
 
 def build(tmp_path, files, rooms=None, mobs=(), resets=(), objects=(), door=False):
     """房間 101 —北— 102；files 是 {檔名: 程式}；rooms 是 {房間號碼: (檔名, timer)}；door：中間有一扇門（開著）。"""
-    plan = [make_room(1, north=2), make_room(2, south=1)]
+    plan = [make_room(101, north=102), make_room(102, south=101)]
     if door:
         plan[0]["exits"]["north"]["locks"] = plan[1]["exits"]["south"]["locks"] = 1
     for vnum, (file, timer) in (rooms or {}).items():
-        plan[vnum - 1]["script"] = {"file": file, "timer": timer}
+        plan[vnum - 101]["script"] = {"file": file, "timer": timer}
     for name, code in files.items():
         write_lua(tmp_path, "a.json", name, code)
-    write_json(tmp_path, "a.json", make_area("a.json", plan, 100, mobiles=list(mobs), resets=list(resets), objects=list(objects)))
+    write_json(tmp_path, "a.json", make_area("a.json", plan, (100, 199), mobiles=list(mobs), resets=list(resets), objects=list(objects)))
     zones.load(tmp_path)
     return zones.world.rooms[101]
 
@@ -263,14 +263,14 @@ def test_on_say_runs_room_first_then_mobs_by_arrival(tmp_path, later):
     files = {"r.lua": 'function on_say(actor, text) room.vars.log = (room.vars.log or "") .. "r" end',
              "a.lua": 'function on_say(actor, text) room.vars.log = room.vars.log .. "a" end',
              "b.lua": 'function on_say(actor, text) room.vars.log = room.vars.log .. "b" end'}
-    room = build(tmp_path, files, {1: ("r.lua", None)}, [mob(2, "乙", "b", "b.lua"), mob(1, "甲", "a", "a.lua")], [M(2), M(1)])
+    room = build(tmp_path, files, {101: ("r.lua", None)}, [mob(102, "乙", "b", "b.lua"), mob(101, "甲", "a", "a.lua")], [M(102), M(101)])
     say(person("Ming"), "say 你好")
     assert room.vars["log"] == "rba"                                   # 乙比甲先進房間
 
 
 def test_on_say_gets_actor_and_text(tmp_path, later):
     files = {"m.lua": 'function on_say(actor, text)\n  if text == "你好" then me:command("say 歡迎光臨，" .. actor.name .. "！") end\nend'}
-    build(tmp_path, files, mobs=[mob(1, "商人", "merchant", "m.lua")], resets=[M(1)])
+    build(tmp_path, files, mobs=[mob(101, "商人", "merchant", "m.lua")], resets=[M(101)])
     ming = person("Ming")
     # 他的指令還沒跑完生物就回話：接在指令的回覆後面，只有最後一個 prompt
     assert say(ming, "say 你好") == "你說：『你好』\r\n\r\n商人說：『歡迎光臨，Ming！』\r\n\r\n" + plain_prompt(ming)
@@ -281,7 +281,7 @@ def test_scripts_do_not_trigger_themselves(tmp_path, later):
     # 生物自己打的指令不會叫到自己的 on_command（不是腳本叫的也一樣），房間的照樣觸發
     files = {"m.lua": 'function on_command(actor, cmd, arg) me.vars.n = (me.vars.n or 0) + 1 end',
              "r.lua": 'function on_command(actor, cmd, arg) room.vars.n = (room.vars.n or 0) + 1 end'}
-    room = build(tmp_path, files, {1: ("r.lua", None)}, [mob(1, "鸚鵡", "parrot", "m.lua")], [M(1)])
+    room = build(tmp_path, files, {101: ("r.lua", None)}, [mob(101, "鸚鵡", "parrot", "m.lua")], [M(101)])
     commands.command(npc("鸚鵡"), "look")
     assert npc("鸚鵡").vars == {} and room.vars == {"n": 1}
 
@@ -290,8 +290,8 @@ def test_mob_say_does_not_trigger_on_say(tmp_path, later):
     # 只有玩家說的話觸發 on_say（使用者選的，生物之間對話用 tell）：鸚鵡說的話，房間和貓都聽不到
     files = {"p.lua": 'function on_say(actor, text) me:command("say 回聲") end',
              "c.lua": 'function on_say(actor, text) me.vars[actor.name] = text end'}
-    room = build(tmp_path, files, {1: ("c.lua", None)}, [mob(1, "鸚鵡", "parrot", "p.lua"), mob(2, "貓", "cat", "c.lua")],
-                 [M(1), M(2)])
+    room = build(tmp_path, files, {101: ("c.lua", None)}, [mob(101, "鸚鵡", "parrot", "p.lua"), mob(102, "貓", "cat", "c.lua")],
+                 [M(101), M(102)])
     say(person("Ming"), "say 嗨")
     commands.command(npc("鸚鵡"), "say 我是鸚鵡")
     assert room.vars == {"Ming": "嗨"} and npc("貓").vars == {"Ming": "嗨"}
@@ -300,7 +300,7 @@ def test_mob_say_does_not_trigger_on_say(tmp_path, later):
 def test_finished_runs_free_their_memory(tmp_path, later):
     # 坑：Python 和 Lua 互相抓著（handle 的方法抓著 Run，Run 抓著 handle），沒放掉的話每次觸發都漏，記憶體用完整個程式會當掉
     code = 'function on_say(actor, text) me.vars.n = (me.vars.n or 0) + 1 me:command("say 嗯") end'
-    build(tmp_path, {"m.lua": code}, mobs=[mob(1, "鸚鵡", "parrot", "m.lua")], resets=[M(1)])
+    build(tmp_path, {"m.lua": code}, mobs=[mob(101, "鸚鵡", "parrot", "m.lua")], resets=[M(101)])
     ming = person("Ming")
     L = lua.rt().lua
 
@@ -320,7 +320,7 @@ def test_a_chain_does_not_come_back(tmp_path, later, caplog):
     # 甲、乙收到 tell 就 tell 對方：甲 → 乙 → 甲 這種繞回來的不跑（甲這一串已經跑過），不是跑到 5 層才停
     files = {"a.lua": 'function on_tell(actor, text) room.vars.n = (room.vars.n or 0) + 1 me:command("tell b 嗯") end',
              "b.lua": 'function on_tell(actor, text) room.vars.n = (room.vars.n or 0) + 1 me:command("tell a 嗯") end'}
-    room = build(tmp_path, files, mobs=[mob(1, "甲", "a", "a.lua"), mob(2, "乙", "b", "b.lua")], resets=[M(1), M(2)])
+    room = build(tmp_path, files, mobs=[mob(101, "甲", "a", "a.lua"), mob(102, "乙", "b", "b.lua")], resets=[M(101), M(102)])
     with caplog.at_level(logging.WARNING):
         say(person("Ming"), "tell a 嗨")
     assert room.vars["n"] == 2 and "超過" not in caplog.text
@@ -331,7 +331,7 @@ def test_after_wait_the_chain_starts_from_the_owner(tmp_path, later):
     files = {"a.lua": 'function on_tell(actor, text)\n  room.vars.n = (room.vars.n or 0) + 1\n'
                       '  if text == "開始" then wait(1) me:command("tell b 嗯") end\nend',
              "b.lua": 'function on_tell(actor, text) room.vars.n = room.vars.n + 1 me:command("tell a 回") end'}
-    room = build(tmp_path, files, mobs=[mob(1, "甲", "a", "a.lua"), mob(2, "乙", "b", "b.lua")], resets=[M(1), M(2)])
+    room = build(tmp_path, files, mobs=[mob(101, "甲", "a", "a.lua"), mob(102, "乙", "b", "b.lua")], resets=[M(101), M(102)])
     say(person("Ming"), "tell a 開始")
     later.run()
     assert room.vars["n"] == 2
@@ -341,8 +341,8 @@ def test_each_owner_runs_once_per_chain(tmp_path, later, caplog):
     # 七隻生物看到別人打指令就也打一個：一串裡每隻只跑一次（使用者選的），一共 7 次。
     # 只擋「繞回自己」的話，每一條路都跑一次，會是 7 + 7×6 + … ＝ 3619 次
     code = 'function on_command(actor, cmd, arg) room.vars.n = (room.vars.n or 0) + 1 me:command("look") end'
-    room = build(tmp_path, {"m.lua": code}, mobs=[mob(i, f"生物{i}", f"m{i}", "m.lua") for i in range(1, 8)],
-                 resets=[M(i) for i in range(1, 8)])
+    room = build(tmp_path, {"m.lua": code}, mobs=[mob(100 + i, f"生物{i}", f"m{i}", "m.lua") for i in range(1, 8)],
+                 resets=[M(100 + i) for i in range(1, 8)])
     with caplog.at_level(logging.WARNING):
         say(person("Ming"), "look")
     assert room.vars["n"] == 7
@@ -351,7 +351,7 @@ def test_each_owner_runs_once_per_chain(tmp_path, later, caplog):
 def test_on_command_can_block(tmp_path, later):
     files = {"g.lua": 'function on_command(actor, cmd, arg)\n  room.vars.last = cmd .. "|" .. arg\n'
                       '  if cmd == "north" then actor:tell("守衛擋住了你。") return true end\nend'}
-    room = build(tmp_path, files, mobs=[mob(1, "守衛", "guard", "g.lua")], resets=[M(1)])
+    room = build(tmp_path, files, mobs=[mob(101, "守衛", "guard", "g.lua")], resets=[M(101)])
     ming = person("Ming")
     out = say(ming, "n")
     assert out.startswith("守衛擋住了你。\r\n\r\n") and ming.room.vnum == 101 and room.vars["last"] == "north|"
@@ -367,7 +367,7 @@ def plain_prompt(p):
 
 def test_on_command_wait_counts_as_blocking(tmp_path, later):
     files = {"g.lua": 'function on_command(actor, cmd, arg)\n  if cmd == "north" then wait(2) actor:tell("好了。") end\nend'}
-    build(tmp_path, files, mobs=[mob(1, "守衛", "guard", "g.lua")], resets=[M(1)])
+    build(tmp_path, files, mobs=[mob(101, "守衛", "guard", "g.lua")], resets=[M(101)])
     ming = person("Ming")
     say(ming, "n")
     assert ming.room.vnum == 101 and [j.seconds for j in later.jobs] == [2]
@@ -377,7 +377,7 @@ def test_on_command_wait_counts_as_blocking(tmp_path, later):
 
 def test_on_enter_and_from(tmp_path, later):
     files = {"r.lua": 'function on_enter(actor, from) room.vars.from = from or "傳送" room:echo("風鈴響了。") end'}
-    room = build(tmp_path, files, {2: ("r.lua", None)})
+    room = build(tmp_path, files, {102: ("r.lua", None)})
     ming = person("Ming")
     out = say(ming, "n")
     assert zones.world.rooms[102].vars["from"] == "south"
@@ -388,7 +388,7 @@ def test_messages_after_the_commands_own_output_start_a_new_block(tmp_path, late
     # 別人的訊息連在一起不空行；中間夾了指令自己的訊息（房間畫面），後面那批前面要空一行
     files = {"g.lua": 'function on_command(actor, cmd, arg) if cmd == "north" then actor:tell("你要往北走了。") end end',
              "e.lua": 'function on_enter(actor, from) room:echo("風鈴響了。") room:echo("風停了。") end'}
-    build(tmp_path, files, {1: ("g.lua", None), 2: ("e.lua", None)})
+    build(tmp_path, files, {101: ("g.lua", None), 102: ("e.lua", None)})
     ming = person("Ming")
     out = say(ming, "n")
     assert out.startswith("你要往北走了。\r\n") and out.endswith("\r\n\r\n風鈴響了。\r\n風停了。\r\n\r\n" + plain_prompt(ming))
@@ -398,8 +398,8 @@ def test_mobs_tell_someone_in_the_room_first(tmp_path, later):
     # 生物的名字是英文，可能跟線上的玩家同名：生物下 tell 先找同一間房（使用者定的）
     files = {"a.lua": 'function on_say(actor, text) me:command("tell " .. text .. " 嗨") end',
              "b.lua": 'function on_tell(actor, text) room.vars.got = actor.name .. text end'}
-    room = build(tmp_path, files, mobs=[mob(1, "甲", "alpha", "a.lua"), mob(2, "麵包師傅", "baker", "b.lua")],
-                 resets=[M(1), M(2)])
+    room = build(tmp_path, files, mobs=[mob(101, "甲", "alpha", "a.lua"), mob(102, "麵包師傅", "baker", "b.lua")],
+                 resets=[M(101), M(102)])
     baker = person("Baker", room=102)                                   # 線上同名的玩家，在別的房間
     ming = person("Ming")
     say(ming, "say baker")
@@ -409,14 +409,14 @@ def test_mobs_tell_someone_in_the_room_first(tmp_path, later):
 
 def test_mobs_tell_online_players_elsewhere(tmp_path, later):
     build(tmp_path, {"a.lua": 'function on_say(actor, text) me:command("tell zed 嗨") end'},
-          mobs=[mob(1, "甲", "alpha", "a.lua")], resets=[M(1)])
+          mobs=[mob(101, "甲", "alpha", "a.lua")], resets=[M(101)])
     zed = person("Zed", room=102)                                       # 同一間房找不到，才找線上的玩家
     say(person("Ming"), "say 嗨")
     assert "甲告訴你：嗨" in plain(zed)
 
 
 def test_script_doors_are_heard_on_the_other_side(tmp_path, later):
-    build(tmp_path, {"r.lua": 'function on_say(actor, text) room:door("north", text) end'}, {1: ("r.lua", None)}, door=True)
+    build(tmp_path, {"r.lua": 'function on_say(actor, text) room:door("north", text) end'}, {101: ("r.lua", None)}, door=True)
     ming, hua = person("Ming"), person("Hua", room=102)
     plain(hua)
     for line, heard in [("close", "南方的門被關起來了。"), ("lock", None), ("unlock", None), ("close", None),
@@ -428,15 +428,15 @@ def test_script_doors_are_heard_on_the_other_side(tmp_path, later):
 
 def test_on_give(tmp_path, later):
     files = {"m.lua": 'function on_give(actor, item, gold) me.vars.got = tostring(item) .. "/" .. gold end'}
-    obj = make_object_proto(5)
-    build(tmp_path, files, mobs=[mob(1, "商人", "merchant", "m.lua")], resets=[M(1)], objects=[obj])
+    obj = make_object_proto(105)
+    build(tmp_path, files, mobs=[mob(101, "商人", "merchant", "m.lua")], resets=[M(101)], objects=[obj])
     ming = person("Ming")
     stats.set_level(ming, 2)
     from mud import objects
     ming.carrying.append(objects.create(105, 1, None))
     ming.gold = 10
     say(ming, "give rock merchant")
-    assert npc("商人").vars["got"] == "5/0"                              # 自己區域的物品號碼是 1～99
+    assert npc("商人").vars["got"] == "105/0"                            # 給腳本的是完整的遊戲號碼
     say(ming, "give 3 coins merchant")
     assert npc("商人").vars["got"] == "nil/3"
 
@@ -451,7 +451,7 @@ def make_object_proto(vnum):
 
 def test_on_death_runs_before_falling(tmp_path, later):
     files = {"m.lua": 'function on_death(killer)\n  me:command("say 我還會回來的，" .. (killer and killer.name or "沒有人") .. "！")\nend'}
-    build(tmp_path, files, mobs=[mob(1, "老鼠", "rat", "m.lua")], resets=[M(1)])
+    build(tmp_path, files, mobs=[mob(101, "老鼠", "rat", "m.lua")], resets=[M(101)])
     ming = person("Ming")
     plain(ming)
     death.die(npc("老鼠"), killer=ming)
@@ -478,7 +478,7 @@ def test_on_death_messages_follow_the_round(tmp_path, later, monkeypatch):
     import asyncio
     from mud import combat
     monkeypatch.setattr(combat, "rng", Always(0.5))
-    build(tmp_path, DEATH_ECHO, mobs=[mob(1, "老鼠", "rat", "m.lua")], resets=[M(1)])
+    build(tmp_path, DEATH_ECHO, mobs=[mob(101, "老鼠", "rat", "m.lua")], resets=[M(101)])
     ming, rat = person("Ming"), npc("老鼠")
     rat.hp = 0.1
     plain(ming)
@@ -494,7 +494,7 @@ def test_on_death_messages_follow_a_skill(tmp_path, later, monkeypatch):
     import asyncio
     from mud import combat
     monkeypatch.setattr(combat, "rng", Always(0.5))
-    build(tmp_path, DEATH_ECHO, mobs=[mob(1, "老鼠", "rat", "m.lua")], resets=[M(1)])
+    build(tmp_path, DEATH_ECHO, mobs=[mob(101, "老鼠", "rat", "m.lua")], resets=[M(101)])
     ming = person("Ming")
     ming.skills = ["smash"]
     npc("老鼠").hp = 0.1
@@ -510,8 +510,8 @@ def test_a_new_room_in_the_middle_of_a_round_starts_a_new_paragraph(tmp_path, la
     import asyncio
     from mud import combat
     monkeypatch.setattr(combat, "rng", Always(0.5))
-    build(tmp_path, {"m.lua": "function on_death(killer) killer:transfer(102) end"}, mobs=[mob(1, "老鼠", "rat", "m.lua")],
-          resets=[M(1)])
+    build(tmp_path, {"m.lua": "function on_death(killer) killer:transfer(102) end"}, mobs=[mob(101, "老鼠", "rat", "m.lua")],
+          resets=[M(101)])
     ming, rat = person("Ming"), npc("老鼠")
     rat.hp = 0.1
     plain(ming)
@@ -521,12 +521,12 @@ def test_a_new_room_in_the_middle_of_a_round_starts_a_new_paragraph(tmp_path, la
 
     asyncio.run(main())
     out = plain(ming)
-    assert "老鼠已經斷氣" in out and "\r\n\r\n【房間2】" in out and ming.room.vnum == 102
+    assert "老鼠已經斷氣" in out and "\r\n\r\n【房間102】" in out and ming.room.vnum == 102
 
 
 def test_on_death_messages_follow_hp_loss_over_time(tmp_path, later):
     from mud import affects
-    build(tmp_path, DEATH_ECHO, mobs=[mob(1, "老鼠", "rat", "m.lua")], resets=[M(1)])
+    build(tmp_path, DEATH_ECHO, mobs=[mob(101, "老鼠", "rat", "m.lua")], resets=[M(101)])
     ming, rat = person("Ming"), npc("老鼠")
     affects.add(rat, affects.Affect("drip", "毒", 60, periodic={"hp": -100000.0}))
     plain(ming)
@@ -536,7 +536,7 @@ def test_on_death_messages_follow_hp_loss_over_time(tmp_path, later):
 
 
 def test_destroy_in_on_death_leaves_no_corpse(tmp_path, later):
-    build(tmp_path, {"m.lua": "function on_death(killer) me:destroy() end"}, mobs=[mob(1, "幽靈", "ghost", "m.lua")], resets=[M(1)])
+    build(tmp_path, {"m.lua": "function on_death(killer) me:destroy() end"}, mobs=[mob(101, "幽靈", "ghost", "m.lua")], resets=[M(101)])
     death.die(npc("幽靈"))
     assert zones.world.rooms[101].contents == [] and not [c for c in characters if isinstance(c, Npc)]
 
@@ -544,7 +544,7 @@ def test_destroy_in_on_death_leaves_no_corpse(tmp_path, later):
 def test_on_fight_each_round(tmp_path, later):
     import asyncio
     build(tmp_path, {"m.lua": "function on_fight(target) me.vars.rounds = (me.vars.rounds or 0) + 1 me.vars.who = target.name end"},
-          mobs=[mob(1, "老鼠", "rat", "m.lua")], resets=[M(1)])
+          mobs=[mob(101, "老鼠", "rat", "m.lua")], resets=[M(101)])
     ming = person("Ming")
     rat = npc("老鼠")
 
@@ -560,7 +560,7 @@ def test_on_born_and_on_reset(tmp_path, later):
     files = {"m.lua": 'function on_born() me.vars.born = true end\nfunction on_reset() me.vars.resets = (me.vars.resets or 0) + 1 end',
              "r.lua": 'function on_reset() room.vars.resets = (room.vars.resets or 0) + 1 end\n'
                       'function on_say(actor, text) room.vars.said = true end'}
-    room = build(tmp_path, files, {1: ("r.lua", None)}, [mob(1, "老鼠", "rat", "m.lua")], [M(1)])
+    room = build(tmp_path, files, {101: ("r.lua", None)}, [mob(101, "老鼠", "rat", "m.lua")], [M(101)])
     rat = npc("老鼠")
     assert rat.vars == {"born": True, "resets": 1} and room.vars == {"resets": 1}   # 區域建立時的第一次重置也算
     say(person("Ming"), "say 嗨")
@@ -571,7 +571,7 @@ def test_on_born_and_on_reset(tmp_path, later):
 
 def test_on_tell(tmp_path, later):
     build(tmp_path, {"m.lua": "function on_tell(actor, text) me:command('say 你說：' .. text) end"},
-          mobs=[mob(1, "商人", "merchant", "m.lua")], resets=[M(1)])
+          mobs=[mob(101, "商人", "merchant", "m.lua")], resets=[M(101)])
     ming, hua = person("Ming"), person("Hua", room=102)
     out = say(ming, "tell merchant 你好")
     assert "你告訴商人：你好" in out and "商人說：『你說：你好』" in out
@@ -580,7 +580,7 @@ def test_on_tell(tmp_path, later):
 
 
 def test_on_timer(tmp_path, later):
-    room = build(tmp_path, {"r.lua": 'function on_timer() room:echo("鐘聲。") end'}, {1: ("r.lua", 2)})
+    room = build(tmp_path, {"r.lua": 'function on_timer() room:echo("鐘聲。") end'}, {101: ("r.lua", 2)})
     ming = person("Ming")
     plain(ming)
     zones.world.tick()
@@ -593,8 +593,8 @@ def test_chain_is_at_most_five_deep(tmp_path, later, caplog):
     # 七隻生物排成一串：第 i 隻收到 tell 就 tell 第 i+1 隻……一串最多 5 層，第 6 隻不跑、記一筆
     files = {f"m{i}.lua": f'function on_tell(actor, text)\n  room.vars.n = (room.vars.n or 0) + 1\n  me:command("tell m{i + 1} 傳")\nend'
              for i in range(1, 8)}
-    mobs = [mob(i, f"生物{i}", f"m{i}", f"m{i}.lua") for i in range(1, 8)]
-    room = build(tmp_path, files, mobs=mobs, resets=[M(i) for i in range(1, 8)])
+    mobs = [mob(100 + i, f"生物{i}", f"m{i}", f"m{i}.lua") for i in range(1, 8)]
+    room = build(tmp_path, files, mobs=mobs, resets=[M(100 + i) for i in range(1, 8)])
     with caplog.at_level(logging.WARNING):
         say(person("Ming"), "tell m1 傳")
     assert room.vars["n"] == scripts.MAX_DEPTH and "一串觸發超過 5 層" in caplog.text
@@ -605,22 +605,22 @@ def test_chain_is_at_most_five_deep(tmp_path, later, caplog):
 def test_actor_fields(tmp_path, later):
     code = ('function on_say(actor, text)\n  room.vars.s = actor.name .. actor.level .. actor.guild .. actor.race .. tostring(actor:is_player())\n'
             '  room.vars.m = tostring(me.guild) .. tostring(me:is_player())\nend')
-    room = build(tmp_path, {"m.lua": code}, mobs=[mob(1, "商人", "merchant", "m.lua")], resets=[M(1)])
+    room = build(tmp_path, {"m.lua": code}, mobs=[mob(101, "商人", "merchant", "m.lua")], resets=[M(101)])
     say(person("Ming"), "say 嗨")
     assert room.vars == {"s": "Ming1physhumantrue", "m": "nilfalse"}
 
 
 def test_items_and_doors(tmp_path, later):
     code = ('function on_say(actor, text)\n'
-            '  if text == "給" then actor:give_item(5, 3) end\n'
-            '  if text == "拿" then room.vars.took = actor:take_item(5) end\n'
-            '  if text == "地" then room:load_item(5, 1) room.vars.floor = room:has_item(5) end\n'
-            '  if text == "有" then room.vars.has = actor:has_item(5) room.vars.wears = actor:wears_item(5) end\n'
+            '  if text == "給" then actor:give_item(105, 3) end\n'
+            '  if text == "拿" then room.vars.took = actor:take_item(105) end\n'
+            '  if text == "地" then room:load_item(105, 1) room.vars.floor = room:has_item(105) end\n'
+            '  if text == "有" then room.vars.has = actor:has_item(105) room.vars.wears = actor:wears_item(105) end\n'
             '  if text == "關" then room:door("north", "lock") end\n'
             'end')
     rooms = [make_room(1, north=2), make_room(2, south=1)]
-    room = build(tmp_path, {"m.lua": code}, mobs=[mob(1, "商人", "merchant", "m.lua")], resets=[M(1)],
-                 objects=[make_object_proto(5)])
+    room = build(tmp_path, {"m.lua": code}, mobs=[mob(101, "商人", "merchant", "m.lua")], resets=[M(101)],
+                 objects=[make_object_proto(105)])
     ming = person("Ming")
     say(ming, "say 給")
     assert [(o.vnum, o.level) for o in ming.carrying] == [(105, 3)]
@@ -636,11 +636,11 @@ def test_items_and_doors(tmp_path, later):
 
 def test_give_item_messages_like_give(tmp_path, later):
     # 生物的腳本給東西：跟玩家用 give 一樣的訊息（使用者要的）；房間的腳本、生物給自己不說話
-    files = {"m.lua": 'function on_say(actor, text)\n  if text == "給" then actor:give_item(5, 1) end\n'
-                      '  if text == "自己" then me:give_item(5, 1) end\nend',
-             "r.lua": 'function on_say(actor, text)\n  if text == "房間" then actor:give_item(5, 1) end\nend'}
-    build(tmp_path, files, {1: ("r.lua", None)}, mobs=[mob(1, "商人", "merchant", "m.lua")], resets=[M(1)],
-          objects=[make_object_proto(5)])
+    files = {"m.lua": 'function on_say(actor, text)\n  if text == "給" then actor:give_item(105, 1) end\n'
+                      '  if text == "自己" then me:give_item(105, 1) end\nend',
+             "r.lua": 'function on_say(actor, text)\n  if text == "房間" then actor:give_item(105, 1) end\nend'}
+    build(tmp_path, files, {101: ("r.lua", None)}, mobs=[mob(101, "商人", "merchant", "m.lua")], resets=[M(101)],
+          objects=[make_object_proto(105)])
     ming, hua = person("Ming"), person("Hua")
     assert "商人把【石頭/rock】拿給你。" in say(ming, "say 給") and "商人將【石頭/rock】拿給Ming。" in plain(hua)
     out = say(ming, "say 房間")
@@ -651,8 +651,8 @@ def test_give_item_messages_like_give(tmp_path, later):
 
 def test_bystanders_get_one_prompt_for_a_command(tmp_path, later):
     # 一個指令送給旁邊的人好幾句（Ming 說話、商人給東西、商人說話）：合成一段、一個 prompt（使用者要的）
-    files = {"m.lua": 'function on_say(actor, text)\n  actor:give_item(5, 1)\n  me:command("say 拿去吧")\nend'}
-    build(tmp_path, files, mobs=[mob(1, "商人", "merchant", "m.lua")], resets=[M(1)], objects=[make_object_proto(5)])
+    files = {"m.lua": 'function on_say(actor, text)\n  actor:give_item(105, 1)\n  me:command("say 拿去吧")\nend'}
+    build(tmp_path, files, mobs=[mob(101, "商人", "merchant", "m.lua")], resets=[M(101)], objects=[make_object_proto(105)])
     ming, hua = person("Ming"), person("Hua")
     plain(hua)
     say(ming, "say 給")
@@ -661,7 +661,7 @@ def test_bystanders_get_one_prompt_for_a_command(tmp_path, later):
 
 def test_bystanders_get_one_prompt_for_a_script_on_its_own(tmp_path, later):
     # 不是指令引起的（on_timer）：一串腳本送的也合成一段
-    room = build(tmp_path, {"r.lua": 'function on_timer() room:echo("鐘響了。") room:echo("風停了。") end'}, {1: ("r.lua", 1)})
+    room = build(tmp_path, {"r.lua": 'function on_timer() room:echo("鐘響了。") room:echo("風停了。") end'}, {101: ("r.lua", 1)})
     hua = person("Hua")
     plain(hua)
     scripts.tick(zones.world)
@@ -669,8 +669,8 @@ def test_bystanders_get_one_prompt_for_a_script_on_its_own(tmp_path, later):
 
 
 def test_give_item_needs_a_level(tmp_path, later, caplog):
-    build(tmp_path, {"m.lua": "function on_say(actor, text)\n  actor:give_item(5)\nend"},
-          mobs=[mob(1, "商人", "merchant", "m.lua")], resets=[M(1)], objects=[make_object_proto(5)])
+    build(tmp_path, {"m.lua": "function on_say(actor, text)\n  actor:give_item(105)\nend"},
+          mobs=[mob(101, "商人", "merchant", "m.lua")], resets=[M(101)], objects=[make_object_proto(105)])
     with caplog.at_level(logging.WARNING):
         say(person("Ming"), "say 嗨")
     assert "a/m.lua:2: 等級一定要寫" in caplog.text
@@ -678,21 +678,21 @@ def test_give_item_needs_a_level(tmp_path, later, caplog):
 
 def test_give_item_checks_fixed_gear_points(tmp_path, later, caplog):
     from area_helpers import make_object
-    sword = make_object(6)                                              # 固定裝備（寫了 affects）：沒寫顏色的上限是 0 點
-    build(tmp_path, {"m.lua": "function on_say(actor, text)\n  actor:give_item(6, 1)\nend"},
-          mobs=[mob(1, "商人", "merchant", "m.lua")], resets=[M(1)], objects=[sword])
+    sword = make_object(106)                                            # 固定裝備（寫了 affects）：沒寫顏色的上限是 0 點
+    build(tmp_path, {"m.lua": "function on_say(actor, text)\n  actor:give_item(106, 1)\nend"},
+          mobs=[mob(101, "商人", "merchant", "m.lua")], resets=[M(101)], objects=[sword])
     ming = person("Ming")
     with caplog.at_level(logging.WARNING):
         say(ming, "say 嗨")
-    assert "a/m.lua:2: 放出物品 106「物品6」：加成點數" in caplog.text and ming.carrying == []
+    assert "a/m.lua:2: 放出物品 106「物品106」：加成點數" in caplog.text and ming.carrying == []
 
 
 def test_load_mob_and_its_limit(tmp_path, later, caplog, monkeypatch):
     monkeypatch.setattr(script_api, "MAX_LOADED_MOBS", 2)
-    code = 'function on_say(actor, text) room:load_mob(2) end'
+    code = 'function on_say(actor, text) room:load_mob(102) end'
     born = 'function on_born() me.vars.born = true end'
-    build(tmp_path, {"m.lua": code, "b.lua": born}, mobs=[mob(1, "商人", "merchant", "m.lua"), mob(2, "老鼠", "rat", "b.lua")],
-          resets=[M(1)])
+    build(tmp_path, {"m.lua": code, "b.lua": born}, mobs=[mob(101, "商人", "merchant", "m.lua"), mob(102, "老鼠", "rat", "b.lua")],
+          resets=[M(101)])
     ming = person("Ming")
     for _ in range(3):
         say(ming, "say 來")
@@ -703,7 +703,7 @@ def test_load_mob_and_its_limit(tmp_path, later, caplog, monkeypatch):
 
 def test_mob_use_gift_only(tmp_path, later, caplog):
     code = 'function on_say(actor, text)\n  if text == "送" then me:use("gift", actor) else me:use("smash", actor) end\nend'
-    build(tmp_path, {"m.lua": code}, mobs=[mob(1, "教官", "teacher", "m.lua")], resets=[M(1)])
+    build(tmp_path, {"m.lua": code}, mobs=[mob(101, "教官", "teacher", "m.lua")], resets=[M(101)])
     ming = person("Ming")
     assert "教官對你施展了【餽贈】。" in say(ming, "say 送") and ming.affects[0].source == "gift"
     with caplog.at_level(logging.WARNING):
@@ -712,12 +712,12 @@ def test_mob_use_gift_only(tmp_path, later, caplog):
 
 
 def test_transfer(tmp_path, later, caplog):
-    code = ('function on_say(actor, text)\n  if text == "走" then actor:transfer(2) else actor:transfer(9999) end\nend')
+    code = ('function on_say(actor, text)\n  if text == "走" then actor:transfer(102) else actor:transfer(9999) end\nend')
     files = {"m.lua": code, "e.lua": 'function on_enter(actor, from) room.vars.from = from or "傳送" end'}
-    build(tmp_path, files, {2: ("e.lua", None)}, mobs=[mob(1, "傳送員", "porter", "m.lua")], resets=[M(1)])
+    build(tmp_path, files, {102: ("e.lua", None)}, mobs=[mob(101, "傳送員", "porter", "m.lua")], resets=[M(101)])
     ming = person("Ming")
     out = say(ming, "say 走")
-    assert ming.room.vnum == 102 and "【房間2】" in out and zones.world.rooms[102].vars["from"] == "傳送"
+    assert ming.room.vnum == 102 and "【房間102】" in out and zones.world.rooms[102].vars["from"] == "傳送"
     ming.room = zones.world.rooms[101]
     with caplog.at_level(logging.WARNING):
         say(ming, "say 進副本")
@@ -726,7 +726,7 @@ def test_transfer(tmp_path, later, caplog):
 
 def test_echo_skips_sleepers(tmp_path, later):
     code = 'function on_say(actor, text) room:echo("大家好") room:echo_except(actor, "除了他") end'
-    build(tmp_path, {"m.lua": code}, mobs=[mob(1, "商人", "merchant", "m.lua")], resets=[M(1)])
+    build(tmp_path, {"m.lua": code}, mobs=[mob(101, "商人", "merchant", "m.lua")], resets=[M(101)])
     ming, hua, lin = person("Ming"), person("Hua"), person("Lin")
     lin.position = Position.SLEEPING
     plain(hua), plain(lin)
@@ -740,7 +740,7 @@ def test_random_and_hour(tmp_path, later, monkeypatch):
         def randint(self, a, b):
             return b
     monkeypatch.setattr(script_api, "rng", R())
-    room = build(tmp_path, {"r.lua": "function on_say(actor, text) room.vars.r = random(1, 6) room.vars.h = hour() end"}, {1: ("r.lua", None)})
+    room = build(tmp_path, {"r.lua": "function on_say(actor, text) room.vars.r = random(1, 6) room.vars.h = hour() end"}, {101: ("r.lua", None)})
     say(person("Ming"), "say 嗨")
     from mud import weather
     assert room.vars == {"r": 6, "h": weather.current.hour}
@@ -751,7 +751,7 @@ def test_random_and_hour(tmp_path, later, monkeypatch):
 def test_player_vars_are_saved_and_other_areas_are_read_only(tmp_path, later):
     code = ('function on_say(actor, text)\n  actor.vars["任務"] = "做完了"\n'
             '  room.vars.other = actor:read_var("包子村", "done")\nend')
-    room = build(tmp_path, {"r.lua": code}, {1: ("r.lua", None)})
+    room = build(tmp_path, {"r.lua": code}, {101: ("r.lua", None)})
     ming = person("Ming")
     ming.vars["包子村"] = {"done": True}
     say(ming, "say 嗨")
@@ -762,7 +762,7 @@ def test_player_vars_are_saved_and_other_areas_are_read_only(tmp_path, later):
 
 @pytest.mark.parametrize("value, want", [('{}', "變數只能存 nil、true／false、數字、字串"), ("nil", None)])
 def test_vars_types(tmp_path, later, caplog, value, want):
-    room = build(tmp_path, {"r.lua": f"function on_say(actor, text)\n  room.vars.x = 1\n  room.vars.x = {value}\nend"}, {1: ("r.lua", None)})
+    room = build(tmp_path, {"r.lua": f"function on_say(actor, text)\n  room.vars.x = 1\n  room.vars.x = {value}\nend"}, {101: ("r.lua", None)})
     with caplog.at_level(logging.WARNING):
         say(person("Ming"), "say 嗨")
     if want:
@@ -775,7 +775,7 @@ def test_vars_types(tmp_path, later, caplog, value, want):
 
 def test_wait_then_stop_if_the_actor_left(tmp_path, later):
     code = 'function on_say(actor, text)\n  wait(5)\n  actor:tell("五秒後")\nend'
-    build(tmp_path, {"m.lua": code}, mobs=[mob(1, "商人", "merchant", "m.lua")], resets=[M(1)])
+    build(tmp_path, {"m.lua": code}, mobs=[mob(101, "商人", "merchant", "m.lua")], resets=[M(101)])
     ming = person("Ming")
     say(ming, "say 嗨")
     later.run()
@@ -788,7 +788,7 @@ def test_wait_then_stop_if_the_actor_left(tmp_path, later):
 
 def test_wait_stops_if_the_owner_is_gone(tmp_path, later):
     code = 'function on_say(actor, text)\n  wait(5)\n  room:echo("還在")\nend'
-    build(tmp_path, {"m.lua": code}, mobs=[mob(1, "商人", "merchant", "m.lua")], resets=[M(1)])
+    build(tmp_path, {"m.lua": code}, mobs=[mob(101, "商人", "merchant", "m.lua")], resets=[M(101)])
     ming = person("Ming")
     say(ming, "say 嗨")
     characters.remove(npc("商人"))
@@ -798,7 +798,7 @@ def test_wait_stops_if_the_owner_is_gone(tmp_path, later):
 
 def test_wait_limits(tmp_path, later, caplog):
     code = 'function on_say(actor, text)\n  if text == "久" then wait(601) else wait(10) end\nend'
-    room = build(tmp_path, {"r.lua": code}, {1: ("r.lua", None)})
+    room = build(tmp_path, {"r.lua": code}, {101: ("r.lua", None)})
     ming = person("Ming")
     with caplog.at_level(logging.WARNING):
         say(ming, "say 久")
@@ -811,7 +811,7 @@ def test_wait_limits(tmp_path, later, caplog):
 
 
 def test_reload_cancels_waiting_scripts(tmp_path, later):
-    build(tmp_path, {"r.lua": 'function on_say(actor, text)\n  wait(5)\n  room.vars.done = true\nend'}, {1: ("r.lua", None)})
+    build(tmp_path, {"r.lua": 'function on_say(actor, text)\n  wait(5)\n  room.vars.done = true\nend'}, {101: ("r.lua", None)})
     say(person("Ming"), "say 嗨")
     room = zones.world.rooms[101]
     zones.stop()
@@ -825,7 +825,7 @@ def test_errors_are_reported_once_a_minute(tmp_path, later, caplog, monkeypatch)
     now = [100.0]
     monkeypatch.setattr(scripts, "clock", lambda: now[0])
     room = build(tmp_path, {"r.lua": "function on_say(actor, text)\n  room.vars.n = (room.vars.n or 0) + 1\n  boom()\nend"},
-                 {1: ("r.lua", None)})
+                 {101: ("r.lua", None)})
     imm, ming = person("Shabu", imm=True), person("Ming")
     plain(imm)
     with caplog.at_level(logging.WARNING):
@@ -843,7 +843,7 @@ def test_errors_are_reported_once_a_minute(tmp_path, later, caplog, monkeypatch)
 
 def test_on_fight_errors_do_not_end_the_fight(tmp_path, later):
     import asyncio
-    build(tmp_path, {"m.lua": "function on_fight(target) boom() end"}, mobs=[mob(1, "老鼠", "rat", "m.lua")], resets=[M(1)])
+    build(tmp_path, {"m.lua": "function on_fight(target) boom() end"}, mobs=[mob(101, "老鼠", "rat", "m.lua")], resets=[M(101)])
     ming, rat = person("Ming"), npc("老鼠")
 
     async def main():
@@ -854,7 +854,25 @@ def test_on_fight_errors_do_not_end_the_fight(tmp_path, later):
 
 
 def test_text_must_be_big5(tmp_path, later, caplog):
-    room = build(tmp_path, {"r.lua": "function on_say(actor, text)\n  actor:tell(utf8.char(128512))\nend"}, {1: ("r.lua", None)})
+    room = build(tmp_path, {"r.lua": "function on_say(actor, text)\n  actor:tell(utf8.char(128512))\nend"}, {101: ("r.lua", None)})
     with caplog.at_level(logging.WARNING):
         say(person("Ming"), "say 嗨")
     assert "a/r.lua:2: 有轉不成 Big5 的字" in caplog.text
+
+
+@pytest.mark.parametrize("call, want", [
+    ("actor:take_item(1)", "號碼要寫完整的遊戲號碼（100 以上，1～99 是保留的），不能是 1"),
+    ("actor:transfer(2)", "房號要寫完整的遊戲號碼（100 以上，1～99 是保留的），不能是 2"),
+])
+def test_reserved_numbers_are_errors(tmp_path, later, caplog, call, want):
+    # 號碼一律寫完整的遊戲號碼：寫 1～99（舊寫法的檔案號碼）算腳本出錯、停在那一行，
+    # 不會換成自己區域的 101、102（身上的物品 101 還在、人沒被送走）
+    from mud import objects
+    code = f"function on_say(actor, text)\n  {call}\n  room.vars.after = true\nend"
+    room = build(tmp_path, {"r.lua": code}, {101: ("r.lua", None)}, objects=[make_object_proto(101)])
+    ming = person("Ming")
+    ming.carrying.append(objects.create(101, 1, None))
+    with caplog.at_level(logging.WARNING):
+        say(ming, "say 嗨")
+    assert f"a/r.lua:2: {want}" in caplog.text and room.vars == {}
+    assert [o.vnum for o in ming.carrying] == [101] and ming.room.vnum == 101

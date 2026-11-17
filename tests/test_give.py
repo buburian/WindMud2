@@ -25,19 +25,19 @@ def world(tmp_path, monkeypatch):
     """房間 101、102 南北相連；102 有野狗和商人（店主）。物品 101 藥水（重 1）、102 石頭（重 200）。"""
     monkeypatch.setattr(save, "PLAYER_DIR", str(tmp_path / "players"))
     objs = []
-    for vnum, short, keywords, weight in ((1, "藥水", "potion 藥水", 1), (2, "石頭", "rock 石頭", 200)):
+    for vnum, short, keywords, weight in ((101, "藥水", "potion 藥水", 1), (102, "石頭", "rock 石頭", 200)):
         o = make_object(vnum)
         o.update(short=short, keywords=keywords, item_type=13, wear_flags="1", extra_flags=0, values=[0, 0, 0, 0],
                  weight=weight, affects=[])
         objs.append(o)
     mobs = []
-    for vnum, short, keywords, shop in ((1, "野狗", "dog 野狗", None), (2, "商人", "merchant 商人", make_mobile(1)["shop"])):
+    for vnum, short, keywords, shop in ((101, "野狗", "dog 野狗", None), (102, "商人", "merchant 商人", make_mobile(101)["shop"])):
         m = make_mobile(vnum)
         m.update(short=short, keywords=keywords, level=1, tier="normal", tier_roll=None, attack=None, defense=None,
                  archetype=None, act=0, position=7, sex=0, long="", drops=[], shop=shop)
         mobs.append(m)
-    resets = [{"cmd": "M", "rare": 0, "mob_vnum": v, "limit": 1, "room_vnum": 2, "comment": ""} for v in (1, 2)]
-    write_json(tmp_path, "a.json", make_area("a.json", [make_room(1, north=2), make_room(2, south=1)], 100,
+    resets = [{"cmd": "M", "rare": 0, "mob_vnum": v, "limit": 1, "room_vnum": 102, "comment": ""} for v in (101, 102)]
+    write_json(tmp_path, "a.json", make_area("a.json", [make_room(101, north=102), make_room(102, south=101)], (100, 199),
                                              mobiles=mobs, resets=resets, objects=objs))
     zones.load(tmp_path)
     yield tmp_path

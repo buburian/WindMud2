@@ -1,7 +1,7 @@
 // 區域檔的資料操作（不碰畫面）。規則照 docs/區域製作手冊.md；檢查一律交給後端的 check_files()。
 //
-// 出口一律比「算出來的遊戲號碼」：to_room 寫 1～99 是同一個區域（加上 area_number），
-// 100 以上照寫。同一區域的出口也可能寫完整號碼（101 指到房間 1），所以不能只比 to_room == vnum。
+// 號碼一律寫完整的遊戲號碼（照 C 版）：header.vnums 是這個檔的號碼範圍 [最小, 最大]，
+// 自己的房間、生物、物品在範圍裡，範圍外的號碼是外連到別的區域檔。1～99 是保留的（MIN_VNUM）。
 
 export const DIRECTIONS = ["north", "east", "south", "west", "up", "down"];
 export const FLAT = ["north", "east", "south", "west"];            // 畫在同一層地圖上的方向
@@ -123,36 +123,32 @@ function ensureList(data, key) {
   return data[key];
 }
 
-export function base(data) {
-  const n = data.area.header.area_number;
-  return isInt(n) && n >= 1 ? n : null;
+export const MIN_VNUM = 100;                   // 遊戲號碼最小是 100（同 area.MIN_VNUM）
+
+// header.vnums 寫得對就回傳 [最小, 最大]，不對是 null（同 area.vnum_range）
+export function vnumRange(data) {
+  const v = data.area.header.vnums;
+  return Array.isArray(v) && v.length === 2 && v.every(isInt) && MIN_VNUM <= v[0] && v[0] <= v[1] ? v : null;
 }
 
-// 號碼規則（同 area.resolve）：1～99 是同一個區域，100 以上照寫
-export function resolve(areaNumber, number) {
-  return number <= 99 ? areaNumber + number : number;
+// 一個號碼（to_room、recall、重置…）：是整數才拿來找東西，不是就是 null
+export function gameNumber(number) {
+  return isInt(number) ? number : null;
 }
 
-// 一個號碼（to_room、recall）算出來的遊戲號碼；算不出來是 null
-export function gameNumber(data, number) {
-  const b = base(data);
-  return b !== null && isInt(number) && number >= 1 ? resolve(b, number) : null;
+// 房間、生物、物品的號碼
+export function numberOf(item) {
+  return gameNumber(item.vnum);
 }
 
-// 房間、生物、物品的遊戲號碼（area_number ＋ vnum）
-export function roomNumber(data, room) {
-  const b = base(data);
-  return b !== null && isInt(room.vnum) ? b + room.vnum : null;
-}
-
-export function target(data, exit) {
-  return exit ? gameNumber(data, exit.to_room) : null;
+export function target(exit) {
+  return exit ? gameNumber(exit.to_room) : null;
 }
 
 // kind 是 "rooms"、"mobiles"、"objects"：在那張清單裡找遊戲號碼是 number 的
 export function findByNumber(data, kind, number) {
   if (number === null) return null;
-  return listOf(data, kind).find((x) => roomNumber(data, x) === number) || null;
+  return listOf(data, kind).find((x) => numberOf(x) === number) || null;
 }
 
 export function roomByNumber(data, number) {
@@ -160,7 +156,7 @@ export function roomByNumber(data, number) {
 }
 
 export function exitRoom(data, exit) {
-  return roomByNumber(data, target(data, exit));
+  return roomByNumber(data, target(exit));
 }
 
 // room_flags 的寫法同 area.parse_flags：數字，或 "1|4" 這種字串。看不懂是 null
@@ -212,11 +208,26 @@ export function pieces(data) {
   return Array.from({ length: count }, (_, i) => order.filter((r) => pieceOf.get(r) === i));
 }
 
-// list（房間、生物或物品）裡最小沒用過的檔案號碼；1～99 都用完了是 null
-export function freeVnum(list) {
+// list（房間、生物或物品）在號碼範圍 range 裡最小沒用過的號碼；用完了、範圍沒寫好是 null
+export function freeVnum(list, range) {
+  if (!range) return null;
   const used = new Set(list.map((r) => r.vnum));
-  for (let v = 1; v <= 99; v++) if (!used.has(v)) return v;
+  for (let v = range[0]; v <= range[1]; v++) if (!used.has(v)) return v;
   return null;
+}
+
+// 加東西時號碼用完了（或範圍沒寫好）要說的話，寫出實際的範圍
+export function noVnumText(data, label) {
+  const range = vnumRange(data);
+  return range ? `${label}號碼 ${range[0]}～${range[1]} 都用完了` : "先在區域設定寫好號碼範圍（vnums）";
+}
+
+// kind（"rooms"、"mobiles"、"objects"）裡最小的號碼，給新的重置、掉落表先填；沒有就用範圍的最小值
+export function firstNumber(data, kind) {
+  const first = sortedList(listOf(data, kind))[0];
+  if (first && isInt(first.vnum)) return first.vnum;
+  const range = vnumRange(data);
+  return range ? range[0] : MIN_VNUM;
 }
 
 export function newRoom(vnum) {
@@ -229,7 +240,7 @@ export function newExit(toRoom) {
 
 // 加一間房（號碼用最小沒用過的）；號碼用完了回傳 null
 export function addRoom(data) {
-  const vnum = freeVnum(data.rooms);
+  const vnum = freeVnum(data.rooms, vnumRange(data));
   if (vnum === null) return null;
   const room = newRoom(vnum);
   data.rooms.push(room);
@@ -261,25 +272,25 @@ export function connect(data, room, dir, other) {
 export function removeExit(data, room, dir) {
   const other = exitRoom(data, room.exits[dir]);
   delete room.exits[dir];
-  const me = roomNumber(data, room);
+  const me = numberOf(room);
   const back = other && other.exits[REVERSE[dir]];
-  if (back && me !== null && target(data, back) === me) delete other.exits[REVERSE[dir]];
+  if (back && me !== null && target(back) === me) delete other.exits[REVERSE[dir]];
 }
 
 // 刪掉一間房，連這個檔裡指到它的出口、重置一起拿掉
 export function deleteRoom(data, room) {
-  const me = roomNumber(data, room);
+  const me = numberOf(room);
   data.rooms.splice(data.rooms.indexOf(room), 1);
   if (me === null) return;
   for (const r of data.rooms) {
-    for (const d of Object.keys(r.exits)) if (target(data, r.exits[d]) === me) delete r.exits[d];
+    for (const d of Object.keys(r.exits)) if (target(r.exits[d]) === me) delete r.exits[d];
   }
   dropResets(data, "rooms", me);
 }
 
 // 刪掉一隻生物或一個物品（kind 是 "mobiles"、"objects"），連指到它的重置一起拿掉
 export function deleteThing(data, kind, item) {
-  const me = roomNumber(data, item);
+  const me = numberOf(item);
   const list = listOf(data, kind);
   list.splice(list.indexOf(item), 1);
   if (me !== null) dropResets(data, kind, me);
@@ -297,14 +308,14 @@ export function renumber(data, room, vnum) {
 // 物品：重置的 obj_vnum、container_vnum，生物掉落表的 obj_vnum，出口的 key
 export function renumberThing(data, kind, item, vnum) {
   if (vnum === item.vnum) return null;
-  if (!isInt(vnum) || vnum < 1 || vnum > 99) return "號碼要是 1～99 的整數";
+  const range = vnumRange(data);
+  if (range && !(isInt(vnum) && range[0] <= vnum && vnum <= range[1])) return `號碼要在這個檔的範圍 ${range[0]}～${range[1]} 裡`;
+  if (!range && !(isInt(vnum) && vnum >= MIN_VNUM)) return `號碼要是 ${MIN_VNUM} 以上的整數（1～99 是保留的）`;
   if (listOf(data, kind).some((x) => x !== item && x.vnum === vnum)) return `${KIND_NAMES[kind]} ${vnum} 已經有了`;
-  const b = base(data);
-  const old = roomNumber(data, item);
-  if (b !== null && old !== null) {
-    // 原本寫 1～99 的改成新的檔案號碼，原本寫完整號碼的改成新的完整號碼
+  const old = numberOf(item);
+  if (old !== null) {
     const fix = (obj, key) => {
-      if (isObject(obj) && gameNumber(data, obj[key]) === old) obj[key] = obj[key] <= 99 ? vnum : b + vnum;
+      if (isObject(obj) && obj[key] === old) obj[key] = vnum;
     };
     for (const r of listOf(data, "resets")) {
       for (const [key, k] of Object.entries(RESET_REFS)) if (k === kind && isObject(r) && key in r) fix(r, key);
@@ -315,7 +326,7 @@ export function renumberThing(data, kind, item, vnum) {
     }
     if (kind === "objects") {
       for (const m of listOf(data, "mobiles")) for (const d of Array.isArray(m.drops) ? m.drops : []) fix(d, "obj_vnum");
-      for (const r of data.rooms) for (const e of Object.values(r.exits)) fix(e, "key");   // -1、0 算不出號碼，不會被改
+      for (const r of data.rooms) for (const e of Object.values(r.exits)) fix(e, "key");   // -1、0 不是號碼，不會被改
     }
   }
   item.vnum = vnum;
@@ -342,13 +353,13 @@ export function newObject(vnum) {
 
 // 勾「牠是店主」、掉落表新增一行時先填的值
 export const newShop = () => ({ buy_types: [], profit_buy: 100, profit_sell: 100, open_hour: 0, close_hour: 23 });
-export const newDrop = () => ({ obj_vnum: 1, color: null, chance: 10000, tiers: null });
+export const newDrop = (objVnum) => ({ obj_vnum: objVnum, color: null, chance: 10000, tiers: null });
 export const newAffect = () => ({ location: 1, modifier: 0 });
 
 // 加一隻生物或一個物品（號碼用最小沒用過的）；號碼用完了回傳 null
 export function addThing(data, kind) {
   const list = ensureList(data, kind);
-  const vnum = freeVnum(list);
+  const vnum = freeVnum(list, vnumRange(data));
   if (vnum === null) return null;
   const item = kind === "mobiles" ? newMobile(vnum) : newObject(vnum);
   list.push(item);
@@ -362,18 +373,18 @@ export const RESET_REFS = { room_vnum: "rooms", mob_vnum: "mobiles", obj_vnum: "
 
 // 重置 r 的 key 欄位指到的東西（找不到是 null）
 export function resetThing(data, r, key) {
-  return findByNumber(data, RESET_REFS[key], gameNumber(data, r[key]));
+  return findByNumber(data, RESET_REFS[key], gameNumber(r[key]));
 }
 
-// 新的一筆重置，各欄位先填的值
+// 新的一筆重置，各欄位先填的值；號碼由呼叫的地方給（fields），這裡先放 null
 export function newReset(cmd, fields = {}) {
   const made = {
-    M: { cmd, rare: 0, mob_vnum: 1, limit: 1, room_vnum: 1, comment: "" },
-    G: { cmd, rare: 0, obj_vnum: 1, color: null, level: null, limit: 0, comment: "" },
-    O: { cmd, if_flag: 0, obj_vnum: 1, color: null, level: 1, limit: 0, room_vnum: 1, comment: "" },
-    P: { cmd, if_flag: 0, obj_vnum: 1, color: null, level: 1, limit: 0, container_vnum: 1, comment: "" },
-    D: { cmd, if_flag: 0, room_vnum: 1, direction: "north", state: 0, comment: "" },
-    R: { cmd, if_flag: 0, room_vnum: 1, exit_count: 2, comment: "" },
+    M: { cmd, rare: 0, mob_vnum: null, limit: 1, room_vnum: null, comment: "" },
+    G: { cmd, rare: 0, obj_vnum: null, color: null, level: null, limit: 0, comment: "" },
+    O: { cmd, if_flag: 0, obj_vnum: null, color: null, level: 1, limit: 0, room_vnum: null, comment: "" },
+    P: { cmd, if_flag: 0, obj_vnum: null, color: null, level: 1, limit: 0, container_vnum: null, comment: "" },
+    D: { cmd, if_flag: 0, room_vnum: null, direction: "north", state: 0, comment: "" },
+    R: { cmd, if_flag: 0, room_vnum: null, exit_count: 2, comment: "" },
     "*": { cmd, comment: "" },
   }[cmd];
   for (const k of Object.keys(fields)) if (k in made) made[k] = fields[k];
@@ -401,11 +412,11 @@ export function leaderOf(resets, j) {
 
 // 這間房的重置：放進來的生物（和跟著的 G）、物品（和跟著的 P）、門的狀態（方向 → 第幾筆）、打亂出口（第幾筆，沒有是 -1）
 export function roomResets(data, room) {
-  const me = roomNumber(data, room);
+  const me = numberOf(room);
   const resets = listOf(data, "resets");
   const result = { mobs: [], objs: [], doors: {}, random: -1 };
   resets.forEach((r, i) => {
-    if (!isObject(r) || me === null || gameNumber(data, r.room_vnum) !== me) return;
+    if (!isObject(r) || me === null || gameNumber(r.room_vnum) !== me) return;
     if (r.cmd === "M") result.mobs.push({ index: i, followers: followersOf(resets, i) });
     else if (r.cmd === "O") result.objs.push({ index: i, followers: followersOf(resets, i) });
     else if (r.cmd === "D" && typeof r.direction === "string" && !(r.direction in result.doors)) result.doors[r.direction] = i;
@@ -416,13 +427,13 @@ export function roomResets(data, room) {
 
 // 指到 item（kind 的東西）的重置：[{ index, key }]，key 是指到它的欄位
 export function resetsPointingAt(data, kind, item) {
-  const me = roomNumber(data, item);
+  const me = numberOf(item);
   const out = [];
   if (me === null) return out;
   listOf(data, "resets").forEach((r, i) => {
     if (!isObject(r)) return;
     for (const [key, k] of Object.entries(RESET_REFS)) {
-      if (k === kind && key in r && gameNumber(data, r[key]) === me) out.push({ index: i, key });
+      if (k === kind && key in r && gameNumber(r[key]) === me) out.push({ index: i, key });
     }
   });
   return out;
@@ -435,7 +446,7 @@ function doomedResets(data, kind, number) {
   resets.forEach((r, i) => {
     if (!isObject(r)) return;
     for (const [key, k] of Object.entries(RESET_REFS)) {
-      if (k === kind && key in r && gameNumber(data, r[key]) === number) {
+      if (k === kind && key in r && gameNumber(r[key]) === number) {
         doomed.add(i);
         for (const j of followersOf(resets, i)) doomed.add(j);
       }
@@ -446,7 +457,7 @@ function doomedResets(data, kind, number) {
 
 // 刪 item 時會一起刪掉幾筆重置（給確認視窗用）
 export function resetsGoingWith(data, kind, item) {
-  const me = roomNumber(data, item);
+  const me = numberOf(item);
   return me === null ? 0 : doomedResets(data, kind, me).size;
 }
 

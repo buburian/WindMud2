@@ -3,7 +3,7 @@
 function on_say(actor, text)
   if text == "畢業" then
     actor.vars.student = nil
-    actor:take_item(1)
+    actor:take_item(201)
     me:command("say 恭喜你畢業了，" .. actor.name .. "！外面的世界很大，好好冒險吧。")
     actor:transfer(101)
   end

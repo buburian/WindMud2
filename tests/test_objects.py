@@ -82,15 +82,16 @@ def M(mob_vnum, room_vnum, limit=1):
     return {"cmd": "M", "rare": 0, "mob_vnum": mob_vnum, "limit": limit, "room_vnum": room_vnum, "comment": ""}
 
 
-def load(folder, mobiles=(), objects_=(), reset_list=(), name="a.json", area_number=100, kind="world", rooms=(1, 2)):
-    rs = [make_room(v) for v in rooms]
-    write_json(folder, name, make_area(name, rs, area_number, mobiles=mobiles, resets=reset_list,
+def load(folder, mobiles=(), objects_=(), reset_list=(), name="a.json", vnums=(100, 199), kind="world", rooms=None):
+    """rooms 沒寫是範圍裡的前兩間（vnums 最小 ＋ 1、＋ 2）。"""
+    rs = [make_room(v) for v in (rooms or (vnums[0] + 1, vnums[0] + 2))]
+    write_json(folder, name, make_area(name, rs, vnums, mobiles=mobiles, resets=reset_list,
                                        objects=objects_, kind=kind))
 
 
 def world_with_dog(folder, drops=(), objs=()):
     """世界：房間 101 有一隻野狗（生物 101）。"""
-    load(folder, [mob(1, drops, short="野狗", keywords="dog 野狗", level=5)], objs, [M(1, 1)])
+    load(folder, [mob(101, drops, short="野狗", keywords="dog 野狗", level=5)], objs, [M(101, 101)])
     zones.load(folder)
     return next(c for c in characters if isinstance(c, Npc))
 
@@ -122,7 +123,7 @@ def corpse_in(room):
 # ---- 做出物品 ----
 
 def test_fixed_equipment_uses_written_affects(monkeypatch):
-    monkeypatch.setattr(objects, "protos", {101: sword(1, [{"location": 1, "modifier": 2}, {"location": 9, "modifier": 3}])})
+    monkeypatch.setattr(objects, "protos", {101: sword(101, [{"location": 1, "modifier": 2}, {"location": 9, "modifier": 3}])})
     o = objects.create(101, 10, "orange", random.Random(1))
     assert (o.vnum, o.name, o.keywords, o.level, o.color) == (101, "長劍", ["sword", "長劍"], 10, "orange")
     assert o.affects == [(Apply.STR, 2), (Apply.HIT, 3)]
@@ -131,7 +132,7 @@ def test_fixed_equipment_uses_written_affects(monkeypatch):
 
 @pytest.mark.parametrize("seed", range(5))
 def test_random_equipment_rolls_and_puts_the_name_in_front(monkeypatch, seed):
-    monkeypatch.setattr(objects, "protos", {101: sword(1)})
+    monkeypatch.setattr(objects, "protos", {101: sword(101)})
     o = objects.create(101, 10, "orange", random.Random(seed))
     rolled = equipment.roll_item("wield", 10, "orange", random.Random(seed))
     assert rolled["name"] and o.name == rolled["name"] + "長劍"        # 疾風之蠻力長劍
@@ -141,14 +142,14 @@ def test_random_equipment_rolls_and_puts_the_name_in_front(monkeypatch, seed):
 
 @pytest.mark.parametrize("color", ["gray", None])
 def test_gray_or_no_color_has_no_random_affects(monkeypatch, color):
-    monkeypatch.setattr(objects, "protos", {101: sword(1)})
+    monkeypatch.setattr(objects, "protos", {101: sword(101)})
     o = objects.create(101, 10, color, random.Random(1))
     assert (o.name, o.affects) == ("長劍", [])
     assert set(o.base) == {"dmg_min", "dmg_max"}
 
 
 def test_not_equipment_has_no_affects(monkeypatch):
-    monkeypatch.setattr(objects, "protos", {101: potion(1)})
+    monkeypatch.setattr(objects, "protos", {101: potion(101)})
     o = objects.create(101, 10, None)
     assert (o.name, o.affects, o.base) == ("治療藥水", [], {})
 
@@ -156,7 +157,7 @@ def test_not_equipment_has_no_affects(monkeypatch):
 # ---- 商店的基本價格（區域製作手冊物品的 cost）：scavenger、janitor 用 ----
 
 def test_base_price_of_things_is_the_cost(monkeypatch):
-    p = potion(1)
+    p = potion(101)
     p.update(cost=25)
     monkeypatch.setattr(objects, "protos", {101: p})
     o = objects.create(101, 10, None)
@@ -171,14 +172,14 @@ def test_base_price_of_things_is_the_cost(monkeypatch):
     ([{"location": 9, "modifier": 3}], "gray", 1),
 ])
 def test_base_price_of_equipment_is_the_points(monkeypatch, affects, color, price):
-    s = sword(1, affects)
+    s = sword(101, affects)
     s.update(cost=999)
     monkeypatch.setattr(objects, "protos", {101: s})
     assert objects.base_price(objects.create(101, 10, color, random.Random(1))) == pytest.approx(price)
 
 
 def test_cost_is_saved(monkeypatch):
-    p = potion(1)
+    p = potion(101)
     p.update(cost=25)
     monkeypatch.setattr(objects, "protos", {101: p})
     data = objects.to_data(objects.create(101, 10, None))
@@ -188,11 +189,11 @@ def test_cost_is_saved(monkeypatch):
 
 
 def test_slots_for_two_handed_offhand_weapon_and_shield(monkeypatch):
-    great = sword(1)
+    great = sword(101)
     great.update(extra_flags=512, values=[8, 0, 0, 3])              # 大劍：雙手
-    offhand = sword(2)
+    offhand = sword(102)
     offhand.update(wear_flags="1|512")                              # 副手武器（雙持）
-    shield = sword(3)
+    shield = sword(103)
     shield.update(item_type=9, wear_flags="1|512", values=[0, 0, 0, 0])
     monkeypatch.setattr(objects, "protos", {101: great, 102: offhand, 103: shield})
     for vnum, slot, offhand_weapon in ((101, "two_handed", False), (102, "offhand", True), (103, "offhand", False)):
@@ -212,42 +213,44 @@ def test_unknown_object_is_logged(monkeypatch, caplog):
 # ---- 掉落表 ----
 
 def test_drops_use_the_mobile_level_and_the_line_color(folder):
-    dog = world_with_dog(folder, [drop(1, color="white")], [sword(1)])
+    dog = world_with_dog(folder, [drop(101, color="white")], [sword(101)])
     [o] = objects.roll_drops(dog)
     assert (o.vnum, o.level, o.color) == (101, 5, "white")
 
 
 def test_each_line_rolls_on_its_own(folder):
-    dog = world_with_dog(folder, [drop(1), drop(2, chance=5000), drop(1, color="blue")], [sword(1), potion(2)])
+    dog = world_with_dog(folder, [drop(101), drop(102, chance=5000), drop(101, color="blue")], [sword(101), potion(102)])
     found = objects.roll_drops(dog, FixedRng(5000))                 # 中間那行沒骰到，不影響後面那行
     assert [(o.vnum, o.color) for o in found] == [(101, None), (101, "blue")]     # 照掉落表的順序
 
 
 @pytest.mark.parametrize("roll, dropped", [(4999, True), (5000, False)])
 def test_chance_is_out_of_ten_thousand(folder, roll, dropped):
-    dog = world_with_dog(folder, [drop(2, chance=5000)], [potion(2)])
+    dog = world_with_dog(folder, [drop(102, chance=5000)], [potion(102)])
     assert len(objects.roll_drops(dog, FixedRng(roll))) == (1 if dropped else 0)
 
 
 def test_tiers_limit_who_drops(folder):
-    dog = world_with_dog(folder, [drop(2, tiers=["boss"])], [potion(2)])
+    dog = world_with_dog(folder, [drop(102, tiers=["boss"])], [potion(102)])
     rng = FixedRng(0)
     assert objects.roll_drops(dog, rng) == [] and rng.calls == 0    # 種類對不上：不骰
     dog.tier = MobTier.BOSS
     assert len(objects.roll_drops(dog, rng)) == 1
 
 
-def test_drops_use_the_mobile_file_numbers(folder):
-    # a.json 的 M 放 b.json 的生物：掉落表的 obj_vnum 照 b.json 的 area_number 換算
-    load(folder, reset_list=[M(201, 1)])
-    load(folder, [mob(1, [drop(2), drop(150)])], [potion(2)], name="b.json", area_number=200)
+def test_drops_use_the_written_full_numbers_across_files(folder):
+    # a.json 的 M 放 b.json 的生物；掉落表寫完整號碼，照寫的用：b.json 自己的物品 202、c.json 的物品 301
+    load(folder, reset_list=[M(201, 101)])
+    load(folder, [mob(201, [drop(202), drop(301)])], [potion(202)], name="b.json", vnums=(200, 299))
+    load(folder, objects_=[potion(301)], name="c.json", vnums=(300, 399))
     zones.load(folder)
     [npc] = [c for c in characters if isinstance(c, Npc)]
-    assert [line["obj_vnum"] for line in npc.drops] == [202, 150]
+    assert [line["obj_vnum"] for line in npc.drops] == [202, 301]
+    assert [o.vnum for o in objects.roll_drops(npc)] == [202, 301]       # 真的做得出來（別的檔的也是）
 
 
 def test_drop_of_missing_object_is_skipped(folder, caplog):
-    dog = world_with_dog(folder, [drop(9)])
+    dog = world_with_dog(folder, [drop(109)])
     with caplog.at_level(logging.WARNING):
         assert objects.roll_drops(dog) == []
     assert "做不出物品 109" in caplog.text
@@ -256,7 +259,7 @@ def test_drop_of_missing_object_is_skipped(folder, caplog):
 # ---- 屍體 ----
 
 def test_corpse_holds_the_drops(folder):
-    dog = world_with_dog(folder, [drop(2)], [potion(2)])
+    dog = world_with_dog(folder, [drop(102)], [potion(102)])
     room = dog.room
     room.contents.append(objects.Obj("石頭", "一顆石頭在這裡。", 13, ["stone"]))
     corpse = objects.make_corpse(dog, FixedRng(0))
@@ -282,7 +285,7 @@ def test_slay_is_an_imm_command():
 
 
 def test_slay_leaves_a_corpse(folder):
-    dog = world_with_dog(folder, [drop(2)], [potion(2)])
+    dog = world_with_dog(folder, [drop(102)], [potion(102)])
     room = dog.room
     shabu, ming = player("Shabu", room, is_imm=True), player("Ming", room)
     commands.command(shabu, "slay dog")
@@ -364,7 +367,7 @@ def test_look_shows_the_corpse_after_players(folder):
 
 
 def test_look_in_corpse(folder):
-    dog = world_with_dog(folder, [drop(2), drop(1, color="orange")], [potion(2), sword(1)])
+    dog = world_with_dog(folder, [drop(102), drop(101, color="orange")], [potion(102), sword(101)])
     shabu = player("Shabu", dog.room)
     death.die(dog, random.Random(3))
     commands.command(shabu, "look in corpse")
@@ -413,7 +416,7 @@ def test_name_without_english_keywords():
 
 def test_corpse_rots_away_with_everything_inside(folder, monkeypatch):
     monkeypatch.setattr(zones, "OBJ_TICKS", 1)
-    dog = world_with_dog(folder, [drop(2)], [potion(2)])
+    dog = world_with_dog(folder, [drop(102)], [potion(102)])
     room = dog.room
     awake, asleep = player("Ming", room), player("Hua", room, Position.SLEEPING)
     death.die(dog, FixedRng(0))
@@ -428,7 +431,7 @@ def test_corpse_rots_away_with_everything_inside(folder, monkeypatch):
 
 def test_two_corpses_rot_in_one_message(folder, monkeypatch):
     monkeypatch.setattr(zones, "OBJ_TICKS", 1)
-    load(folder, [mob(1, short="野狗", keywords="dog"), mob(2, short="野貓", keywords="cat")], [], [M(1, 1), M(2, 1)])
+    load(folder, [mob(101, short="野狗", keywords="dog"), mob(102, short="野貓", keywords="cat")], [], [M(101, 101), M(102, 101)])
     zones.load(folder)
     room = zones.world.rooms[101]
     ming = player("Ming", room)
@@ -444,8 +447,8 @@ def test_two_corpses_rot_in_one_message(folder, monkeypatch):
 def test_corpse_rots_in_an_instance_with_a_player_inside(folder, monkeypatch):
     # 副本裡有人站著時 tick 會提早 return：屍體還是要爛
     monkeypatch.setattr(zones, "OBJ_TICKS", 1)
-    write_json(folder, "world.json", make_area("world.json", [make_room(1)], 100))
-    load(folder, [mob(1, short="野狗", keywords="dog")], [], [M(1, 1)], name="inst.json", area_number=300, kind="instance")
+    write_json(folder, "world.json", make_area("world.json", [make_room(101)], vnums=(100, 199)))
+    load(folder, [mob(301, short="野狗", keywords="dog")], [], [M(301, 301)], name="inst.json", vnums=(300, 399), kind="instance")
     zones.load(folder)
 
     async def main():
@@ -464,10 +467,10 @@ def test_corpse_rots_in_an_instance_with_a_player_inside(folder, monkeypatch):
 # ---- 區域物件 ----
 
 def test_corpse_goes_away_with_a_released_dynamic_area(folder):
-    w = make_room(1)
+    w = make_room(101)
     w["exits"]["north"] = {"description": "", "keywords": "", "locks": 0, "key": -1, "to_room": 201}
-    write_json(folder, "world.json", make_area("world.json", [w], 100))
-    load(folder, [mob(1, short="野狗", keywords="dog")], [], [M(1, 1)], name="dyn.json", area_number=200, kind="dynamic")
+    write_json(folder, "world.json", make_area("world.json", [w], vnums=(100, 199)))
+    load(folder, [mob(201, short="野狗", keywords="dog")], [], [M(201, 201)], name="dyn.json", vnums=(200, 299), kind="dynamic")
     zones.load(folder)
     room = zones.room_at(zones.world.rooms[101], 201)               # 走進去才建立
     [dog] = [c for c in characters if isinstance(c, Npc)]
@@ -479,8 +482,8 @@ def test_corpse_goes_away_with_a_released_dynamic_area(folder):
 
 
 def test_instances_have_their_own_corpses(folder):
-    write_json(folder, "world.json", make_area("world.json", [make_room(1)], 100))
-    load(folder, [mob(1, short="野狗", keywords="dog")], [], [M(1, 1)], name="inst.json", area_number=300, kind="instance")
+    write_json(folder, "world.json", make_area("world.json", [make_room(101)], vnums=(100, 199)))
+    load(folder, [mob(301, short="野狗", keywords="dog")], [], [M(301, 301)], name="inst.json", vnums=(300, 399), kind="instance")
     zones.load(folder)
 
     async def main():

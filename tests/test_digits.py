@@ -22,7 +22,7 @@ class FakeWriter:
 @pytest.fixture
 def ming(tmp_path, monkeypatch):
     monkeypatch.setattr(save, "PLAYER_DIR", tmp_path / "players")
-    write_json(tmp_path, "a.json", make_area("a.json", [make_room(1)], 100, objects=[make_object(1)]))   # 物品 101：oload 才查得到等級
+    write_json(tmp_path, "a.json", make_area("a.json", [make_room(101)], (100, 199), objects=[make_object(101)]))   # 物品 101：oload 才查得到等級
     zones.load(tmp_path)
     make_player_file("Ming")
     p = save.player_from(save.load_data("Ming"), FakeWriter())

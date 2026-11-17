@@ -26,6 +26,7 @@ uv run pytest tests/test_telnet.py::test_encode   # 單一測試
 uv run python -m mud.areacheck                    # 檢查 areas/ 全部的區域檔（有問題時結束代碼 1）
 uv run python -m mud.areacheck areas/test.json    # 只檢查一個區域檔
 uv run python -m mud.builder                      # 區域編輯器，瀏覽器開 http://127.0.0.1:1234（區域檔存在 builder_area/）
+uv run python -m mud.areaconvert 舊.json builder_area/新.json   # 舊區域（area2json 的輸出）轉成我們的格式，印出拿掉了什麼
 ```
 
 - `tests/test_telnet.py` 是 `Telnet` 狀態機的單元測試；`tests/test_commands.py` 測指令縮寫比對、tell、reply、quit 和 look（`look 名字` 的描述、11 句受傷狀態、打量、方向先於角色）；`tests/test_color.py` 測顏色代碼；`tests/test_act.py` 測 `act()` 的代換和送給誰；
@@ -60,6 +61,7 @@ uv run python -m mud.builder                      # 區域編輯器，瀏覽器�
   `tests/test_stats.py` 比對種族、公會、裸裝屬性、MP／MV 跟玩家角色手冊、balance.py；`test_equipment.py`、`test_stats.py` 讀 balance.py 用 `tests/balance_loader.py`
   （唯讀：不寫 .pyc、不改 mud_design；找不到 mud_design 才跳過）。
   `tests/test_builder.py` 用 port 0 開真的區域編輯器（資料夾是 `tmp_path`），用 urllib 打 API；也比對網頁的數字表跟 `area.py` 的定義、手冊的表，special 選單的兩組跟 `specials.py` 的分法。
+  `tests/test_areaconvert.py` 用小的假資料測舊區域轉換的每條規則（旗標照名字、外連出口、補門、E 變掉落表…）和報告，也真的轉一次秋風城（找不到 mud_design 就跳過）。
   `tests/test_weather.py` 測天氣（時間、日夜、天空一次只走一格、送給誰、weather 指令）；`tests/test_clock.py` 測定時器；`tests/test_zones.py` 測區域物件（動態區域、副本的建立和釋放、tick）；`tests/test_fight.py` 測戰鬥 loop 和時間軸的出手順序。
   用到房間的測試要自己先 `zones.load(areas 資料夾)`：`zones.world` 是全域的，不要依賴別的測試先載入過。
   角色的 `room` 是 Room 物件：載入之後再把角色放進 `zones.world.rooms[101]` 這種房間（重新載入後舊的 Room 就不是世界裡的了）。
@@ -155,8 +157,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `npc.panel` ＝ 它 ＋ 身上的效果，`npcs.recompute()`；測試直接設 `panel` 沒有 `base_panel` 的生物不要放效果）、
     `npc.mix`（攻擊類型比例），HP 補滿；怪物 MP、MV 是 0。常數（`MOB_TIER_FILL`、`ARCHETYPE_TILT`、`BASE_PER_G`…）抄 balance.py，
     `tests/test_stats.py` 比對常數，也把 4 等級 × 4 種類 × 7 攻擊 × 3 攻防 × 5 原型全部跟 `area_mob()` 比。`Npc(name, sex, room)` 直接建的（測試）沒有區域檔的資料。
-    `spawn(vnum, proto, room, rng, base)` 也存 `npc.drops`（掉落表，`obj_vnum` 用**牠自己那個檔**的 `base` 換算：M 可以放別的檔的生物），
-    所以 `resets.mobiles` 的值是 `(area_number, 生物)`。`names()` 是別人指定牠用的名字（keywords；玩家是名字），`characters.find_in_room()` 用它。
+    `spawn(vnum, proto, room, rng)` 也存 `npc.drops`（掉落表，`obj_vnum` 照寫的完整號碼），`resets.mobiles` 的值是區域檔的生物（M 可以放別的檔的生物）。`names()` 是別人指定牠用的名字（keywords；玩家是名字），`characters.find_in_room()` 用它。
     **生物、物品的 keywords 一律只寫英文**（使用者 2026-11-06 定的；屍體只認 `corpse`）。門的名字、可以細看的東西不算。區域檔檢查還沒擋中文（要擋照區域檔格式的流程，先改手冊）。
     **死掉**（`death.die(npc, killer=)`，照 C 版 raw_kill）：先跑牠的 on_death（腳本，牠被 destroy 了就到此為止）→ 打牠的人和牠停手 → `objects.make_corpse()` → 移出 `characters`（重置的 limit 數不到牠，下次重置再放）。
     imm 的 slay、戰鬥打到 HP 0（`combat.py`）都呼叫它。死亡慘叫（C 版 death_cry）還沒做。
@@ -269,23 +270,25 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   `room_flags` 用 `parse_flags()` 解析：可以寫數字（`5`），
   也可以寫字串（`"5"`、`"1|4"`，`|` 是把幾個數字的位元合起來，`"1|3"` 是 3 不是 4），只能用 `RoomFlag` 裡有的旗標；
   `sector` 只能寫 0～10 的一個整數（地形一間房只有一種）。伺服器還沒用到這兩個值，只是先存在 `Room` 上。
-  **號碼規則**（使用者定的）：
-  - 檔案裡的房間、物品、生物號碼各自只能是 1～99；遊戲裡的號碼 ＝ `area.header.area_number` ＋ 檔案號碼（3200 ＋ 3 ＝ 3203）。
-    三種號碼分開算（房間 101 和生物 101 可以同時存在），跨檔案的重複檢查也是各算各的。
-  - 出口 `to_room` 寫 1～99 是同一個區域（一樣加上 area_number），100 以上是完整號碼，用來通到別的區域。
-    門的鑰匙 `key`、區域的 `recall` 也照這個規則（`key` 寫 -1 或 0 是不用鑰匙）；這兩個還沒實作，做的時候要照規則換算。
-  - 所以遊戲號碼 1～99 是保留的（`area_number` 不能是 0）：算出來小於 100 就報錯。`area_number` 不必是 100 的倍數。
-    `key` 指到的物品存不存在還沒檢查（物品目前只檢查格式）。
-    **區域檔格式是我們自己的**：舊區域的流程是 `.are` → area2json → 我們的區域編輯器處理 → 才給伺服器用。
+  **號碼規則**（照 C 版，使用者 2026-11-17 定的；以前的 `area_number` ＋ 檔案號碼 1～99 拿掉了）：
+  - 檔案裡的號碼一律寫完整的遊戲號碼（房間 101 就寫 101），程式裡沒有換算。
+    每個檔在 `area.header.vnums` 寫自己的範圍 `[最小, 最大]`（`area.vnum_range()`）：自己的房間、生物、物品要在範圍裡（`check_number()`），
+    一個檔可以超過 99 個；兩個檔的範圍不能重疊（`check_files()`，對照的檔也算）。三種號碼分開算（房間 101 和生物 101 可以同時存在）。
+  - 指到別的東西的號碼（出口 `to_room`、門和容器的 `key`、`recall`、掉落表、重置、腳本）：範圍外就是外連到別的區域檔。
+    遊戲號碼 1～99 是保留的（`area.MIN_VNUM` 100）：寫 1～99 就報錯（`check_ref()`；`key` 的 -1、0 是不用鑰匙，`is_key()`），腳本寫 1～99 算腳本出錯。
+    出口、recall 指到的房間要存在；`key`、重置、掉落表指到的東西存不存在還沒檢查。
+    **區域檔格式是我們自己的**：舊區域的流程是 `.are` → area2json → `mud/areaconvert.py` 轉成我們的格式（寫進 `builder_area/`）→ 區域編輯器處理 → 才給伺服器用。
+    轉換的規則寫在 `areaconvert.py` 開頭（使用者 2026-11-17 定的：舊區域只重用敘述，寫不下的拿掉並列進報告；重置 E 變成 100% 掉落的白色裝備）。
+    `--force` 才蓋掉已經有的檔（在編輯器改過的會不見）。秋風城（`midgaard1.json`）已經轉成 `builder_area/midgaard.json`。
     `mud_design/tools/area_convert/out/*.json` 只是拿來打底的參考，伺服器不直接載入它；兩者已經不同：
-    房間沒有 `area_number`，改成寫在 `area.header`；等級範圍只有一個 `header.levels`（`[最低, 最高]`）；
+    房間沒有 `area_number`，號碼範圍寫在 `area.header.vnums`；等級範圍只有一個 `header.levels`（`[最低, 最高]`）；
     沒有 `area.name`，之後遊戲要用 header 的資料自己組出顯示的名稱；
     `room_flags`（數字或字串）、`sector`（整數）不是 `{"value": …, "names": …}` 這種 dict；沒有 `overridden_exits`。
-    `areas/test.json` 是測試區域（世界區域，`type` 是 `world`）：`area_number` 100，房間 1（南）、2（北）在遊戲裡是 101、102，南北相連；
+    `areas/test.json` 是測試區域（世界區域，`type` 是 `world`）：號碼範圍 `[100, 199]`，房間 101（南）、102（北）南北相連；
     起始房間 `config.START_ROOM` 是 101。之後會照使用者的指示繼續改格式。`area`、每個房間、每隻生物、每個物品和每筆重置的欄位**一個都不能少**，
-    巢狀欄位也要有範例值（`extra_descriptions` 放一筆；`script`：房間 2 用 `areas/test/鐘聲.lua`、生物 1 用 `商人.lua`、物品 2 是物品的舊格式；生物 1「測試商人」的每個欄位都有值，生物 2「測試坐騎」示範 null／空的寫法；生物 3「野兔」是練功用的 1 級一般怪，重置放 3 隻在房間 2（使用者要的）；
-    物品 1～4 是藥水、長劍、箱子、麵包（重置用到 1、3、4），物品 2「測試長劍」每個欄位都有值；物品 5～9 是給 `oload` 試裝備用的（盾牌、匕首（副手）、大劍（雙手）、戒指、皮甲，都沒寫 affects，給顏色就抽隨機屬性；不在重置裡，使用者同意加的）；
-    `resets` 每種指令各一筆；房間 1 往北、房間 2 往南的出口是同一扇木門（門兩邊都要寫），給 `D` 的範例用）：使用者靠它看系統還缺哪些功能。
+    巢狀欄位也要有範例值（`extra_descriptions` 放一筆；`script`：房間 102 用 `areas/test/鐘聲.lua`、生物 101 用 `商人.lua`、物品 102 是物品的舊格式；生物 101「測試商人」的每個欄位都有值，生物 102「測試坐騎」示範 null／空的寫法；生物 103「野兔」是練功用的 1 級一般怪，重置放 3 隻在房間 102（使用者要的）；
+    物品 101～104 是藥水、長劍、箱子、麵包（重置用到 101、103、104），物品 102「測試長劍」每個欄位都有值；物品 105～109 是給 `oload` 試裝備用的（盾牌、匕首（副手）、大劍（雙手）、戒指、皮甲，都沒寫 affects，給顏色就抽隨機屬性；不在重置裡，使用者同意加的）；
+    `resets` 每種指令各一筆；房間 101 往北、房間 102 往南的出口是同一扇木門（門兩邊都要寫），給 `D` 的範例用）：使用者靠它看系統還缺哪些功能。
     房間的文字可以用顏色代碼。
     **每個欄位的意思和新系統的實作進度寫在 `docs/區域製作手冊.md`**：改區域檔格式、或做了新的區域功能時，
     要同步更新它（開頭的進度總表，以及各欄位「新系統」那一欄）。
@@ -345,7 +348,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     使用者會再刪改，所以 `check_resets()` 只檢查寫法；號碼指到的東西存不存在、`G` 前面有沒有 `M`、`D` 的出口有沒有門都還沒查。
     **重置做了 `M` 和 `D`**（`resets.py`，照 C 版 `reset_area`、`area_update`）：`rare` 骰萬分之一；`limit` 數同號碼的生物，
     sentinel 數同房間、其他數**同一個區域物件**（手冊寫整個遊戲，但每份副本要各自有生物，使用者確認過）；`tier_roll` 骰種類。
-    生物可以是別的區域檔的（`resets.mobiles` 是全部檔案的生物表，遊戲號碼 → (area_number, 區域檔資料)）；房間不在這個區域物件就記 log 跳過。
+    生物可以是別的區域檔的（`resets.mobiles` 是全部檔案的生物表，遊戲號碼 → 區域檔的生物）；房間不在這個區域物件就記 log 跳過。
     `D` 用 `doors.set_state()`，一筆同時設兩邊（C 版一筆只設一邊）；房間或方向沒有門就記 log 跳過。
     **G、O、P、R**（照手冊和 C 版 db.c）：`reset_area()` 記住上一筆 M 這一次放出來的生物（`last_mob`），G 只給它（沒放出來就不做），`rare` 跟 M 同一個骰法（`appears()`），等級 null 是生物等級，放進 `npc.carrying`；
     O 在區域檔的房間沒有玩家（`players_in()`）、地上還沒有同號碼的才放；P 找這個區域物件裡第一件 `container_vnum`（`objects_in()`：地上和生物背包），裡面還沒有才放（照 WindSrc，有玩家也放）；
@@ -366,7 +369,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - 每間 Room 有 `zone` 指回它的區域物件。走路用 `room_at(from_room, vnum)`：先找自己所在的區域物件
     （所以在副本、動態區域裡走會留在同一份），再找世界，最後是動態區域。
     `find_room()` 順序一樣，但**不會建立**還沒建的動態區域（找門的對面用：關門不能把動態區域建起來）。
-- **教學學院**（規則在玩家角色手冊「教學學院」，使用者 2026-11-06 定的）：`areas/academy.json`（副本，`area_number` 200）＋ `areas/academy/` 的三個腳本；
+- **教學學院**（規則在玩家角色手冊「教學學院」，使用者 2026-11-06 定的）：`areas/academy.json`（副本，號碼範圍 `[200, 299]`）＋ `areas/academy/` 的三個腳本；
   `builder_area/` 也放了一樣的一份給編輯器。新角色建好就進自己那一份（`zones.instance(ACADEMY_FILE, 名字)`）。
   - 「家」是 `zones.home(player)`：學生（`zones.is_student()`：有學院的區域檔，而且 `player.vars["academy"]["student"]`）是學院的第一間 `ACADEMY_START`，其他人是 `start_room()`。
     建角（`login.create()` 先 `enroll()`）、讀檔（`save.player_from()`：學生一律回家，其他人房間不在世界才回家）、玩家死掉（`death.player_dies()`）都用它。
@@ -499,8 +502,9 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     生物（`mobiles.js`）、物品（`objects.js`）：沒有地圖，右邊表單佔滿；重置總覽（`resets.js`）：照檔案順序的表格，可拖曳排順序。
     各畫面模組拿 `editor.js` 的 `ctx`（`state`、`edited()`、`rebuild()`、`refresh()`、`goRoom()`、`chipOf()`），不互相 import 成一圈。
     **分頁規則（使用者定的）**：只有一份的欄位放同一個分頁，可以一直新增的清單才各自一個分頁。
-  - **號碼一律比算出來的遊戲號碼**（`model.js` 照 `area.resolve()` 寫了一份）：同一區域也可能寫完整號碼（101 指到房間 1）。
-    房間、生物、物品的號碼分開算。改號碼時這個檔裡指到它的地方一起改（出口、recall、重置、生物掉落表的 obj_vnum、出口的 key，`renumberThing()`）；
+  - **號碼就是遊戲號碼**（沒有換算）：`model.js` 的 `vnumRange()` 照 `area.vnum_range()`，新增房間、生物、物品用範圍裡最小的空號碼（`freeVnum()`，
+    用完了、範圍沒寫好就說 `noVnumText()`），改號碼要在範圍裡；新的重置、掉落表先填 `firstNumber()`。地圖照「這個檔裡找得到」判斷是不是外連。
+    設定的浮動視窗、新增區域檔的對話框都是最小、最大兩格（`vnums`）。房間、生物、物品的號碼分開算。改號碼時這個檔裡指到它的地方一起改（出口、recall、重置、生物掉落表的 obj_vnum、出口的 key，`renumberThing()`）；
     刪除時指到它的重置一起刪，M、O 後面跟著的 G、P 也一起刪（`deleteRoom()`、`deleteThing()`），確認視窗會寫刪幾筆。
   - 重置的分組：緊接在 M 後面的 G、O 後面的 P 算跟著它（`followersOf()`、`leaderOf()`）。房間分頁新增時，M、O、D、R 加在最後，
     G、P 插在它跟著的那筆後面；總覽新增時插在選到的那筆後面。
@@ -524,7 +528,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     那一句是 `doors.tell_other_side()`，玩家的 open／close 和腳本的 `room:door` 共用（腳本真的打開、關上了才說，使用者要的）。
   - look 的出口：關著的門是紫色 `*北`（照 C 版）；`look 方向` 描述後面加「木門是關著的。」／「是開著的。」。
 - **物品**（`objects.py`，規則在區域製作手冊「屍體」、玩家角色手冊「物品和裝備」）：遊戲裡真的出現的物品：屍體和裡面掉落的、重置 G／O／P 放的、imm 用 `oload` 做的。
-  - **容器**：`obj.container`（`area.ContainerFlag`，從 values 第 2 個開始，開關、上鎖改它）、`key`（values 第 3 個，換算跟出口的 key 一樣，`area_number` ＝ 遊戲號碼 − 檔案號碼）、`seal`。屍體的 `container` 是 None，一直開著。
+  - **容器**：`obj.container`（`area.ContainerFlag`，從 values 第 2 個開始，開關、上鎖改它）、`key`（values 第 3 個，跟出口的 key 一樣寫完整的遊戲號碼，0 以下是沒有鑰匙）、`seal`。屍體的 `container` 是 None，一直開著。
     關著的拿不出東西（「【X】關起來了。」）、`look in` 看不到（「它是蓋起來的。」）；封印著的撿不起來；可以封印又有密碼的打不開（封印的指令還沒做）。
   - **生物死掉**：屍體裡 ＝ 掉落表 ＋ 牠背包裡的；**店主（`npc.shopkeeper`）背包裡的直接消失**（使用者選的，照 C 版）。
   - `Obj`：`vnum`、`keywords`、`name`（short）、`long`、`item_type`、`level`、`color`、`affects`（`[(Apply, 數值)]`）、`base`（武器傷害範圍或 AC）、`contains`、`timer`、

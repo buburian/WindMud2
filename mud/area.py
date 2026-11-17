@@ -4,11 +4,10 @@
 規則只在 check_files() 一份：伺服器開機（zones.load）、檢查工具（python -m mud.areacheck）和區域編輯器都用它。
 開機後真的在跑的區域（世界、動態區域、副本）在 zones.py。
 
-號碼規則：檔案裡的房間、生物號碼只能是 1～99，遊戲裡的號碼是 area.header.area_number 加上它
-（房間和生物的號碼分開算）。
-要指到房間或物品時（to_room、key、recall），寫 1～99 是同一個區域（一樣加上 area_number），
-100 以上是完整號碼（指到別的區域）。所以遊戲號碼 1～99 是保留的：有房間用了它，
-別的區域寫 1～99 就分不出是指哪一個（area_number 不能是 0）。
+號碼規則（照 C 版，使用者 2026-11-17 定的）：檔案裡的號碼一律寫完整的遊戲號碼（房間 101 就寫 101）。
+每個檔在 area.header.vnums 寫自己的號碼範圍 [最小, 最大]：自己的房間、生物、物品要在範圍裡（三種號碼分開算），
+指到範圍外的號碼（to_room、key、recall、重置、掉落表）就是外連到別的區域檔。兩個檔的範圍不能重疊。
+遊戲號碼 1～99 是保留的（MIN_VNUM）：範圍最小要 100，指到別的東西寫 1～99 是錯的。一個檔可以放超過 99 個。
 """
 import enum
 import json
@@ -318,7 +317,7 @@ MOB_ONLY_ATTACKS = {Attack.HIT, Attack.BITE, Attack.SUCTION}   # 只給怪物用
 # 每一層要剛好有這些欄位
 TOP_KEYS = ("schema_version", "file", "area", "rooms", "mobiles", "objects", "resets")
 AREA_KEYS = ("header", "recall", "no_teleport", "clan_recall", "gem")
-HEADER_KEYS = ("levels", "author", "title", "area_number", "type")
+HEADER_KEYS = ("levels", "author", "title", "vnums", "type")
 ROOM_KEYS = ("vnum", "name", "description", "room_flags", "sector", "exits", "extra_descriptions", "script")
 EXIT_KEYS = ("description", "keywords", "locks", "key", "to_room")
 EXTRA_KEYS = ("keywords", "description")
@@ -333,6 +332,13 @@ MOBILE_KEYS = ("vnum", "keywords", "short", "long", "description", "level", "tie
                "attack", "defense", "archetype", "act", "affected_by", "alignment",
                "race", "sex", "position",
                "drops", "script", "shop", "special", "special_ratio", "poison_ratio")
+# 生物的種族 race（手冊的種族表，C 版的名稱轉小寫，有測試比對）：區域檔照寫，C 版比對時看開頭、不分大小寫
+MOB_RACES = (
+    "human", "elf", "halfelf", "drow", "dwarf", "halfdwarf", "hobbit", "gnome", "faerie", "halfkobold", "giant", "ogre",
+    "orc", "kobold", "minotaur", "troll", "hobgoblin", "insect", "dragon", "animal", "god", "undead", "harpy", "bear",
+    "githyanki", "elemental", "bat", "plant", "rat", "vampire", "werewolf", "goblin", "arachnid", "mindflayer", "object",
+    "mist", "snake", "worm", "fish", "hydra", "lizard",
+)
 # special 能寫的名字（手冊 special 那節的表，有測試比對）：要做什麼寫在 specials.py，有幾個寫了還沒作用
 SPECIALS = (
     "spec_guard", "spec_executioner", "spec_cast_adept", "spec_janitor", "spec_fido", "spec_thief", "spec_mayor",
@@ -355,7 +361,8 @@ RESET_KEYS = {
     "R": ("cmd", "if_flag", "room_vnum", "exit_count", "comment"),                 # 打亂出口
     "*": ("cmd", "comment"),                                                       # 整行註解
 }
-RESET_NUMBERS = ("mob_vnum", "obj_vnum", "room_vnum", "container_vnum")   # 照號碼規則寫的欄位
+RESET_NUMBERS = ("mob_vnum", "obj_vnum", "room_vnum", "container_vnum")   # 寫完整遊戲號碼的欄位
+MIN_VNUM = 100                              # 遊戲號碼最小是 100：1～99 是保留的
 
 
 class Room:
@@ -425,13 +432,26 @@ def parse_flags(value):
     return result
 
 
-def resolve(base, number):
-    """號碼規則：1～99 是同一個區域（加上 area_number），100 以上照寫的號碼。"""
-    return base + number if number <= 99 else number
-
-
 def is_int(value):
     return isinstance(value, int) and not isinstance(value, bool)   # JSON 的 true 在 Python 也算 int，要排除
+
+
+def is_vnum(value):
+    """寫得對的遊戲號碼：MIN_VNUM 以上的整數（1～99 是保留的）。"""
+    return is_int(value) and value >= MIN_VNUM
+
+
+def check_ref(where, value, problems):
+    """指到別的東西的號碼（to_room、recall、重置、掉落表…）：要寫完整的遊戲號碼。回傳寫得對不對。"""
+    if is_vnum(value):
+        return True
+    problems.append(f"{where}要寫完整的遊戲號碼（{MIN_VNUM} 以上，1～99 是保留的），不能是 {value!r}")
+    return False
+
+
+def is_key(value):
+    """鑰匙（門的 key、容器 values 第 3 個）的寫法：0 以下是不用鑰匙，不然是物品的遊戲號碼。"""
+    return is_int(value) and (value <= 0 or value >= MIN_VNUM)
 
 
 def check_files(paths, reference=(), script_root=None):
@@ -451,6 +471,18 @@ def check_files(paths, reference=(), script_root=None):
             folder = Path(script_root if script_root is not None else path.parent) / path.stem
             check_lua(path.name, data, folder, problems[path], lua_cache)
 
+    # 跨檔案：號碼範圍不能重疊。先登記對照用的檔案，重疊時算在要檢查的檔案頭上
+    ranges = [(r, path.name) for path in reference if path.resolve() not in checked
+              for r in [area_range(path)] if r is not None]
+    for path, info in found.items():
+        if info.range is None:
+            continue
+        lo, hi = info.range
+        for (a, b), other in ranges:
+            if lo <= b and a <= hi:
+                problems[path].append(f"{path.name}：area.header.vnums 的範圍 {lo}～{hi} 跟 {other} 的 {a}～{b} 重疊")
+        ranges.append((info.range, path.name))
+
     # 跨檔案：遊戲號碼不能重複。先登記對照用的檔案，重複時算在要檢查的檔案頭上。
     # 房間和生物的號碼分開算（房間 101 和生物 101 可以同時存在）
     def owners(key, label, vnums_of):
@@ -460,22 +492,20 @@ def check_files(paths, reference=(), script_root=None):
                 for number in game_numbers(path, key):
                     owner.setdefault(number, path.name)
         for path, info in found.items():
-            for vnum in vnums_of(info):
-                number = info.base + vnum
+            for number in vnums_of(info):
                 if number in owner:
                     problems[path].append(f"{path.name}：{label} {number} 跟 {owner[number]} 重複")
                 else:
                     owner[number] = path.name
         return owner
 
-    owner = owners("rooms", "房間", lambda info: info.vnums)
+    owner = owners("rooms", "房間", lambda info: info.rooms)
     # 每個檔案是哪一種區域（檔名 → AreaType），出口通到別的檔案時要看
     kinds = {path.name: area_kind(path) for path in reference if path.resolve() not in checked}
     kinds.update({path.name: info.kind for path, info in found.items()})
     # 出口和 recall 指到的房間要存在；副本只能用 enter 進去、recall 出來，所以出口不能跨進或跨出副本
     for path, info in found.items():
-        for vnum, d, to in info.exits:
-            target = resolve(info.base, to)
+        for vnum, d, target in info.exits:
             if target not in owner:
                 problems[path].append(f"{path.name}：房間 {vnum} 往 {d} 的出口指到不存在的房間 {target}")
             elif owner[target] != path.name and info.kind == AreaType.INSTANCE:
@@ -484,8 +514,8 @@ def check_files(paths, reference=(), script_root=None):
             elif owner[target] != path.name and kinds.get(owner[target]) == AreaType.INSTANCE:
                 problems[path].append(f"{path.name}：房間 {vnum} 往 {d} 的出口通到副本 {owner[target]} 的房間 {target}，"
                                       f"副本不能走進去（要用 enter）")
-        if info.recall is not None and resolve(info.base, info.recall) not in owner:
-            problems[path].append(f"{path.name}：area.recall 指到不存在的房間 {resolve(info.base, info.recall)}")
+        if info.recall is not None and info.recall not in owner:
+            problems[path].append(f"{path.name}：area.recall 指到不存在的房間 {info.recall}")
     owners("mobiles", "生物", lambda info: info.mobiles)
     owners("objects", "物品", lambda info: info.objects)
     # 固定裝備：物品可能在別的檔（寫完整號碼），所以用全部讀到的檔（含對照用的）去找物品和生物
@@ -494,9 +524,9 @@ def check_files(paths, reference=(), script_root=None):
     rooms = world_exits([*paths, *reference])
     for path, info in found.items():
         data = read_json(path, [])
-        if info.base is not None and isinstance(data, dict):
-            check_fixed_items(path.name, data, info.base, objects, mob_levels, problems[path])
-            check_doors(path.name, data, info.base, rooms, problems[path])
+        if isinstance(data, dict):
+            check_fixed_items(path.name, data, objects, mob_levels, problems[path])
+            check_doors(path.name, data, rooms, problems[path])
     return problems
 
 
@@ -505,36 +535,32 @@ def world_exits(paths):
     rooms = {}
     for path in {p.resolve(): p for p in paths}.values():
         data = read_json(path, [])
-        try:
-            base = data["area"]["header"]["area_number"]
-        except (KeyError, TypeError):
-            continue
-        if not is_int(base):
+        if not isinstance(data, dict):
             continue
         for r in data.get("rooms") if isinstance(data.get("rooms"), list) else []:
-            if not (isinstance(r, dict) and is_int(r.get("vnum")) and 1 <= r["vnum"] <= 99 and isinstance(r.get("exits"), dict)):
+            if not (isinstance(r, dict) and is_vnum(r.get("vnum")) and isinstance(r.get("exits"), dict)):
                 continue
-            exits = {d: (resolve(base, e["to_room"]), e["locks"]) for d, e in r["exits"].items()
-                     if isinstance(e, dict) and is_int(e.get("to_room")) and e["to_room"] >= 1 and is_int(e.get("locks"))}
-            rooms.setdefault(base + r["vnum"], (path.name, exits))
+            exits = {d: (e["to_room"], e["locks"]) for d, e in r["exits"].items()
+                     if isinstance(e, dict) and is_vnum(e.get("to_room")) and is_int(e.get("locks"))}
+            rooms.setdefault(r["vnum"], (path.name, exits))
     return rooms
 
 
-def check_doors(name, data, base, rooms, problems):
+def check_doors(name, data, rooms, problems):
     """門兩邊都要寫：有門的出口通到的房間，往回的出口（反方向）指回這間房的話，那個出口也要有門。
 
     往回沒有出口（單向出口）、或往回的出口指到別間，不算同一扇門。rooms 是 world_exits() 的結果。寫錯的地方就略過（別的規則會報錯）。
     算在有門的那一邊；門在別的檔時，沒寫門的這一邊也報（編輯器只檢查一個檔，作者才看得到）。
     """
     for r in data.get("rooms") if isinstance(data.get("rooms"), list) else []:
-        if not (isinstance(r, dict) and is_int(r.get("vnum")) and isinstance(r.get("exits"), dict)):
+        if not (isinstance(r, dict) and is_vnum(r.get("vnum")) and isinstance(r.get("exits"), dict)):
             continue
-        me = base + r["vnum"]
+        me = r["vnum"]
         for d, e in r["exits"].items():
             if not (d in DIRECTIONS and isinstance(e, dict) and is_int(e.get("locks")) and e["locks"] in Locks
-                    and is_int(e.get("to_room")) and e["to_room"] >= 1):
+                    and is_vnum(e.get("to_room"))):
                 continue
-            target = resolve(base, e["to_room"])
+            target = e["to_room"]
             other, exits = rooms.get(target, (None, {}))
             back = exits.get(REVERSE[d])
             if back is None or back[0] != me:
@@ -552,28 +578,24 @@ def world_items(paths):
     objects, mob_levels = {}, {}
     for path in {p.resolve(): p for p in paths}.values():
         data = read_json(path, [])
-        try:
-            base = data["area"]["header"]["area_number"]
-        except (KeyError, TypeError):
-            continue
-        if not is_int(base):
+        if not isinstance(data, dict):
             continue
         for key, out, value in (("objects", objects, lambda o: o), ("mobiles", mob_levels, lambda m: m.get("level"))):
             for item in data.get(key) if isinstance(data.get(key), list) else []:
-                if isinstance(item, dict) and is_int(item.get("vnum")) and 1 <= item["vnum"] <= 99:
-                    out.setdefault(base + item["vnum"], value(item))
+                if isinstance(item, dict) and is_vnum(item.get("vnum")):
+                    out.setdefault(item["vnum"], value(item))
     return objects, mob_levels
 
 
-def check_fixed_items(name, data, base, objects, mob_levels, problems):
+def check_fixed_items(name, data, objects, mob_levels, problems):
     """固定裝備（物品寫了 affects）放出來的地方：加成的點數不能超過「等級和部位的上限 × 顏色加成」（設計文件 §3.3）。
 
     放出來的地方和等級：掉落表 drops 用這隻生物的等級；重置 G 寫 null 用前面最近那筆 M 的生物等級；O、P 寫在 level。
     顏色 null、gray 的加成是 ×0：只有不算點數的加成（例如龍焰抗性）才放得進去。
     """
     def place(where, obj_vnum, level, color):
-        if is_int(obj_vnum) and is_int(level) and obj_vnum >= 1:
-            check_fixed_item(where, resolve(base, obj_vnum), objects, level, color, problems)
+        if is_vnum(obj_vnum) and is_int(level):
+            check_fixed_item(where, obj_vnum, objects, level, color, problems)
 
     for m in data.get("mobiles") if isinstance(data.get("mobiles"), list) else []:
         if isinstance(m, dict) and isinstance(m.get("drops"), list):
@@ -585,7 +607,7 @@ def check_fixed_items(name, data, base, objects, mob_levels, problems):
         if not isinstance(r, dict):
             continue
         if r.get("cmd") == "M":
-            m_level = mob_levels.get(resolve(base, r["mob_vnum"])) if is_int(r.get("mob_vnum")) else None
+            m_level = mob_levels.get(r["mob_vnum"]) if is_int(r.get("mob_vnum")) else None
         elif r.get("cmd") in ("G", "O", "P"):
             level = m_level if r.get("cmd") == "G" and r.get("level") is None else r.get("level")
             place(f"{name}：resets 第 {i + 1} 筆（{r['cmd']}）", r.get("obj_vnum"), level, r.get("color"))
@@ -649,16 +671,16 @@ def decimal_text(x):
 
 
 class Found:
-    """check_structure 找到、可以拿來做跨檔案檢查的東西。area_number 不對時全部是空的。"""
+    """check_structure 找到、可以拿來做跨檔案檢查的東西。號碼都是遊戲號碼。"""
 
     def __init__(self):
-        self.base = None                    # area_number
+        self.range = None                   # 格式沒問題的 header.vnums：(最小, 最大)
         self.kind = None                    # 格式沒問題的 header.type（AreaType）
-        self.vnums = []                     # 號碼沒問題的房間（檔案號碼）
-        self.exits = []                     # [(房間檔案號碼, 方向, to_room)]：格式沒問題的出口
+        self.rooms = []                     # 號碼沒問題的房間
+        self.exits = []                     # [(房間, 方向, to_room)]：格式沒問題的出口
         self.recall = None                  # 格式沒問題的 recall
-        self.mobiles = []                   # 號碼沒問題的生物（檔案號碼）
-        self.objects = []                   # 號碼沒問題的物品（檔案號碼）
+        self.mobiles = []                   # 號碼沒問題的生物
+        self.objects = []                   # 號碼沒問題的物品
 
 
 def read_json(path, problems):
@@ -670,17 +692,31 @@ def read_json(path, problems):
 
 
 def game_numbers(path, key="rooms"):
-    """盡量算出一個檔案的房間（key="mobiles" 是生物）有哪些遊戲號碼（給對照用，格式不對的部分就略過）。"""
+    """盡量讀出一個檔案的房間（key="mobiles" 是生物）有哪些遊戲號碼（給對照用，格式不對的部分就略過）。"""
     data = read_json(path, [])
     try:
-        base = data["area"]["header"]["area_number"]
         items = data[key]
     except (KeyError, TypeError):
         return []
-    if not is_int(base) or not isinstance(items, list):
+    if not isinstance(items, list):
         return []
-    return [base + r["vnum"] for r in items
-            if isinstance(r, dict) and is_int(r.get("vnum")) and 1 <= r["vnum"] <= 99]
+    return [r["vnum"] for r in items if isinstance(r, dict) and is_vnum(r.get("vnum"))]
+
+
+def area_range(path):
+    """盡量讀出一個檔案的 header.vnums（給對照用，格式不對就是 None）。"""
+    data = read_json(path, [])
+    try:
+        return vnum_range(data["area"]["header"]["vnums"])
+    except (KeyError, TypeError):
+        return None
+
+
+def vnum_range(value):
+    """header.vnums 寫得對就回傳 (最小, 最大)，不對是 None：兩個整數，MIN_VNUM ≤ 最小 ≤ 最大。"""
+    if isinstance(value, list) and len(value) == 2 and all(is_int(x) for x in value) and MIN_VNUM <= value[0] <= value[1]:
+        return value[0], value[1]
+    return None
 
 
 def area_kind(path):
@@ -777,61 +813,59 @@ def check_structure(name, data, problems):
         problems.append(f"{name}：schema_version 要是 1，不能是 {data['schema_version']!r}")
     if "file" in data and data["file"] != name:
         problems.append(f"{name}：file 要寫實際的檔名 {name!r}，不能是 {data['file']!r}")
-    base, recall, kind = check_area(name, data["area"], problems) if "area" in data else (None, None, None)
-    found.kind = kind
-    rooms = check_rooms(name, data, base, problems)
-    mobiles = check_mobiles(name, data, base, problems)
-    objects = check_objects(name, data, base, problems)
+    vnums, recall, kind = check_area(name, data["area"], problems) if "area" in data else (None, None, None)
+    found.range, found.kind, found.recall = vnums, kind, recall
+    rooms = check_rooms(name, data, vnums, problems)
+    found.mobiles = check_mobiles(name, data, vnums, problems)
+    found.objects = check_objects(name, data, vnums, problems)
     check_resets(name, data, problems)
-    if base is not None:                    # 沒有 area_number 就算不出遊戲號碼，跨檔案的檢查只好略過
-        found.base, found.mobiles, found.objects = base, mobiles, objects
-        if rooms is not None:               # rooms 整個不對時，房間的跨檔案檢查也略過
-            found.vnums, found.exits = rooms
-            found.recall = recall
+    if rooms is not None:                   # rooms 整個不對時，房間的跨檔案檢查略過
+        found.rooms, found.exits = rooms
     return found
 
 
-def check_number(name, label, vnum, where, seen, base, problems):
-    """檔案裡的號碼（房間、生物）：1～99、檔案裡不重複、遊戲號碼不小於 100。沒問題就記進 seen，回傳 True。"""
-    if not (is_int(vnum) and 1 <= vnum <= 99):
-        problems.append(f"{name}：{label}號碼 {vnum!r} 不在 1～99")
+def check_number(name, label, vnum, where, seen, vnums, problems):
+    """房間、生物、物品自己的號碼：完整的遊戲號碼、在這個檔的範圍 vnums 裡（範圍寫錯就不看）、檔案裡不重複。
+    沒問題就記進 seen，回傳 True。"""
+    if not is_vnum(vnum):
+        problems.append(f"{name}：{label}號碼要寫完整的遊戲號碼（{MIN_VNUM} 以上，1～99 是保留的），不能是 {vnum!r}")
+    elif vnums is not None and not vnums[0] <= vnum <= vnums[1]:
+        problems.append(f"{where}的號碼 {vnum} 不在這個檔的範圍 {vnums[0]}～{vnums[1]}（area.header.vnums）")
     elif vnum in seen:
         problems.append(f"{name}：{label} {vnum} 在這個檔案裡重複")
-    elif base is not None and base + vnum < 100:
-        problems.append(f"{where}的遊戲號碼是 area_number {base} ＋ {vnum} ＝ {base + vnum}，不能小於 100（1～99 是保留的）")
     else:
         seen.append(vnum)
         return True
     return False
 
 
-def check_rooms(name, data, base, problems):
+def check_rooms(name, data, vnums, problems):
     """檢查 rooms。回傳 (號碼沒問題的房間, 格式沒問題的出口 [(房間, 方向, to_room)])；rooms 整個不對是 None。"""
     if "rooms" not in data:
         return None
     if not isinstance(data["rooms"], list):
         problems.append(f"{name}：rooms 要寫成 […]，不能是 {data['rooms']!r}")
         return None
-    vnums, exits = [], []
+    seen, exits = [], []
     for i, r in enumerate(data["rooms"]):
         vnum = r.get("vnum") if isinstance(r, dict) else None
         where = f"{name}：房間 {vnum} " if is_int(vnum) else f"{name}：第 {i + 1} 間房間 "
         if not check_keys(r, ROOM_KEYS, where, problems):
             continue
         room_exits = check_room(where, r, problems)
-        if "vnum" in r and check_number(name, "房間", vnum, where, vnums, base, problems):
+        if "vnum" in r and check_number(name, "房間", vnum, where, seen, vnums, problems):
             exits += [(vnum, d, to) for d, to in room_exits]
-    return vnums, exits
+    return seen, exits
 
 
-def check_mobiles(name, data, base, problems):
-    """檢查 mobiles。回傳號碼沒問題的生物（檔案號碼）。"""
+def check_mobiles(name, data, vnums, problems):
+    """檢查 mobiles。回傳號碼沒問題的生物。"""
     if "mobiles" not in data:
         return []
     if not isinstance(data["mobiles"], list):
         problems.append(f"{name}：mobiles 要寫成 […]，不能是 {data['mobiles']!r}")
         return []
-    vnums = []
+    seen = []
     for i, m in enumerate(data["mobiles"]):
         vnum = m.get("vnum") if isinstance(m, dict) else None
         where = f"{name}：生物 {vnum} " if is_int(vnum) else f"{name}：第 {i + 1} 隻生物 "
@@ -839,13 +873,13 @@ def check_mobiles(name, data, base, problems):
             continue
         check_mobile(where, m, problems)
         if "vnum" in m:
-            check_number(name, "生物", vnum, where, vnums, base, problems)
-    return vnums
+            check_number(name, "生物", vnum, where, seen, vnums, problems)
+    return seen
 
 
 def check_area(name, area, problems):
-    """檢查 area 區塊。回傳 (area_number, recall, type)，不對的就是 None。"""
-    base = recall = kind = None
+    """檢查 area 區塊。回傳 (號碼範圍 (最小, 最大), recall, type)，不對的就是 None。"""
+    vnums = recall = kind = None
     if not check_keys(area, AREA_KEYS, f"{name}：area ", problems):
         return None, None, None
     header = area.get("header")
@@ -857,29 +891,25 @@ def check_area(name, area, problems):
         for k in ("author", "title"):
             if k in header and not isinstance(header[k], str):
                 problems.append(f"{name}：area.header.{k} 要是字串，不能是 {header[k]!r}")
-        if "area_number" in header:
-            if is_int(header["area_number"]) and header["area_number"] >= 1:
-                base = header["area_number"]
-            else:
-                problems.append(f"{name}：area.header.area_number 要是正整數（1～99 是保留的號碼，area_number 不能是 0），"
-                                f"不能是 {header['area_number']!r}")
+        if "vnums" in header:
+            vnums = vnum_range(header["vnums"])
+            if vnums is None:
+                problems.append(f"{name}：area.header.vnums 要寫 [最小, 最大] 兩個整數，最小不能小於 {MIN_VNUM}"
+                                f"（1～99 是保留的）、不能大於最大，不能是 {header['vnums']!r}")
         if "type" in header:
             if header["type"] in codes(AreaType):
                 kind = AreaType(header["type"])
             else:
                 problems.append(f"{name}：area.header.type 要寫 {'、'.join(t.value for t in AreaType)} 其中一個，"
                                 f"不能是 {header['type']!r}")
-    if "recall" in area and area["recall"] is not None:
-        if is_int(area["recall"]) and area["recall"] >= 1:
-            recall = area["recall"]
-        else:
-            problems.append(f"{name}：area.recall 要是 null 或房間號碼，不能是 {area['recall']!r}")
+    if "recall" in area and area["recall"] is not None and check_ref(f"{name}：area.recall ", area["recall"], problems):
+        recall = area["recall"]
     if "no_teleport" in area and not (area["no_teleport"] is None or (is_int(area["no_teleport"]) and area["no_teleport"] in (0, 1))):
         problems.append(f"{name}：area.no_teleport 要是 null、0 或 1，不能是 {area['no_teleport']!r}")
     for k in ("clan_recall", "gem"):
         if k in area and not (area[k] is None or (is_int(area[k]) and area[k] >= 0)):
             problems.append(f"{name}：area.{k} 要是 null 或不小於 0 的整數，不能是 {area[k]!r}")
-    return base, recall, kind
+    return vnums, recall, kind
 
 
 def check_room(where, r, problems):
@@ -940,14 +970,12 @@ def check_exit(where, e, problems):
             problems.append(f"{where}的 {k} 要是字串，不能是 {e[k]!r}")
     if "locks" in e and not (is_int(e["locks"]) and e["locks"] in Locks):
         problems.append(f"{where}的 locks 要是 0～{max(Locks)} 的整數，不能是 {e['locks']!r}")
-    if "key" in e and not (is_int(e["key"]) and e["key"] >= -1):
-        problems.append(f"{where}的 key 要是 -1、0 或物品號碼，不能是 {e['key']!r}")
+    if "key" in e and not (is_key(e["key"]) and e["key"] >= -1):
+        problems.append(f"{where}的 key 要是 -1、0（不用鑰匙）或鑰匙的遊戲號碼（{MIN_VNUM} 以上，1～99 是保留的），"
+                        f"不能是 {e['key']!r}")
     if "to_room" not in e:
         return False
-    if not (is_int(e["to_room"]) and e["to_room"] >= 1):
-        problems.append(f"{where}號碼 {e['to_room']!r} 不對")
-        return False
-    return True
+    return check_ref(f"{where}的 to_room ", e["to_room"], problems)
 
 
 def check_script(where, s, problems):
@@ -974,14 +1002,14 @@ def check_object_script(where, s, problems):
         problems.append(f"{where}的 function 不能是空的")
 
 
-def check_objects(name, data, base, problems):
-    """檢查 objects。回傳號碼沒問題的物品（檔案號碼）。"""
+def check_objects(name, data, vnums, problems):
+    """檢查 objects。回傳號碼沒問題的物品。"""
     if "objects" not in data:
         return []
     if not isinstance(data["objects"], list):
         problems.append(f"{name}：objects 要寫成 […]，不能是 {data['objects']!r}")
         return []
-    vnums = []
+    seen = []
     for i, o in enumerate(data["objects"]):
         vnum = o.get("vnum") if isinstance(o, dict) else None
         where = f"{name}：物品 {vnum} " if is_int(vnum) else f"{name}：第 {i + 1} 個物品 "
@@ -989,8 +1017,8 @@ def check_objects(name, data, base, problems):
             continue
         check_object(where, o, problems)
         if "vnum" in o:
-            check_number(name, "物品", vnum, where, vnums, base, problems)
-    return vnums
+            check_number(name, "物品", vnum, where, seen, vnums, problems)
+    return seen
 
 
 def check_object(where, o, problems):
@@ -1021,6 +1049,9 @@ def check_object(where, o, problems):
         problems.append(f"{where}的 values 要寫 4 個數字或字串，不能是 {o['values']!r}")
     elif o.get("item_type") == WEAPON_ITEM_TYPE and "values" in o:
         check_weapon(where, o, problems)
+    elif o.get("item_type") == CONTAINER_ITEM_TYPE and "values" in o and is_int(o["values"][2]) and not is_key(o["values"][2]):
+        problems.append(f"{where}的鑰匙（values 第 3 個）要是 0 以下（不用鑰匙）或鑰匙的遊戲號碼"
+                        f"（{MIN_VNUM} 以上，1～99 是保留的），不能是 {o['values'][2]!r}")
     if "affects" in o:
         if not isinstance(o["affects"], list):
             problems.append(f"{where}的 affects 要寫成 […]，不能是 {o['affects']!r}")
@@ -1059,7 +1090,7 @@ def check_weapon(where, o, problems):
 
 
 def check_resets(name, data, problems):
-    """檢查 resets，只看寫法。號碼指到的東西存不存在、G 前面有沒有 M、D 的出口有沒有門，都還沒檢查。"""
+    """檢查 resets，只看寫法（號碼要寫完整的遊戲號碼）。號碼指到的東西存不存在、G 前面有沒有 M、D 的出口有沒有門，都還沒檢查。"""
     if "resets" not in data:
         return
     if not isinstance(data["resets"], list):
@@ -1077,8 +1108,8 @@ def check_resets(name, data, problems):
         check_ints(w, r, ("rare", "limit", "if_flag", "state", "exit_count"), problems)
         check_strs(w, r, ("comment",), problems)
         for k in RESET_NUMBERS:
-            if k in r and not (is_int(r[k]) and r[k] >= 1):
-                problems.append(f"{w}的 {k} 號碼 {r[k]!r} 不對")
+            if k in r:
+                check_ref(f"{w}的 {k} ", r[k], problems)
         if "direction" in r and r["direction"] not in DIRECTIONS:
             problems.append(f"{w}的 direction {r['direction']!r} 不對（只能是 {'、'.join(DIRECTIONS)}）")
         if "state" in r and is_int(r["state"]) and r["state"] not in DoorState:
@@ -1149,8 +1180,8 @@ def check_drops(where, m, problems):
         w = f"{where}的 drops 第 {i + 1} 行"
         if not check_keys(d, DROP_KEYS, f"{w} ", problems):
             continue
-        if "obj_vnum" in d and not (is_int(d["obj_vnum"]) and d["obj_vnum"] >= 1):
-            problems.append(f"{w}的 obj_vnum 要是物品號碼，不能是 {d['obj_vnum']!r}")
+        if "obj_vnum" in d:
+            check_ref(f"{w}的 obj_vnum ", d["obj_vnum"], problems)
         if "color" in d:
             check_color(w, d["color"], problems)
         if "chance" in d and not (is_int(d["chance"]) and 1 <= d["chance"] <= CHANCE_MAX):
@@ -1217,16 +1248,16 @@ def is_ratio(value):
             and math.isfinite(value) and value > 0)
 
 
-def build_room(base, r):
+def build_room(r):
     """把一個（已經檢查過的）房間變成 Room。"""
-    exits = {d: resolve(base, e["to_room"]) for d, e in r["exits"].items()}
+    exits = {d: e["to_room"] for d, e in r["exits"].items()}
     exit_descriptions = {d: e["description"] for d, e in r["exits"].items()}
     # 名字用空白隔開（例如 "牌子 sign"），存成小寫，英文比對時不分大小寫
     extra_descriptions = [([k.lower() for k in ed["keywords"].split()], ed["description"])
                           for ed in r["extra_descriptions"]]
-    room = Room(base + r["vnum"], r["name"], r["description"], exits,
+    room = Room(r["vnum"], r["name"], r["description"], exits,
                 RoomFlag(parse_flags(r["room_flags"])), Sector(r["sector"]), exit_descriptions, extra_descriptions)
-    # 有門的出口：鑰匙照號碼規則換算，-1、0 是不用鑰匙
-    room.doors = {d: Door(e["keywords"].split(), Locks(e["locks"]), resolve(base, e["key"]) if e["key"] > 0 else None)
+    # 有門的出口：-1、0 是不用鑰匙
+    room.doors = {d: Door(e["keywords"].split(), Locks(e["locks"]), e["key"] if e["key"] > 0 else None)
                   for d, e in r["exits"].items() if e["locks"] != Locks.NO_DOOR}
     return room

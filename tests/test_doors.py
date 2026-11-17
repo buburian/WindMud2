@@ -34,11 +34,11 @@ def door_exit(to, keywords="木門 door", locks=1, key=-1):
     return e
 
 
-def two_rooms(keywords="木門 door", key=-1):
-    """房間 1 往北、房間 2 往南，中間是同一扇門（兩邊都寫）。"""
-    r1, r2 = make_room(1), make_room(2)
-    r1["exits"]["north"] = door_exit(2, keywords, key=key)
-    r2["exits"]["south"] = door_exit(1, keywords, key=key)
+def two_rooms(keywords="木門 door", key=-1, first=101):
+    """房間 first 往北、房間 first+1 往南，中間是同一扇門（兩邊都寫）。"""
+    r1, r2 = make_room(first), make_room(first + 1)
+    r1["exits"]["north"] = door_exit(first + 1, keywords, key=key)
+    r2["exits"]["south"] = door_exit(first, keywords, key=key)
     return [r1, r2]
 
 
@@ -46,8 +46,8 @@ def D(room, direction, state):
     return {"cmd": "D", "if_flag": 0, "room_vnum": room, "direction": direction, "state": state, "comment": ""}
 
 
-def load(folder, rooms, resets_=(), name="a.json", area_number=100, kind="world"):
-    write_json(folder, name, make_area(name, rooms, area_number, resets=resets_, kind=kind))
+def load(folder, rooms, resets_=(), name="a.json", vnums=(100, 199), kind="world"):
+    write_json(folder, name, make_area(name, rooms, vnums, resets=resets_, kind=kind))
 
 
 def player(name, room, position=Position.STANDING):
@@ -71,53 +71,53 @@ def world_door(vnum, direction):
 # ---- 門的資料 ----
 
 def test_build_room_makes_doors():
-    r1 = two_rooms(key=5)[0]
-    r1["exits"]["east"] = make_exit(3)                          # 沒有門的出口
+    r1 = two_rooms(key=105)[0]
+    r1["exits"]["east"] = make_exit(103)                        # 沒有門的出口
     r1["exits"]["up"] = door_exit(150, keywords="", locks=8, key=0)
     r1["exits"]["down"] = door_exit(160, key=150)
-    room = area.build_room(100, r1)
+    room = area.build_room(r1)
     assert set(room.doors) == {"north", "up", "down"}
     north = room.doors["north"]
     assert (north.keywords, north.locks, north.key, north.closed, north.locked) == (["木門", "door"], Locks.DOOR, 105, False, False)
     assert north.name == "木門" and room.doors["up"].name == "門"        # 沒寫名字就叫「門」
     assert room.doors["up"].key is None                         # 0、-1 是不用鑰匙
-    assert room.doors["down"].key == 150                        # 100 以上照寫的號碼
+    assert room.doors["down"].key == 150                        # 照寫的遊戲號碼
 
 
 # ---- 檢查：門兩邊都要寫 ----
 
 def check(folder, *files):
-    """files 是 (檔名, rooms, area_number)；全部一起檢查，回傳 {檔名: 問題}。"""
-    paths = [write_json(folder, n, make_area(n, rooms, base)) for n, rooms, base in files]
+    """files 是 (檔名, rooms, header.vnums)；全部一起檢查，回傳 {檔名: 問題}。"""
+    paths = [write_json(folder, n, make_area(n, rooms, vnums)) for n, rooms, vnums in files]
     return {p.name: found for p, found in area.check_files(paths, paths).items()}
 
 
 def test_door_on_one_side_is_a_problem(folder):
     rooms = two_rooms()
     rooms[1]["exits"]["south"]["locks"] = 0
-    assert check(folder, ("a.json", rooms, 100))["a.json"] == [
+    assert check(folder, ("a.json", rooms, (100, 199)))["a.json"] == [
         "a.json：房間 101 往 north 的出口有門（locks 1），房間 102 往 south 的出口指回來，也要有門（現在 locks 是 0）：門兩邊都要寫"]
 
 
 def test_door_on_both_sides_is_fine(folder):
-    assert check(folder, ("a.json", two_rooms(), 100))["a.json"] == []
+    assert check(folder, ("a.json", two_rooms(), (100, 199)))["a.json"] == []
 
 
-@pytest.mark.parametrize("back", [None, 3], ids=["單向出口", "往回指到別間"])
+@pytest.mark.parametrize("back", [None, 103], ids=["單向出口", "往回指到別間"])
 def test_not_the_same_door(folder, back):
-    rooms = two_rooms() + [make_room(3)]
+    rooms = two_rooms() + [make_room(103)]
     del rooms[1]["exits"]["south"]
     if back is not None:
         rooms[1]["exits"]["south"] = make_exit(back)
-    assert check(folder, ("a.json", rooms, 100))["a.json"] == []
+    assert check(folder, ("a.json", rooms, (100, 199)))["a.json"] == []
 
 
 def test_door_in_another_file(folder):
     # a.json 有門、b.json 沒寫門：兩個檔各自報（只檢查 b.json 時，作者才看得到）
-    a, b = make_room(1), make_room(1)
+    a, b = make_room(101), make_room(201)
     a["exits"]["north"] = door_exit(201)
     b["exits"]["south"] = make_exit(101)
-    found = check(folder, ("a.json", [a], 100), ("b.json", [b], 200))
+    found = check(folder, ("a.json", [a], (100, 199)), ("b.json", [b], (200, 299)))
     assert found["a.json"] == ["a.json：房間 101 往 north 的出口有門（locks 1），房間 201 往 south 的出口指回來，也要有門（現在 locks 是 0）：門兩邊都要寫"]
     assert found["b.json"] == ["b.json：房間 201 往 south 的出口沒有門（locks 0），但 a.json 的房間 101 往 north 的出口有門（locks 1）指到這裡：門兩邊都要寫"]
 
@@ -126,7 +126,7 @@ def test_door_in_another_file(folder):
 
 @pytest.mark.parametrize("keywords, want", [("木門 door", "【木門】關起來了。"), ("", "北方關起來了。")])
 def test_closed_door_blocks_walking(folder, keywords, want):
-    load(folder, two_rooms(keywords), [D(1, "north", DoorState.CLOSED)])
+    load(folder, two_rooms(keywords), [D(101, "north", DoorState.CLOSED)])
     zones.load(folder)
     ming = player("Ming", zones.world.rooms[101])
     command(ming, "north")
@@ -139,9 +139,9 @@ def test_closed_door_blocks_walking(folder, keywords, want):
 # ---- open、close ----
 
 def test_open_and_close_change_both_sides(folder):
-    load(folder, two_rooms(), [D(1, "north", DoorState.CLOSED)])
+    load(folder, two_rooms(), [D(101, "north", DoorState.CLOSED)])
     zones.load(folder)
-    ming, hua = player("Ming", zones.world.rooms[101]), player("Hua", zones.world.rooms[101])
+    ming, hua =player("Ming", zones.world.rooms[101]), player("Hua", zones.world.rooms[101])
     bob = player("Bob", zones.world.rooms[102])
     sleeper = player("Zed", zones.world.rooms[102], Position.SLEEPING)
     command(ming, "open 木門")
@@ -161,7 +161,7 @@ def test_dark_room_does_not_see_the_door(folder):
     # 對面房間很暗、又沒有光源（光源是物品，還沒做）：看不到門被打開
     rooms = two_rooms()
     rooms[1]["room_flags"] = 1
-    load(folder, rooms, [D(1, "north", DoorState.CLOSED)])
+    load(folder, rooms, [D(101, "north", DoorState.CLOSED)])
     zones.load(folder)
     ming, bob = player("Ming", zones.world.rooms[101]), player("Bob", zones.world.rooms[102])
     command(ming, "open 木門")
@@ -182,7 +182,7 @@ def test_open_close_refusals(folder, line, want):
 
 
 def test_close_twice_and_open_locked(folder):
-    load(folder, two_rooms(), [D(1, "north", DoorState.LOCKED)])
+    load(folder, two_rooms(), [D(101, "north", DoorState.LOCKED)])
     zones.load(folder)
     ming = player("Ming", zones.world.rooms[101])
     command(ming, "close 木門")
@@ -196,15 +196,15 @@ def test_close_twice_and_open_locked(folder):
 @pytest.mark.parametrize("key, state, line, want", [
     (-1, DoorState.CLOSED, "lock 木門", "它沒有辦法鎖起來。"),
     (-1, DoorState.LOCKED, "unlock 木門", "沒辦法打開這個鎖。"),
-    (5, DoorState.CLOSED, "lock 木門", "你沒有鑰匙，怎麼上鎖呢？"),     # 物品還沒做，沒有人有鑰匙
-    (5, DoorState.LOCKED, "unlock 木門", "你沒有這個門的鑰匙。"),
-    (5, DoorState.OPEN, "lock 木門", "要先關起來才能上鎖。"),
-    (5, DoorState.OPEN, "unlock 木門", "它沒關起來。"),
-    (5, DoorState.OPEN, "lock", "你想鎖住什麼呢？"),
-    (5, DoorState.OPEN, "unlock", "你想打開哪裡的鎖呢？"),
+    (105, DoorState.CLOSED, "lock 木門", "你沒有鑰匙，怎麼上鎖呢？"),   # 物品還沒做，沒有人有鑰匙
+    (105, DoorState.LOCKED, "unlock 木門", "你沒有這個門的鑰匙。"),
+    (105, DoorState.OPEN, "lock 木門", "要先關起來才能上鎖。"),
+    (105, DoorState.OPEN, "unlock 木門", "它沒關起來。"),
+    (105, DoorState.OPEN, "lock", "你想鎖住什麼呢？"),
+    (105, DoorState.OPEN, "unlock", "你想打開哪裡的鎖呢？"),
 ])
 def test_lock_refusals(folder, key, state, line, want):
-    load(folder, two_rooms(key=key), [D(1, "north", state)])
+    load(folder, two_rooms(key=key), [D(101, "north", state)])
     zones.load(folder)
     ming = player("Ming", zones.world.rooms[101])
     command(ming, line)
@@ -214,7 +214,7 @@ def test_lock_refusals(folder, key, state, line, want):
 def test_lock_and_unlock_with_key(folder, monkeypatch):
     # 有鑰匙（物品還沒做，先假裝有）：兩邊一起鎖、一起開鎖；對面不會知道（照 C 版）
     monkeypatch.setattr(door_commands, "has_key", lambda ch, vnum: vnum == 105)
-    load(folder, two_rooms(key=5), [D(1, "north", DoorState.CLOSED)])
+    load(folder, two_rooms(key=105), [D(101, "north", DoorState.CLOSED)])
     zones.load(folder)
     ming, hua = player("Ming", zones.world.rooms[101]), player("Hua", zones.world.rooms[101])
     bob = player("Bob", zones.world.rooms[102])
@@ -242,8 +242,8 @@ def test_lock_and_unlock_with_key(folder, monkeypatch):
     ("close e", "東方的出口沒有門。"),
 ])
 def test_find_door(folder, line, want):
-    rooms = two_rooms() + [make_room(3)]
-    rooms[0]["exits"]["east"] = make_exit(3)
+    rooms = two_rooms() + [make_room(103)]
+    rooms[0]["exits"]["east"] = make_exit(103)
     load(folder, rooms)
     zones.load(folder)
     ming = player("Ming", zones.world.rooms[101])
@@ -253,8 +253,8 @@ def test_find_door(folder, line, want):
 
 def test_door_name_comes_before_direction(folder):
     # 照 CLAUDE.md 定的順序：先找門的名字，再當方向。北邊的門叫 east，close east 關的是北邊的門
-    rooms = two_rooms("east 東門") + [make_room(3)]
-    rooms[0]["exits"]["east"] = make_exit(3)
+    rooms = two_rooms("east 東門") + [make_room(103)]
+    rooms[0]["exits"]["east"] = make_exit(103)
     load(folder, rooms)
     zones.load(folder)
     ming = player("Ming", zones.world.rooms[101])
@@ -284,7 +284,7 @@ def test_abbreviations():
 # ---- look ----
 
 def test_look_shows_closed_doors(folder):
-    load(folder, two_rooms(), [D(1, "north", DoorState.CLOSED)])
+    load(folder, two_rooms(), [D(101, "north", DoorState.CLOSED)])
     zones.load(folder)
     ming = player("Ming", zones.world.rooms[101])
     command(ming, "look")
@@ -305,7 +305,7 @@ def test_look_shows_closed_doors(folder):
 # ---- 重置 D ----
 
 def test_reset_sets_both_sides_and_closes_opened_doors(folder):
-    load(folder, two_rooms(), [D(1, "north", DoorState.LOCKED)])     # 一筆 D 設兩邊
+    load(folder, two_rooms(), [D(101, "north", DoorState.LOCKED)])   # 一筆 D 設兩邊
     zones.load(folder)
     assert world_door(101, "north").locked and world_door(102, "south").locked
     doors.set_state(zones.world.rooms[101], "north", DoorState.OPEN)  # 玩家打開了
@@ -314,17 +314,17 @@ def test_reset_sets_both_sides_and_closes_opened_doors(folder):
 
 
 def test_reset_door_without_door_is_skipped(folder, caplog):
-    rooms = two_rooms() + [make_room(3)]
-    rooms[0]["exits"]["east"] = make_exit(3)
-    load(folder, rooms, [D(1, "east", DoorState.CLOSED)])
+    rooms = two_rooms() + [make_room(103)]
+    rooms[0]["exits"]["east"] = make_exit(103)
+    load(folder, rooms, [D(101, "east", DoorState.CLOSED)])
     with caplog.at_level(logging.WARNING):
         zones.load(folder)
     assert "a.json 的 D 設不了：房間 101 不在世界裡，或往 east 沒有門" in caplog.text
 
 
 def test_instances_have_their_own_doors(folder):
-    write_json(folder, "world.json", make_area("world.json", [make_room(1)], 100))
-    load(folder, two_rooms(), [D(1, "north", DoorState.OPEN)], name="inst.json", area_number=300, kind="instance")
+    write_json(folder, "world.json", make_area("world.json", [make_room(101)], (100, 199)))
+    load(folder, two_rooms(first=301), [D(301, "north", DoorState.OPEN)], name="inst.json", vnums=(300, 399), kind="instance")
     zones.load(folder)
 
     async def main():
@@ -338,11 +338,11 @@ def test_instances_have_their_own_doors(folder):
 
 def test_other_side_does_not_build_dynamic_area(folder):
     # 門的對面在還沒人去過的動態區域：只改這一邊，不會因為關門就把動態區域建起來
-    w, dyn = make_room(1), make_room(1)
+    w, dyn = make_room(101), make_room(201)
     w["exits"]["north"] = door_exit(201)
     dyn["exits"]["south"] = door_exit(101)
     load(folder, [w], name="world.json")
-    load(folder, [dyn], name="dyn.json", area_number=200, kind="dynamic")
+    load(folder, [dyn], name="dyn.json", vnums=(200, 299), kind="dynamic")
     zones.load(folder)
     ming = player("Ming", zones.world.rooms[101])
     command(ming, "close 木門")

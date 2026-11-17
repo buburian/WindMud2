@@ -45,14 +45,14 @@ class FakeRng:
 def world(tmp_path, monkeypatch):
     """房間 101 —北— 102 —東— 103，兩條路都是門（開著）。102 有一隻野狗。"""
     monkeypatch.setattr(fight, "TICK_SECONDS", 1000)
-    dog = make_mobile(1)
+    dog = make_mobile(101)
     dog.update(short="野狗", keywords="dog 野狗", level=1, tier="normal", tier_roll=None, attack=None, defense=None,
                archetype=None, act=0, position=7, sex=0, long="", drops=[])
-    rooms = [make_room(1, north=2), make_room(2, south=1, east=3), make_room(3, west=2)]
+    rooms = [make_room(101, north=102), make_room(102, south=101, east=103), make_room(103, west=102)]
     for r, d in ((rooms[0], "north"), (rooms[1], "south"), (rooms[1], "east"), (rooms[2], "west")):
         r["exits"][d].update(locks=1, keywords="木門 door")
-    reset = [{"cmd": "M", "rare": 0, "mob_vnum": 1, "limit": 1, "room_vnum": 2, "comment": ""}]
-    write_json(tmp_path, "a.json", make_area("a.json", rooms, 100, mobiles=[dog], resets=reset))
+    reset = [{"cmd": "M", "rare": 0, "mob_vnum": 101, "limit": 1, "room_vnum": 102, "comment": ""}]
+    write_json(tmp_path, "a.json", make_area("a.json", rooms, (100, 199), mobiles=[dog], resets=reset))
     zones.load(tmp_path)
     yield zones.world
     characters.clear()

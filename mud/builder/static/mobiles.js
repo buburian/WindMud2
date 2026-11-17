@@ -24,7 +24,7 @@ export function listItems(ctx) {
 
 export function add(ctx) {
   const mob = M.addThing(ctx.state.data, "mobiles");
-  if (!mob) return toast("生物號碼 1～99 都用完了");
+  if (!mob) return toast(M.noVnumText(ctx.state.data, "生物"));
   Object.assign(ctx.state, { mob, mobTab: "basic", thingDraft: null, thingError: null });
   ctx.rebuild();
 }
@@ -51,13 +51,12 @@ export function render(ctx) {
     ui.panel.replaceChildren(h("div", { class: "panel-empty" }, addButton("新增生物", () => add(ctx))));
     return;
   }
-  const number = M.roomNumber(state.data, mob);
   ui.thingTitle = h("h1", { class: "insp-title" }, textOf(mob.short));
   const tab = { basic: basicTab, drops: dropsTab }[state.mobTab] || basicTab;
   ui.panel.replaceChildren(
     h("div", { class: "panel-head" },
       h("div", { class: "insp-names" },
-        h("span", { class: "eyebrow" }, `生物 ${numberText(mob.vnum)}` + (number !== null ? ` · 遊戲裡 ${number} 號` : "")),
+        h("span", { class: "eyebrow" }, `生物 ${numberText(mob.vnum)}`),
         ui.thingTitle,
         placesOf(ctx, "mobiles", mob)),
       h("button", { type: "button", class: "btn btn-text btn-danger", onclick: () => remove(ctx) }, "刪除生物")),
@@ -205,7 +204,7 @@ function dropsTab(ctx, mob) {
   const done = ctx.edited;
   const list = Array.isArray(mob.drops) ? mob.drops : [];
   return h("div", { class: "stack", style: "gap: 16px" },
-    listHead("drops", () => addTo(ctx, mob, "drops", M.newDrop(), (i) => `drop-${i}-obj`)),
+    listHead("drops", () => addTo(ctx, mob, "drops", M.newDrop(M.firstNumber(ctx.state.data, "objects")), (i) => `drop-${i}-obj`)),
     list.map((d, i) => {
       const shown = h("span", { class: "muted" }, percent(d.chance));
       return h("div", { class: "card card-form" },

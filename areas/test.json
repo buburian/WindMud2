@@ -9,17 +9,20 @@
       ],
       "author": "Test",
       "title": "測試區域",
-      "area_number": 100,
+      "vnums": [
+        100,
+        199
+      ],
       "type": "world"
     },
-    "recall": 1,
+    "recall": 101,
     "no_teleport": null,
     "clan_recall": null,
     "gem": null
   },
   "rooms": [
     {
-      "vnum": 1,
+      "vnum": 101,
       "name": "測試房間（南）",
       "description": "這是測試區域南邊的房間。\n往北可以走到另一個房間。\n",
       "room_flags": 0,
@@ -30,7 +33,7 @@
           "keywords": "木門 door",
           "locks": 1,
           "key": -1,
-          "to_room": 2
+          "to_room": 102
         }
       },
       "extra_descriptions": [
@@ -42,7 +45,7 @@
       "script": null
     },
     {
-      "vnum": 2,
+      "vnum": 102,
       "name": "測試房間（北）",
       "description": "這是測試區域北邊的房間。\n往南可以回到剛才的房間。\n",
       "room_flags": "0",
@@ -53,7 +56,7 @@
           "keywords": "木門 door",
           "locks": 1,
           "key": -1,
-          "to_room": 1
+          "to_room": 101
         }
       },
       "extra_descriptions": [],
@@ -65,7 +68,7 @@
   ],
   "mobiles": [
     {
-      "vnum": 1,
+      "vnum": 101,
       "keywords": "merchant",
       "short": "測試商人",
       "long": "一位測試商人/merchant/站在櫃檯後面。\n",
@@ -84,7 +87,7 @@
       "position": 7,
       "drops": [
         {
-          "obj_vnum": 2,
+          "obj_vnum": 102,
           "color": "orange",
           "chance": 100,
           "tiers": [
@@ -92,7 +95,7 @@
           ]
         },
         {
-          "obj_vnum": 1,
+          "obj_vnum": 101,
           "color": null,
           "chance": 5000,
           "tiers": null
@@ -117,7 +120,7 @@
       "poison_ratio": 0.4
     },
     {
-      "vnum": 2,
+      "vnum": 102,
       "keywords": "horse",
       "short": "測試坐騎",
       "long": "一匹測試坐騎/horse/在這裡低頭吃草。\n",
@@ -142,7 +145,7 @@
       "poison_ratio": null
     },
     {
-      "vnum": 3,
+      "vnum": 103,
       "keywords": "rabbit",
       "short": "野兔",
       "long": "一隻野兔/rabbit/在草叢裡跳來跳去。\n",
@@ -169,7 +172,7 @@
   ],
   "objects": [
     {
-      "vnum": 1,
+      "vnum": 101,
       "keywords": "potion",
       "short": "測試藥水",
       "long": "一瓶測試藥水放在地上。",
@@ -189,7 +192,7 @@
       "script": null
     },
     {
-      "vnum": 2,
+      "vnum": 102,
       "keywords": "sword",
       "short": "測試長劍",
       "long": "一把測試長劍插在地上。",
@@ -231,7 +234,7 @@
       }
     },
     {
-      "vnum": 3,
+      "vnum": 103,
       "keywords": "box",
       "short": "測試箱子",
       "long": "一個木頭做的測試箱子放在角落。",
@@ -251,7 +254,7 @@
       "script": null
     },
     {
-      "vnum": 4,
+      "vnum": 104,
       "keywords": "bread",
       "short": "測試麵包",
       "long": "一塊測試麵包掉在地上。",
@@ -271,7 +274,7 @@
       "script": null
     },
     {
-      "vnum": 5,
+      "vnum": 105,
       "keywords": "shield",
       "short": "測試盾牌",
       "long": "一面測試盾牌靠在牆邊。",
@@ -291,7 +294,7 @@
       "script": null
     },
     {
-      "vnum": 6,
+      "vnum": 106,
       "keywords": "dagger",
       "short": "測試匕首",
       "long": "一把測試匕首掉在地上。",
@@ -311,7 +314,7 @@
       "script": null
     },
     {
-      "vnum": 7,
+      "vnum": 107,
       "keywords": "greatsword",
       "short": "測試大劍",
       "long": "一把測試大劍插在地上。",
@@ -331,7 +334,7 @@
       "script": null
     },
     {
-      "vnum": 8,
+      "vnum": 108,
       "keywords": "ring",
       "short": "測試戒指",
       "long": "一枚測試戒指在地上閃閃發光。",
@@ -351,7 +354,7 @@
       "script": null
     },
     {
-      "vnum": 9,
+      "vnum": 109,
       "keywords": "armor",
       "short": "測試皮甲",
       "long": "一件測試皮甲丟在地上。",
@@ -379,15 +382,15 @@
     {
       "cmd": "M",
       "rare": 0,
-      "mob_vnum": 1,
+      "mob_vnum": 101,
       "limit": 1,
-      "room_vnum": 1,
+      "room_vnum": 101,
       "comment": "測試商人"
     },
     {
       "cmd": "G",
       "rare": 0,
-      "obj_vnum": 1,
+      "obj_vnum": 101,
       "color": null,
       "level": null,
       "limit": 0,
@@ -396,7 +399,7 @@
     {
       "cmd": "G",
       "rare": 0,
-      "obj_vnum": 2,
+      "obj_vnum": 102,
       "color": "white",
       "level": 1,
       "limit": 0,
@@ -405,27 +408,27 @@
     {
       "cmd": "O",
       "if_flag": 0,
-      "obj_vnum": 3,
+      "obj_vnum": 103,
       "color": null,
       "level": 1,
       "limit": 0,
-      "room_vnum": 2,
+      "room_vnum": 102,
       "comment": "北邊房間地上的箱子"
     },
     {
       "cmd": "P",
       "if_flag": 0,
-      "obj_vnum": 4,
+      "obj_vnum": 104,
       "color": null,
       "level": 1,
       "limit": 0,
-      "container_vnum": 3,
+      "container_vnum": 103,
       "comment": "箱子裡的東西"
     },
     {
       "cmd": "D",
       "if_flag": 0,
-      "room_vnum": 1,
+      "room_vnum": 101,
       "direction": "north",
       "state": 0,
       "comment": "南邊房間往北的木門，一開始是開著的"
@@ -433,32 +436,32 @@
     {
       "cmd": "R",
       "if_flag": 0,
-      "room_vnum": 2,
+      "room_vnum": 102,
       "exit_count": 2,
       "comment": "打亂北邊房間北、東兩個方向的出口"
     },
     {
       "cmd": "M",
       "rare": 0,
-      "mob_vnum": 3,
+      "mob_vnum": 103,
       "limit": 3,
-      "room_vnum": 2,
+      "room_vnum": 102,
       "comment": "練功用的野兔（北邊房間 3 隻）"
     },
     {
       "cmd": "M",
       "rare": 0,
-      "mob_vnum": 3,
+      "mob_vnum": 103,
       "limit": 3,
-      "room_vnum": 2,
+      "room_vnum": 102,
       "comment": "練功用的野兔（北邊房間 3 隻）"
     },
     {
       "cmd": "M",
       "rare": 0,
-      "mob_vnum": 3,
+      "mob_vnum": 103,
       "limit": 3,
-      "room_vnum": 2,
+      "room_vnum": 102,
       "comment": "練功用的野兔（北邊房間 3 隻）"
     }
   ]
