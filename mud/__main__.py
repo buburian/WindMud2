@@ -3,8 +3,8 @@ import argparse
 import asyncio
 import logging
 
-from . import helps, socials, zones
-from .config import AREA_DIR, ENCODING, HELP_FILE, SOCIAL_FILE, START_ROOM
+from . import helps, login, socials, zones
+from .config import AREA_DIR, ENCODING, HELP_FILE, LOGIN_SCREEN, SOCIAL_FILE, START_ROOM
 from .log import setup
 from .server import handle
 
@@ -34,6 +34,11 @@ async def main():
         socials.load(SOCIAL_FILE)
     except ValueError as e:
         log.error(f"表情動作載入失敗：{e}")
+        raise SystemExit(1)
+    try:
+        login.load_screen(LOGIN_SCREEN)
+    except ValueError as e:
+        log.error(f"登入畫面載入失敗：{e}")
         raise SystemExit(1)
     zones.start()
     server = await asyncio.start_server(handle, args.host, args.port)

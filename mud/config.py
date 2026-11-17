@@ -8,6 +8,7 @@ PROMPT = "> "          # 沒有屬性的角色用的 prompt（測試直接建的
 AREA_DIR = "areas"   # 區域檔的資料夾，跟 logs/ 同一層
 HELP_FILE = "help/help.json"   # help 指令的說明檔（helps.py），跟 areas/ 同一層
 SOCIAL_FILE = "socials/socials.json"   # 表情動作和說話結尾的表情（socials.py），跟 areas/ 同一層
+LOGIN_SCREEN = "screens/login.txt"     # 連線時看到的登入畫面（login.load_screen），可以用顏色代碼，跟 areas/ 同一層
 START_ROOM = 3001    # 畢業、死掉、存檔的房間不在了都回這裡：秋風城的神殿大廳（使用者要的），要在世界區域裡
 # 教學學院（副本，使用者要的）：新角色建好先進自己那一份，沒畢業前登入、死掉都回第一間（zones.home）
 ACADEMY_FILE = "academy.json"

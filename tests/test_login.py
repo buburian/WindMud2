@@ -256,3 +256,69 @@ def test_name_taken_while_creating(folder):
     run(main)
     data = json.loads((folder / "vcx.json").read_text(encoding="utf-8"))
     assert save.check_password(PASSWORD, data["password"])     # 先建好的沒有被蓋掉
+
+
+# ---- 登入畫面（login.load_screen、check_screen）----
+
+def test_the_real_login_screen_fits():
+    from mud import login
+    from mud.config import LOGIN_SCREEN
+    text = Path(LOGIN_SCREEN).read_text(encoding="utf-8")
+    assert login.check_screen(text) == []
+
+
+@pytest.mark.parametrize("text, problem", [
+    ("x" * 80, "第 1 行太寬了：80 格"),
+    ("中" * 40, "第 1 行太寬了：80 格"),                    # 中文字算兩格
+    ("\n".join(["a"] * 24), "太高了：24 行，加上問名字那一行是 25 行"),
+    ("你好😀", "轉不成 Big5 的字 '😀'"),
+])
+def test_login_screen_rules(text, problem):
+    from mud import login
+    assert any(problem in p for p in login.check_screen(text))
+
+
+def test_colour_codes_do_not_count():
+    from mud import login
+    assert login.check_screen("{R" + "x" * 79 + "{x") == [] and login.check_screen("\n".join(["a"] * 23)) == []
+
+
+def test_a_broken_screen_keeps_the_old_one(tmp_path, monkeypatch):
+    from mud import login
+    monkeypatch.setattr(login, "screen", "舊的")
+    bad = tmp_path / "s.txt"
+    bad.write_text("x" * 80, encoding="utf-8")
+    with pytest.raises(ValueError, match="太寬了"):
+        login.load_screen(bad)
+    assert login.screen == "舊的"
+
+
+def text(data):
+    """收到的 bytes 去掉 telnet 協商（連上來先送的 IAC DO BINARY）再轉成文字。"""
+    return re.sub(rb"\xff[\xfb-\xfe].", b"", data).decode(ENCODING)
+
+
+def test_the_screen_comes_first_and_only_once(folder, monkeypatch):
+    from mud import login
+    monkeypatch.setattr(login, "screen", "")
+    login.load_screen(Path(__file__).resolve().parent.parent / "screens" / "login.txt")
+
+    async def main(connect):
+        c = await connect()
+        first = text(await c.until("請輸入你的英文名字："))
+        assert first.count(login.CLEAR) == 1 and "風　之　大　陸" in first
+        c.say("ab")                                       # 名字打錯：只重問，不再給畫面
+        again = text(await c.until("請輸入你的英文名字："))
+        assert "風　之　大　陸" not in again and login.CLEAR not in again
+
+    run(main)
+
+
+def test_blank_lines_at_the_end_are_kept(tmp_path, monkeypatch):
+    from mud import login
+    monkeypatch.setattr(login, "screen", "")
+    f = tmp_path / "s.txt"
+    f.write_text("標題\n\n", encoding="utf-8")                # 最後空一行再問名字
+    login.load_screen(f)
+    assert login.screen == "標題\n\n"
+    assert login.check_screen("\n".join(["a"] * 23) + "\n\n")   # 空行也算一行：23 + 1 空行 + 問名字 = 25

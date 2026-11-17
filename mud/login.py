@@ -3,15 +3,19 @@
 名字用英文 3～12 個字母（照 C 版），存成第一個字大寫、其他小寫。
 有這個角色就問密碼；沒有就建立：密碼兩次、性別、種族、公會，選完就建好（主屬性先用種族的數字）。
 同一個角色已經在線上又用對的密碼登入：踢掉舊連線，新的接手同一個角色（照 C 版）。
+連上來先清掉畫面、給他看登入畫面（config.LOGIN_SCREEN，使用者要的：獨立一個檔，不用改程式就能改），再問名字。
 """
 import asyncio
 import logging
 import re
 from collections import deque
+from pathlib import Path
 
 from . import save, skills, stats, zones
 from .characters import SEX_FEMALE, SEX_MALE, characters
+from .color import colorize
 from .commands.system import look
+from .config import ENCODING
 from .players import Player, online_players, send
 from .telnet import Telnet
 
@@ -21,6 +25,49 @@ NAME = re.compile(r"[A-Za-z]{3,12}")
 RESERVED = {"all", "auto", "imm", "immortal", "self", "someone"}   # 不能當名字（照 C 版的 check_parse_name）
 MIN_PASSWORD = 5                                                  # 密碼至少幾個字（照 C 版）
 TAKEN = object()                                                  # create() 的回傳：名字剛剛被別人建走了
+NAME_PROMPT = "請輸入你的英文名字："
+SCREEN_WIDTH, SCREEN_HEIGHT = 79, 24        # 登入畫面最寬幾格、最高幾行（使用者定的；高度連最後問名字那一行）
+CLEAR = "\x1b[2J\x1b[H"                     # 清掉畫面、游標回到左上角（照 C 版的登入畫面）
+ANSI = re.compile(r"\x1b\[[0-9;]*m")
+
+screen = ""                                 # 載入的登入畫面（已經換成色碼）；沒載入是空的，直接問名字
+
+
+def load_screen(path):
+    """讀登入畫面、檢查。有問題就 ValueError（第一個問題加總數），原本載入的不動。開機時呼叫（__main__）。"""
+    global screen
+    try:
+        text = Path(path).read_text(encoding="utf-8")
+    except OSError:
+        raise ValueError(f"讀不到登入畫面 {path}") from None
+    problems = check_screen(text)
+    if problems:
+        raise ValueError(f"{path}：{problems[0]}（共 {len(problems)} 個問題）")
+    screen = colorize("\n".join(screen_lines(text)) + "\n")
+
+
+def screen_lines(text):
+    """畫面上的每一行：照檔案寫的，只拿掉最後一個換行（最後空一行再問名字，就在檔案最後多一個空行）。"""
+    return (text[:-1] if text.endswith("\n") else text).split("\n")
+
+
+def check_screen(text):
+    """登入畫面的問題（空的就是沒問題）：連最後問名字那一行不超過 SCREEN_HEIGHT 行，每行不超過 SCREEN_WIDTH 格，字要轉得成 Big5。
+    寬度不算顏色代碼；中文字（Big5 兩個 byte）算兩格。"""
+    lines = screen_lines(text)
+    problems = []
+    if len(lines) + 1 > SCREEN_HEIGHT:
+        problems.append(f"太高了：{len(lines)} 行，加上問名字那一行是 {len(lines) + 1} 行，最多 {SCREEN_HEIGHT} 行")
+    for i, line in enumerate(lines, 1):
+        shown = ANSI.sub("", colorize(line))
+        try:
+            width = len(shown.encode(ENCODING))
+        except UnicodeEncodeError as e:
+            problems.append(f"第 {i} 行有轉不成 Big5 的字 {shown[e.start]!r}")
+            continue
+        if width > SCREEN_WIDTH:
+            problems.append(f"第 {i} 行太寬了：{width} 格，最多 {SCREEN_WIDTH} 格")
+    return problems
 
 
 class Connection:
@@ -81,8 +128,10 @@ def valid_name(name):
 
 async def login(conn):
     """從問名字到進入遊戲。回傳登入的 Player；斷線或密碼錯是 None（呼叫的人關掉連線）。"""
+    if screen:                              # 登入畫面只在剛連上時給一次（名字打錯重問不再給）
+        conn.send(CLEAR + screen)
     while True:
-        line = await ask(conn, "請輸入你的英文名字：")
+        line = await ask(conn, NAME_PROMPT)
         if line is None:
             return None
         if not line:
