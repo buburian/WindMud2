@@ -1,6 +1,7 @@
 """物品：做出物品（固定、隨機裝備）、掉落表、屍體、slay、look 看屍體、屍體消失、區域物件釋放。"""
 import asyncio
 import logging
+import math
 import random
 import re
 
@@ -165,18 +166,27 @@ def test_base_price_of_things_is_the_cost(monkeypatch):
 
 
 @pytest.mark.parametrize("affects, color, price", [
-    # 裝備是實際用掉的點數：每一項 × 單價加起來（負的抵掉），最低 1；灰色是 1（cost 不看）；沒有顏色的照 cost
-    ([{"location": 1, "modifier": 2}, {"location": 9, "modifier": 3}], "white", 2 * equipment.price("str", 10) + 3),
+    # 裝備：實際用掉的點數（每一項 × 單價加起來，負的抵掉）× 1.5 × exp(等級 ÷ 36)，最低 1；灰色是 1（cost 不看）；沒有顏色的照 cost
+    ([{"location": 1, "modifier": 2}, {"location": 9, "modifier": 3}], "white",
+     (2 * equipment.price("str", 10) + 3) * 1.5 * math.exp(10 / 36)),
     ([{"location": 9, "modifier": 3}, {"location": 6, "modifier": -5}], "white", 1),
     ([{"location": 16, "modifier": 4}], "white", 1),                # 龍焰抗性不算點數
     ([{"location": 9, "modifier": 3}], "gray", 1),
     ([{"location": 9, "modifier": 3}], None, 999),                  # 沒有顏色：不是裝備，照 cost（使用者定的）
 ])
-def test_base_price_of_equipment_is_the_points(monkeypatch, affects, color, price):
+def test_base_price_of_equipment_follows_the_points(monkeypatch, affects, color, price):
     s = sword(101, affects)
     s.update(cost=999)
     monkeypatch.setattr(objects, "protos", {101: s})
     assert objects.base_price(objects.create(101, 10, color, random.Random(1))) == pytest.approx(price)
+
+
+def test_white_gear_prices_stay_in_the_range():
+    """使用者 2026-11-18 定的範圍（白色、點數用滿）：1 級的身體大約 10～20，99 級最貴的雙手武器不超過 5 萬。"""
+    white = lambda lv, slot: objects.gear_price(equipment.cap(lv, slot), lv)
+    assert 10 <= white(1, "body") <= 20
+    assert max(white(99, slot) for slot in [*equipment.SLOT_WEIGHT, equipment.TWO_HANDED]) <= 50000
+    assert white(99, equipment.TWO_HANDED) > 40000                  # 不是隨便壓低：最貴的接近 5 萬
 
 
 def test_cost_is_saved(monkeypatch):

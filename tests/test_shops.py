@@ -15,6 +15,7 @@ from mud.config import ENCODING
 from mud.players import Player
 
 SHOP = {"buy_types": [5, 15], "profit_buy": 150, "profit_sell": 50, "open_hour": 6, "close_hour": 20}
+UNREACHABLE = "test.json"                   # 測試區域：沒有路走得到，防刷錢的檢查不算它的店
 
 
 class FakeWriter:
@@ -310,11 +311,12 @@ def test_colorless_things_are_priced_by_cost(world):
 
 def test_no_two_shops_in_the_real_areas_make_money():
     """真的 areas/：在一家買、拿去另一家賣，不能賺錢（人類、其他種族都是）。§3.7 的防刷錢只比同一家店，
-    兩家店的倍率要區域作者自己顧（秋風城的毛皮店、珠寶店收購倍率因此調低過，使用者 2026-11-17 選的）。"""
+    兩家店的倍率要區域作者自己顧（秋風城的毛皮店、珠寶店收購倍率因此調低過，使用者 2026-11-17 選的）。
+    測試區域 test.json 的店不算：沒有路走得到，玩家去不了（使用者 2026-11-18 選的）。"""
     from mud.config import AREA_DIR
     zones.load(AREA_DIR)
     try:
-        keepers = [c for c in characters if getattr(c, "shop", None)]
+        keepers = [c for c in characters if getattr(c, "shop", None) and c.room.area.name != UNREACHABLE]
         found = []
         for race in stats.Race:
             ch = Player("Ming", FakeWriter(), None)

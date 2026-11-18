@@ -72,7 +72,7 @@ uv run python -m mud.areaconvert 舊.json builder_area/新.json   # 舊區域（
   `tests/test_socials.py` 測表情動作（真的 socials.json 檢查得過、check() 的每條規則、縮寫、沒對象／對別人／對自己、遠遠地、找不到、睡著、生物的反應、廣播、很暗、socials 指令、生物也能做）和說話結尾的表情。
   `tests/test_item_skills.py` 測會放技能的物品（quaff、recite、zap、brandish 的每一句、等級不夠和對象不對不用掉、沒寫對象看技能種類、不扣消耗、次數和碎掉、brandish、安全區、存檔、區域檔檢查）。
   `tests/test_shops.py` 測商店（list、buy、sell、value 的每一句和檢查順序、§3.7 的價格（人類、防刷錢、最低 1）、開店時間、賣不完、只賣 G 給店主的、賣掉消失、buy_types、兩個店主、很暗、存檔；`save.save_player` 換成記下來）。
-  它也把真的 `areas/` 裡所有的店兩兩算一遍：在一家買、拿去另一家賣不能賺錢（§3.7 只擋同一家店；秋風城的毛皮店、珠寶店收購倍率因此調低過）。改店的倍率、店裡的貨，這個測試會告訴你能不能刷錢。
+  它也把真的 `areas/` 裡所有的店兩兩算一遍：在一家買、拿去另一家賣不能賺錢（§3.7 只擋同一家店；秋風城的毛皮店、珠寶店收購倍率因此調低過；test.json 的測試商人走不到，不算）。改店的倍率、店裡的貨，這個測試會告訴你能不能刷錢。
   `tests/test_meals.py` 測吃喝（eat、drink、fill 的每一句、自動坐下、坐滿 10 秒、站起來／開打／死掉取消、同一秒 stand 又 rest、吃了又吃、劍 MV 杖 MP、buff、藥錠、很暗、一個 prompt、存檔、區域檔檢查、液體表跟手冊比對、每個模組先 import 不會繞圈）。
   `tests/test_recall.py` 測 recall（起始房間、自己的返回點、副本的 recall 先、no_recall、找不到、已經在那裡、打架中和休息、旁人的訊息、on_enter、存檔）；學生不能用的在 `test_academy.py`。
   坑：日夜照現實時間算，原野、水、空中的房間大約 12 分鐘有 5 分鐘是暗的：用到這些房間的測試要 `monkeypatch.setattr(weather, "current", weather.Weather(hour=12))`。
@@ -517,7 +517,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
       `Fight.join()` 記 `special_at[生物] = 現在 ＋ SPECIAL_TICKS`、`stop_fighting()` 拿掉；`Fight.tick()` 每個 tick 整段包在 `collecting()`：回合 → on_fight → `behavior.wimpy()` → `specials.fight()`。
       `use()`：`damage.strike(生物, 對手, combat.rng, 類型, source=牠平常的攻擊類型)` × `special_ratio`（null 1.8），打中最低 1 → `land(..., named=True)`。
       坑：`source` 一定要給（`per_hit` 的點數用它、減傷用類型）：生物只有自己攻擊類型的點數，只會物理的生物龍焰、法術點數是 0，不給的話吐息打 0（真的連線才看到，測試把 strike 換掉了看不出來）；spec_poison 咬中沒死 → `skills.dot_affect("spec_poison", POISON, 傷害)`（【劇毒】、毒傷、C 版的兩句）。
-      招式名稱（使用者選的）：吐息照 C 版（灼熱龍燄…），施法都是「法術」，咬人「利牙」。janitor 撿垃圾、液體容器、基本價格 < 10（`objects.base_price()`，有顏色的裝備照點數）；fido 吃屍體、裡面的掉地上。
+      招式名稱（使用者選的）：吐息照 C 版（灼熱龍燄…），施法都是「法術」，咬人「利牙」。janitor 撿垃圾、液體容器、基本價格 < 10（`objects.base_price()`，有顏色的裝備照點數和等級）；fido 吃屍體、裡面的掉地上。
     - 坑：`fight` → `behavior`、`specials` → `combat` → … → `fight` 繞一圈，都用 `from . import 模組`；用到 `commands` 的在函式裡才 import。
     - 坑：原地改壞程式做變異測試時，還原後要刪 `mud/__pycache__` 裡那個模組的 .pyc（一樣長、同一秒寫回，Python 會一直用改壞的 .pyc）。
   - **身上的效果**（buff／debuff，`affects.py`，規則在玩家角色手冊「身上的效果」，設計文件 §2.6）：`ch.affects` 是 `Affect` 的清單，玩家和生物都有。
@@ -624,7 +624,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - **生物死掉**：屍體裡 ＝ 掉落表 ＋ 牠背包裡的；**店主（`npc.shopkeeper`）背包裡的直接消失**（使用者選的，照 C 版）。
   - `Obj`：`vnum`、`keywords`、`name`（short）、`long`、`item_type`、`level`、`color`、`affects`（`[(Apply, 數值)]`）、`base`（武器傷害範圍或 AC）、`contains`、`timer`、
     `weight`、`cost`（存檔，舊存檔是 0）、`take`（wear_flags 有 1；屍體沒有）、`slot`（`equipment.best_slot()`，跟點數上限同一個；雙手武器是 `TWO_HANDED`）、武器的 `weapon_kind`、`attack`。只放現在用得到的。
-    `base_price(obj)` 是商店的基本價格（手冊物品的 cost）：不是裝備（沒有穿戴部位、或顏色是 null，使用者定的）是 `cost`，灰色 1，其他裝備 ＝ Σ 加成 × `equipment.price()`、最低 1（scavenger、janitor 用）。
+    `base_price(obj)` 是商店的基本價格（手冊物品的 cost）：不是裝備（沒有穿戴部位、或顏色是 null，使用者定的）是 `cost`，灰色 1，其他裝備 ＝ `gear_price(Σ 加成 × equipment.price(), 等級)` ＝ 點數 × `GEAR_PRICE_SCALE` 1.5 × exp(等級 ÷ `GEAR_PRICE_LEVELS` 36)、最低 1（使用者 2026-11-18 定的：白色 1 級大約 10～20、99 級最貴不超過 5 萬，`test_white_gear_prices_stay_in_the_range` 看著；scavenger、janitor 也用）。
     **沒有全遊戲的物品名單**：放在 `room.contents`（地上，新的在前）、`obj.contains`（屍體裡）、角色的 `carrying`、`equipment`；
     地上的在區域物件釋放、重新載入時房間不要了就跟著不見（使用者要的，有測試）。
   - `find(objs, name)` 跟找生物同一個規則（`names.py`）。`to_data()`／`from_data()` 是存檔用的，整件存（區域檔改了身上的照舊）。

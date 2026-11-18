@@ -5,6 +5,7 @@
 區域物件釋放時房間不要了，地上的物品就跟著不見；角色身上的跟著角色，存檔用 to_data()、from_data()。
 """
 import logging
+import math
 import random
 
 from . import area, equipment, names
@@ -26,6 +27,10 @@ COLOR_CODES = {ItemColor.GRAY: "{D", ItemColor.WHITE: "{W", ItemColor.BLUE: "{B"
 OTHER_CODE = "{G"
 ENGLISH, FLOOR, RESET = colorize("{C"), colorize("{W"), colorize("{x")    # 地上那一行亮白（使用者選的，跟生物一樣）
 BIND_NAMES = {ExtraFlag.BIND_PICKUP: "拾取後綁定", ExtraFlag.BIND_EQUIP: "裝備後綁定"}   # 綁定的兩種（設計文件 §3.10）
+# 有顏色的裝備的基本價格 ＝ 點數 × GEAR_PRICE_SCALE × exp(等級 ÷ GEAR_PRICE_LEVELS)（使用者 2026-11-18 定的：
+# 白色 1 級大約 10～20，99 級最貴的（雙手武器）不超過 5 萬）
+GEAR_PRICE_SCALE = 1.5
+GEAR_PRICE_LEVELS = 36
 
 protos = {}                                 # 遊戲號碼 → 區域檔的物品（zones.load 填，跨檔案也找得到）
 
@@ -154,8 +159,14 @@ def meal_parts(proto):
     return {}
 
 
+def gear_price(points, level):
+    """有顏色的裝備用掉 points 點、等級 level 的基本價格（還沒取最低 1）。"""
+    return points * GEAR_PRICE_SCALE * math.exp(level / GEAR_PRICE_LEVELS)
+
+
 def base_price(obj):
-    """商店的基本價格（設計文件 §3.7，區域製作手冊物品的 cost）：裝備是實際用掉的點數（每一項加成 × 單價加起來，負的抵掉），最低 1，灰色是 1；
+    """商店的基本價格（設計文件 §3.7，區域製作手冊物品的 cost）：裝備是 gear_price(實際用掉的點數, 裝備等級)
+    （點數是每一項加成 × 單價加起來，負的抵掉），最低 1，灰色是 1；
     其他物品是 cost。沒有穿戴部位、或沒有顏色（放出它的地方顏色寫 null：手冊說不是裝備）的都算其他物品
     （使用者 2026-11-17 定的：火把、燈籠、許可狀這種拿在手上、沒有點數的東西照 cost）。商店、scavenger、janitor 用它。
     """
@@ -163,7 +174,8 @@ def base_price(obj):
         return obj.cost
     if obj.color == ItemColor.GRAY:
         return 1
-    return max(1, sum(n * equipment.price(a.name.lower(), obj.level) for a, n in obj.affects if a != Apply.NONE))
+    points = sum(n * equipment.price(a.name.lower(), obj.level) for a, n in obj.affects if a != Apply.NONE)
+    return max(1, gear_price(points, obj.level))
 
 
 def make_corpse(npc, rng=random):
