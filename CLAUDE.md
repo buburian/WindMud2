@@ -56,6 +56,7 @@ uv run python -m mud.areaconvert 舊.json builder_area/新.json   # 舊區域（
   `tests/test_object_resets.py` 測重置 G、O、P、R、生物身上的東西進屍體（店主的消失）、test.json 載入後商人身上的東西和箱子裡的麵包；
   `tests/test_containers.py` 測容器的 open、close、lock、unlock、找的順序、鑰匙、關著不能拿、封印、存檔帶容器狀態、門用真的鑰匙。
   `tests/test_give.py` 測 give（給東西、給金幣、店主不收、放不下、1 級不能給金幣、給完存檔、log）。
+  `tests/test_put.py` 測 put（每一句和檢查順序、put all、地上和背包的容器、很暗、容量、綁定、存檔）和件數（容器本身不算、35 件時撿、give、buy 都擋、從自己的袋子拿不擋、inventory、容量的存檔和舊存檔）。
   `tests/test_bind.py` 測綁定（每一條拿到東西的路、drop、drop all、give 的順序、容器裡有綁住的、imm 和生物不擋、可以賣、裝備後綁定、穿不上不綁、（綁定）、examine、ostat、存檔、舊存檔、區域檔檢查）。
   `tests/test_scripts.py` 測 Lua 腳本：沙箱（拿不到的名字、碰不到 Python、指令數上限、記憶體）、開機檢查的每一條、10 個觸發時機、每個函式、vars、wait、出錯的提醒
   （wait 用假的 `scripts.schedule`，自己呼叫 `later.run()`；區域檔和 .lua 用 `build()` 寫進 `tmp_path`）。
@@ -600,7 +601,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     **現在站的房間和要去的房間都算**（照 C 版，使用者定的：到期了走不出去就用 recall；空中房間又是 no_recall 會卡住是區域設計的問題，程式不擋）、**只限制玩家**（照 C 版）。`system.move()` 在門的檢查之後呼叫；flee 用 `can_go()` 先拿掉走不過去的出口。
   - 訊息：`leave_text()`（預設的「朝…離開」從水裡到水裡換成「游向」）、`arrive_text()`（飛行 → 游泳（要去可游泳的水）→ 走路，照 C 版的順序）。
   - 窒息 `choke()`：世界每 `CHOKE_TICKS`（3），水底、沒有 GILLS 的在線玩家（imm 除外）扣 HP 上限的 `CHOKE_PCT` 10%，先 `affects.absorb()`，到 0 `combat.slain()`。
-  - 走路扣 MV 不做（使用者定的）。秋風城的生物 3189 舊檔有 flying，轉換時拿掉了，加了 FLYING 後手動補回兩份 midgaard.json。
+  - 走路不扣 MV（使用者 2026-11-17 定的，C 版地形越難走扣越多）。秋風城的生物 3189 舊檔有 flying，轉換時拿掉了，加了 FLYING 後手動補回兩份 midgaard.json。
 - **物品**（`objects.py`，規則在區域製作手冊「屍體」、玩家角色手冊「物品和裝備」）：遊戲裡真的出現的物品：屍體和裡面掉落的、重置 G／O／P 放的、imm 用 `oload` 做的。
   - **容器**：`obj.container`（`area.ContainerFlag`，從 values 第 2 個開始，開關、上鎖改它）、`key`（values 第 3 個，跟出口的 key 一樣寫完整的遊戲號碼，0 以下是沒有鑰匙）、`seal`。屍體的 `container` 是 None，一直開著。
     關著的拿不出東西（「【X】關起來了。」）、`look in` 看不到（「它是蓋起來的。」）；封印著的撿不起來；可以封印又有密碼的打不開（封印的指令還沒做）。
@@ -630,7 +631,12 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     give（照 C 版：給同房間的人、`give N coins 名字` 給金幣、1 級不能給金幣、店主不收、對方是玩家要 `over_limit()` 放得下，給完 `keep()` 幫給的人存檔）、
     wear（`wear x` 換下原本的；`wear all` 只穿空的部位，副手武器排最後）、
     remove（`remove all` 照 SLOTS 的順序，副手在主手前）、inventory（最後一行件數和負重，使用者選的）、equipment。最低姿勢照 C 版：前四個 RESTING（打架中可以），後兩個 DEAD。
-  - 限制：裝備等級（角色等級 < 裝備等級不能穿，設計文件 §3.4）、件數 `stats.CARRY_COUNT` 35、負重 `stats.carry_limit()`（STR 表、獸人 ×1.25，身上穿的也算）、
+  - put（`do_put`，照 C 版 do_put，RESTING，`p`）：容器找地上（`light.floor()`）和背包，只收 `CONTAINER_ITEM_TYPE`（屍體不算）；檢查照 C 版的順序（`cannot_put()`：放自己、綁住的、
+    裡面的重量 ＋ 這件 ＞ `Obj.holds`（容器的容量，values 第 1 個，存檔；舊存檔照區域檔現在的值））；`put all` 不行的靜靜跳過，一件都沒放是新加的那句；放了才 `keep()` 存檔。
+    C 版把奉獻箱存到檔案，我們不存。
+  - 限制：裝備等級（角色等級 < 裝備等級不能穿，設計文件 §3.4）、件數 `stats.CARRY_COUNT` 35
+    （`inventory.carry_count()`：照 C 版 get_obj_number 的 `objects.count()`，容器本身不算、裡面的一件一件算，使用者 2026-11-17 選的；
+    從自己背包裡的容器拿東西不檢查件數、負重，C 版會擋，我們修掉）、負重 `stats.carry_limit()`（STR 表、獸人 ×1.25，身上穿的也算）、
     武器重量 `stats.wield_limit()`（每一把武器自己比）；兩張表抄手冊（`test_gear.py` 比對）。生物不檢查件數、負重。
     副手武器要主手先拿（單手）武器；雙持時不能先卸主手（這兩句訊息是新加的）。
   - 訊息合成一段送（`inventory.Lines`：自己那段是指令的回覆，別人每人 notify 一次）。
@@ -646,7 +652,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `inventory.can_let_go()`（照 C 版 can_drop_obj）擋 drop（「你無法丟掉這樣東西。」，drop all 靜靜跳過）和 give（「你無法讓它離開你。」，找到人之後、店主拒絕之前）：
     只擋玩家、imm 不擋；容器裡（連容器裡的容器）有綁住的也擋（我們加的）。sell、腳本的 take_item 不擋。
     「（綁定）」只加在 inventory、equipment（`items.bound_tag()`），不要加進 `objects.short()`（每句訊息、list、地上那一行都用它）。
-    之後做 put（放進容器）、死亡掉東西時，綁住的要擋（設計文件 §3.10）。
+    put 也擋（`cannot_put()` 用 `can_let_go()`）；之後做死亡掉東西時，綁住的要擋（設計文件 §3.10）。
   - `examine`（`ex`，`commands/items.py` 的 `identify()`）：**只看背包和身上的**（使用者要的），句型照 C 版 identify，每種東西只列有的行。
     imm 的 `ostat <名字>`（`os`：背包、身上、地上、地上屍體裡，照這個順序）／`ostat <號碼>`（區域檔的寫法）、`mstat <名字>`（`m`：同房間的生物或玩家）：
     全部資料，數字留小數。名稱用 `area.ITEM_TYPE_NAMES`、`WEAPON_KIND_NAMES`、`ATTACK_NAMES`（手冊的表，有測試）、`equipment.STAT_NAMES`、`SLOT_NAMES`、`COLOR_NAMES`。

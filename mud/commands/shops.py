@@ -81,7 +81,7 @@ def do_buy(ch, arg):
             told(keeper, ch, "好可憐，你連一個都買不起。")
         return
     # 件數每個人都算（防止買太多個卡住）；負重只算玩家（生物沒有主屬性）
-    if len(ch.carrying) + count > stats.CARRY_COUNT:
+    if inventory.carry_count(ch) + count * objects.count(obj) > stats.CARRY_COUNT:
         ch.send("你沒有辦法攜帶這麼多的物品。\n")
         return
     if inventory.is_player(ch) and inventory.carry_weight(ch) + count * objects.weight(obj) > stats.carry_limit(ch):

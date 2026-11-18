@@ -77,6 +77,11 @@ def worn(ch):
     return list(ch.equipment.values())
 
 
+def carry_count(ch):
+    """背包裡算幾件（objects.count：容器本身不算、裡面的算；身上穿的不算）。"""
+    return sum(objects.count(o) for o in ch.carrying)
+
+
 def carry_weight(ch):
     """背包加身上穿的重量（手冊：身上穿的裝備也算重量）。"""
     return sum(objects.weight(o) for o in ch.carrying + worn(ch))
@@ -86,7 +91,7 @@ def over_limit(ch, obj):
     """ch 再拿 obj 會超過哪一個：件數是 "count"、負重是 "weight"，都沒超過是 None。生物不檢查。"""
     if not is_player(ch):
         return None
-    if len(ch.carrying) + 1 > stats.CARRY_COUNT:
+    if carry_count(ch) + objects.count(obj) > stats.CARRY_COUNT:
         return "count"
     if carry_weight(ch) + objects.weight(obj) > stats.carry_limit(ch):
         return "weight"
@@ -180,7 +185,7 @@ def wear(ch, obj, replace, out):
             old.append(o)
     if old and not replace:
         return False
-    if is_player(ch) and len(ch.carrying) - 1 + len(old) > stats.CARRY_COUNT:
+    if is_player(ch) and carry_count(ch) - objects.count(obj) + sum(objects.count(o) for o in old) > stats.CARRY_COUNT:
         out.add(TOO_MANY, t=objects.short(old[-1]))
         return False
     # 換主手武器時副手的武器留著（主手還是有武器）；換成雙手武器時副手的也一起換下來（positions 有 offhand）
@@ -206,7 +211,7 @@ def take_off(ch, obj, out, check=True):
         if pos == "wield" and ch.equipment.get("offhand") is not None and ch.equipment["offhand"].is_weapon():
             out.add("你要先卸下左手的武器。")
             return False
-        if is_player(ch) and len(ch.carrying) + 1 > stats.CARRY_COUNT:
+        if is_player(ch) and carry_count(ch) + objects.count(obj) > stats.CARRY_COUNT:
             out.add(TOO_MANY, t=objects.short(obj))
             return False
     del ch.equipment[pos]

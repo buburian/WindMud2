@@ -55,6 +55,7 @@ class Obj:
         self.container = None               # 容器才有：現在的 area.ContainerFlag（values 第 2 個開始，開關、上鎖會改它）；屍體是 None，一直開著
         self.key = None                     # 容器的鑰匙：遊戲號碼（values 第 3 個，換算跟出口的 key 一樣），None 是鎖不起來
         self.seal = 0                       # 容器的封印密碼（values 第 4 個）：可以封印又不是 0 就打不開（封印的指令還沒做）
+        self.holds = None                   # 容器的容量（values 第 1 個）：裡面最多裝多重（put 用）；不是容器是 None
         self.hours = None                   # 照明用具才有：還能亮幾小時（values 第 3 個；0 燒完了、負數永遠不熄，light.py）
         self.skills = []                    # 會放技能的物品（卷軸、藥水、魔杖、魔棒）：用的時候放哪些技能（技能的 id，commands/item_skills.py）
         self.charges = None                 # 魔杖、魔棒才有：還剩幾次（values 第 3 個），到 0 就碎掉
@@ -102,6 +103,7 @@ def create(vnum, level, color, rng=random):
         obj.container = ContainerFlag(flags & sum(ContainerFlag))
         obj.key = key if key > 0 else None
         obj.seal = seal
+        obj.holds = container_holds(proto)
     if proto["item_type"] == WEAPON_ITEM_TYPE:      # 區域檢查保證武器的種類、攻擊方式是對的
         obj.weapon_kind, obj.attack = WeaponKind(int(proto["values"][0])), Attack(int(proto["values"][3]))
     if proto["item_type"] == LIGHT_ITEM_TYPE:
@@ -203,6 +205,20 @@ def short(obj):
     return colorize(COLOR_CODES.get(obj.color, OTHER_CODE)) + obj.name + english_tail(obj) + RESET
 
 
+def container_holds(proto):
+    """容器的容量：values 第 1 個（照 C 版 value[0]），寫錯當作 0。"""
+    v = proto["values"][0]
+    return int(v) if str(v).lstrip("-").isdecimal() else 0
+
+
+def count(obj):
+    """obj 算幾件（照 C 版 get_obj_number，使用者 2026-11-17 選的）：容器本身不算，裡面的一件一件算（容器裡的容器也一樣）；
+    其他的東西一件。所以空袋子是 0 件，放進袋子不會多出空間。"""
+    if obj.item_type in (CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE):
+        return sum(count(o) for o in obj.contains)
+    return 1
+
+
 def bound(obj):
     """綁住了沒（設計文件 §3.10）：拾取後綁定的一定是（玩家拿到就綁，沒有拿著卻沒綁的時候），裝備後綁定的要穿上過。"""
     return obj.bind == ExtraFlag.BIND_PICKUP or obj.bound
@@ -254,7 +270,8 @@ def to_data(obj):
     data.update(keywords=" ".join(obj.keywords), affects=[[int(a), n] for a, n in obj.affects],
                 weapon_kind=None if obj.weapon_kind is None else int(obj.weapon_kind),
                 attack=None if obj.attack is None else int(obj.attack),
-                container=None if obj.container is None else int(obj.container), key=obj.key, seal=obj.seal, cost=obj.cost,
+                container=None if obj.container is None else int(obj.container), key=obj.key, seal=obj.seal, holds=obj.holds,
+                cost=obj.cost,
                 hours=obj.hours, skills=list(obj.skills), charges=obj.charges, contains=[to_data(o) for o in obj.contains],
                 bind=None if obj.bind is None else int(obj.bind), bound=obj.bound,
                 **{k: getattr(obj, k) for k in MEAL_FIELDS})
@@ -273,6 +290,11 @@ def from_data(data):
     obj.bind = None if data.get("bind") is None else ExtraFlag(data["bind"])    # 舊存檔沒有：不綁
     for k, default in LATER_FIELDS.items():
         setattr(obj, k, data.get(k, default))
+    if "holds" in data:
+        obj.holds = data["holds"]
+    elif obj.item_type == CONTAINER_ITEM_TYPE:  # 舊存檔沒有：照區域檔現在的值；區域檔沒有這件了就是 0（放不進東西）
+        proto = protos.get(obj.vnum)
+        obj.holds = container_holds(proto) if proto else 0
     if "hours" in data:
         obj.hours = data["hours"]
     elif obj.item_type == LIGHT_ITEM_TYPE:  # 舊存檔沒有 hours：照區域檔現在的值；區域檔沒有這件了就當作永遠不熄

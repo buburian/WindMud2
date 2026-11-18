@@ -1,4 +1,4 @@
-"""物品類指令：get、drop、give、wear、remove、inventory、equipment（玩家角色手冊「物品和裝備」，訊息照 C 版 act_obj.c）。
+"""物品類指令：get、drop、put、give、wear、remove、inventory、equipment（玩家角色手冊「物品和裝備」，訊息照 C 版 act_obj.c）。
 
 名字照 objects.find()（開頭就行、2.sword 是第 2 件），all 是全部（all 不分大小寫）。
 一個指令的訊息合成一段送（inventory.Lines）：get all 撿好幾件，旁邊的人也只看到一個 prompt。
@@ -80,7 +80,7 @@ def get_from_container(ch, name, where, out):
         out.add("在【$t】裡面，找不到那樣東西。", t=objects.short(container))
     elif not obj.take:
         out.add("你不能拿起這樣東西。")
-    elif inventory.room_for(ch, obj, out):
+    elif container in ch.carrying or inventory.room_for(ch, obj, out):
         pick_up(ch, obj, container.contains, container, out)
 
 
@@ -88,13 +88,16 @@ EMPTY_CONTAINER = "在【$t】裡面沒有東西。"   # get all 容器：沒有
 
 
 def take_all(ch, source, container, out, nothing):
-    """全部拿：撿不起來的（屍體、封印著的容器）靜靜跳過；拿不動了說一次就停（照 C 版，不然訊息一直重複）。"""
+    """全部拿：撿不起來的（屍體、封印著的容器）靜靜跳過；拿不動了說一次就停（照 C 版，不然訊息一直重複）。
+    從自己背包裡的容器拿：件數、負重都沒變，不檢查（C 版會擋，我們修掉）。
+    """
     found = False
+    mine = container is not None and container in ch.carrying
     for obj in list(source):
         if not obj.take or sealed(obj):
             continue
         found = True
-        if not inventory.room_for(ch, obj, out):
+        if not mine and not inventory.room_for(ch, obj, out):
             break
         pick_up(ch, obj, source, container, out)
     if not found:
@@ -136,6 +139,67 @@ def do_drop(ch, arg):
         else:
             put_down(ch, obj, out)
     out.send()
+
+
+def do_put(ch, arg):
+    """put <東西> <容器>、put all <容器>：把背包裡的東西放進地上或背包裡的容器（照 C 版 do_put，訊息照 C 版）。
+
+    綁住的（裝著綁住的東西的容器也是）放不進去（設計文件 §3.10）；裡面的重量加這件超過容量（holds）放不進去。
+    put all 不行的靜靜跳過（照 C 版），一件都沒放是「你沒有可以放進去的東西。」（新加的）。放完存檔（照 C 版）。
+    """
+    words = arg.split()
+    if len(words) < 2:
+        ch.send("你想把什麼東西放進容器裡？\n")
+        return
+    name, where = words[0], words[1]
+    if is_all(where):
+        ch.send("你不能這樣作。\n")
+        return
+    out, moved = inventory.Lines(ch), []
+    container = objects.find(light.floor(ch) + ch.carrying, where)
+    if container is None:
+        out.add("這兒沒有【$t】。", t=where)
+    elif container.item_type != CONTAINER_ITEM_TYPE:   # 屍體也不行（照 C 版）
+        out.add("那不是個容器。")
+    elif container.closed():
+        out.add("【$t】關起來了。", t=objects.short(container))
+    elif is_all(name):
+        for obj in list(ch.carrying):
+            if cannot_put(ch, obj, container) is None:     # 一件一件看：前面放進去的會佔掉容量
+                put_in(ch, obj, container, out)
+                moved.append(obj)
+        if not moved:
+            out.add("你沒有可以放進去的東西。")
+    else:
+        obj = objects.find(ch.carrying, name)
+        reason = "你沒有這個物品。" if obj is None else cannot_put(ch, obj, container)
+        if reason is not None:
+            out.add(reason)
+        else:
+            put_in(ch, obj, container, out)
+            moved.append(obj)
+    out.send()
+    if moved:
+        keep(ch)
+
+
+def cannot_put(ch, obj, container):
+    """obj 放不進 container 的原因（照 C 版的順序），放得進去是 None。"""
+    if obj is container:
+        return "你不能把物品塞進它自己裡面。"
+    if not inventory.can_let_go(ch, obj):
+        return "你無法把它放進去。"
+    if objects.weight(obj) + sum(objects.weight(o) for o in container.contains) > (container.holds or 0):
+        return "它塞不進去。"
+    return None
+
+
+def put_in(ch, obj, container, out):
+    """放進去（新的在前，照 C 版）。"""
+    ch.carrying.remove(obj)
+    container.contains.insert(0, obj)
+    out.add("你把【$t】放進【$T】裡面。", t=objects.short(obj), T=objects.short(container))
+    out.add("$n把【$t】放進【$T】裡面。", TO_ROOM, t=objects.short(obj), T=objects.short(container))
 
 
 CANT_DROP = "你無法丟掉這樣東西。"          # 綁住的東西（照 C 版 nodrop 的那句）
@@ -300,7 +364,7 @@ def do_inventory(ch, arg):
     """inventory（i、inv）：背包裡的東西，每件一行前面空 5 格（照 C 版），最後是件數和負重（使用者選的）。"""
     lines = ["你目前所攜帶的東西有："] + ([f"     {objects.short(o)}{bound_tag(o)}" for o in ch.carrying] or ["     空無一物。"])
     if inventory.is_player(ch):
-        lines.append(f"（{len(ch.carrying)}/{stats.CARRY_COUNT} 件，"
+        lines.append(f"（{inventory.carry_count(ch)}/{stats.CARRY_COUNT} 件，"
                      f"負重 {stats.shown(inventory.carry_weight(ch))}/{stats.shown(stats.carry_limit(ch))}）")
     ch.send("\n".join(lines) + "\n")
 
