@@ -80,6 +80,8 @@ IMM_COMMANDS = [
     ("restore", imm.do_restore, P.DEAD),        # res 還是 rest，resto 才是 restore
     ("affect", imm.do_affect, P.DEAD),          # a 還是 advance，af 才是 affect
     ("sset", imm.do_sset, P.DEAD),              # s 還是 south、sa 是 say…，ss 才是 sset
+    ("goto", imm.do_goto, P.DEAD),              # go（照 C 版的最低姿勢）
+    ("givemoney", imm.do_givemoney, P.DEAD),    # give 還是 give，givem 才是 givemoney
 ]
 
 # 姿勢不夠時的訊息（照 C 版 interp.c）

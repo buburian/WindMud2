@@ -6,13 +6,13 @@ import json
 import logging
 from collections import Counter
 
-from .. import affects, death, equipment, inventory, names, objects, skills, stats
+from .. import affects, death, equipment, inventory, names, objects, skills, stats, zones
 from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act, notify
 from ..area import AFFECT_FLAG_NAMES, ATTACK_NAMES, ITEM_TYPE_NAMES, WEAPON_KIND_NAMES, AffectFlag, Apply, ItemColor
-from ..characters import Position, find_in_room
+from ..characters import Position, arrive, characters, find_in_room
 from ..config import TICK_SECONDS
 from ..equipment import SLOT_NAMES, TWO_HANDED
-from . import items
+from . import items, system
 from ..npcs import Npc
 from ..players import online_players
 
@@ -368,3 +368,60 @@ def do_sset(ch, arg):
         return
     ch.send(mine + "\n")
     notify(victim, theirs)
+
+
+GOTO_LEAVE = "$n在一陣旋風中離開了。"          # 照 C 版 do_goto 的 bamfout、bamfin 預設
+GOTO_ARRIVE = "$n乘著旋風出現了。"
+
+
+def do_goto(ch, arg):
+    """goto <房間號碼或名字>（照 C 版 find_location）：號碼是那間房（zones.room_at：先找自己所在的區域物件、再世界、再動態區域，
+    還沒建立的動態區域會建立；副本的房間用號碼去不了，用人的名字去）；名字先找同房間的、再找線上的玩家、最後是遊戲裡所有的角色（開頭就行），
+    去那個人所在的房間。打架中先停手（照 C 版）。不觸發 on_enter（照 C 版：只有走路會觸發）。
+    """
+    words = arg.split()
+    if not words:
+        ch.send("去那兒？\n")
+        return
+    word = words[0]
+    if word.isdecimal():
+        to = zones.room_at(ch.room, int(word))
+    else:
+        others = [c for c in characters if c is not ch]
+        who = (find_in_room(ch, word) or names.pick(online_players(), word, lambda c: c.names())
+               or names.pick(others, word, lambda c: c.names()))
+        to = who.room if who is not None else None
+    if to is None:
+        ch.send("沒有這個地方。\n")
+        return
+    death.stop_all(ch)
+    act(GOTO_LEAVE, ch, to=TO_ROOM)
+    ch.room = to
+    arrive(ch)
+    act(GOTO_ARRIVE, ch, to=TO_ROOM)
+    ch.send(system.look(ch))
+    log.info(f"{ch.name} goto 房間 {to.vnum}")
+
+
+def do_givemoney(ch, arg):
+    """givemoney <名字> <數量>：給線上的玩家金幣（使用者 2026-11-18 定的：不用在同一間房、只能給正數、自己的金幣不會少），給完幫他存檔、記 log。"""
+    words = arg.split()
+    if len(words) != 2:
+        ch.send("用法：givemoney <名字> <數量>\n")
+        return
+    victim = names.pick(online_players(), words[0], lambda c: c.names())
+    if victim is None:
+        ch.send("沒有找到這個玩家。\n")
+        return
+    if not words[1].isdecimal() or int(words[1]) < 1:  # 坑：用 isdecimal，isdigit 認得「①」但 int() 不認得
+        ch.send("數量要是正整數。\n")
+        return
+    amount = int(words[1])
+    victim.gold += amount
+    log.info(f"{ch.name} 給了 {victim.name} {amount} 枚金幣")
+    items.keep(victim)
+    if victim is ch:
+        ch.send(f"你給了自己【{amount}】枚金幣。\n")
+        return
+    act("你給了$N【$t】枚金幣。", ch, victim, t=str(amount), to=TO_CHAR)
+    act("$n給你【$t】枚金幣。", ch, victim, t=str(amount), to=TO_VICT)

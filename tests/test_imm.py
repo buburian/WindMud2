@@ -1,3 +1,4 @@
+import asyncio
 import json
 import random
 import re
@@ -6,7 +7,7 @@ from pathlib import Path
 import pytest
 
 import mud.commands as commands
-from mud import save, stats, zones
+from mud import fight, save, stats, zones
 from mud.characters import characters
 from mud.commands import imm, system
 from mud.config import ENCODING
@@ -243,3 +244,95 @@ def test_old_save_without_new_fields_loads(monkeypatch, tmp_path):
     path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
     again = save.player_from(save.load_data("Ming"), FakeWriter())
     assert (again.imm, again.points, again.trained, again.gold) == (False, 0, {k: 0 for k in stats.PRIMARY_KEYS}, 0)
+
+
+# ---- goto ----
+
+def body(p):
+    """收到的字，拿掉最後的 prompt。"""
+    return p.writer.text().rsplit("\r\n\r\n", 1)[0]
+
+
+def test_goto_and_givemoney_abbreviations():
+    assert commands.find("go", is_imm=True) is imm.do_goto
+    assert commands.find("give", is_imm=True) is not imm.do_givemoney        # give 還是 give
+    assert commands.find("givem", is_imm=True) is imm.do_givemoney
+
+
+def test_goto_a_room_number():
+    boss, hua, ming = player("Boss", is_imm=True), player("Hua"), player("Ming")
+    ming.room = zones.world.rooms[3001]
+    commands.command(boss, "goto 3001")
+    assert boss.room is zones.world.rooms[3001]
+    assert body(boss).startswith("【秋風城神殿大廳】")                         # 到了先看房間
+    assert "Boss在一陣旋風中離開了。" in hua.writer.text()                   # 照 C 版
+    assert "Boss乘著旋風出現了。" in ming.writer.text()
+
+
+def test_goto_a_person_or_a_mobile():
+    boss, ming = player("Boss", is_imm=True), player("Ming")
+    ming.room = zones.world.rooms[3001]
+    commands.command(boss, "goto mi")                                        # 線上的玩家，名字打開頭
+    assert boss.room is ming.room
+    commands.command(boss, "goto rabbit")                                    # 別的房間的生物（野兔在 102）
+    assert boss.room is zones.world.rooms[102]
+
+
+@pytest.mark.parametrize("line, want", [
+    ("goto", "去那兒？"),
+    ("goto 99999", "沒有這個地方。"),
+    ("goto 201", "沒有這個地方。"),                                           # 副本（教學學院）的房間用號碼去不了
+    ("goto nobody", "沒有這個地方。"),
+])
+def test_goto_mistakes(line, want):
+    boss = player("Boss", is_imm=True)
+    commands.command(boss, line)
+    assert body(boss) == want and boss.room is zones.world.rooms[101]
+
+
+def test_goto_stops_the_fight():
+    boss = player("Boss", is_imm=True)
+    boss.room = zones.world.rooms[102]
+    rabbit = next(c for c in characters if getattr(c, "vnum", None) == 103)
+
+    async def go():
+        fight.start_fight(boss, rabbit)
+        assert boss.fighting is rabbit
+        commands.command(boss, "goto 101")
+        return boss.fighting, rabbit.fighting
+
+    assert asyncio.run(go()) == (None, None) and boss.room is zones.world.rooms[101]
+
+
+# ---- givemoney ----
+
+def test_givemoney(monkeypatch):
+    saved = []
+    monkeypatch.setattr(save, "save_player", saved.append)
+    boss, ming = player("Boss", is_imm=True), player("Ming")
+    ming.room = zones.world.rooms[3001]                                      # 不用在同一間房
+    boss.gold = 5
+    commands.command(boss, "givemoney mi 100")
+    assert body(boss) == "你給了Ming【100】枚金幣。"
+    assert "Boss給你【100】枚金幣。" in ming.writer.text()
+    assert (ming.gold, boss.gold, saved) == (100, 5, [ming])                # 自己的不會少，幫對方存檔
+
+
+def test_givemoney_to_yourself():
+    boss = player("Boss", is_imm=True)
+    commands.command(boss, "givemoney boss 7")
+    assert body(boss) == "你給了自己【7】枚金幣。" and boss.gold == 7
+
+
+@pytest.mark.parametrize("line, want", [
+    ("givemoney", "用法：givemoney <名字> <數量>"),
+    ("givemoney ming", "用法：givemoney <名字> <數量>"),
+    ("givemoney nobody 5", "沒有找到這個玩家。"),
+    ("givemoney ming 0", "數量要是正整數。"),
+    ("givemoney ming -5", "數量要是正整數。"),
+    ("givemoney ming ①", "數量要是正整數。"),
+])
+def test_givemoney_mistakes(line, want):
+    boss, ming = player("Boss", is_imm=True), player("Ming")
+    commands.command(boss, line)
+    assert body(boss) == want and ming.gold == 0

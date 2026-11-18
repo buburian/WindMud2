@@ -194,7 +194,7 @@ def test_imm_sees_the_imm_category():
         "  戰鬥    kill use flee",
         "  物品    get drop put give wear remove inventory equipment examine eat drink fill list buy sell value quaff recite zap brandish",
         "  門      open close lock unlock",
-        "  管理員  advance slay oload ostat mstat restore affect sset",
+        "  管理員  advance slay oload ostat mstat restore affect sset goto givemoney",
     ]
     assert say("help", imm=True) == "\r\n".join(want) + "\r\n\r\n> "
 
@@ -206,7 +206,7 @@ def test_help_category():
 
 def test_imm_category_is_only_for_imm():
     assert say("help 管理員") == NOT_FOUND
-    assert say("help 管理員", imm=True).startswith("【管理員】\r\n  advance  改玩家的等級\r\n")
+    assert say("help 管理員", imm=True).startswith("【管理員】\r\n  advance    改玩家的等級\r\n")
 
 
 def test_help_command():

@@ -41,7 +41,7 @@ uv run python -m mud.areaconvert 舊.json builder_area/新.json   # 舊區域（
   `tests/test_log.py` 測紀錄檔的編號、換檔和刪舊檔；`tests/test_area.py` 測區域載入，也比對手冊的數字表跟程式的定義；`tests/test_areacheck.py` 測區域檔檢查的每條規則；
   要自己做區域檔的測試，用 `tests/area_helpers.py` 做出完整的檔案再改欄位（直接 `from area_helpers import …`）；
   `tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit；另一個測試讓 tick 和幾場戰鬥一直跑，確認玩家打字照樣馬上回應。
-  `tests/test_login.py` 也開真的伺服器，測建立角色、密碼、名字規則、存檔、斷線存檔、重複登入接手。`tests/test_imm.py` 測 imm 指令、advance、train；`tests/test_position.py` 測姿勢、rest／sleep／stand、睡覺時能用的指令、say、who、save。`tests/test_resets.py` 測生物的重置（M、limit、rare、tier_roll、時機、look）。`tests/test_doors.py` 測門（兩邊都要寫的檢查、走路、open／close／lock／unlock、對面看得到、look、重置 D、副本各自的門）。
+  `tests/test_login.py` 也開真的伺服器，測建立角色、密碼、名字規則、存檔、斷線存檔、重複登入接手。`tests/test_imm.py` 測 imm 指令、advance、train、goto（號碼、名字、副本去不了、停手）、givemoney；`tests/test_position.py` 測姿勢、rest／sleep／stand、睡覺時能用的指令、say、who、save。`tests/test_resets.py` 測生物的重置（M、limit、rare、tier_roll、時機、look）。`tests/test_doors.py` 測門（兩邊都要寫的檢查、走路、open／close／lock／unlock、對面看得到、look、重置 D、副本各自的門）。
   `tests/test_objects.py` 測物品（固定、隨機裝備、掉落表、屍體、slay、look 和 look in、屍體消失、區域物件釋放後不見、基本價格 `base_price()`、cost 存檔）。
   `tests/test_behavior.py` 測生物平常的行為（走動的出口和機率、scavenger、主動攻擊和半身人的不起眼、生物回血、wimpy），亂數換成 `behavior.rng`；
   `tests/test_specials.py` 測 special（打架用的時間、傷害 × 倍率、招式名稱、劇毒，janitor、fido，名字的表跟手冊比對），`damage.strike` 換成固定值、`fight.hit` 不打。
@@ -223,7 +223,9 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   `slay <名字>`（`sla` 起，直接殺死同房間的生物，訊息照 C 版，不給經驗；不能殺玩家）、`oload`、`ostat`、`mstat`（見下面「背包和裝備」）、
   `restore <名字或 all>`（`resto`，照 C 版補滿 HP／MP／MV，另外清技能冷卻；名字先找同房間、再找線上玩家）、
   `affect <名字> <poison|regen|bless|blind|clear>`（`af`，測試用的效果 `TEST_EFFECTS`，見下面「身上的效果」）、
-  `sset <名字> <技能> [off]`（`ss`，照 C 版的名字，讓線上的玩家學會／忘掉技能，imm_only 的不能給）。
+  `sset <名字> <技能> [off]`（`ss`，照 C 版的名字，讓線上的玩家學會／忘掉技能，imm_only 的不能給）、
+  `goto <號碼或名字>`（`go`，照 C 版 find_location：號碼用 `zones.room_at()`（副本的房間去不了），名字先同房間、再線上玩家、再全部角色；`death.stop_all()` 停手、旋風的兩句、不觸發 on_enter）、
+  `givemoney <名字> <數量>`（`givem`，使用者 2026-11-18 要的：線上的玩家、正整數、自己的不少，`items.keep()` 幫對方存檔）。
   **玩家的指令排在 imm 指令前面**：同字首的玩家指令會搶走 imm 指令的縮寫（之前加了 affects，imm 打 `a` 就變成 affects）。
   **`kill <名字>`**（`commands/combat.py`，`k`，最低姿勢 FIGHTING 照 C 版）：開打同房間的生物，牠自動還手；**不可以打玩家**（使用者要的，自己也不行）。
   **安全區**（`RoomFlag.SAFE`，使用者要的）：`commands/combat.protected()` 送 C 版「$N正在受到神力所保護的房間內。」，kill 和 use 的傷害技能都在扣消耗之前呼叫它；主動攻擊在 `behavior.aggress()` 自己看。開打只有這三個地方，所以安全區裡不會有戰鬥。
