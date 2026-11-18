@@ -6,7 +6,7 @@
 """
 import random
 
-from . import fight, objects, specials, stats
+from . import fight, light, objects, specials, stats
 from .act import TO_ROOM, act, gathering
 from .area import DIRECTIONS, ActFlag, RoomFlag
 from .characters import Position, characters
@@ -76,7 +76,7 @@ def scavenge(npc):
 
 def aggress():
     """主動攻擊（每個 tick）：aggressive、站著（沒在打架）、不在安全區的生物，從同一間房的玩家隨機挑一個開打，
-    跟玩家用 kill 開打一樣（沒有另外的訊息）。不挑 imm、正在打架的人（不然等於兩隻一起打）；睡著的照打，不看等級差。
+    跟玩家用 kill 開打一樣（沒有另外的訊息）。不挑 imm、正在打架的人（不然等於兩隻一起打）、牠看不到的人（隱形、藏匿）；睡著的照打，不看等級差。
     先從在線的玩家整理每間房可以打的人（玩家少，比較快：loop 裡不能卡住）。
     """
     targets = {}
@@ -90,7 +90,8 @@ def aggress():
         if (room not in targets or ActFlag.AGGRESSIVE not in npc.act or npc.position != Position.STANDING
                 or RoomFlag.SAFE in room.room_flags):
             continue
-        choices = [p for p in targets[room] if p.fighting is None and not spared(npc, p)]
+        # 看不到的（隱形、藏匿，牠沒有偵測）不打：先拿掉再骰，亂數的用法不變
+        choices = [p for p in targets[room] if p.fighting is None and not spared(npc, p) and light.visible(npc, p)]
         if not choices:
             continue
         victim = rng.choice(choices)

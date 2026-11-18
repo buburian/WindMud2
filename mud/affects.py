@@ -5,7 +5,7 @@
   主屬性照被放的人自己的等級換成次要屬性（使用者定的，stats.add_affects）；生物沒有公會，不算。
 - 持續加減 HP／MP／MV（periodic 固定量、periodic_pct 上限的幾成）：每 AFFECT_PULSE_TICKS（3）tick 跳一次，從放下去開始數，放下去那一刻不跳。
   HP 扣到 0 就死（使用者定的），跟被打死同一套（combat.slain）。
-- 旗標（flags，area.AffectFlag）：現在只是記號。
+- 旗標（flags，area.AffectFlag）：哪些有作用寫在 AffectFlag（飛行、水中呼吸、隱形、藏匿、偵測、粉光、通透、聖光）。
 - 護盾（shield_pct，使用者 2026-11-06 定的）：放下去時用 HP 上限 × shield_pct 算出幾點（shield）。受到的傷害（攻擊、技能、持續扣血全部）
   先扣護盾、扣完才扣 HP（absorb()）；好幾個護盾先放的先扣；扣光的就破了、拿掉。再放一次（覆蓋）回到滿的。
 同一個來源（哪個技能放的）只有一份：再放一次是覆蓋；不同來源就疊。
@@ -237,6 +237,8 @@ def pulse(ch, a, out):
             setattr(ch, key, max(now, min(ch.panel[key], now + n)))
             changes.append(change_text(key, getattr(ch, key) - now))    # 實際加到的（滿了加不進去）
         elif key == "hp":
+            if has_flag(ch, AffectFlag.SANCTUARY):
+                n /= 2                      # 聖光：持續扣血也減一半（使用者定的），再扣護盾
             taken, broken = absorb(ch, -n)  # 持續扣血也先扣護盾（使用者選的：全部傷害）
             ch.hp = now + n + taken
             if a.hurt:                      # 跳的訊息（燃燒）：被燒的亮青、同房間的人不上色，跟戰鬥訊息一樣

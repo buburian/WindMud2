@@ -9,7 +9,7 @@
 
 坑：act 會用到這裡，這裡要用 weather（weather 又 import act），所以 act、characters 在函式裡才 import 這個模組。
 """
-from . import weather
+from . import stealth, weather
 from .act import TO_ROOM, gathering, notify, act
 from .area import LIGHT_ITEM_TYPE, RoomFlag, Sector
 from .characters import characters, in_room
@@ -62,8 +62,10 @@ def can_see_room(ch):
 
 
 def visible(reader, ch):
-    """reader 看不看得到 ch（act 的名字、找人、看誰走進來）：自己看得到；不在同一間房（chat、tell）也照樣看得到名字。"""
-    return reader is ch or reader.room is not ch.room or can_see_room(reader)
+    """reader 看不看得到 ch（act 的名字、找人、look 列出來、看誰走進來）：自己看得到；不在同一間房（chat、tell）也照樣看得到名字。
+    同一間房：看得到房間（不暗或有夜視），而且 ch 沒有隱形、藏匿起來（stealth.unseen()）。
+    """
+    return reader is ch or reader.room is not ch.room or (can_see_room(reader) and not stealth.unseen(reader, ch))
 
 
 def floor(ch):

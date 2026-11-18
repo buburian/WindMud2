@@ -720,7 +720,7 @@ def test_mob_use_gift_only(tmp_path, later, caplog):
     assert "教官對你施展了【餽贈】。" in say(ming, "say 送") and ming.affects[0].source == "gift"
     with caplog.at_level(logging.WARNING):
         say(ming, "say 打")
-    assert "重擊是傷害技能：mob:use 只能放增益技能" in caplog.text and ming.fighting is None
+    assert "重擊不是增益技能：mob:use 只能放增益技能" in caplog.text and ming.fighting is None
 
 
 def test_transfer(tmp_path, later, caplog):

@@ -2,7 +2,8 @@
 
 新增技能只要在 SKILLS 加一筆：玩家用 use 指令放（commands/skills.py），不用加指令。
 傷害技能的資料和消耗照 mud_design 的 balance.py（SKILLS、Model.skill_cost），tests/test_skills.py 直接比對。
-現在有傷害（打一隻）和增益（把 affect 放在自己或同房間的玩家身上，不開打）；補血、減益、打一群、怪物用技能都還沒定。
+現在有傷害（打一隻）、增益（把 affect 放在自己或同房間的玩家身上，不開打）、減益（把 affect 放在一隻生物身上，會開打）；
+補血、打一群、怪物用技能都還沒定。
 誰會（使用者定的，技能自己設計）：starter 寫的公會建立角色就會；其他的要用程式加（learn：之後的學習、技能書，現在是 imm 的 sset）。
 會的技能存在角色的 skills（存檔）。imm_only 的只有 imm 會（imm 自動會，不能給別人）。imm 用任何技能都不扣消耗、不用等冷卻。
 坑：combat → death → fight 繞一圈，這裡也用 from . import 模組。
@@ -10,8 +11,8 @@
 import copy
 from dataclasses import dataclass, field
 
-from . import affects, combat, damage, stats
-from .act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act
+from . import affects, combat, damage, stats, stealth
+from .act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act, compose
 from .area import AffectFlag
 from .config import AFFECT_PULSE_TICKS
 from .players import online_players
@@ -27,8 +28,8 @@ class Skill:
     name: str                   # 名稱，訊息寫「你使用重擊攻擊野狗」
     guild: object               # 哪個公會的路數（Guild）：決定傷害類型、扣 MV 還是 MP、消耗用哪個公會標準；不是誰會。
                                 # None：傷害類型照使用的人的公會、沒有消耗（imm 的技能）
-    kind: str                   # 種類："damage"（傷害，代號跟 balance.py 一樣）、"buff"（增益：放 affect）
-    target: str                 # 目標："single"（打一隻）、"ally"（自己或同房間的玩家）
+    kind: str                   # 種類："damage"（傷害，代號跟 balance.py 一樣）、"buff"（增益：放 affect）、"debuff"（減益：放 affect 在生物身上，會開打）
+    target: str                 # 目標："single"（一隻生物）、"ally"（自己或同房間的玩家）、"self"（只有自己）
     hits: int                   # 用一次打幾次（攻速不影響次數）
     ratio: float                # 每一次 ＝ 主手這一下平砍的最終傷害 × ratio
     cooldown: int               # 冷卻幾秒（1 tick ＝ 1 秒），每個技能各自算
@@ -38,6 +39,7 @@ class Skill:
     imm_only: bool = False      # 只有 imm 會：imm 自動會，不能給別人
     affect: dict = field(default=None, hash=False)  # 增益技能放上去的效果：affects.Affect 的欄位；source、name 沒寫就用技能的 id、名稱（make_affect）
     dot: dict = field(default=None, hash=False)     # 打中後留在目標身上的持續傷害（dot_affect）：name、ratio（每跳 ＝ 第一發 × ratio）、jumps（跳幾次）、hurt（訊息的動詞）
+    cast_text: tuple = ()       # 減益放上去時的訊息（照 C 版）：(對象看到的, 同房間的人看到的)，$n 是對象
 
 
 SKILLS = {s.id: s for s in (
@@ -56,7 +58,26 @@ SKILLS = {s.id: s for s in (
         duration=1800, flags=AffectFlag.FLYING, off_message="你的腳緩慢的降回地面。")),
     Skill("breathe", "水中呼吸術", None, "buff", "ally", 0, 0.0, 0, 0.0, affect=dict(
         duration=1800, flags=AffectFlag.GILLS, off_message="你不能在水下呼吸了。")),
+    # 看不見的人和光圈（使用者 2026-11-17 定的：跟飛翔術一樣，用程式加、不扣消耗、沒有冷卻、30 分鐘）。名字、消失的訊息照 C 版。
+    # 加在最後：use 找第一個用打的字開頭的技能，原本的縮寫才不會變
+    Skill("invis", "隱身術", None, "buff", "ally", 0, 0.0, 0, 0.0, affect=dict(
+        duration=1800, flags=AffectFlag.INVISIBLE, off_message="你不再隱形了。")),
+    Skill("hide", "藏匿技巧", None, "buff", "self", 0, 0.0, 0, 0.0, affect=dict(
+        duration=1800, flags=AffectFlag.HIDE, off_message="你藏匿的效果消失了!!")),
+    Skill("pass_door", "穿牆術", None, "buff", "self", 0, 0.0, 0, 0.0, affect=dict(
+        duration=1800, flags=AffectFlag.PASS_DOOR, off_message="你覺得你的身體無法再穿透物品了。")),
+    Skill("sanctuary", "聖光術", None, "buff", "ally", 0, 0.0, 0, 0.0, affect=dict(
+        duration=1800, flags=AffectFlag.SANCTUARY, off_message="環繞你的神聖光圈從身上消失。")),
+    Skill("detect_invis", "偵查隱形", None, "buff", "self", 0, 0.0, 0, 0.0, affect=dict(
+        duration=1800, flags=AffectFlag.DETECT_INVIS, off_message="你不再看到隱形的物體。")),
+    Skill("detect_hidden", "偵查藏匿", None, "buff", "self", 0, 0.0, 0, 0.0, affect=dict(
+        duration=1800, flags=AffectFlag.DETECT_HIDDEN, off_message="你對四週的觀察力下降了。")),
+    # 減益：粉光讓隱形、藏匿都沒用，閃躲、AC ×0.9（stats.add_affects() 看旗標）
+    Skill("faerie_fire", "灼熱火燄", None, "debuff", "single", 0, 0.0, 0, 0.0, affect=dict(
+        duration=1800, flags=AffectFlag.FAERIE_FIRE, off_message="粉紅色的光圈從你身上消失。"),
+        cast_text=("粉紅色的光圈將你團團圍住了。", "粉紅色的光圈將$n團團圍住了。")),
 )}
+SELF_ONLY = "這個技能只能放在自己身上。"      # target 是 "self" 的技能指定了別人（use、物品）
 
 
 MIN_SKILL_DAMAGE = 1                        # 技能（不是平砍）打中最低幾點，燃燒每跳也是（使用者定的；失手還是 0）
@@ -179,6 +200,9 @@ def use(ch, skill, victim, pay_cost=True):
     if skill.kind == "buff":
         buff(ch, skill, victim)
         return
+    if skill.kind == "debuff":
+        debuff(ch, skill, victim)
+        return
     battle = ch.fight                       # 先記住：打死生物時 die() 會把 ch.fight 清掉
     with battle.collecting(me=ch):          # 技能那幾下、打死時腳本說的話合成一段
         first = None                        # 第一發打中的傷害（持續傷害用）
@@ -215,8 +239,8 @@ def buff(ch, skill, target):
     """增益技能：把 skill.affect 放到 target 身上（同一個來源是覆蓋：時間回到滿的），送訊息。
 
     不用打架、不開打：NPC 也能直接呼叫 use(npc, 技能, 玩家)（之後教學區的 NPC 用）。
+    先說再放：放了隱身術的人看不到了，先放的話訊息會寫成「你對某人施展了」。
     """
-    affects.add(target, make_affect(skill))
     if target is ch:
         act("你對自己施展了【$t】。", ch, t=skill.name, to=TO_CHAR)
         act("$n對自己施展了【$t】。", ch, t=skill.name, to=TO_ROOM)
@@ -224,6 +248,20 @@ def buff(ch, skill, target):
         act("你對$N施展了【$t】。", ch, target, t=skill.name, to=TO_CHAR)
         act("$n對你施展了【$t】。", ch, target, t=skill.name, to=TO_VICT)
         act("$n對$N施展了【$t】。", ch, target, t=skill.name, to=TO_NOTVICT)
+    affects.add(target, make_affect(skill))
+
+
+def debuff(ch, skill, victim):
+    """減益技能（要先開打，跟傷害技能一樣）：把 skill.affect 放到 victim 身上（同一個來源覆蓋），送 cast_text 的兩句。
+    放減益也算出手：兩邊都現形（使用者選的）。訊息放進那一場，打完馬上送（ch 那段是指令的回覆）。
+    """
+    battle = ch.fight
+    with battle.collecting(me=ch):
+        battle.tell(stealth.reveal(ch) + stealth.reveal(victim))
+        affects.add(victim, make_affect(skill))
+        mine, theirs = skill.cast_text
+        battle.tell(compose(mine, victim, to=TO_CHAR))
+        battle.tell(compose(theirs, victim, to=TO_ROOM))
 
 
 def tick():

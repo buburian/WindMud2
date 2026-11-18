@@ -5,8 +5,8 @@
 """
 import random
 
-from . import affects, damage, death, light, objects, stats
-from .area import ATTACK_NAMES
+from . import affects, damage, death, light, objects, stats, stealth
+from .area import ATTACK_NAMES, AffectFlag
 from .act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, compose
 from .npcs import Npc
 from .players import Player
@@ -60,7 +60,11 @@ def land(battle, ch, victim, dmg, crit, attack=BARE_HAND, named=False):
     """打出去的一下（平砍、技能、生物的 special 共用）：扣 HP、三句訊息放進 battle、打死了就處理死掉和經驗值。回傳 victim 死了沒。
 
     attack：用什麼打的（訊息裡的「使用直拳」「使用重擊」）。玩家一定寫；生物只有 named（special 的招式）才寫。
+    出手或被打都現形（使用者選的，有沒有打中都算）；聖光減一半之後才扣護盾、扣 HP，訊息寫的也是減完的。
     """
+    battle.tell(stealth.reveal(ch) + stealth.reveal(victim))
+    if affects.has_flag(victim, AffectFlag.SANCTUARY):
+        dmg /= 2                                    # 聖光：被打的傷害減一半（照 C 版，使用者定的）
     taken, broken = affects.absorb(victim, dmg)     # 先扣護盾，扣完才扣 HP（使用者定的）
     victim.hp -= dmg - taken
     for to, fmt in messages(ch, victim, dmg, crit, attack, taken, named):

@@ -1,7 +1,8 @@
 """技能類指令：use 放技能、skills 列出會的技能。規則在玩家角色手冊「技能」。
 
 技能只能用 use 放（使用者要的）：新增技能只要在 skills.SKILLS 加資料，不用加指令。
-誰會哪個技能看 skills.known()（技能自己設計：一開始就會、要用程式加）。傷害技能可以開打（使用者定的）；增益技能放在自己或同房間的玩家身上，不開打。
+誰會哪個技能看 skills.known()（技能自己設計：一開始就會、要用程式加）。傷害、減益技能可以開打（使用者定的）；
+增益技能放在自己或同房間的玩家身上（"self" 的只有自己），不開打。
 """
 from .. import affects, fight, skills
 from ..characters import characters, find_in_room
@@ -21,10 +22,12 @@ def do_use(ch, arg):
     if skill is None:                       # 沒學過的、imm 的技能也是這句
         ch.send("你不會這個技能。\n")
         return
-    if skill.target == "ally":              # 增益：沒打名字是自己，只能放在玩家身上，不開打
+    if skill.target in ("ally", "self"):    # 增益：沒打名字是自己，只能放在玩家身上，不開打
         target = find_in_room(ch, words[1]) if len(words) > 1 else ch
         if target is None:
             ch.send("這裡沒有這個人。\n")
+        elif skill.target == "self" and target is not ch:
+            ch.send(skills.SELF_ONLY + "\n")
         elif isinstance(target, Npc):
             ch.send(f"{skill.name}只能放在玩家身上。\n")
         elif ready(ch, skill):
@@ -90,7 +93,7 @@ def do_skills(ch, arg):
     for s in known:
         pool = skills.resource(s)
         spent = f"{skills.cost(s, ch.level)}" + (f" {skills.RESOURCE_NAMES[pool]}" if pool else "")    # 沒有資源的技能
-        if s.kind == "buff":                # 增益：寫持續多久，做什麼放下一行（太長就換行，不超過 79 格）
+        if s.kind in ("buff", "debuff"):    # 增益、減益：寫持續多久，做什麼放下一行（太長就換行，不超過 79 格）
             a = skills.make_affect(s)
             what = f"持續 {a.duration * TICK_SECONDS:g} 秒"
         else:
@@ -101,7 +104,7 @@ def do_skills(ch, arg):
         if wait:
             line += f"  還要等 {wait} 秒"
         lines.append(line)
-        if s.kind == "buff":
+        if s.kind in ("buff", "debuff"):
             lines += ["    " + more for more in wrap(affects.parts(a, listing=True), 75)]
         if s.dot:                           # 打中後的持續傷害：燃燒：每 3 秒 第一發的 30%，3 次
             lines.append(f"    {s.dot['name']}：每 {AFFECT_PULSE_TICKS * TICK_SECONDS:g} 秒 第一發的 {s.dot['ratio'] * 100:g}%，"

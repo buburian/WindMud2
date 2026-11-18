@@ -67,6 +67,8 @@ uv run python -m mud.areaconvert 舊.json builder_area/新.json   # 舊區域（
   `tests/test_light.py` 測黑暗和光源（很暗的四個條件、光源在身上／地上／背包、精靈和 imm、look 的每一種、找不到人、撿不到、「某人」、走進來、對面的門、燒完、燈籠放光源位置、存檔的 hours、暗處不自動拾取）；
   `tests/test_terrain.py` 測地形（每一種擋法、船、飛行、現在站的房間也算、生物不受限制、飛和游的訊息、flee 不挑走不過去的出口、窒息）和飛翔術、水中呼吸術；
   `tests/test_safe.py` 測安全區（kill、use 傷害技能擋下來而且不扣消耗、增益技能照用）。
+  `tests/test_stealth.py` 測看不見的人和光圈（隱形、藏匿看不到找不到、某人、走進來、主動攻擊、偵測、粉光、不同房間、look 和找人對得上；
+  現形：出手、被打、沒打中、生物天生的、放增益不現形、放減益現形；通透；聖光：平砍、持續扣血、護盾、窒息不減；光圈；7 個技能：只能放自己、減益、物品）。
   `tests/test_socials.py` 測表情動作（真的 socials.json 檢查得過、check() 的每條規則、縮寫、沒對象／對別人／對自己、遠遠地、找不到、睡著、生物的反應、廣播、很暗、socials 指令、生物也能做）和說話結尾的表情。
   `tests/test_item_skills.py` 測會放技能的物品（quaff、recite、zap、brandish 的每一句、等級不夠和對象不對不用掉、沒寫對象看技能種類、不扣消耗、次數和碎掉、brandish、安全區、存檔、區域檔檢查）。
   `tests/test_shops.py` 測商店（list、buy、sell、value 的每一句和檢查順序、§3.7 的價格（人類、防刷錢、最低 1）、開店時間、賣不完、只賣 G 給店主的、賣掉消失、buy_types、兩個店主、很暗、存檔；`save.save_player` 換成記下來）。
@@ -175,7 +177,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `name` 是區域檔的 `short`，另外存 `vnum`（遊戲號碼）、`keywords`、`long`、`description`、`level`、`tier`（骰過 `tier_roll`，`roll_tier()`）、
     `attack`／`defense`／`archetype`（代號，算屬性用）、`special`、`special_ratio`、`poison_ratio`（照區域檔存，null 用的時候才換成預設，見下面「生物的行為」）、
     `unnoticed`（半身人的不起眼）、`act`（`area.ActFlag`）、`affected_by`（`area.AffectFlag`：照 C 版一直帶著，不是 `Affect`，
-    不會消失、`affect clear` 拿不掉；`affects.has_flag()` 也看它，mstat 看得到；有作用的只有 FLYING、GILLS，見下面「地形」）。姿勢照區域檔的 `position`（C 版讀了就丟，我們用它），寫錯就站著。
+    不會消失、`affect clear` 拿不掉，只有隱形、藏匿出手或被打會拿掉（`stealth.reveal()`）；`affects.has_flag()` 也看它，mstat 看得到；
+    哪些有作用寫在 `AffectFlag`，見下面「地形」「看不見的人和光圈」）。姿勢照區域檔的 `position`（C 版讀了就丟，我們用它），寫錯就站著。
     **出現時就算好全部屬性**：`stats.mob_stats(level, tier, attack, defense, archetype)` 照 balance.py 的 `Model.area_mob()`
     （等級 ＋ 種類的裝備完整度和進度加成 → 攻擊類型 → 原型 → 攻防傾向），存在 `npc.base_panel`（SECONDARY_KEYS、dmg_dragon、mp、mv、wpn、ac；
     `npc.panel` ＝ 它 ＋ 身上的效果，`npcs.recompute()`；測試直接設 `panel` 沒有 `base_panel` 的生物不要放效果）、
@@ -282,7 +285,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   先生物（NPC），再玩家（`characters.in_room()`，找人的 `n.名字` 也照這個順序），最後是地上的物品（`room.contents` 的 `long`，新的在前）；生物、玩家、地上的物品都是**亮白**。
   每個角色照姿勢寫「X站在這裡。」「X躺在這裡睡覺。」…（`LOOK_POSITIONS`）；房間沒有別人就不空行。
   **名字前面的標記**（`tags()`、`tagged()`，使用者要的，照 C 版 show_char_to_char）：生物的種類「(菁英)」亮綠、「(首領)」亮紅（`TIER_TAGS`，一般、雜魚沒有）。
-  之後做 buff／debuff：重要效果的光圈（C 版的 (聖光)、(火燄)…）也從 `tags()` 回傳，就會接在那一行前面。
+  後面接光圈（`AURAS`：(隱形)(藏匿)(通透)(粉光)(聖光)，見下面「看不見的人和光圈」）；之後有新的效果要光圈，加進 `AURAS` 就好。
+  `look()` 只列 `light.visible()` 看得到的人（跟 `find_in_room()` 同一個判斷，「畫面上第 n 隻」才對得上）。
   `score` 看自己的全部屬性（`sc` 起才找得到），使用者選的樣子：**寬 `SCORE_WIDTH` 79 格（跟 C 版一樣），每個數字的位置固定**
   （不照內容算寬度：經驗留 7 位數、HP／MP／MV 7 位數、次要屬性 8 位數，金幣 `gold` 放在等級那行的最後，再長也只往右）。
   暗灰框線、名字用房間標題的綠框黃字、HP／MP／MV 有條（紅、藍、綠，20 格）、下半部三欄對齊，公會用不到的傷害整格變暗；
@@ -500,7 +504,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
       **飛翔術、水中呼吸術**（`fly`、`breathe`，使用者定的）：帶 `AffectFlag.FLYING`、`GILLS` 的增益，1800 秒，要用程式加、不扣消耗、沒有冷卻，`off_message` 照 C 版。
       **NPC 直接呼叫 `skills.use(npc, SKILLS["gift"], 玩家)` 就能放**（不用學、不用在打架）。`skills` 指令的增益技能：那一行寫持續多久，做什麼放下一行（`system.wrap()`，不超過 79 格）。
       冷卻用 tick 數：世界每個 tick `skills.tick()` 減 1，所以實際等 5～6 秒。
-      `weapon_ok()`：有限用武器的技能，主手要拿那種武器（空手不行）；技能那一下用主手的武器。還沒做：學習、技能書、補血、減益、打一群、怪物打架時用技能。
+      `weapon_ok()`：有限用武器的技能，主手要拿那種武器（空手不行）；技能那一下用主手的武器。還沒做：學習、技能書、補血、打一群、怪物打架時用技能。
     - 坑：`fight` → `combat` → `death` → `fight` 繞一圈：這幾個模組互相都用 `from . import 模組`，不要 `from .fight import stop_fighting`、`from .combat import hit`。
     - 還沒做：C 版「快死了」「昏迷」（HP ≤ 0 就是死）。
   - **生物的行為**（設計文件 §4.11，使用者 2026-11-16 定案，規則在區域製作手冊 act、special）：
@@ -522,7 +526,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `applies`（屬性加減，`stats.add_affects()` 加進 panel：次要屬性照加；**主屬性照 `primary_bundle(公會, 主屬性, 被放的人自己的等級)` 換算**（使用者定的），
     生物沒有公會不算；負重、MP／MV 上限、55 上限只看自己的主屬性）、`periodic`（hp／mp／mv 每 `AFFECT_PULSE_TICKS` 3 加減固定量）、
     `periodic_pct`（每跳一次加減**當時上限**的幾成，例如餽贈的 `{"hp": 0.10}`；扣 HP 的也算矮人的堅韌、也會扣死，`drains_hp()`）、
-    `flags`（`area.AffectFlag`，有作用的只有 FLYING、GILLS（`terrain.py`）；`AFFECT_FLAG_NAMES` 跟手冊比對）、`keep_on_death`、`off_message`（有寫才用，沒寫是共用的 `affects.off_message()`：「你身上的【名字】消失了。」，使用者要的）、
+    `flags`（`area.AffectFlag`，有作用的見 `AffectFlag`（`terrain.py`、`stealth.py`…）；`AFFECT_FLAG_NAMES` 跟手冊比對）、`keep_on_death`、`off_message`（有寫才用，沒寫是共用的 `affects.off_message()`：「你身上的【名字】消失了。」，使用者要的）、
     **護盾** `shield_pct`（HP 上限的幾倍，使用者 2026-11-06 定的效果，名字是我取的「護盾」）和 `shield`（還剩幾點，`add()` 照當時的上限算，覆蓋就是回到滿的）。
     扣 HP 的地方只有兩個，都先 `affects.absorb()`（先放的先扣，扣光的拿掉）：`combat.land()`（平砍、技能；訊息加「（吸收 N）」`ABSORBED`）、
     `affects.pulse()`（持續扣血）。被打破的訊息 `broken_messages()` 放進同一段。**新增會扣 HP 的地方也要先 absorb**。
@@ -589,13 +593,25 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     地形室內、城市 → 不暗；`weather.current.sunlight` 是 SET、DARK → 暗。先看旗標、地形、日夜，本來會暗才找光源（`act` 每個讀的人都問一次）。
     沒有 `room_flags`、`sector` 的房間（測試拿 `object()` 當房間）當作不暗。
   - 看得到房間 `can_see_room(ch)`：不暗，或 `night_vision()`（imm、精靈的夜視、生物：簡化成生物都看得到，C 版只有出生在暗處的）。
-    `visible(reader, ch)`：自己、不在同一間房都看得到，同一間房才看房間（所以同一間房的人 chat、tell 也是「某人」，跟 C 版一樣；不同房間的照樣有名字，C 版不是）。
+    `visible(reader, ch)`：自己、不在同一間房都看得到，同一間房才看房間（所以同一間房的人 chat、tell 也是「某人」，跟 C 版一樣；不同房間的照樣有名字，C 版不是），
+    還要 ch 沒有隱形、藏匿起來（`stealth.unseen()`，見下面「看不見的人和光圈」）。
   - 看不到時：`look`（`do_look` 在看參數之前就擋，`look()` 回 `darkness()`：那一句加上同房間每個精靈一雙紅眼睛）、
     `characters.find_in_room()` 只找得到自己、`light.floor(ch)` 是空的（撿東西、地上的容器、`find_door` 用它）、
     `act.fill()` 的 `$n`／`$N` 是「某人」、`system.move()` 走進來那句只送看得到的人、`doors.tell_room()` 一個一個人判斷、`combat.slain()` 不自動拾取。
     自己的背包、身上的照樣看得到（C 版連這些都看不到，不做）。
   - 照明用具：`Obj.hours`（values 第 3 個；0 燒完、負數不熄，存檔；舊存檔沒有就照區域檔現在的值）；世界每 `HOUR_TICKS` 的 `burn()`：在線玩家（imm 除外）光源位置的少 1，到 0 自己和旁人看到「【火把】燃燒殆盡了。」、不見。地上的不燒。
   - 坑：`act`、`characters` 在函式裡才 import `light`（`light` → `weather` → `act`，`light` → `characters`）。
+- **看不見的人和光圈**（`stealth.py`，規則在玩家角色手冊「看不見的人和光圈」，使用者 2026-11-17 定的）：
+  - `unseen(reader, ch)`：ch 有 `AffectFlag.INVISIBLE`／`HIDE`，reader 沒有 `DETECT_INVIS`／`DETECT_HIDDEN`、不是 imm，ch 身上也沒有 `FAERIE_FIRE`（粉光讓隱形、藏匿沒用，我們加的）。
+    `light.visible()` 問它，所以很暗那套（某人、找不到、看不到走進來、店主）都跟著；`behavior.aggress()` 也只挑看得到的玩家（先拿掉再骰，亂數用法不變）。
+  - `reveal(ch)`：出手或被打（使用者選的，C 版只有出手）就現形：`combat.land()`（平砍、技能、special，沒打中也算）兩邊都呼叫、`skills.debuff()` 也是；
+    拿掉效果和生物天生的旗標（照 C 版，直到重生），**先全部拿掉才寫訊息**（不然旁人看到「某人漸漸地現出…」）。放增益不現形。
+  - 聖光 `SANCTUARY`：`combat.land()`、`affects.pulse()` 的傷害減一半，在 `absorb()` 之前（訊息寫減完的；窒息 `terrain.choke()` 不減）。不加經驗。
+  - 通透 `PASS_DOOR`：`system.move()` 穿得過關著、鎖著的門，`area.PASSPROOF_LOCKS`（locks 5～8）不行。flee 不改（只挑開著的）。
+  - 技能（`skills.SKILLS` 最後 7 個，跟飛翔術一樣用程式加、不扣消耗、沒有冷卻、1800 秒）：invis、hide、pass_door、sanctuary、detect_invis、detect_hidden、faerie_fire。
+    `Skill.target` 多一種 `"self"`（只能放自己，`SELF_ONLY`；use、物品都擋，`mob:use` 也擋）；`kind` 多一種 `"debuff"`（`skills.debuff()`：跟傷害技能一樣選對象、開打、安全區，
+    放 affect、送 `cast_text` 兩句）。`buff()` 先送訊息再放效果（隱身術放了就看不到，先放會寫成「你對某人施展了」）。
+  - 粉光 `FAERIE_FIRE`：除了讓隱形、藏匿沒用，閃躲、AC × `stats.FAERIE_FIRE_RATIO` 0.9（設計文件 §2.6），在 `stats.add_affects()` 最後乘（裝備、效果加減完；生物天生的也算）。秋風城有 5 隻生物天生隱形（區域檔原本就寫的），城市守衛的腳本招呼玩家會是「某人說」。
 - **地形**（`terrain.py`，規則在玩家角色手冊「地形」、區域製作手冊 sector，使用者 2026-11-17 定的）：
   - `blocked(ch, to)`：空中要 `AffectFlag.FLYING`、要船的水要飛行或背包有船（`BOAT_ITEM_TYPE` 22）、水底要 `GILLS`（`affects.has_flag()`），訊息照 C 版。
     **現在站的房間和要去的房間都算**（照 C 版，使用者定的：到期了走不出去就用 recall；空中房間又是 no_recall 會卡住是區域設計的問題，程式不擋）、**只限制玩家**（照 C 版）。`system.move()` 在門的檢查之後呼叫；flee 用 `can_go()` 先拿掉走不過去的出口。

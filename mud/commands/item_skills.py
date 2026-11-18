@@ -56,6 +56,9 @@ def plan(ch, obj, victim, ask):
         if target is None:
             ch.send(ask + "\n")
             return None
+        if skill.target == "self" and target is not ch:
+            ch.send(skills.SELF_ONLY + "\n")
+            return None
         if skill.kind == "buff" and isinstance(target, Npc):
             ch.send(NOT_FOR_MOBS.format(skill.name) + "\n")
             return None
@@ -219,6 +222,9 @@ def everyone(ch, staff):
     for sid in staff.skills:
         skill = skills.SKILLS.get(sid)
         if skill is None:
+            continue
+        if skill.target == "self":          # 只能放自己的：只放自己
+            pairs.append((skill, ch))
             continue
         if skill.kind == "buff":
             pairs += [(skill, c) for c in [ch] + others if not isinstance(c, Npc)]

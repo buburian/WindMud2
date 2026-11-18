@@ -84,7 +84,7 @@ def test_header_and_range(tmp_path):
 
 def test_flags_go_by_name_and_unknown_ones_are_reported():
     rooms = [old_room(3001, room_flags=("safe", "indoors"))]
-    mobs = [old_mob(3001, act=("is_npc", "sentinel", "hate"), affected=("detect_invis", "sanctuary"))]
+    mobs = [old_mob(3001, act=("is_npc", "sentinel", "hate"), affected=("detect_invis", "flaming"))]
     objs = [old_obj(3001, extra=("bless", "anti_evil"), wear=("take", "body", "shoulder"))]
     data, report = areaconvert.convert(old_area(rooms, mobs, objs), "new.json")
     assert data["rooms"][0]["room_flags"] == area.RoomFlag.SAFE | area.RoomFlag.INDOORS
@@ -92,7 +92,7 @@ def test_flags_go_by_name_and_unknown_ones_are_reported():
     assert data["mobiles"][0]["affected_by"] == area.AffectFlag.DETECT_INVIS
     assert data["objects"][0]["extra_flags"] == area.ExtraFlag.BLESS == 256          # 我們的數字，不是舊的
     assert data["objects"][0]["wear_flags"] == area.WearFlag.TAKE | area.WearFlag.BODY
-    assert report.dropped == ["生物 3001 生物3001的 act hate", "生物 3001 生物3001的 affected_by sanctuary",
+    assert report.dropped == ["生物 3001 生物3001的 act hate", "生物 3001 生物3001的 affected_by flaming",
                               "物品 3001 物品3001的 extra_flags anti_evil", "物品 3001 物品3001的 wear_flags shoulder"]
     assert "房間 3001 房間3001的旗標" not in " ".join(report.kept)                # safe、indoors 有作用
 

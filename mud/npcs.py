@@ -19,7 +19,7 @@ class Npc(Character):
         self.tier = None                    # MobTier：骰過 tier_roll 之後的種類
         self.attack = self.defense = self.archetype = None   # 區域檔的代號（屬性已經照它們算好在 panel）
         self.act = ActFlag(0)
-        self.affected_by = AffectFlag(0)    # 區域檔的 affected_by：牠身上一直帶著的旗標（照 C 版，不會消失；現在只是記號）
+        self.affected_by = AffectFlag(0)    # 區域檔的 affected_by：牠身上一直帶著的旗標（照 C 版；隱形、藏匿出手或被打會拿掉，stealth.reveal()）
         self.base_panel = {}                # 出現時算好的全部屬性（stats.mob_stats()）；直接建的（測試）沒有
         self.panel = {}                     # 現在的全部屬性 ＝ base_panel ＋ 身上的效果（recompute()）
         self.mix = {}                       # 攻擊類型比例，例如 {"dragon": 0.7, "phys": 0.3}

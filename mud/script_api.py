@@ -242,7 +242,9 @@ def mob_use(npc, skill_id, target):
     if skill is None:
         raise ScriptError(f"沒有技能 {lua_repr(skill_id)}")
     if skill.kind != "buff":
-        raise ScriptError(f"{skill.name}是傷害技能：mob:use 只能放增益技能")
+        raise ScriptError(f"{skill.name}不是增益技能：mob:use 只能放增益技能")
+    if skill.target == "self":
+        raise ScriptError(f"{skill.name}只能放在自己身上：mob:use 是生物放給玩家的")
     victim = lua.obj_of(target)
     if not isinstance(victim, Player) or victim.room is not npc.room:
         raise ScriptError("mob:use 的對象要是同一個房間的玩家")

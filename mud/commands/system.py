@@ -4,7 +4,7 @@ import re
 
 from .. import affects, light, meals, objects, save, scripts, socials, stats, terrain, weather, zones
 from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act, compose, notify
-from ..area import DIRECTIONS, REVERSE, MobTier, RoomFlag
+from ..area import DIRECTIONS, PASSPROOF_LOCKS, REVERSE, AffectFlag, MobTier, RoomFlag
 from ..characters import SEX_FEMALE, SEX_MALE, Position, arrive, characters, find_in_room, in_room
 from ..color import colorize
 from ..config import ENCODING, PAGE_LINES, PAGE_LINES_MAX, PAGE_LINES_MIN
@@ -134,7 +134,8 @@ def look(ch):
     text = colorize("{G【{Y" + room.name + "{G】{x\n{G【出口：" + exits + "{G】{x\n" + room.description)
     if not text.endswith("\n"):
         text += "\n"
-    lines = [f"{tagged(c)}\n" for c in in_room(ch)] + [f"{objects.on_floor(o)}\n" for o in room.contents]
+    # 看不到的人（隱形、藏匿）不列：跟 find_in_room() 用同一個 light.visible()，「畫面上第 n 隻」才對得上
+    lines = [f"{tagged(c)}\n" for c in in_room(ch) if light.visible(ch, c)] + [f"{objects.on_floor(o)}\n" for o in room.contents]
     if lines:
         text += "\n" + "".join(lines)
     return text
@@ -151,15 +152,22 @@ WHITE, RESET = colorize("{W"), colorize("{x")
 
 # 名字前面的標記（使用者要的，照 C 版 show_char_to_char 的「(菁英)」）：種類 → (文字, 顏色代碼)。一般、雜魚沒有
 TIER_TAGS = {MobTier.ELITE: ("菁英", "{G"), MobTier.BOSS: ("首領", "{R")}
+# 光圈（使用者 2026-11-17 定的，順序、顏色照 C 版）：身上有這個旗標 → (文字, 顏色代碼)
+AURAS = (
+    (AffectFlag.INVISIBLE, "隱形", "{y"),   # C 版的 BROWN
+    (AffectFlag.HIDE, "藏匿", "{y"),
+    (AffectFlag.PASS_DOOR, "通透", "{g"),
+    (AffectFlag.FAERIE_FIRE, "粉光", "{M"),
+    (AffectFlag.SANCTUARY, "聖光", "{W"),
+)
 
 
 def tags(c):
-    """c 名字前面要加的標記 [(文字, 顏色代碼)]，照順序：生物的種類（菁英亮綠、首領亮紅，使用者選的）。
-
-    之後做 buff／debuff：重要的效果的光圈（像 C 版的 (聖光)、(火燄)）也從這裡回傳，就會出現在 look 那一行前面。
+    """c 名字前面要加的標記 [(文字, 顏色代碼)]，照順序：生物的種類（菁英亮綠、首領亮紅，使用者選的），再來是光圈（AURAS）。
+    看不到的人（隱形、藏匿）不會列在 look 裡，所以 (隱形)、(藏匿) 只有看得到他的人（imm、有偵測的）會看到。
     """
     tier = TIER_TAGS.get(getattr(c, "tier", None))
-    return [tier] if tier else []
+    return ([tier] if tier else []) + [(word, code) for flag, word, code in AURAS if affects.has_flag(c, flag)]
 
 
 def tagged(c):
@@ -178,13 +186,19 @@ def move(ch, direction, leave=terrain.WALK_AWAY):
 
     地形走不過去（現在的或要去的房間要飛、要船、要會潛水）就停在原地（terrain.blocked()，只限制玩家）。
     走進去的房間：有飛行是「飛了過來」、可游泳的水是「游了過來」；很暗看不到他的人收不到（照 C 版）。
+    門關著過不去；有通透（穿牆術）的穿得過，法術穿不過的門除外（照 C 版）。
     """
     vnum = ch.room.exits.get(direction)
     door = ch.room.doors.get(direction)
     if door is not None and door.closed:
         # 手冊定的：有名字是「【木門】關起來了。」，沒寫名字用方向「北方關起來了。」
-        ch.send(f"【{door.keywords[0]}】關起來了。\n" if door.keywords else f"{DIRECTIONS[direction]}方關起來了。\n")
-        return
+        name = f"【{door.keywords[0]}】" if door.keywords else f"{DIRECTIONS[direction]}方"
+        if not affects.has_flag(ch, AffectFlag.PASS_DOOR):
+            ch.send(f"{name}關起來了。\n")
+            return
+        if door.locks in PASSPROOF_LOCKS:   # 通透（照 C 版）：關著、鎖著的都穿得過，法術穿不過的門不行
+            ch.send(f"啊!!你沒有辦法通過{name}。\n")
+            return
     # 在副本、動態區域裡走會留在同一份；走進還沒建立的動態區域時，room_at 會建立它
     to = zones.room_at(ch.room, vnum) if vnum is not None else None
     if to is None:

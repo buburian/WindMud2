@@ -81,6 +81,9 @@ class Locks(enum.IntEnum):
     PICKPROOF_BASHPROOF_PASSPROOF = 8       # 門，撬不開、撞不開、法術穿不過去
 
 
+PASSPROOF_LOCKS = (Locks.PASSPROOF, Locks.PICKPROOF_PASSPROOF, Locks.BASHPROOF_PASSPROOF, Locks.PICKPROOF_BASHPROOF_PASSPROOF)  # 通透穿不過的門
+
+
 class DoorState(enum.IntEnum):
     """門的狀態（重置 D 的 state），要跟手冊的 state 表一樣。"""
     OPEN = 0                                # 開著
@@ -131,21 +134,28 @@ class ActFlag(enum.IntFlag):
 class AffectFlag(enum.IntFlag):
     """身上的效果的旗標（生物的 affected_by、身上的效果的 flags，affects.py）。名字、數字是手冊的 C 版名稱和數字。
 
-    有作用的只有 FLYING、GILLS（terrain.py：空中、要船的水、水底）；其他現在只是記號。判斷一律用 affects.has_flag()。
+    有作用的：FLYING、GILLS（terrain.py）；INVISIBLE、HIDE、DETECT_INVIS、DETECT_HIDDEN、FAERIE_FIRE（stealth.py）；
+    PASS_DOOR（system.move）；SANCTUARY（combat.land、affects.pulse）。其他現在只是記號。判斷一律用 affects.has_flag()。
     """
     BLIND = 1                               # 失明
-    INVISIBLE = 2                           # 隱形
+    INVISIBLE = 2                           # 隱形：同房間的人看不到（stealth.py）
     DETECT_EVIL = 4                         # 看得出邪惡
     DETECT_INVIS = 8                        # 看得到隱形
     DETECT_MAGIC = 16                       # 看得出魔法
+    DETECT_HIDDEN = 32                      # 看得到藏匿
+    SANCTUARY = 128                         # 聖光：被打的傷害減一半
+    FAERIE_FIRE = 256                       # 粉光：隱形、藏匿都沒用，閃躲、AC ×0.9（stats.add_affects）
+    HIDE = 65536                            # 藏匿：同房間的人看不到（stealth.py）
     FLYING = 524288                         # 飛行：進得去空中、要船的水（飛翔術）
+    PASS_DOOR = 1048576                     # 通透：穿得過關著的門（法術穿不過的除外）
     GILLS = 16777216                        # 水中呼吸：進得去水底、不會窒息（水中呼吸術）
 
 
 AFFECT_FLAG_NAMES = {                       # 顯示用的中文（手冊 affected_by 表的「意思」，有測試比對）
     AffectFlag.BLIND: "失明", AffectFlag.INVISIBLE: "隱形", AffectFlag.DETECT_EVIL: "看得出邪惡",
-    AffectFlag.DETECT_INVIS: "看得到隱形", AffectFlag.DETECT_MAGIC: "看得出魔法",
-    AffectFlag.FLYING: "飛行", AffectFlag.GILLS: "水中呼吸",
+    AffectFlag.DETECT_INVIS: "看得到隱形", AffectFlag.DETECT_MAGIC: "看得出魔法", AffectFlag.DETECT_HIDDEN: "看得到藏匿",
+    AffectFlag.SANCTUARY: "聖光", AffectFlag.FAERIE_FIRE: "粉光", AffectFlag.HIDE: "藏匿",
+    AffectFlag.FLYING: "飛行", AffectFlag.PASS_DOOR: "通透", AffectFlag.GILLS: "水中呼吸",
 }
 
 

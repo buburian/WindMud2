@@ -334,12 +334,19 @@ def recompute(player):
     player.panel = panel
 
 
+FAERIE_FIRE_RATIO = 0.9                     # 粉光（設計文件 §2.6，使用者 2026-11-17 同意）：閃躲、AC 乘這個
+FAERIE_FIRE_KEYS = ("dodge", "ac")
+
+
 def add_affects(panel, ch):
-    """ch 身上的效果的暫時加減屬性（affects.Affect.applies）加進 panel：玩家、生物共用。
+    """ch 身上的效果的暫時加減屬性（affects.Affect.applies）加進 panel：玩家、生物共用（兩邊的 recompute 最後都呼叫它）。
 
     主屬性照 primary_bundle 換成次要屬性，用**被放的人自己的等級**（使用者定的；裝備是用裝備的等級）。
     生物沒有公會，主屬性的加減不算。負重、MP／MV 上限、55 上限只看自己的主屬性，不受影響（設計文件 §2.6）。
+    最後看旗標：有粉光（效果的或生物天生的）閃躲、AC 乘 FAERIE_FIRE_RATIO，裝備、效果都加減完再乘。法術抗性不另外減（AC 本來就擋法術）。
     """
+    from . import affects                   # 坑：affects 會 import 這個模組，在函式裡才 import
+    from .area import AffectFlag
     guild = getattr(ch, "guild", None)
     for a in ch.affects:
         for key, n in a.applies.items():
@@ -348,6 +355,9 @@ def add_affects(panel, ch):
             elif guild is not None:
                 for s, units in primary_bundle(guild, key, ch.level).items():
                     panel[s] += n * units
+    if affects.has_flag(ch, AffectFlag.FAERIE_FIRE):
+        for key in FAERIE_FIRE_KEYS:
+            panel[key] *= FAERIE_FIRE_RATIO
 
 
 def refresh(player):
