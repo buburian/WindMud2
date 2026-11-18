@@ -200,7 +200,7 @@ def test_carried_things_go_into_the_corpse(folder):
     [m] = npcs()
     death.die(m)
     [corpse] = zones.world.rooms[101].contents
-    assert names(corpse.contains) == ["藥水"]
+    assert names(corpse.contains) == ["藥水", "一些金幣"]                # 金幣放在最後
 
 
 def test_shopkeepers_things_are_gone(folder):
@@ -211,7 +211,7 @@ def test_shopkeepers_things_are_gone(folder):
     assert m.shopkeeper and names(m.carrying) == ["藥水"]
     death.die(m)
     [corpse] = zones.world.rooms[101].contents
-    assert corpse.contains == []
+    assert names(corpse.contains) == ["一些金幣"]                        # 店主也掉金幣（照 C 版）
 
 
 # ---- test.json ----

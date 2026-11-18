@@ -207,7 +207,7 @@ export const VALUE_FIELDS = {
   18: UNUSED,
   19: [["可以吃幾口", "number", "至少 1；每吃一口少 1，到 0 就不見"], ["buff 技能", "spell", "吃完坐滿 10 秒放的增益技能 key，例如 fly；沒有寫空的（回 HP 快一倍）"],
     ["沒用到", "number"], ["有毒", "number", "還沒做"]],
-  20: [["多少錢", "number", "C 版放出時改成價格"], ["不確定", "number"], ["不確定", "number"], ["不確定", "number"]],
+  20: [["幾枚金幣", "number", "玩家拿起來就變成身上的金幣，不進背包"], ["沒用到", "number"], ["沒用到", "number"], ["沒用到", "number"]],
   22: UNUSED,
   23: UNKNOWN,
   24: UNKNOWN,

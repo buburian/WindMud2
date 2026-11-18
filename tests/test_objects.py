@@ -9,7 +9,7 @@ import pytest
 
 import mud.commands as commands
 from area_helpers import make_area, make_mobile, make_object, make_room, write_json
-from mud import death, equipment, fight, objects, resets, zones
+from mud import death, equipment, fight, objects, resets, stats, zones
 from mud.area import CORPSE_NPC_ITEM_TYPE, Apply, MobTier
 from mud.characters import Position, characters
 from mud.color import colorize
@@ -277,7 +277,7 @@ def test_corpse_holds_the_drops(folder):
     assert room.contents[0] is corpse                               # 新的在前面（照 C 版）
     assert (corpse.name, corpse.long, corpse.keywords) == ("野狗的屍體", "野狗的屍體橫躺在地上。", ["corpse"])   # 名字一律英文（使用者定的）
     assert (corpse.item_type, corpse.level, corpse.timer) == (CORPSE_NPC_ITEM_TYPE, 5, 10)
-    assert [o.name for o in corpse.contains] == ["治療藥水"]
+    assert [o.name for o in corpse.contains] == ["治療藥水", "一些金幣"]   # 金幣放在最後
 
 
 def test_corpse_timer_is_ten_to_fourteen(folder):
@@ -303,7 +303,7 @@ def test_slay_leaves_a_corpse(folder):
     assert text_of(shabu) == "你相當殘酷地屠殺(Slay)野狗，他變成一堆的肉塊與血水!!\r\n\r\n> "
     assert text_of(ming) == "\r\nShabu相當殘酷地屠殺(Slay)野狗，他變成一堆的肉塊與血水!!\r\n\r\n> "
     assert dog not in characters
-    assert [o.name for o in corpse_in(room).contains] == ["治療藥水"]
+    assert [o.name for o in corpse_in(room).contains] == ["治療藥水", "一些金幣"]   # slay 也留下金幣（照 C 版）
 
 
 def test_slay_by_chinese_name(folder):
@@ -386,10 +386,12 @@ def test_look_in_corpse(folder):
     name = corpse_in(dog.room).contains[1].name
     assert name.endswith("長劍") and name != "長劍"                  # 隨機裝備：名稱接在前面
     assert text == ("野狗的屍體裝著：\r\n     " + colorize("{G") + "治療藥水/" + colorize("{C") + "potion" + colorize("{x") + "\r\n"
-                    "     " + colorize("{y") + name + "/" + colorize("{C") + "sword" + colorize("{x") + "\r\n\r\n> ")
+                    "     " + colorize("{y") + name + "/" + colorize("{C") + "sword" + colorize("{x") + "\r\n"
+                    "     " + colorize("{G") + "一些金幣/" + colorize("{C") + "coins gold" + colorize("{x") + "\r\n\r\n> ")
 
 
-def test_look_in_empty_corpse(folder):
+def test_look_in_empty_corpse(folder, monkeypatch):
+    monkeypatch.setattr(stats, "drop_gold", lambda *args: 0)       # 連金幣都沒有
     dog = world_with_dog(folder)
     shabu = player("Shabu", dog.room)
     death.die(dog)

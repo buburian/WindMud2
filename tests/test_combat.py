@@ -224,7 +224,7 @@ def test_killing_a_mobile(world):
     # 打死的那一下、死亡訊息、經驗值在同一段，只有一個 prompt
     assert lines[1].startswith("你使用直拳攻擊野狗，")
     assert lines[2:4] == ["野狗已經斷氣，倒在地上死亡了!!", f"你共獲得了【{stats.shown(want_exp)}】點的經驗點數。"]
-    assert lines[4:6] == ["野狗的屍體裝著：", "     空無一物。"]                # 沒開自動拾取：看屍體裡有什麼（照 C 版）
+    assert lines[4:6] == ["野狗的屍體裝著：", "     一些金幣/coins gold"]     # 沒開自動拾取：看屍體裡有什麼（照 C 版）
     assert dog not in characters and shabu.fighting is None and shabu.fight is None
     assert [o.item_type for o in zones.world.rooms[102].contents] == [CORPSE_NPC_ITEM_TYPE]
     assert shabu.exp == pytest.approx(want_exp)
@@ -262,7 +262,8 @@ def test_autoloot_takes_everything_from_the_corpse(world):
     assert "Shabu把【石頭/stone】從【野狗的屍體/corpse】拿出來。" in text_of(ming)
 
 
-def test_autoloot_of_an_empty_corpse(world):
+def test_autoloot_of_an_empty_corpse(world, monkeypatch):
+    monkeypatch.setattr(stats, "drop_gold", lambda *args: 0)       # 連金幣都沒有
     shabu = fighter("Shabu")
     shabu.autoloot = True
     the_dog().hp = 0.1

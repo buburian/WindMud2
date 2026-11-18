@@ -8,10 +8,10 @@ import logging
 import math
 import random
 
-from . import area, equipment, names
+from . import area, equipment, names, stats
 from .act import notify
 from .area import (CHANCE_MAX, CHARGED_ITEM_TYPES, CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE, DRINK_CON_ITEM_TYPE, FOOD_ITEM_TYPE,
-                   FOUNTAIN_ITEM_TYPE, LIGHT_ITEM_TYPE, SKILL_ITEM_TYPES, WEAPON_ITEM_TYPE, Apply, Attack, ContainerFlag,
+                   FOUNTAIN_ITEM_TYPE, LIGHT_ITEM_TYPE, MONEY_ITEM_TYPE, SKILL_ITEM_TYPES, WEAPON_ITEM_TYPE, Apply, Attack, ContainerFlag,
                    ExtraFlag, ItemColor, WeaponKind, WearFlag, parse_flags, skill_slots, wear_slots)
 from .characters import Position
 from .color import colorize
@@ -31,6 +31,9 @@ BIND_NAMES = {ExtraFlag.BIND_PICKUP: "拾取後綁定", ExtraFlag.BIND_EQUIP: "�
 # 白色 1 級大約 10～20，99 級最貴的（雙手武器）不超過 5 萬）
 GEAR_PRICE_SCALE = 1.5
 GEAR_PRICE_LEVELS = 36
+# 怪物屍體裡的金幣（照 C 版 limbo.are 的 2、3 號物品）：1 枚、2 枚以上 → (名字, 地上那一行, keywords)
+MONEY_ONE = ("一枚金幣", "一枚金幣被留在地上。", ["coin", "gold"])
+MONEY_SOME = ("一些金幣", "一堆金幣被遺留在地上。", ["coins", "gold"])
 
 protos = {}                                 # 遊戲號碼 → 區域檔的物品（zones.load 填，跨檔案也找得到）
 
@@ -61,6 +64,7 @@ class Obj:
         self.key = None                     # 容器的鑰匙：遊戲號碼（values 第 3 個，換算跟出口的 key 一樣），None 是鎖不起來
         self.seal = 0                       # 容器的封印密碼（values 第 4 個）：可以封印又不是 0 就打不開（封印的指令還沒做）
         self.holds = None                   # 容器的容量（values 第 1 個）：裡面最多裝多重（put 用）；不是容器是 None
+        self.coins = 0                      # 金錢才有：幾枚金幣（區域檔 values 第 1 個，或屍體裡 money() 做的）；拿起來就變成身上的金幣
         self.hours = None                   # 照明用具才有：還能亮幾小時（values 第 3 個；0 燒完了、負數永遠不熄，light.py）
         self.skills = []                    # 會放技能的物品（卷軸、藥水、魔杖、魔棒）：用的時候放哪些技能（技能的 id，commands/item_skills.py）
         self.charges = None                 # 魔杖、魔棒才有：還剩幾次（values 第 3 個），到 0 就碎掉
@@ -113,6 +117,9 @@ def create(vnum, level, color, rng=random):
         obj.weapon_kind, obj.attack = WeaponKind(int(proto["values"][0])), Attack(int(proto["values"][3]))
     if proto["item_type"] == LIGHT_ITEM_TYPE:
         obj.hours = light_hours(proto)
+    if proto["item_type"] == MONEY_ITEM_TYPE:   # 寫錯（不是整數）當作 0
+        v = proto["values"][0]
+        obj.coins = int(v) if str(v).isdecimal() else 0
     if proto["item_type"] in SKILL_ITEM_TYPES:
         obj.skills, obj.charges = skill_parts(proto)
     for k, v in meal_parts(proto).items():
@@ -182,6 +189,7 @@ def make_corpse(npc, rng=random):
     """npc 死掉留下的屍體：放在牠的房間地上（最前面），CORPSE_TIMER 次 OBJ_TICKS 後消失。
 
     裡面是掉落表骰到的物品，加上牠背包裡的（照 C 版）；店主背包裡的不放進去、直接消失（照 C 版：防止殺店主複製東西，使用者選的）。
+    最後是金幣（stats.drop_gold() ＋ 別人給牠的，店主也有，照 C 版），0 枚就沒有。
     """
     # 地上那一行：「野狗的屍體橫躺在地上。」，英文名字 /corpse 由 on_floor() 接在後面（使用者定的，跟其他物品一樣）
     corpse = Obj(f"{npc.name}的屍體", f"{npc.name}的屍體橫躺在地上。", CORPSE_NPC_ITEM_TYPE, list(CORPSE_KEYWORDS))
@@ -189,8 +197,22 @@ def make_corpse(npc, rng=random):
     corpse.timer = rng.randint(*CORPSE_TIMER)
     corpse.contains = roll_drops(npc, rng) + ([] if getattr(npc, "shopkeeper", False) else list(npc.carrying))
     npc.carrying = []
+    # 金幣最後才骰（原本的亂數順序不變）；別人 give 給牠的一起放（照 C 版）。沒有區域檔資料（tier）的生物不掉
+    gold = (stats.drop_gold(npc.level, npc.tier, rng) if getattr(npc, "tier", None) is not None else 0) + npc.gold
+    npc.gold = 0
+    if gold > 0:
+        corpse.contains.append(money(gold))
     npc.room.contents.insert(0, corpse)
     return corpse
+
+
+def money(amount):
+    """一堆 amount 枚金幣（照 C 版 create_money：1 枚是「一枚金幣」，其他「一些金幣」）。價格是 0（照 C 版）。"""
+    name, long, keywords = MONEY_ONE if amount == 1 else MONEY_SOME
+    obj = Obj(name, long, MONEY_ITEM_TYPE, list(keywords))
+    obj.coins = amount
+    obj.take = True
+    return obj
 
 
 def roll_drops(npc, rng=random):

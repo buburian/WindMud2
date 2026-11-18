@@ -10,7 +10,8 @@ from .. import inventory, light, objects, save, scripts, stats
 from ..act import TO_NOTVICT, TO_ROOM, TO_VICT
 from ..characters import find_in_room
 from ..npcs import Npc
-from ..area import ATTACK_NAMES, CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE, ITEM_TYPE_NAMES, WEAPON_KIND_NAMES, ContainerFlag
+from ..area import (ATTACK_NAMES, CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE, ITEM_TYPE_NAMES, MONEY_ITEM_TYPE, WEAPON_KIND_NAMES,
+                    ContainerFlag)
 from ..equipment import COLOR_NAMES, SLOT_NAMES, STAT_NAMES, TWO_HANDED
 
 CONTAINERS = (CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE)     # get 東西 容器：可以從裡面拿的物品種類
@@ -26,6 +27,11 @@ def is_all(word):
 def sealed(obj):
     """封印著的容器撿不起來（照 C 版）。"""
     return obj.container is not None and ContainerFlag.SEALED in obj.container
+
+
+def is_money(obj):
+    """金錢：拿起來就變成身上的金幣，不進背包，所以不看件數、負重（照 C 版 get_obj）。"""
+    return obj.item_type == MONEY_ITEM_TYPE
 
 
 def do_get(ch, arg):
@@ -54,7 +60,7 @@ def get_from_floor(ch, name, out):
         out.add("你不能拿起這樣東西。")
     elif sealed(obj):
         out.add("你無法拿起被封印的東西...")
-    elif inventory.room_for(ch, obj, out):
+    elif is_money(obj) or inventory.room_for(ch, obj, out):
         pick_up(ch, obj, floor, None, out)
 
 
@@ -80,7 +86,7 @@ def get_from_container(ch, name, where, out):
         out.add("在【$t】裡面，找不到那樣東西。", t=objects.short(container))
     elif not obj.take:
         out.add("你不能拿起這樣東西。")
-    elif container in ch.carrying or inventory.room_for(ch, obj, out):
+    elif container in ch.carrying or is_money(obj) or inventory.room_for(ch, obj, out):
         pick_up(ch, obj, container.contains, container, out)
 
 
@@ -88,31 +94,43 @@ EMPTY_CONTAINER = "在【$t】裡面沒有東西。"   # get all 容器：沒有
 
 
 def take_all(ch, source, container, out, nothing):
-    """全部拿：撿不起來的（屍體、封印著的容器）靜靜跳過；拿不動了說一次就停（照 C 版，不然訊息一直重複）。
-    從自己背包裡的容器拿：件數、負重都沒變，不檢查（C 版會擋，我們修掉）。
+    """全部拿：撿不起來的（屍體、封印著的容器）靜靜跳過；拿不動了說一次，之後只再拿金幣（照 C 版會整個停，
+    我們讓金幣照樣拿：不然金幣卡在屍體裡）。從自己背包裡的容器拿：件數、負重都沒變，不檢查（C 版會擋，我們修掉）。
     """
-    found = False
+    found = full = False
     mine = container is not None and container in ch.carrying
     for obj in list(source):
         if not obj.take or sealed(obj):
             continue
         found = True
-        if not mine and not inventory.room_for(ch, obj, out):
-            break
+        if not (mine or is_money(obj)):
+            if full:
+                continue
+            if not inventory.room_for(ch, obj, out):
+                full = True
+                continue
         pick_up(ch, obj, source, container, out)
     if not found:
         out.add(nothing, t=objects.short(container) if container else None)
 
 
 def pick_up(ch, obj, source, container, out):
+    """get、get all、自動拾取都從這裡拿：金錢變成身上的金幣（照 C 版 get_obj：2 枚以上說估算有幾枚，100 萬枚以上記 log），其他放進背包。"""
     source.remove(obj)
-    ch.carrying.insert(0, obj)
+    if not is_money(obj):
+        ch.carrying.insert(0, obj)
     if container is None:
         out.add("你拿起了【$t】。", t=objects.short(obj))
         out.add("$n拿起了【$t】。", TO_ROOM, t=objects.short(obj))
     else:
         out.add("你把【$t】從【$T】拿出來。", t=objects.short(obj), T=objects.short(container))
         out.add("$n把【$t】從【$T】拿出來。", TO_ROOM, t=objects.short(obj), T=objects.short(container))
+    if is_money(obj):
+        if obj.coins > 1:
+            out.add("你估算一下裡面共有【$t】枚金幣。", t=str(obj.coins))
+        ch.gold += obj.coins
+        if obj.coins >= GOLD_LOG:
+            log.info(f"{ch.name} 拿到 {obj.coins} 枚金幣" + (f"（從 {container.name}）" if container else ""))
 
 
 def do_drop(ch, arg):

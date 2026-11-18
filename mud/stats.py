@@ -227,6 +227,26 @@ def gain_exp(player, amount):
     return gained
 
 
+# ---- 金幣掉落（玩家角色手冊「金幣」，使用者 2026-11-18 定的）----
+# 金幣 ＝ 四捨五入（GOLD_BASE × exp(怪物等級 ÷ GOLD_LEVELS) × 種類倍率 × 隨機 1 ± GOLD_SPREAD）：1 級一般怪 2～3 枚、100 級 4000～5000 枚
+GOLD_BASE = 2.32
+GOLD_LEVELS = 13.2                          # 很敏感：13.0 的話 100 級變 5084，13.4 變 4041
+GOLD_SPREAD = 0.10
+
+
+def gold_ratio(tier):
+    """種類倍率：照經驗的比例（使用者選的，打哪種怪划算跟經驗一致）＝ 種類難度 × 種類加成 ÷ 一般怪的。"""
+    normal = MobTier.NORMAL
+    tier = MobTier(tier)
+    return TIER_DIFFICULTY[tier] * TIER_EXP_MULT[tier] / (TIER_DIFFICULTY[normal] * TIER_EXP_MULT[normal])
+
+
+def drop_gold(level, tier, rng=random):
+    """level 級、tier 種類的怪物死掉時掉幾枚金幣（整數，可能是 0：低等的雜魚）。亂數只用一次 rng.random()。"""
+    spread = 1 + GOLD_SPREAD * (2 * rng.random() - 1)
+    return shown(GOLD_BASE * math.exp(level / GOLD_LEVELS) * gold_ratio(tier) * spread)
+
+
 # ---- 裝備（玩家角色手冊「物品和裝備」、設計文件 §8.2） ----
 
 def primary_bundle(guild, p, level):

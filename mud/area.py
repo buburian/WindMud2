@@ -274,6 +274,7 @@ CORPSE_NPC_ITEM_TYPE = 23                   # 物品種類 23 怪物屍體：生
 TRASH_ITEM_TYPE = 13                        # 物品種類 13 垃圾：spec_janitor 會撿
 DRINK_CON_ITEM_TYPE = 17                    # 物品種類 17 液體容器：drink、fill（values：容量、現在多少、液體）；spec_janitor 會撿
 FOOD_ITEM_TYPE = 19                         # 物品種類 19 食物：eat（values：可以吃幾口、buff 技能）
+MONEY_ITEM_TYPE = 20                        # 物品種類 20 金錢：拿起來就變成身上的金幣（values 第 1 個是幾枚；怪物屍體裡的由 objects.money() 做）
 FOUNTAIN_ITEM_TYPE = 25                     # 物品種類 25 噴泉：drink 喝不完、fill 裝水（values 第 3 個是液體）
 # 液體種類（手冊的液體種類表，有測試比對）：號碼 → (名字, 喝了坐滿 10 秒放的 buff 技能，"" 是沒有，設計文件 §3.9)
 # C 版每種液體還有醉、飽、不渴的數字，新系統不會餓、不會渴，不用

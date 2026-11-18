@@ -56,6 +56,7 @@ uv run python -m mud.areaconvert 舊.json builder_area/新.json   # 舊區域（
   `tests/test_object_resets.py` 測重置 G、O、P、R、生物身上的東西進屍體（店主的消失）、test.json 載入後商人身上的東西和箱子裡的麵包；
   `tests/test_containers.py` 測容器的 open、close、lock、unlock、找的順序、鑰匙、關著不能拿、封印、存檔帶容器狀態、門用真的鑰匙。
   `tests/test_give.py` 測 give（給東西、給金幣、店主不收、放不下、1 級不能給金幣、給完存檔、log）。
+  `tests/test_gold.py` 測金幣掉落（公式的兩頭和 ±10%、種類倍率跟經驗比、低等雜魚 0、屍體裡最後才骰、give 給牠的、店主、拿起來變金幣、背包滿了也拿得到、自動拾取、地上的、區域檔的金錢、100 萬記 log）。
   `tests/test_put.py` 測 put（每一句和檢查順序、put all、地上和背包的容器、很暗、容量、綁定、存檔）和件數（容器本身不算、35 件時撿、give、buy 都擋、從自己的袋子拿不擋、inventory、容量的存檔和舊存檔）。
   `tests/test_bind.py` 測綁定（每一條拿到東西的路、drop、drop all、give 的順序、容器裡有綁住的、imm 和生物不擋、可以賣、裝備後綁定、穿不上不綁、（綁定）、examine、ostat、存檔、舊存檔、區域檔檢查）。
   `tests/test_scripts.py` 測 Lua 腳本：沙箱（拿不到的名字、碰不到 Python、指令數上限、記憶體）、開機檢查的每一條、10 個觸發時機、每個函式、vars、wait、出錯的提醒
@@ -142,7 +143,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     全域的 `characters` 是遊戲裡所有的角色（玩家和 NPC，所有區域物件裡的），找同房間的人都從這裡找。
   - `Player(name, writer, room, sex)`：多了 `writer`（連線）和 `reply`（最後一個 tell 我的玩家），`send()` 寫到連線。
     建立角色或讀檔時才填的屬性：`password`（雜湊）、`race`、`guild`、`level`、`primaries`（角色自己的主屬性）、`resource_roll`、`skills`（會的技能，見下面「技能」）、
-    `hp`／`mp`／`mv`（現在的值）、`panel`（全部次要屬性的快取）、`gold`（金幣，放在 `Character`：玩家存檔，生物只有別人 give 給牠的；玩家現在只能靠賣東西給商店拿到金幣，金幣掉落還沒設計）。直接 `Player(...)` 建出來的（測試）沒有屬性，`score` 會說看不到。
+    `hp`／`mp`／`mv`（現在的值）、`panel`（全部次要屬性的快取）、`gold`（金幣，放在 `Character`：玩家存檔，生物只有別人 give 給牠的；玩家靠怪物屍體裡的金幣和賣東西拿到，見下面「物品」的金幣）。直接 `Player(...)` 建出來的（測試）沒有屬性，`score` 會說看不到。
     升級點數：`points`（還沒分配的）、`trained`（每項主屬性靠升級加了幾點，降級扣回用），**永遠成立 `points ＋ Σ trained ＝ 等級 − 1`**、
     主屬性 ＝ 種族的數字 ＋ `trained`（有測試）。`stats.set_level()` 改等級（升級加 `points`；降級先扣 `points`，不夠再隨機扣加過點的屬性，使用者選的；
     改完從頭算、HP／MP／MV 補滿），`stats.train()` 加點（每項最高 `PRIMARY_CAP` 55）。
@@ -635,6 +636,11 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     結果要完全一樣（詞綴、名稱）。改它時不能多叫或少叫一次亂數，`AFFIX_WORD` 的順序也不能動（`rng.choice` 照順序挑）。
   - `make_corpse(npc, rng)`：「野狗的屍體」（`area.CORPSE_NPC_ITEM_TYPE`）、地上「野狗的屍體橫躺在地上。」（後面由 `on_floor()` 接 /corpse，使用者定的）、名字只有 `corpse`（使用者定的：生物、物品的名字一律英文）、`timer` 10～14（照 C 版）；
     `roll_drops()` 每一行各自骰（`tiers` 對不上不骰，萬分之一），物品等級是生物等級、顏色是那一行的。
+  - **金幣**（玩家角色手冊「金幣」，使用者 2026-11-18 定的）：`make_corpse()` 最後（亂數也是最後骰，原本的順序不變）放 `money(stats.drop_gold(等級, 種類) ＋ npc.gold)`，0 就不放；
+    沒有 `tier` 的生物（測試直接建的）不掉。`drop_gold()` ＝ `shown(GOLD_BASE × exp(L ÷ GOLD_LEVELS) × gold_ratio(種類) × (1 ± GOLD_SPREAD))`，
+    `gold_ratio()` 照經驗的比例（`TIER_DIFFICULTY × TIER_EXP_MULT ÷ 一般怪的`），只用一次 `rng.random()`。店主、slay 也有。
+    金錢物品（`area.MONEY_ITEM_TYPE` 20，`Obj.coins`；區域檔的從 values 第 1 個讀，名字照 C 版 `MONEY_ONE`／`MONEY_SOME`，cost 0）：
+    `items.pick_up()`（get、get all、自動拾取共用）把它變成 `ch.gold`、不進背包，所以不檢查件數、負重（`is_money()`）；`take_all()` 拿不動之後只再拿金幣。
   - 名字（使用者選的，`short()`）：「測試藥水/potion」。名字裝備照顏色（灰 `{D`、白 `{W`、藍 `{B`、紫 `{M`、橘用暗黃 `{y`），其他亮綠 `{G`；
     `/` 後面是 keywords 裡的英文字，亮青 `{C`（照 C 版），沒有英文字就只有名字。地上那一行（`on_floor()`）：描述亮白，後面接「/英文名字」亮青（`english_tail()`，使用者定的：「一把測試長劍插在地上。/sword」）。區域作者寫的名字不轉顏色代碼（跟生物一樣）。
   - **消失**：`Zone.tick()` 每 `OBJ_TICKS`（30）呼叫 `objects.update()`，地上有 `timer` 的減 1，到 0 連同裡面的東西一起拿掉，醒著的人看到「野狗的屍體腐爛變成了灰塵。」
