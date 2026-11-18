@@ -53,7 +53,8 @@ class Obj:
         self.base = {}                      # 裝備基本值：武器 dmg_min、dmg_max，護具 ac（equipment.base_values）
         self.contains = []                  # 裡面的物品（屍體）
         self.timer = None                   # 還剩幾次 OBJ_TICKS 就消失；None 是不會消失
-        self.for_sale = False               # 店裡賣的（重置 G 給店主的，shops.py）：賣不完，買到的是複製品。不存檔
+        self.for_sale = False               # 店裡賣的（重置 G 給店主的，shops.py）：賣不完，買的時候照區域檔重做一件。不存檔
+        self.unrolled = False               # 店裡的隨機裝備：還沒抽屬性（買的時候才抽，使用者 2026-11-18 定的），只有名字。不存檔
         self.weight = 0                     # 重量（區域檔的 weight）
         self.cost = 0                       # 價格（區域檔的 cost）：裝備以外的物品的基本價格（base_price）
         self.take = False                  # 撿不撿得起來（wear_flags 有 1 take）；屍體撿不起來
@@ -90,18 +91,19 @@ class Obj:
         return self.container is not None and ContainerFlag.CLOSED in self.container
 
 
-def create(vnum, level, color, rng=random):
+def create(vnum, level, color, rng=random, for_sale=False):
     """照區域檔的物品 vnum 做一件，裝備等級 level、顏色 color（放出它的地方決定）。號碼找不到記 log、回傳 None。
 
     有穿戴部位的是裝備：寫了 affects 用寫好的（固定裝備），[] 照等級和顏色隨機抽，名稱接在名字前面（「疾風之蠻力長劍」）。
     灰色、沒寫顏色的裝備沒有隨機屬性。基本值（武器傷害、AC）都照等級算，不算點數。
+    for_sale：店裡的貨（重置 G 給店主的）：不抽屬性、不算基本值（level 可能是 -1 買的人的等級），買的時候才重做一件。
     """
     proto = protos.get(vnum)
     if proto is None:                       # 掉落表的號碼存不存在還沒檢查：先記 log 跳過
         log.warning(f"做不出物品 {vnum}：沒有這個號碼的物品")
         return None
     obj = Obj(proto["short"], proto["long"], proto["item_type"], proto["keywords"].lower().split())
-    obj.vnum, obj.level, obj.color = vnum, level, color
+    obj.vnum, obj.level, obj.color, obj.for_sale = vnum, level, color, for_sale
     obj.weight, obj.cost = proto["weight"], proto["cost"]
     obj.take = bool(parse_flags(proto["wear_flags"]) & WearFlag.TAKE)
     obj.bind = next((b for b in BIND_NAMES if parse_flags(proto["extra_flags"]) & b), None)
@@ -128,8 +130,12 @@ def create(vnum, level, color, rng=random):
         return obj
     offhand_weapon = slot == "offhand" and proto["item_type"] == WEAPON_ITEM_TYPE   # 副手武器（雙持）：給武器傷害、不給 AC
     if proto["affects"]:
-        obj.base = equipment.base_values(slot, level, rng, offhand_weapon)
+        if not for_sale:
+            obj.base = equipment.base_values(slot, level, rng, offhand_weapon)
         obj.affects = [(Apply(a["location"]), a["modifier"]) for a in proto["affects"]]
+        return obj
+    if for_sale:                            # 隨機裝備：買的時候才抽（使用者 2026-11-18 定的），list 只看得到名字
+        obj.unrolled = color is not None and color != ItemColor.GRAY
         return obj
     rolled = equipment.roll_item(slot, level, color, rng, offhand_weapon)
     obj.base = rolled["base"]
@@ -171,18 +177,26 @@ def gear_price(points, level):
     return points * GEAR_PRICE_SCALE * math.exp(level / GEAR_PRICE_LEVELS)
 
 
-def base_price(obj):
+def base_price(obj, level=None):
     """商店的基本價格（設計文件 §3.7，區域製作手冊物品的 cost）：裝備是 gear_price(實際用掉的點數, 裝備等級)
     （點數是每一項加成 × 單價加起來，負的抵掉），最低 1，灰色是 1；
     其他物品是 cost。沒有穿戴部位、或沒有顏色（放出它的地方顏色寫 null：手冊說不是裝備）的都算其他物品
     （使用者 2026-11-17 定的：火把、燈籠、許可狀這種拿在手上、沒有點數的東西照 cost）。商店、scavenger、janitor 用它。
+    level：照這個等級算（店裡寫 -1 的貨用買的人的等級）；沒給是物品自己的等級。
     """
     if obj.slot is None or obj.color is None:
         return obj.cost
     if obj.color == ItemColor.GRAY:
         return 1
-    points = sum(n * equipment.price(a.name.lower(), obj.level) for a, n in obj.affects if a != Apply.NONE)
-    return max(1, gear_price(points, obj.level))
+    level = obj.level if level is None else level
+    points = sum(n * equipment.price(a.name.lower(), level) for a, n in obj.affects if a != Apply.NONE)
+    return max(1, gear_price(points, level))
+
+
+def full_price(obj, level):
+    """店裡還沒抽屬性的隨機裝備（obj.unrolled）的基本價格：level 級、這個顏色的點數用滿（部位上限 × 顏色加成）。
+    抽出來的點數不會超過上限，所以買到的那件賣回去不會比買的貴。"""
+    return max(1, gear_price(equipment.cap(level, obj.slot) * equipment.COLOR_BONUS[obj.color], level))
 
 
 def make_corpse(npc, rng=random):

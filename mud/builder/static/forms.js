@@ -53,7 +53,8 @@ export function colorField({ id, obj, done }) {
 
 // 重置放出的物品（G、O、P）：顏色和等級。G 的等級空著（null）是前面那筆 M 的怪物等級；O、P 一定要寫
 export function itemLookRow(r, idPrefix, done) {
-  const tip = r.cmd === "G" ? "空著是前面那筆 M 的怪物等級；商店要賣低等裝備就自己寫" : "O、P 沒有怪物帶著，一定要寫";
+  const tip = r.cmd === "G" ? "空著是前面那筆 M 的怪物等級；商店要賣低等裝備就自己寫；寫 -1 是買的人的等級（店主賣的）"
+    : "O、P 沒有怪物帶著，一定要寫（不能寫 -1）";
   return h("div", { class: "row" },
     colorField({ id: `${idPrefix}-color`, obj: r, done }),
     numberField({ id: `${idPrefix}-level`, label: "等級", code: "level", obj: r, key: "level", tip, style: "flex: 0 0 120px", done }));

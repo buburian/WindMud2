@@ -1,12 +1,15 @@
 """商店（設計文件 §3.7，使用者 2026-11-17 定的；規則在玩家角色手冊「商店」）：找店主、開店時間、賣什麼、價格。指令在 commands/shops.py。
 
 - 店主：區域檔的生物寫了 shop（npc.shop）。同一間房、看得到的店主照 look 的順序找，可以用名字指定。
-- 賣的東西：重置 G 給店主的（Obj.for_sale），賣不完：買到的是那一件的複製品。
+- 賣的東西：重置 G 給店主的（Obj.for_sale），賣不完：買的時候照區域檔重做一件，隨機裝備當下才抽屬性（list 只看得到名字，使用者 2026-11-18 定的）。
+  G 的 level 寫 -1（BUYER_LEVEL）是買的人的等級：list 的等級、價錢、買到的都照看的人、買的人的等級。
   店主自己撿到的不賣；玩家賣給店的直接消失（使用者選的）。
-- 價格：基本價格（objects.base_price：有顏色的裝備照點數和等級算，其他是 cost）× 這家店的倍率（%），人類再乘種族技能「交易」，四捨五入、最低 1。
+- 價格：基本價格（objects.base_price：有顏色的裝備照點數和等級算，其他是 cost；還沒抽的隨機裝備照點數用滿算，objects.full_price）
+  × 這家店的倍率（%），人類再乘種族技能「交易」，四捨五入、最低 1。
   賣得的錢最多等於這個人向這家店買同一件要付的錢（防刷錢，§3.7）。
 """
 from . import light, names, objects, stats, weather
+from .area import BUYER_LEVEL
 from .characters import in_room
 
 TRADE_BUY = 0.90                            # 人類的種族技能「交易」：向商店買 ×0.90（玩家角色手冊的種族表，§3.6）
@@ -58,9 +61,20 @@ def price(x):
     return max(1, stats.shown(x))
 
 
+def goods_level(ch, obj):
+    """店裡的貨 obj 賣給 ch 是幾級：G 寫 -1（BUYER_LEVEL）的是 ch 自己的等級，其他是物品的等級。"""
+    return ch.level if obj.level == BUYER_LEVEL else obj.level
+
+
+def goods_base(ch, obj):
+    """obj 對 ch 的基本價格：還沒抽屬性的隨機裝備照點數用滿算（objects.full_price），其他照 objects.base_price。"""
+    level = goods_level(ch, obj)
+    return objects.full_price(obj, level) if obj.unrolled else objects.base_price(obj, level)
+
+
 def buy_price(ch, keeper, obj):
     """ch 向 keeper 買 obj 要付的錢：基本價格 × profit_buy%，人類 × TRADE_BUY。"""
-    return price(objects.base_price(obj) * keeper.shop["profit_buy"] / 100 * (TRADE_BUY if human(ch) else 1))
+    return price(goods_base(ch, obj) * keeper.shop["profit_buy"] / 100 * (TRADE_BUY if human(ch) else 1))
 
 
 def sell_price(ch, keeper, obj):

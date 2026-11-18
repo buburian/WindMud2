@@ -48,12 +48,12 @@ def do_list(ch, arg):
         ch.send(("這裡沒有賣你想買的東西。" if words else "你不能夠在這裡買任何東西。") + "\n")
         return
     lines = ["【 Lv    價格】 物品："]
-    lines += [f"【{o.level:>3} {shops.buy_price(ch, keeper, o):>7}】 {objects.short(o)}" for o in goods]
+    lines += [f"【{shops.goods_level(ch, o):>3} {shops.buy_price(ch, keeper, o):>7}】 {objects.short(o)}" for o in goods]
     ch.send("\n".join(lines) + "\n")
 
 
 def do_buy(ch, arg):
-    """buy [數量] 東西 [店主]：買的是展示那件的複製品（賣不完），扣金幣、存檔。"""
+    """buy [數量] 東西 [店主]：照區域檔重做（賣不完，隨機裝備買的時候才抽），扣金幣、存檔。"""
     words = arg.split()
     if not words:
         ch.send("你想買什麼東西呢？\n")
@@ -88,8 +88,8 @@ def do_buy(ch, arg):
         ch.send("你沒有辦法攜帶這麼重的物品。\n")
         return
     ch.gold -= each * count
-    for _ in range(count):
-        ch.carrying.insert(0, objects.from_data(objects.to_data(obj)))   # 複製品：不是 for_sale（不存檔的欄位）
+    for _ in range(count):                  # 每件照區域檔重做：隨機裝備這時才抽，每件都不一樣（使用者 2026-11-18 定的）
+        ch.carrying.insert(0, objects.create(obj.vnum, shops.goods_level(ch, obj), obj.color))
     out = inventory.Lines(ch)
     if count == 1:
         out.add("你買下了【$t】。", t=name)

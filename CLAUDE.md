@@ -72,7 +72,7 @@ uv run python -m mud.areaconvert 舊.json builder_area/新.json   # 舊區域（
   現形：出手、被打、沒打中、生物天生的、放增益不現形、放減益現形；通透；聖光：平砍、持續扣血、護盾、窒息不減；光圈；7 個技能：只能放自己、減益、物品）。
   `tests/test_socials.py` 測表情動作（真的 socials.json 檢查得過、check() 的每條規則、縮寫、沒對象／對別人／對自己、遠遠地、找不到、睡著、生物的反應、廣播、很暗、socials 指令、生物也能做）和說話結尾的表情。
   `tests/test_item_skills.py` 測會放技能的物品（quaff、recite、zap、brandish 的每一句、等級不夠和對象不對不用掉、沒寫對象看技能種類、不扣消耗、次數和碎掉、brandish、安全區、存檔、區域檔檢查）。
-  `tests/test_shops.py` 測商店（list、buy、sell、value 的每一句和檢查順序、§3.7 的價格（人類、防刷錢、最低 1）、開店時間、賣不完、只賣 G 給店主的、賣掉消失、buy_types、兩個店主、很暗、存檔；`save.save_player` 換成記下來）。
+  `tests/test_shops.py` 測商店（list、buy、sell、value 的每一句和檢查順序、§3.7 的價格（人類、防刷錢、最低 1）、開店時間、賣不完、只賣 G 給店主的、賣掉消失、buy_types、兩個店主、很暗、存檔、隨機裝備買的時候才抽（list 只有名字、每件各自抽、賣回去不會多）、level -1 買的人的等級；`save.save_player` 換成記下來）。
   它也把真的 `areas/` 裡所有的店兩兩算一遍：在一家買、拿去另一家賣不能賺錢（§3.7 只擋同一家店；秋風城的毛皮店、珠寶店收購倍率因此調低過；test.json 的測試商人走不到，不算）。改店的倍率、店裡的貨，這個測試會告訴你能不能刷錢。
   `tests/test_meals.py` 測吃喝（eat、drink、fill 的每一句、自動坐下、坐滿 10 秒、站起來／開打／死掉取消、同一秒 stand 又 rest、吃了又吃、劍 MV 杖 MP、buff、藥錠、很暗、一個 prompt、存檔、區域檔檢查、液體表跟手冊比對、每個模組先 import 不會繞圈）。
   `tests/test_recall.py` 測 recall（起始房間、自己的返回點、副本的 recall 先、no_recall、找不到、已經在那裡、打架中和休息、旁人的訊息、on_enter、存檔）；學生不能用的在 `test_academy.py`。
@@ -249,7 +249,9 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   坑：`skills` → `affects` → `combat` → `death` → `fight` → `meals` 繞一圈：`meals.py` 用 `skills.名字`，不能 `from .skills import`（測試裡 import 順序剛好碰不到，`areacheck` 會當掉；`test_each_module_imports_first` 開新的 Python 看著它）。
   **商店**（設計文件 §3.7，使用者 2026-11-17 定的，規則在玩家角色手冊「商店」）：list、buy、sell、value 在 `commands/shops.py`（最低姿勢 STANDING 照 C 版，`li`、`bu`、`se`、`v`），
   找店主、開店時間、價格在 `shops.py`。`npc.shop` 是區域檔的 shop（`spawn()` 存的，`shopkeeper` 照舊是布林）；店裡賣的是重置 G 給店主的（`resets.reset_give()` 設 `Obj.for_sale`，不存檔），
-  賣不完：買到的是 `objects.from_data(objects.to_data(obj))` 的複製品。價格 ＝ `objects.base_price()` × 倍率%（人類 × `TRADE_BUY`／`TRADE_SELL`），`stats.shown()`、最低 1；
+  賣不完：buy 每件用 `objects.create(obj.vnum, shops.goods_level(ch, obj), obj.color)` 重做。**店裡的隨機裝備買的時候才抽**（使用者 2026-11-18 定的）：`reset_give()` 給店主的用 `create(..., for_sale=True)`（不抽、不算基本值，`Obj.unrolled`），list 只看得到名字。
+  G 的 level 寫 `area.BUYER_LEVEL`（-1）是買的人的等級（`goods_level()`；給一般生物的跟 null 一樣；O、P 不能寫；固定裝備用 1 級查上限）。
+  價格 ＝ `shops.goods_base()`（還沒抽的照 `objects.full_price()`：那個等級、顏色點數用滿；其他 `objects.base_price(obj, 等級)`）× 倍率%（人類 × `TRADE_BUY`／`TRADE_SELL`），`stats.shown()`、最低 1；
   賣價取跟買價比較小的（防刷錢）。使用者選的：賣掉的直接消失、買的時候不看等級。我們統一的：`buy_types` 沒有就不收（C 版用 1 枚收是 bug）、value 跟 sell 一樣檢查、容器要先清空。
   店主說的話是 `told()`（「$n告訴你：」TO_VICT）；沒開時店主用 `system.do_say()` 說。買賣完用 `items.keep()` 存檔。
   **`flee`**（`f`，最低姿勢 FIGHTING，規則在玩家角色手冊「戰鬥」）：機率 `stats.flee_chance()` ＝ min(80%, 10% ＋ 70% × DEX ÷ 55)，DEX 是自己的 ＋ 裝備加的（使用者定的）。

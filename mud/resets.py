@@ -10,7 +10,7 @@ import random
 
 from . import doors, objects, scripts
 from .act import notify
-from .area import CHANCE_MAX, DIRECTIONS, ActFlag, DoorState, parse_flags
+from .area import BUYER_LEVEL, CHANCE_MAX, DIRECTIONS, ActFlag, DoorState, parse_flags
 from .characters import Position, characters
 from .npcs import Npc, spawn
 from .players import online_players
@@ -125,14 +125,16 @@ def reset_door(zone, area, r):
 
 def reset_give(area, r, mob, rng):
     """G：給前面那筆 M 這一次放出來的生物一件物品，放進牠的背包。level 是 null 就用那隻生物的等級。limit 不用（C 版沒用到）。
-    給店主的就是店裡賣的東西（for_sale，賣不完，shops.py）。
+    給店主的就是店裡賣的東西（for_sale，賣不完，買的時候才做、才抽屬性，shops.py）：level 寫 -1（BUYER_LEVEL）照存，買的時候換成買的人的等級；
+    給一般生物的 -1 跟 null 一樣是生物的等級。
     """
     if mob is None or not appears(r, rng):
         return
-    level = mob.level if r["level"] is None else r["level"]
-    obj = objects.create(r["obj_vnum"], level, r["color"], rng)
+    level = r["level"]
+    if level is None or (level == BUYER_LEVEL and not mob.shopkeeper):
+        level = mob.level
+    obj = objects.create(r["obj_vnum"], level, r["color"], rng, for_sale=mob.shopkeeper)
     if obj is not None:
-        obj.for_sale = mob.shopkeeper
         mob.carrying.insert(0, obj)
 
 

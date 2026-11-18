@@ -399,6 +399,7 @@ RESET_KEYS = {
     "*": ("cmd", "comment"),                                                       # 整行註解
 }
 RESET_NUMBERS = ("mob_vnum", "obj_vnum", "room_vnum", "container_vnum")   # 寫完整遊戲號碼的欄位
+BUYER_LEVEL = -1                            # G 的 level 寫 -1：店主賣的東西，等級是買的人的等級（使用者 2026-11-18 定的）；O、P 不能寫
 MIN_VNUM = 100                              # 遊戲號碼最小是 100：1～99 是保留的
 
 
@@ -623,7 +624,8 @@ def world_items(paths):
 def check_fixed_items(name, data, objects, mob_levels, problems):
     """固定裝備（物品寫了 affects）放出來的地方：加成的點數不能超過「等級和部位的上限 × 顏色加成」（設計文件 §3.3）。
 
-    放出來的地方和等級：掉落表 drops 用這隻生物的等級；重置 G 寫 null 用前面最近那筆 M 的生物等級；O、P 寫在 level。
+    放出來的地方和等級：掉落表 drops 用這隻生物的等級；重置 G 寫 null 用前面最近那筆 M 的生物等級，寫 -1（買的人的等級）
+    用 1 級查（上限最低：1 級的玩家也買得到）；O、P 寫在 level。
     顏色 null、gray 的加成是 ×0：只有不算點數的加成（例如龍焰抗性）才放得進去。
     """
     def place(where, obj_vnum, level, color):
@@ -643,6 +645,8 @@ def check_fixed_items(name, data, objects, mob_levels, problems):
             m_level = mob_levels.get(r["mob_vnum"]) if is_int(r.get("mob_vnum")) else None
         elif r.get("cmd") in ("G", "O", "P"):
             level = m_level if r.get("cmd") == "G" and r.get("level") is None else r.get("level")
+            if r.get("cmd") == "G" and level == BUYER_LEVEL:
+                level = 1
             place(f"{name}：resets 第 {i + 1} 筆（{r['cmd']}）", r.get("obj_vnum"), level, r.get("color"))
 
 
@@ -1207,6 +1211,8 @@ def check_resets(name, data, problems):
         if "level" in r and not (is_int(r["level"]) or (cmd == "G" and r["level"] is None)):
             allowed = "null（用前面那筆 M 的怪物等級）或整數" if cmd == "G" else "整數（O、P 沒有怪物帶著，一定要寫）"
             problems.append(f"{w}的 level 是物品的等級，要是 {allowed}，不能是 {r['level']!r}")
+        elif cmd in ("O", "P") and r.get("level") == BUYER_LEVEL:
+            problems.append(f"{w}的 level 不能是 {BUYER_LEVEL}：{BUYER_LEVEL} 是店主賣的東西用買的人的等級，只有 G 能寫")
 
 
 def check_color(where, color, problems):

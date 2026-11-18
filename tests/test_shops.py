@@ -1,5 +1,5 @@
 """商店（shops.py、commands/shops.py，設計文件 §3.7）：list、buy、sell、value 的每一句和檢查的順序、價格（人類、防刷錢、最低 1）、
-開店時間、賣不完（複製品）、只賣 G 給店主的、賣掉消失、buy_types、等級、容器、兩個店主、很暗、存檔。
+開店時間、賣不完（每件重做）、只賣 G 給店主的、賣掉消失、buy_types、等級、容器、兩個店主、很暗、存檔。
 """
 import re
 
@@ -7,7 +7,7 @@ import pytest
 
 import mud.commands as commands
 from area_helpers import make_area, make_mobile, make_object, make_room, write_json
-from mud import light, objects, save, shops, stats, weather, zones
+from mud import equipment, light, objects, save, shops, stats, weather, zones
 from mud.area import RoomFlag
 from mud.characters import Position, characters
 from mud.commands import REFUSALS
@@ -200,7 +200,9 @@ def test_buy_one(world):
     assert "Ming買下了【長劍/sword】。" in plain(wang)
     [got] = mine(ming, 102)
     assert ming.gold == 1000 - price and got is not sword and not got.for_sale
-    assert objects.to_data(got) == objects.to_data(sword)             # 跟展示的一模一樣（隨機屬性也是）
+    # 照區域檔重做一件：固定裝備的屬性一樣，武器傷害這時才算（展示的那件沒有）
+    assert (got.level, got.color, got.affects, got.name) == (1, "white", sword.affects, "長劍")
+    assert got.base and not sword.base
     assert sword in keeper.carrying                                   # 賣不完
     assert world == [ming]                                            # 買完存檔
 
@@ -330,3 +332,83 @@ def test_no_two_shops_in_the_real_areas_make_money():
     finally:
         characters.clear()
         zones.stop()
+
+
+# ---- 買的時候才抽屬性、level -1 是買的人的等級（使用者 2026-11-18 定的）----
+
+@pytest.fixture
+def goods(tmp_path, monkeypatch):
+    """101：商人賣 5 級白色隨機盾牌、-1 的白色隨機盾牌、-1 的固定長劍、-1 的麵包（倍率 100%）；野狗（不是店主）身上 -1 的盾牌。"""
+    monkeypatch.setattr(weather, "current", weather.Weather(hour=12))
+    monkeypatch.setattr(save, "save_player", lambda p: None)
+    shop = dict(SHOP, buy_types=[9], profit_buy=100, profit_sell=100)
+    objs = [item(101, "麵包", "bread", 19, 10, (1, "", 0, 0)),
+            item(102, "長劍", "sword", 5, 0, (2, 0, 0, 3), "1|8192", [{"location": 1, "modifier": 1}]),
+            item(105, "盾牌", "shield", 9, 0, wear="1|512")]
+    resets = [M(101, 101), G(105, "white", 5), G(105, "white", -1), G(102, "white", -1), G(101, None, -1),
+              M(103, 101), G(105, "white", -1)]
+    write_json(tmp_path, "a.json", make_area("a.json", [make_room(101)], (100, 199), objects=objs, resets=resets,
+                                             mobiles=[mob(101, "商人", "merchant", shop), mob(103, "野狗", "dog", level=7)]))
+    zones.load(tmp_path)
+    yield npc(101)
+    characters.clear()
+    zones.stop()
+
+
+def at_level(name, level):
+    p = person(name)
+    stats.set_level(p, level)
+    return p
+
+
+def full(level):
+    """白色盾牌（副手）level 級、點數用滿的價錢（倍率 100%、不是人類）。"""
+    return shops.price(objects.gear_price(equipment.cap(level, "offhand"), level))
+
+
+def test_list_shows_only_the_name(goods):
+    ming = at_level("Ming", 10)
+    shields = [o for o in goods.carrying if o.vnum == 105]
+    assert all(o.unrolled and o.affects == [] and o.name == "盾牌" for o in shields)
+    lines = say(ming, "list").split("\r\n")
+    assert lines[1:] == [f"【 10 {10:>7}】 麵包/bread",                                   # -1：自己的等級
+                         f"【 10 {shops.price(objects.base_price(goods.carrying[1], 10)):>7}】 長劍/sword",
+                         f"【 10 {full(10):>7}】 盾牌/shield",
+                         f"【  5 {full(5):>7}】 盾牌/shield"]                               # 只有名字，看不到抽到什麼
+
+
+def test_buyer_level_changes_the_price(goods):
+    low, high = at_level("Ming", 10), at_level("Hua", 30)
+    shield = goods.carrying[2]                                                             # -1 的盾牌
+    assert (shops.goods_level(low, shield), shops.goods_level(high, shield)) == (10, 30)
+    assert shops.buy_price(low, goods, shield) == full(10) < shops.buy_price(high, goods, shield) == full(30)
+    sword = goods.carrying[1]                                                              # -1 的固定裝備：照買的人的等級算點數
+    assert shops.buy_price(high, goods, sword) == shops.price(objects.base_price(sword, 30)) > shops.buy_price(low, goods, sword)
+    assert shops.buy_price(high, goods, goods.carrying[0]) == 10                          # 不是裝備：照 cost
+
+
+def test_buying_rolls_each_one(goods):
+    ming = at_level("Ming", 30)
+    assert say(ming, "buy 2 shield") == "你一次買下了【2】個【盾牌/shield】。"
+    a, b = [o for o in ming.carrying if o.vnum == 105]
+    for got in (a, b):
+        assert got.level == 30 and got.affects and got.name.endswith("盾牌") and got.name != "盾牌"
+        assert got.base and not got.unrolled and not got.for_sale
+    assert a is not b and ming.gold == 1000 - 2 * full(30)
+    assert all(o.unrolled for o in goods.carrying if o.vnum == 105)                       # 店裡的照舊沒抽
+
+
+def test_selling_back_never_pays_more(goods):
+    """抽出來的點數不會超過上限：買到的賣回去（100% 收）不會比買的貴。"""
+    ming = at_level("Ming", 40)
+    ming.gold = 10 ** 6
+    for _ in range(20):
+        say(ming, "buy 2.shield")                                                         # 5 級的那面
+        say(ming, "buy shield")                                                           # -1 的那面
+    for got in [o for o in ming.carrying if o.vnum == 105]:
+        assert shops.sell_price(ming, goods, got) <= (full(5) if got.level == 5 else full(40))
+
+
+def test_minus_one_for_an_ordinary_mob_is_its_level(goods):
+    [shield] = npc(103).carrying
+    assert shield.level == 7 and shield.affects and not shield.for_sale                  # 不是店主：跟 null 一樣，生物的等級

@@ -217,6 +217,8 @@ RULES = [
                  "（O）的 level 是物品的等級，要是 整數（O、P 沒有怪物帶著，一定要寫）", id="O 等級沒寫"),
     pytest.param(lambda d: reset(d, "P").update(level=1.5), "（P）的 level 是物品的等級", id="P 等級小數"),
     pytest.param(lambda d: reset(d, "O").pop("level"), "（O）少了欄位 level", id="O 少等級"),
+    pytest.param(lambda d: reset(d, "O").update(level=-1), "（O）的 level 不能是 -1", id="O 買的人的等級"),
+    pytest.param(lambda d: reset(d, "P").update(level=-1), "（P）的 level 不能是 -1", id="P 買的人的等級"),
     pytest.param(lambda d: reset(d, "D").update(direction="northeast"), "direction 'northeast' 不對", id="D 方向"),
     pytest.param(lambda d: reset(d, "D").update(state=3), "state 要是 0～2", id="D 的 state"),
     pytest.param(lambda d: reset(d, "R").update(exit_count="4"), "exit_count 要是整數", id="R exit_count"),
@@ -410,6 +412,14 @@ def test_fixed_item_over_cap_shows_the_math(tmp_path):
     assert problems_of(tmp_path, data) == [
         "a.json：resets 第 2 筆（G）放出物品 101「物品101」：加成點數 力量 +2 × 3.741 ＋ 攻速 +18 × 1 ＝ 25.482，"
         "超過 1 級主手＋副手（雙手）、白色的上限 20.058 × 1 ＝ 20.058（設計文件 §3.3）"]
+
+
+def test_fixed_item_for_the_buyers_level_is_checked_at_level_one(tmp_path):
+    # G 寫 -1（買的人的等級）：1 級的玩家也買得到，用 1 級的上限查；G 寫 -1 本身不是錯
+    sword = armed(101, [{"location": 13, "modifier": 18}])
+    problems = problems_of(tmp_path, fixed_area([sword], [M1, give(101, level=-1)], [make_mobile(101)]))
+    assert len(problems) == 1 and "超過 1 級主手" in problems[0]
+    assert problems_of(tmp_path, fixed_area([armed(101, [])], [M1, give(101, level=-1)], [make_mobile(101)])) == []
 
 
 def test_fixed_item_level_written_on_g_wins(tmp_path):
