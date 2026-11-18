@@ -8,7 +8,7 @@ import pytest
 import mud.commands as commands
 from area_helpers import make_area, make_mobile, make_object, make_room, write_json
 from mud import equipment, light, objects, save, shops, stats, weather, zones
-from mud.area import RoomFlag
+from mud.area import BUYER_LEVEL, RoomFlag
 from mud.characters import Position, characters
 from mud.commands import REFUSALS
 from mud.config import ENCODING
@@ -314,20 +314,27 @@ def test_colorless_things_are_priced_by_cost(world):
 def test_no_two_shops_in_the_real_areas_make_money():
     """真的 areas/：在一家買、拿去另一家賣，不能賺錢（人類、其他種族都是）。§3.7 的防刷錢只比同一家店，
     兩家店的倍率要區域作者自己顧（秋風城的毛皮店、珠寶店收購倍率因此調低過，使用者 2026-11-17 選的）。
-    測試區域 test.json 的店不算：沒有路走得到，玩家去不了（使用者 2026-11-18 選的）。"""
+    測試區域 test.json 的店不算：沒有路走得到，玩家去不了（使用者 2026-11-18 選的）。
+    賣的是真的買到的那件：照買的人的等級（-1 的貨）做、隨機裝備當下抽（店裡的還沒抽，拿它去賣只值 1 枚），所以 1～100 級都算。"""
+    import random
     from mud.config import AREA_DIR
     zones.load(AREA_DIR)
     try:
         keepers = [c for c in characters if getattr(c, "shop", None) and c.room.area.name != UNREACHABLE]
-        found = []
+        rng, found = random.Random(7), []
         for race in stats.Race:
             ch = Player("Ming", FakeWriter(), None)
             ch.race = race
-            for a in keepers:
-                for obj in shops.stock(a):
-                    for b in keepers:
-                        if shops.buys(b, obj) and obj.level <= b.level and shops.sell_price(ch, b, obj) > shops.buy_price(ch, a, obj):
-                            found.append((race.value, a.name, obj.name, b.name))
+            for ch.level in range(1, 101):
+                for a in keepers:
+                    for obj in shops.stock(a):
+                        pay = shops.buy_price(ch, a, obj)
+                        for _ in range(3 if obj.unrolled else 1):
+                            got = objects.create(obj.vnum, shops.goods_level(ch, obj), obj.color, rng)
+                            for b in keepers:
+                                if shops.buys(b, got) and got.level <= b.level and shops.sell_price(ch, b, got) > pay:
+                                    found.append((race.value, ch.level, a.name, obj.name, b.name))
+        assert any(o.unrolled and o.level == BUYER_LEVEL for a in keepers for o in shops.stock(a))   # 真的有 -1 的隨機裝備
         assert found == []
     finally:
         characters.clear()

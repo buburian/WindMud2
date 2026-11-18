@@ -73,7 +73,7 @@ uv run python -m mud.areaconvert 舊.json builder_area/新.json   # 舊區域（
   `tests/test_socials.py` 測表情動作（真的 socials.json 檢查得過、check() 的每條規則、縮寫、沒對象／對別人／對自己、遠遠地、找不到、睡著、生物的反應、廣播、很暗、socials 指令、生物也能做）和說話結尾的表情。
   `tests/test_item_skills.py` 測會放技能的物品（quaff、recite、zap、brandish 的每一句、等級不夠和對象不對不用掉、沒寫對象看技能種類、不扣消耗、次數和碎掉、brandish、安全區、存檔、區域檔檢查）。
   `tests/test_shops.py` 測商店（list、buy、sell、value 的每一句和檢查順序、§3.7 的價格（人類、防刷錢、最低 1）、開店時間、賣不完、只賣 G 給店主的、賣掉消失、buy_types、兩個店主、很暗、存檔、隨機裝備買的時候才抽（list 只有名字、每件各自抽、賣回去不會多）、level -1 買的人的等級；`save.save_player` 換成記下來）。
-  它也把真的 `areas/` 裡所有的店兩兩算一遍：在一家買、拿去另一家賣不能賺錢（§3.7 只擋同一家店；秋風城的毛皮店、珠寶店收購倍率因此調低過；test.json 的測試商人走不到，不算）。改店的倍率、店裡的貨，這個測試會告訴你能不能刷錢。
+  它也把真的 `areas/` 裡所有的店兩兩算一遍：1～100 級的人在一家買（真的照買的人的等級做、當下抽）、拿去另一家賣不能賺錢（§3.7 只擋同一家店；秋風城的毛皮店、珠寶店收購倍率因此調低過；test.json 的測試商人走不到，不算）。改店的倍率、店裡的貨，這個測試會告訴你能不能刷錢。
   `tests/test_meals.py` 測吃喝（eat、drink、fill 的每一句、自動坐下、坐滿 10 秒、站起來／開打／死掉取消、同一秒 stand 又 rest、吃了又吃、劍 MV 杖 MP、buff、藥錠、很暗、一個 prompt、存檔、區域檔檢查、液體表跟手冊比對、每個模組先 import 不會繞圈）。
   `tests/test_recall.py` 測 recall（起始房間、自己的返回點、副本的 recall 先、no_recall、找不到、已經在那裡、打架中和休息、旁人的訊息、on_enter、存檔）；學生不能用的在 `test_academy.py`。
   坑：日夜照現實時間算，原野、水、空中的房間大約 12 分鐘有 5 分鐘是暗的：用到這些房間的測試要 `monkeypatch.setattr(weather, "current", weather.Weather(hour=12))`。

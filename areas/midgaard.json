@@ -10749,7 +10749,7 @@
       "rare": 1,
       "obj_vnum": 3170,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 500,
       "comment": "Give wand of breathe water."
     },
@@ -10758,7 +10758,7 @@
       "rare": 1,
       "obj_vnum": 3044,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 500,
       "comment": ""
     },
@@ -10767,7 +10767,7 @@
       "rare": 1,
       "obj_vnum": 3019,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 5000,
       "comment": "creator stone"
     },
@@ -10788,7 +10788,7 @@
       "rare": 1,
       "obj_vnum": 3020,
       "color": "white",
-      "level": 20,
+      "level": -1,
       "limit": 100,
       "comment": ""
     },
@@ -10797,7 +10797,7 @@
       "rare": 1,
       "obj_vnum": 3021,
       "color": "white",
-      "level": 20,
+      "level": -1,
       "limit": 100,
       "comment": ""
     },
@@ -10806,88 +10806,7 @@
       "rare": 1,
       "obj_vnum": 3022,
       "color": "white",
-      "level": 20,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3020,
-      "color": "white",
-      "level": 15,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3021,
-      "color": "white",
-      "level": 15,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3022,
-      "color": "white",
-      "level": 15,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3020,
-      "color": "white",
-      "level": 10,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3021,
-      "color": "white",
-      "level": 10,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3022,
-      "color": "white",
-      "level": 10,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3020,
-      "color": "white",
-      "level": 5,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3021,
-      "color": "white",
-      "level": 5,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3022,
-      "color": "white",
-      "level": 5,
+      "level": -1,
       "limit": 100,
       "comment": ""
     },
@@ -10908,7 +10827,7 @@
       "rare": 1,
       "obj_vnum": 3072,
       "color": "white",
-      "level": 20,
+      "level": -1,
       "limit": 100,
       "comment": ""
     },
@@ -10917,7 +10836,7 @@
       "rare": 1,
       "obj_vnum": 3073,
       "color": "white",
-      "level": 20,
+      "level": -1,
       "limit": 100,
       "comment": ""
     },
@@ -10926,7 +10845,7 @@
       "rare": 1,
       "obj_vnum": 3074,
       "color": "white",
-      "level": 20,
+      "level": -1,
       "limit": 100,
       "comment": ""
     },
@@ -10935,7 +10854,7 @@
       "rare": 1,
       "obj_vnum": 3075,
       "color": "white",
-      "level": 20,
+      "level": -1,
       "limit": 100,
       "comment": ""
     },
@@ -10944,7 +10863,7 @@
       "rare": 1,
       "obj_vnum": 3076,
       "color": "white",
-      "level": 20,
+      "level": -1,
       "limit": 100,
       "comment": ""
     },
@@ -10953,7 +10872,7 @@
       "rare": 1,
       "obj_vnum": 3077,
       "color": "white",
-      "level": 20,
+      "level": -1,
       "limit": 100,
       "comment": ""
     },
@@ -10962,196 +10881,7 @@
       "rare": 1,
       "obj_vnum": 3097,
       "color": "white",
-      "level": 20,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3072,
-      "color": "white",
-      "level": 15,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3073,
-      "color": "white",
-      "level": 15,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3074,
-      "color": "white",
-      "level": 15,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3075,
-      "color": "white",
-      "level": 15,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3076,
-      "color": "white",
-      "level": 15,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3077,
-      "color": "white",
-      "level": 15,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3097,
-      "color": "white",
-      "level": 15,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3072,
-      "color": "white",
-      "level": 10,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3073,
-      "color": "white",
-      "level": 10,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3074,
-      "color": "white",
-      "level": 10,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3075,
-      "color": "white",
-      "level": 10,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3076,
-      "color": "white",
-      "level": 10,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3077,
-      "color": "white",
-      "level": 10,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3097,
-      "color": "white",
-      "level": 10,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3072,
-      "color": "white",
-      "level": 5,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3073,
-      "color": "white",
-      "level": 5,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3074,
-      "color": "white",
-      "level": 5,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3075,
-      "color": "white",
-      "level": 5,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3076,
-      "color": "white",
-      "level": 5,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3077,
-      "color": "white",
-      "level": 5,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3097,
-      "color": "white",
-      "level": 5,
+      "level": -1,
       "limit": 100,
       "comment": ""
     },
@@ -11172,7 +10902,7 @@
       "rare": 1,
       "obj_vnum": 3030,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 900,
       "comment": ""
     },
@@ -11181,7 +10911,7 @@
       "rare": 1,
       "obj_vnum": 3031,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 900,
       "comment": ""
     },
@@ -11190,7 +10920,7 @@
       "rare": 1,
       "obj_vnum": 3138,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 999,
       "comment": ""
     },
@@ -11215,7 +10945,7 @@
       "rare": 1,
       "obj_vnum": 3009,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 100,
       "comment": ""
     },
@@ -11260,7 +10990,7 @@
       "rare": 1,
       "obj_vnum": 3066,
       "color": "white",
-      "level": 20,
+      "level": -1,
       "limit": 100,
       "comment": ""
     },
@@ -11269,7 +10999,7 @@
       "rare": 1,
       "obj_vnum": 3067,
       "color": "white",
-      "level": 20,
+      "level": -1,
       "limit": 100,
       "comment": ""
     },
@@ -11278,7 +11008,7 @@
       "rare": 1,
       "obj_vnum": 3068,
       "color": "white",
-      "level": 20,
+      "level": -1,
       "limit": 100,
       "comment": ""
     },
@@ -11287,7 +11017,7 @@
       "rare": 1,
       "obj_vnum": 3069,
       "color": "white",
-      "level": 20,
+      "level": -1,
       "limit": 100,
       "comment": ""
     },
@@ -11296,7 +11026,7 @@
       "rare": 1,
       "obj_vnum": 3070,
       "color": "white",
-      "level": 20,
+      "level": -1,
       "limit": 100,
       "comment": ""
     },
@@ -11305,169 +11035,7 @@
       "rare": 1,
       "obj_vnum": 3071,
       "color": "white",
-      "level": 20,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3066,
-      "color": "white",
-      "level": 15,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3067,
-      "color": "white",
-      "level": 15,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3068,
-      "color": "white",
-      "level": 15,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3069,
-      "color": "white",
-      "level": 15,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3070,
-      "color": "white",
-      "level": 15,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3071,
-      "color": "white",
-      "level": 15,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3066,
-      "color": "white",
-      "level": 10,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3067,
-      "color": "white",
-      "level": 10,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3068,
-      "color": "white",
-      "level": 10,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3069,
-      "color": "white",
-      "level": 10,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3070,
-      "color": "white",
-      "level": 10,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3071,
-      "color": "white",
-      "level": 10,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3066,
-      "color": "white",
-      "level": 5,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3067,
-      "color": "white",
-      "level": 5,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3068,
-      "color": "white",
-      "level": 5,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3069,
-      "color": "white",
-      "level": 5,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3070,
-      "color": "white",
-      "level": 5,
-      "limit": 100,
-      "comment": ""
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3071,
-      "color": "white",
-      "level": 5,
+      "level": -1,
       "limit": 100,
       "comment": ""
     },
@@ -11488,7 +11056,7 @@
       "rare": 1,
       "obj_vnum": 3050,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 20,
       "comment": "Give a raft to the captain"
     },
@@ -11497,7 +11065,7 @@
       "rare": 1,
       "obj_vnum": 3051,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 10,
       "comment": "Give canoe to Captain"
     },
@@ -11530,7 +11098,7 @@
       "rare": 1,
       "obj_vnum": 3000,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 100,
       "comment": ""
     },
@@ -11539,7 +11107,7 @@
       "rare": 1,
       "obj_vnum": 3001,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 100,
       "comment": ""
     },
@@ -11560,7 +11128,7 @@
       "rare": 1,
       "obj_vnum": 3002,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 100,
       "comment": ""
     },
@@ -11569,7 +11137,7 @@
       "rare": 1,
       "obj_vnum": 3004,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 100,
       "comment": ""
     },
@@ -11590,7 +11158,7 @@
       "rare": 1,
       "obj_vnum": 3002,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 100,
       "comment": ""
     },
@@ -11599,7 +11167,7 @@
       "rare": 1,
       "obj_vnum": 3003,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 100,
       "comment": ""
     },
@@ -11620,7 +11188,7 @@
       "rare": 1,
       "obj_vnum": 3002,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 100,
       "comment": ""
     },
@@ -11629,7 +11197,7 @@
       "rare": 1,
       "obj_vnum": 3003,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 100,
       "comment": ""
     },
@@ -11638,7 +11206,7 @@
       "rare": 1,
       "obj_vnum": 3004,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 100,
       "comment": ""
     },
@@ -11659,7 +11227,7 @@
       "rare": 1,
       "obj_vnum": 3003,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 100,
       "comment": ""
     },
@@ -11668,7 +11236,7 @@
       "rare": 1,
       "obj_vnum": 3004,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 100,
       "comment": ""
     },
@@ -11689,7 +11257,7 @@
       "rare": 1,
       "obj_vnum": 3003,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 100,
       "comment": ""
     },
@@ -11698,7 +11266,7 @@
       "rare": 1,
       "obj_vnum": 3004,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 100,
       "comment": ""
     },
@@ -11852,7 +11420,7 @@
       "rare": 1,
       "obj_vnum": 3352,
       "color": "white",
-      "level": 20,
+      "level": -1,
       "limit": 100,
       "comment": "standard issue mace"
     },
@@ -11861,7 +11429,7 @@
       "rare": 1,
       "obj_vnum": 3366,
       "color": "white",
-      "level": 20,
+      "level": -1,
       "limit": 100,
       "comment": "bardiche"
     },
@@ -11870,88 +11438,7 @@
       "rare": 1,
       "obj_vnum": 3367,
       "color": "white",
-      "level": 20,
-      "limit": 100,
-      "comment": "large club"
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3352,
-      "color": "white",
-      "level": 15,
-      "limit": 100,
-      "comment": "standard issue mace"
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3366,
-      "color": "white",
-      "level": 15,
-      "limit": 100,
-      "comment": "bardiche"
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3367,
-      "color": "white",
-      "level": 15,
-      "limit": 100,
-      "comment": "large club"
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3352,
-      "color": "white",
-      "level": 10,
-      "limit": 100,
-      "comment": "standard issue mace"
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3366,
-      "color": "white",
-      "level": 10,
-      "limit": 100,
-      "comment": "bardiche"
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3367,
-      "color": "white",
-      "level": 10,
-      "limit": 100,
-      "comment": "large club"
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3352,
-      "color": "white",
-      "level": 5,
-      "limit": 100,
-      "comment": "standard issue mace"
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3366,
-      "color": "white",
-      "level": 5,
-      "limit": 100,
-      "comment": "bardiche"
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3367,
-      "color": "white",
-      "level": 5,
+      "level": -1,
       "limit": 100,
       "comment": "large club"
     },
@@ -12396,7 +11883,7 @@
       "rare": 1,
       "obj_vnum": 3100,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 500,
       "comment": "A cup of tea"
     },
@@ -12405,7 +11892,7 @@
       "rare": 1,
       "obj_vnum": 3101,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 500,
       "comment": "A cup of coffee"
     },
@@ -12414,7 +11901,7 @@
       "rare": 1,
       "obj_vnum": 3102,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 500,
       "comment": "A cup of water"
     },
@@ -12791,7 +12278,7 @@
       "rare": 1,
       "obj_vnum": 3002,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 100,
       "comment": ""
     },
@@ -12800,7 +12287,7 @@
       "rare": 1,
       "obj_vnum": 3003,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 100,
       "comment": ""
     },
@@ -12809,7 +12296,7 @@
       "rare": 1,
       "obj_vnum": 3004,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 100,
       "comment": ""
     },
@@ -12870,7 +12357,7 @@
       "rare": 1,
       "obj_vnum": 3373,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 0,
       "comment": "citizen notebook"
     },
@@ -12879,7 +12366,7 @@
       "rare": 1,
       "obj_vnum": 3391,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 0,
       "comment": "marsh map"
     },
@@ -12888,7 +12375,7 @@
       "rare": 1,
       "obj_vnum": 3392,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 0,
       "comment": "plateau map"
     },
@@ -12897,7 +12384,7 @@
       "rare": 1,
       "obj_vnum": 3393,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 0,
       "comment": "Seching map"
     },
@@ -12906,7 +12393,7 @@
       "rare": 1,
       "obj_vnum": 3394,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 0,
       "comment": "westforest map"
     },
@@ -12915,7 +12402,7 @@
       "rare": 1,
       "obj_vnum": 3395,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 0,
       "comment": "eastforest map"
     },
@@ -12924,7 +12411,7 @@
       "rare": 1,
       "obj_vnum": 3396,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 0,
       "comment": "northplain map"
     },
@@ -12933,7 +12420,7 @@
       "rare": 1,
       "obj_vnum": 3397,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 0,
       "comment": "river map"
     },
@@ -12942,7 +12429,7 @@
       "rare": 1,
       "obj_vnum": 3398,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 0,
       "comment": "laker map"
     },
@@ -12951,7 +12438,7 @@
       "rare": 1,
       "obj_vnum": 3399,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 0,
       "comment": "icemountain map"
     },
@@ -12960,7 +12447,7 @@
       "rare": 1,
       "obj_vnum": 3370,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 0,
       "comment": "highmountain map"
     },
@@ -12969,7 +12456,7 @@
       "rare": 1,
       "obj_vnum": 3369,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 0,
       "comment": "mountain map"
     },
@@ -12978,7 +12465,7 @@
       "rare": 1,
       "obj_vnum": 3368,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 0,
       "comment": "desert map"
     },
@@ -12987,7 +12474,7 @@
       "rare": 1,
       "obj_vnum": 3349,
       "color": null,
-      "level": null,
+      "level": 5,
       "limit": 0,
       "comment": "Hazaryae map"
     },
