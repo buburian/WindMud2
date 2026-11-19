@@ -15,7 +15,7 @@ import heapq
 import itertools
 import logging
 
-from . import act, behavior, combat, damage, meals, scripts, specials  # 坑：combat 會 import 回來，要用「模組.名字」，不能 from .combat import hit
+from . import act, affects, behavior, combat, damage, meals, scripts, specials  # 坑：combat 會 import 回來，要用「模組.名字」，不能 from .combat import hit
 from .act import notify
 from .characters import Position, characters
 from .clock import cancel, every
@@ -129,7 +129,8 @@ class Fight:
             if hand >= len(hands):          # 打架中脫掉了副手武器：這隻手不打了（要在 hit() 前面，不然會用空手多打一下）
                 self.armed[ch] = min(self.armed.get(ch, 0), hand)
                 continue
-            hit(ch, victim, hand)
+            if not affects.controlled(ch, affects.HELD):   # 暈、凍住：不能出手，時間照排（設計文件 §2.6）
+                hit(ch, victim, hand)
             # 坑：浮點數一直加會有誤差（1.6 加三次是 4.800000000000001），剛好在回合邊界的出手會排錯回合，所以取到小數 9 位
             heapq.heappush(self.queue, (round(t + ROUND_TICKS / attacks(ch)[hand], 9), seq, hand, ch))
 

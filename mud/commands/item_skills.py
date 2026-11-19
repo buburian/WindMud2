@@ -14,7 +14,7 @@ from ..act import TO_CHAR, TO_ROOM, act
 from ..area import POTION_ITEM_TYPE, SCROLL_ITEM_TYPE, STAFF_ITEM_TYPE, WAND_ITEM_TYPE
 from ..characters import characters, find_in_room, in_room
 from ..npcs import Npc
-from .combat import protected
+from .combat import SUMMONED, protected
 from .skills import engage
 
 HOLD = "hold"                               # 魔杖、魔棒要拿在這個位置（inventory.SLOTS）
@@ -37,7 +37,7 @@ def too_low(ch, obj):
 
 def default_target(ch, skill):
     """沒寫對象時（使用者定的）：增益對自己；傷害打架中是對手（還在同一間房），不然是 None（要問）。"""
-    if skill.kind == "buff":
+    if skills.friendly(skill):
         return ch
     victim = ch.fighting
     return victim if victim in characters and victim.room is ch.room else None
@@ -59,12 +59,15 @@ def plan(ch, obj, victim, ask):
         if skill.target == "self" and target is not ch:
             ch.send(skills.SELF_ONLY + "\n")
             return None
-        if skill.kind == "buff" and isinstance(target, Npc):
+        if skills.friendly(skill) and isinstance(target, Npc):
             ch.send(NOT_FOR_MOBS.format(skill.name) + "\n")
             return None
-        if skill.kind != "buff":
+        if not skills.friendly(skill):
             if not isinstance(target, Npc):
                 ch.send(NOT_PLAYERS + "\n")
+                return None
+            if target.master is not None:   # 召喚物（summons.py）
+                ch.send(SUMMONED + "\n")
                 return None
             if protected(ch, target):        # 安全區：說 C 版那句
                 return None
@@ -77,7 +80,7 @@ def cast(ch, pairs):
     for skill, target in pairs:
         if target not in characters or target.room is not ch.room:
             continue
-        if skill.kind != "buff":
+        if not skills.friendly(skill):
             engage(ch, target)
         skills.use(ch, skill, target, pay_cost=False)
 
@@ -226,10 +229,10 @@ def everyone(ch, staff):
         if skill.target == "self":          # 只能放自己的：只放自己
             pairs.append((skill, ch))
             continue
-        if skill.kind == "buff":
+        if skills.friendly(skill):
             pairs += [(skill, c) for c in [ch] + others if not isinstance(c, Npc)]
             continue
-        mobs = [c for c in others if isinstance(c, Npc)]
+        mobs = [c for c in others if isinstance(c, Npc) and c.master is None]     # 召喚物不打
         if mobs and protected(ch, mobs[0]):
             return None
         pairs += [(skill, c) for c in mobs]

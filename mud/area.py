@@ -1123,12 +1123,14 @@ def skill_slots(item_type):
 def check_skill_item(where, item_type, values, problems):
     """會放技能的物品（設計文件 §3.8，使用者定的）：技能的位置寫技能的 key（"" 是沒有），至少要寫一個（沒寫的用了沒作用）；
     魔杖、魔棒的第 2、3 個（最多幾次、剩幾次）是 0 以上的整數。法術還沒有對應技能的物品先不要放進區域檔。
+    被動技能不用放，不能寫。
     """
     from .skills import SKILLS              # 坑：skills 會 import 很多模組，area 是最底層，在函式裡才 import
+    usable = [k for k, s in SKILLS.items() if s.kind != "passive"]
     slots = skill_slots(item_type)
     for i in slots:
-        if values[i] != "" and values[i] not in SKILLS:
-            problems.append(f"{where}的 values 第 {i + 1} 個要寫技能的 key（{'、'.join(SKILLS)}）或 \"\"，不能是 {values[i]!r}")
+        if values[i] != "" and values[i] not in usable:
+            problems.append(f"{where}的 values 第 {i + 1} 個要寫技能的 key（{'、'.join(usable)}）或 \"\"，不能是 {values[i]!r}")
     if all(values[i] == "" for i in slots):
         problems.append(f"{where}沒有寫技能（values 第 {'4' if item_type in CHARGED_ITEM_TYPES else '2～4'} 個），用了沒作用")
     if item_type in CHARGED_ITEM_TYPES:

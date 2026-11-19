@@ -106,9 +106,8 @@ def own_skill(p):
 
 
 def test_skills_match_mud_design(balance):
-    # 傷害技能照 balance.py；imm 的技能、增益技能（餽贈）是我們自己加的（balance.py 沒有）
-    assert {s["id"] for s in balance.SKILLS.values()} == {s.id for s in skills.SKILLS.values()
-                                                         if s.kind == "damage" and not s.imm_only}
+    # 建立角色就會的傷害技能照 balance.py；路線的技能照 skill_tree.py（test_skill_tree.py），imm 的技能、增益技能（餽贈）是我們自己加的
+    assert {s["id"] for s in balance.SKILLS.values()} == {s.id for s in skills.SKILLS.values() if s.starter}
     for name, want in balance.SKILLS.items():
         s = skills.SKILLS[want["id"]]
         assert s.name == name

@@ -38,6 +38,7 @@ class Character:
         self.carrying = []                  # 背包裡的物品（objects.Obj），新的在前（照 C 版）；身上穿的不在這裡
         self.equipment = {}                 # 穿在身上的：部位（inventory.SLOTS 的代號）→ Obj。生物不穿裝備（使用者說的）
         self.affects = []                   # 身上的效果（affects.Affect），放上去的順序
+        self.final = {}                     # 效果、被動最後再乘的倍率（stats.FINAL_KEYS → 倍數）：重算屬性時一起算，damage 打的時候乘
         self.gold = 0                       # 金幣：玩家存進存檔；生物只有別人 give 給牠的（不存，死掉時跟掉落的金幣一起放進屍體）
         self.arrived = 0                    # 進現在這個房間的先後（arrive()）：好幾個生物的腳本照這個順序跑
         self.meals = {}                     # 吃喝之後還在等的（meals.py）：{"eat" 或 "drink": [還要幾秒, buff 技能]}，不存檔

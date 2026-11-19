@@ -351,11 +351,28 @@ def recompute(player):
         for key, n in gear_bonus(player.guild, obj).items():
             panel[key] += n
     add_affects(panel, player)
+    passives(panel, player)
     player.panel = panel
 
 
 FAERIE_FIRE_RATIO = 0.9                     # 粉光（設計文件 §2.6，使用者 2026-11-17 同意）：閃躲、AC 乘這個
 FAERIE_FIRE_KEYS = ("dodge", "ac")
+DMG_POINT_KEYS = ("dmg_phys", "dmg_spell", "dmg_dragon")    # 倍率寫 "dmg"（衰弱術的傷害點數）：每一種傷害點數一起乘
+# 最後再乘的倍率（設計文件 §2.6）：不是 panel 的屬性，存在 ch.final，damage 打的時候乘（damage.final()）。
+# 攻速（每回合出手次數）、副手的出手次數、命中率（失明）、平砍傷害（重武精通，技能也是平砍 × 比率所以一起算）
+FINAL_KEYS = ("aspd", "off_attacks", "hit_mult", "dmg_out")
+
+
+def multiply(panel, final, key, x):
+    """一個倍率（效果的 mult、被動技能）乘上去：FINAL_KEYS 記在 final，"dmg" 乘每一種傷害點數，其他乘 panel 的那一項。"""
+    if key in FINAL_KEYS:
+        final[key] = final.get(key, 1.0) * x
+    elif key == "dmg":
+        for k in DMG_POINT_KEYS:
+            if k in panel:
+                panel[k] *= x
+    else:
+        panel[key] *= x
 
 
 def add_affects(panel, ch):
@@ -363,6 +380,7 @@ def add_affects(panel, ch):
 
     主屬性照 primary_bundle 換成次要屬性，用**被放的人自己的等級**（使用者定的；裝備是用裝備的等級）。
     生物沒有公會，主屬性的加減不算。負重、MP／MV 上限、55 上限只看自己的主屬性，不受影響（設計文件 §2.6）。
+    加減完再乘效果的倍率（Affect.mult，例如弱點標記 AC ×0.5），最後再乘的那幾種記在 ch.final（multiply()）。
     最後看旗標：有粉光（效果的或生物天生的）閃躲、AC 乘 FAERIE_FIRE_RATIO，裝備、效果都加減完再乘。法術抗性不另外減（AC 本來就擋法術）。
     """
     from . import affects                   # 坑：affects 會 import 這個模組，在函式裡才 import
@@ -375,9 +393,27 @@ def add_affects(panel, ch):
             elif guild is not None:
                 for s, units in primary_bundle(guild, key, ch.level).items():
                     panel[s] += n * units
+    ch.final = {}
+    for a in ch.affects:
+        for key, x in a.mult.items():
+            multiply(panel, ch.final, key, x)
     if affects.has_flag(ch, AffectFlag.FAERIE_FIRE):
         for key in FAERIE_FIRE_KEYS:
             panel[key] *= FAERIE_FIRE_RATIO
+
+
+def passives(panel, player):
+    """學會的被動技能（設計文件 §2.6）：倍率乘在最後的值上（裝備、效果都算完）。條件（限定武器、副手）不合的沒有效果（skills.passives）。
+
+    盾牌精通（shield_ac）乘的是盾的 AC：多出來的加進 AC。穿脫裝備、學會技能都會從頭算（recompute），條件變了就跟著變。
+    """
+    from . import skills                    # 坑：skills 會 import 這個模組，在函式裡才 import
+    for skill in skills.passives(player):
+        for key, x in skill.passive.items():
+            if key == "shield_ac":
+                panel["ac"] += player.equipment["offhand"].base.get("ac", 0.0) * (x - 1.0)
+            else:
+                multiply(panel, player.final, key, x)
 
 
 def refresh(player):

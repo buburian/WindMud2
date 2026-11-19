@@ -5,7 +5,7 @@
 """
 import random
 
-from . import affects, damage, death, light, objects, stats, stealth
+from . import affects, damage, death, light, objects, protect, stats, stealth
 from .area import ATTACK_NAMES, AffectFlag
 from .act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, compose
 from .npcs import Npc
@@ -61,15 +61,37 @@ def land(battle, ch, victim, dmg, crit, attack=BARE_HAND, named=False):
 
     attack：用什麼打的（訊息裡的「使用直拳」「使用重擊」）。玩家一定寫；生物只有 named（special 的招式）才寫。
     出手或被打都現形（使用者選的，有沒有打中都算）；聖光減一半之後才扣護盾、扣 HP，訊息寫的也是減完的。
+    有人守護他（protect.py）：聖光算完以後，幾成改扣保護的人，訊息寫的是他自己受的。
     """
     battle.tell(stealth.reveal(ch) + stealth.reveal(victim))
     if affects.has_flag(victim, AffectFlag.SANCTUARY):
         dmg /= 2                                    # 聖光：被打的傷害減一半（照 C 版，使用者定的）
+    dmg, covered = protect.split(victim, dmg)       # 守護：幾成改扣保護的人（設計文件 §2.6）
     taken, broken = affects.absorb(victim, dmg)     # 先扣護盾，扣完才扣 HP（使用者定的）
     victim.hp -= dmg - taken
     for to, fmt in messages(ch, victim, dmg, crit, attack, taken, named):
         battle.tell(compose(fmt, ch, victim, to=to))
     battle.tell(affects.broken_messages(victim, broken))
+    protect.cover(battle, ch, victim, covered)
+    if victim.hp > 0:
+        return False
+    slain(battle, ch, victim)
+    return True
+
+
+def burn_all(battle, ch, victim, a, dmg, fmt):
+    """連動「爆炎引爆」：victim 身上的效果 a 剩下的傷害一次扣完（跟持續扣血一樣：聖光、守護、護盾都算），訊息「$n身上的【燃燒】…(30)」。
+    回傳 victim 死了沒（死了算 ch 打死的）。
+    """
+    if affects.has_flag(victim, AffectFlag.SANCTUARY):
+        dmg /= 2
+    dmg, covered = protect.split(victim, dmg)
+    taken, broken = affects.absorb(victim, dmg)
+    victim.hp -= dmg - taken
+    tail = damage_tail(dmg, taken)
+    battle.tell(compose(fmt + tail, victim, t=a.name, to=TO_CHAR) + compose(fmt + tail, victim, t=a.name, to=TO_ROOM))
+    battle.tell(affects.broken_messages(victim, broken))
+    protect.cover(battle, ch, victim, covered)
     if victim.hp > 0:
         return False
     slain(battle, ch, victim)
@@ -82,8 +104,10 @@ def slain(out, killer, victim):
     killer 是打死他的人：打出最後一下的；被持續扣血扣死的是他正在打的對手，沒在打架是 None（誰都不給經驗）。
     """
     out.tell(compose(DEAD_ROOM, victim, to=TO_ROOM))
+    if isinstance(killer, Npc) and killer.master is not None:
+        killer = killer.master              # 召喚物打死的：經驗、掉落算主人的（設計文件 §2.6）
     if isinstance(victim, Npc):
-        if isinstance(killer, Player):
+        if isinstance(killer, Player) and victim.master is None:     # 召喚物被打死不給經驗
             reward(out, killer, victim)
         corpse = death.die(victim, killer=killer)
         if (isinstance(killer, Player) and corpse is not None and corpse in killer.room.contents

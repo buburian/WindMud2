@@ -27,6 +27,8 @@ class Npc(Character):
         self.drops = []                     # 掉落表（區域檔的 drops，obj_vnum 換成遊戲號碼）：死掉時 objects.make_corpse() 照它骰
         # special（specials.py）：區域檔的名字和兩個倍率，倍率照存（null 用的時候才換成預設的 1.8、0.3）
         self.special = self.special_ratio = self.poison_ratio = None
+        # 召喚物（summons.py）：主人、哪個技能叫的、還剩幾個 tick；區域檔的生物 master 是 None
+        self.master, self.summon_source, self.summon_ticks = None, None, 0
         self.unnoticed = {}                 # 半身人的「不起眼」骰過的玩家 → (那時他的 arrived, 不打)：他離開這間房 arrived 就變了（behavior.py）
         # 腳本（scripts.py）：script 是 scripts.Script；vars 是牠身上的變數（死掉就沒了）
         self.script, self.timer, self.timer_left, self.waiting, self.vars = None, None, 0, 0, {}

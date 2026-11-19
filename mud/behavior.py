@@ -6,7 +6,7 @@
 """
 import random
 
-from . import fight, light, objects, specials, stats
+from . import affects, fight, light, objects, specials, stats
 from .act import TO_ROOM, act, gathering
 from .area import DIRECTIONS, ActFlag, RoomFlag
 from .characters import Position, characters
@@ -125,6 +125,7 @@ def wimpy(battle):
     from .commands import combat as combat_commands
     for npc in list(battle.members):
         if (not isinstance(npc, Npc) or ActFlag.WIMPY not in npc.act or npc.fight is not battle or not npc.panel
+                or affects.controlled(npc, affects.HELD)    # 暈、凍住：逃不了
                 or npc.hp >= npc.panel["hp"] / 2 or rng.random() >= WIMPY_CHANCE):
             continue
         ways = exits(npc)

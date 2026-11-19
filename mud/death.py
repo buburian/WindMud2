@@ -6,7 +6,7 @@
 """
 import random
 
-from . import affects, fight, meals, objects, scripts, zones   # 坑：fight → combat → death → fight 繞一圈，所以用 fight.stop_fighting，不 from import
+from . import affects, fight, meals, objects, scripts, summons, zones   # 坑：fight → combat → death → fight 繞一圈，所以用 fight.stop_fighting，不 from import
 from .characters import Position, characters
 
 
@@ -23,7 +23,12 @@ def die(npc, rng=random, killer=None):
 
     拿掉以後重置的 limit 數不到牠，下次重置會再放一隻（照 C 版）。
     倒下之前先跑牠腳本的 on_death(killer)（使用者定的：還在房間裡，留遺言做得到）；腳本讓牠消失了（destroy）就不留屍體、回傳 None。
+    召喚物（summons.py）被打死不留屍體、不掉東西，回傳 None。
     """
+    if npc.master is not None:
+        stop_all(npc)
+        characters.remove(npc)
+        return None
     scripts.fire_owner(npc, "on_death", None, killer)
     if npc not in characters:
         return None
@@ -37,6 +42,7 @@ def player_dies(player):
     """玩家死掉：打他的人和他停手，「死掉後不在」的效果拿掉，回「家」（zones.home：起始房間，學生是學院的第一間），HP 剩 1、站著（使用者選的）。"""
     stop_all(player)
     affects.on_death(player)
+    summons.release(player)                 # 主人死掉：召喚物消失
     player.room = zones.home(player)
     player.hp = 1.0
     player.position = Position.STANDING

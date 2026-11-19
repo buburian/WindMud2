@@ -54,7 +54,8 @@ def fight(battle):
         if due is None or battle.ticks < due or npc.fight is not battle:
             continue
         battle.special_at[npc] = battle.ticks + SPECIAL_TICKS
-        use(battle, npc)
+        if not affects.controlled(npc, affects.MUTED):     # 暈、凍住、沉默：不能放 special，時間照排（設計文件 §2.6）
+            use(battle, npc)
 
 
 def use(battle, npc):

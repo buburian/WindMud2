@@ -2,7 +2,7 @@
 import logging
 import re
 
-from .. import affects, light, meals, objects, save, scripts, socials, stats, terrain, weather, zones
+from .. import affects, light, meals, objects, save, scripts, socials, stats, summons, terrain, weather, zones
 from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act, compose, notify
 from ..area import DIRECTIONS, PASSPROOF_LOCKS, REVERSE, AffectFlag, MobTier, RoomFlag
 from ..characters import SEX_FEMALE, SEX_MALE, Position, arrive, characters, find_in_room, in_room
@@ -181,6 +181,9 @@ LOOK_POSITIONS = {
 }
 
 
+HELD = "你現在動彈不得。"                     # 暈、凍住的時候走路、逃跑、用技能
+
+
 def move(ch, direction, leave=terrain.WALK_AWAY):
     """往 direction 走。leave 是原本房間的人看到的那句（flee 換成「逃竄了」；從水裡到水裡照常走路換成游泳，terrain.leave_text()）。
 
@@ -188,6 +191,9 @@ def move(ch, direction, leave=terrain.WALK_AWAY):
     走進去的房間：有飛行是「飛了過來」、可游泳的水是「游了過來」；很暗看不到他的人收不到（照 C 版）。
     門關著過不去；有通透（穿牆術）的穿得過，法術穿不過的門除外（照 C 版）。
     """
+    if affects.controlled(ch, affects.HELD):     # 暈、凍住：不能走（設計文件 §2.6）
+        ch.send(HELD + "\n")
+        return
     vnum = ch.room.exits.get(direction)
     door = ch.room.doors.get(direction)
     if door is not None and door.closed:
@@ -216,6 +222,8 @@ def move(ch, direction, leave=terrain.WALK_AWAY):
             notify(reader, text)
     ch.send(look(ch))
     scripts.fire(to, "on_enter", ch, ch, REVERSE[direction])   # 腳本的 on_enter(actor, from)：from 是從哪個方向進來
+    if not isinstance(ch, Npc):
+        summons.follow(ch, direction)       # 召喚物跟著走
 
 
 def walk(direction):

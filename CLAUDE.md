@@ -50,6 +50,8 @@ uv run python -m mud.areaconvert 舊.json builder_area/新.json   # 舊區域（
   一回合合成一段、打死生物、經驗值和升級、玩家被打死、存檔的經驗值（`fight.TICK_SECONDS` 改很大、自己呼叫 `tick()`，亂數換成 `Always`）。
   `tests/test_skills.py` 把技能的資料、消耗、說明的數字、技能那一下跟 balance.py 比對，也測 use 的每種拒絕（沒過不會開打）、開打、把旁邊的生物拉進來、訊息、冷卻、扣 MV／MP、打死、skills 指令
   （坑：`asyncio.run()` 結束時戰鬥會被收掉，開打和打指令要在同一個 `asyncio.run()` 裡）。
+  `tests/test_skill_tree.py` 把路線技能的資料跟 mud_design 的 `sim/skill_tree.py`（TREE、MECH、TAG）比對（`tests/skill_tree_loader.py` 唯讀載入，找不到就跳過）；還沒做的技能列在 `NOT_YET`，做好一種就拿掉。
+  `tests/test_skill_kinds.py` 測路線技能的機制（被動和條件、副手、只能開打前用、減弱的倍率和擲命中、補血、持續補血、吸血、打中後的減弱、倍率、效果種類、存檔、skills 的寬度、物品不能寫被動）。
   `tests/test_targets.py` 測 `find_in_room()`（名字開頭、`n.名字`、照 look 的順序、自己最後）。
   `tests/test_items.py` 測 get、drop、wear、remove、inventory、equipment、oload 的每種訊息和限制、背包和裝備的存檔；
   `tests/test_gear.py` 測裝備的屬性（跟 balance.py 的 `primary_bundle`、`apply_points` 比對）、手冊的負重／武器重量／攻擊方式表、武器傷害、雙持、打架中換武器、技能的武器。
@@ -520,7 +522,27 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
       **飛翔術、水中呼吸術**（`fly`、`breathe`，使用者定的）：帶 `AffectFlag.FLYING`、`GILLS` 的增益，1800 秒，要用程式加、不扣消耗、沒有冷卻，`off_message` 照 C 版。
       **NPC 直接呼叫 `skills.use(npc, SKILLS["gift"], 玩家)` 就能放**（不用學、不用在打架）。`skills` 指令的增益技能：那一行寫持續多久，做什麼放下一行（`system.wrap()`，不超過 79 格）。
       冷卻用 tick 數：世界每個 tick `skills.tick()` 減 1，所以實際等 5～6 秒。
-      `weapon_ok()`：有限用武器的技能，主手要拿那種武器（空手不行）；技能那一下用主手的武器。還沒做：學習、技能書、補血、打一群、怪物打架時用技能。
+      `weapon_ok()`：有限用武器的技能，主手要拿那種武器（空手不行）；技能那一下用主手的武器。`offhand_ok()`：`Skill.offhand` 是 `"shield"`（副手放護具）、`"dual"`（雙持）。
+      **路線技能**（mud_design 2026-11-19 的草案，規則在玩家角色手冊「路線技能」，數字照 `sim/skill_tree.py`，加在 `SKILLS` 最後面）：68 個和 21 個連動都做了（傷害、補血、增強、減弱、控制、保護、召喚、被動、打一群）（計畫分 6 步，`test_skill_tree.NOT_YET` 是還沒做的）。
+      **控制**（`kind` `"control"`，`Affect.control`：stun、freeze、silence、slow、blind，`affects.CONTROL_NAMES`）：`skills.control()` 只擲命中（`damage.hit_chance`），打中才 `apply_effect()`；
+      `hits` 不是 0 的（盾擊）走傷害那條路、打中後放 `onhit`。`apply_effect()` 管控制的規則：暈、凍住遇到 `affects.resisting()`（已經暈著、或結束後 `RESIST_TICKS` 6 秒的抵抗，`tick_one()` 放）沒有作用，首領時間減半。
+      `affects.HELD`（暈、凍住）擋 `Fight.round()` 的出手（時間照排）、`system.move()`、flee、wimpy；`MUTED`（再加沉默）擋 use 和 `specials.fight()`（時間照排）。`tests/test_skill_control.py` 測這些。
+      **打一群**（`target` `"group"`：`skills.enemies()` 房間裡看得到的生物；`"allies"`：`skills.allies()` 自己和同房間的玩家）：`commands/skills.group()` 不看名字，打一群的每一隻都 `engage()`；
+      `skills.use()` 的 victim 可以是名單，扣血、補血 × `share(n)`（每多一隻總量 +50% 再平分），其他效果完整；控制每隻各自擲。`tests/test_skill_group.py` 測這些。
+      **保護**（`kind` `"protect"`）：挑釁 `skills.taunt()`（`fight.start_fight(牠, 你)` 改打你、被挑釁的 affect）；守護、不倒之盾（`Skill.guard`）在 `protect.py`：
+      `guards` 只在記憶體（不存檔），`combat.land()`、`affects.pulse()` 聖光算完先 `protect.split()`，自己的訊息送完再 `cover()`（先扣保護的人的護盾、可以扣死）；
+      `active()` 順便拿掉離開房間、離線、死掉、時間到的；`skills.tick()` 呼叫 `protect.tick()`。`tests/test_skill_protect.py` 測這些。
+      **新增會扣 HP 的地方也要先 `protect.split()`**（跟 absorb 一樣）。
+      **召喚**（`kind` `"summon"`，`Skill.summon`：tier、below、duration）在 `summons.py`：程式做的 `Npc`（`npc.master`、`summon_source`、`summon_ticks`，`TYPES` 是長相），
+      `skills.tick()` 呼叫 `summons.tick()`（時間、主人離線、跟過去、打主人的對手）；`system.move()` 走完 `follow()`；`death.die()` 召喚物不留屍體；
+      `death.player_dies()` `release()`；`combat.slain()` 召喚物打死的算主人的；`commands.combat.attackable()`（kill、use、物品）擋玩家和召喚物；`skills.enemies()` 不算牠。`tests/test_skill_summon.py` 測這些。
+      **連動**（21 個，規則在玩家角色手冊「連動」）都在 `combos.py`：比率 `RATIOS`、`ratio()`，其他每個連動一個函式，`skills.strike()` 打之前看一次（比率、多打、控制多幾回合、在不在燒、要不要跳），
+      打中一下 `on_hit()`、一隻打完 `after_hits()`；補血、護盾、守護、絕命刺、持續扣血扣死（`affects.pulse` → `undead()`）在各自的地方呼叫。看效果種類用 `affects.has_tag()`；
+      「你放的」看 `Affect.by`（誰放的，`make_affect(skill, by)`、`dot_affect(..., by)`；**不存檔**，`affects.to_data()` 跳過它）。`tests/test_skill_combos.py` 一個連動一個測試。
+      `kind` 多了 `"heal"`（`heal()`：（法術傷害點數 ＋ 主手武器在下限～上限取的值）× ratio、會爆擊、不擲命中；`hot` 是持續補血，放的時候算好每跳）、`"passive"`（`Skill.passive` 是倍率，`stats.passives()` 在 `recompute()` 最後乘，條件不合沒效果；
+      `learn()`、`forget()` 會 `affects.changed()`，所以學了馬上有效）。`friendly()`（補血、增益）是放在自己人身上、不開打的那種：use、物品放技能都用它。
+      減益有 `dot` 的（毒刃）要擲命中：每跳 ＝ 這一下 × ratio（`dot_affect()` 沒寫 ratio 是 1）；只改倍率的一定放得上去（mud_design 定的）。`lifesteal`（`drain()`）、`opener`（只能開打前用，use 擋）、`onhit`（打中後放的效果）、
+      `tag`（效果種類，連動用；`skills.tag()`，`affects.has_tag()`）。被動技能不能寫進會放技能的物品（`area.check_skill_item()`）。還沒做：學習（mud_design 778eb7f 定了，見 `todo/`）、技能書、怪物打架時用技能。
     - 坑：`fight` → `combat` → `death` → `fight` 繞一圈：這幾個模組互相都用 `from . import 模組`，不要 `from .fight import stop_fighting`、`from .combat import hit`。
     - 還沒做：C 版「快死了」「昏迷」（HP ≤ 0 就是死）。
   - **生物的行為**（設計文件 §4.11，使用者 2026-11-16 定案，規則在區域製作手冊 act、special）：
@@ -543,7 +565,9 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     生物沒有公會不算；負重、MP／MV 上限、55 上限只看自己的主屬性）、`periodic`（hp／mp／mv 每 `AFFECT_PULSE_TICKS` 3 加減固定量）、
     `periodic_pct`（每跳一次加減**當時上限**的幾成，例如餽贈的 `{"hp": 0.10}`；扣 HP 的也算矮人的堅韌、也會扣死，`drains_hp()`）、
     `flags`（`area.AffectFlag`，有作用的見 `AffectFlag`（`terrain.py`、`stealth.py`…）；`AFFECT_FLAG_NAMES` 跟手冊比對）、`keep_on_death`、`off_message`（有寫才用，沒寫是共用的 `affects.off_message()`：「你身上的【名字】消失了。」，使用者要的）、
-    **護盾** `shield_pct`（HP 上限的幾倍，使用者 2026-11-06 定的效果，名字是我取的「護盾」）和 `shield`（還剩幾點，`add()` 照當時的上限算，覆蓋就是回到滿的）。
+    **護盾** `shield_pct`（HP 上限的幾倍，使用者 2026-11-06 定的效果，名字是我取的「護盾」）和 `shield`（還剩幾點，`add()` 照當時的上限算，覆蓋就是回到滿的）、
+    `mult`（倍率，設計文件 §2.6：panel 的代號、`"dmg"`（每一種傷害點數）、`stats.FINAL_KEYS`；`stats.multiply()` 在加減完以後乘，FINAL_KEYS 記在 `ch.final`，`damage.final()` 打的時候乘：
+    `aspd` 每回合出手次數、`off_attacks` 副手出手次數、`hit_mult` 命中率、`dmg_out` 平砍傷害）、`tag`（效果種類，空的是 name）。
     扣 HP 的地方只有兩個，都先 `affects.absorb()`（先放的先扣，扣光的拿掉）：`combat.land()`（平砍、技能；訊息加「（吸收 N）」`ABSORBED`）、
     `affects.pulse()`（持續扣血）。被打破的訊息 `broken_messages()` 放進同一段。**新增會扣 HP 的地方也要先 absorb**。
     效果變了就 `changed()`：從頭算（玩家 `stats.recompute`、生物 `npcs.recompute`），HP／MP／MV 夾在新上限（`stats.clamp`，上限變高不補）。

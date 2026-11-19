@@ -3,6 +3,9 @@
 一個效果（Affect）可以同時有三種作用：
 - 暫時加減屬性（applies）：次要屬性加減，跟裝備一樣算進 panel（stats.recompute、npcs.recompute），打架就用得到。
   主屬性照被放的人自己的等級換成次要屬性（使用者定的，stats.add_affects）；生物沒有公會，不算。
+- 屬性的倍率（mult，設計文件 §2.6：弱點標記 AC ×0.5、變慢 攻速 ×0.85…）：加減完再乘（stats.multiply）。
+- 控制（control，設計文件 §2.6 控制類）：暈、凍住不能出手、不能走、不能逃、不能用技能和 special；沉默不能用技能和 special。
+  暈、凍住結束後 RESIST_TICKS 秒內不會再被暈、凍住（skills.apply_effect 看 resisting()）。
 - 持續加減 HP／MP／MV（periodic 固定量、periodic_pct 上限的幾成）：每 AFFECT_PULSE_TICKS（3）tick 跳一次，從放下去開始數，放下去那一刻不跳。
   HP 扣到 0 就死（使用者定的），跟被打死同一套（combat.slain）。
 - 旗標（flags，area.AffectFlag）：哪些有作用寫在 AffectFlag（飛行、水中呼吸、隱形、藏匿、偵測、粉光、通透、聖光）。
@@ -13,9 +16,9 @@
 坑：combat → death → zones → affects → combat 繞一圈，所以 combat 用 from . import。
 """
 import math
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field, fields
 
-from . import act, combat, npcs, stats
+from . import act, combat, combos, npcs, protect, stats
 from .act import TO_CHAR, TO_ROOM, compose, notify
 from .area import AFFECT_FLAG_NAMES, AffectFlag
 from .characters import characters
@@ -39,6 +42,10 @@ class Affect:
     shield_pct: float = 0.0                 # 護盾：HP 上限的幾倍（1.2 是 120%）；0 是沒有護盾
     shield: float = 0.0                     # 護盾還剩幾點：add() 放下去時算，被打就扣（absorb）
     hurt: str = ""                          # 持續扣 HP 跳的時候的訊息動詞（「燒傷」：你被【燃燒】燒傷了.(6)）；空的不說
+    mult: dict = field(default_factory=dict)    # 屬性的倍率：panel 的代號、"dmg"（全部傷害點數）或 stats.FINAL_KEYS → 乘多少（0.5 是一半）
+    tag: str = ""                           # 效果種類（連動用，設計文件 §2.6：火球、引燃都是「燃燒」）；空的是 name
+    by: object = field(default=None, compare=False, repr=False)   # 誰放的（角色，連動用：挑釁盾擊、死者為僕）；不存檔
+    control: str = ""                       # 控制（CONTROL_NAMES）："stun" 暈、"freeze" 凍住、"silence" 沉默、"slow" 變慢、"blind" 失明；空的不是控制
     ticks: int = None                       # 還剩幾個 tick
     elapsed: int = 0                        # 放下去以後過了幾個 tick：決定什麼時候跳（不用剩下的 tick，矮人才不會亂）
 
@@ -73,6 +80,27 @@ def clear(ch):
 def has_flag(ch, flag):
     """ch 身上有沒有 flag（AffectFlag）：生物一直帶著的（區域檔的 affected_by），或身上的效果帶著的。"""
     return flag in getattr(ch, "affected_by", AffectFlag(0)) or any(flag in a.flags for a in ch.affects)
+
+
+CONTROL_NAMES = {"stun": "暈", "freeze": "凍住", "silence": "沉默", "slow": "變慢", "blind": "失明"}
+HELD = ("stun", "freeze")                   # 不能出手（平砍、技能、special）、不能走、不能逃；閃躲照常
+MUTED = ("stun", "freeze", "silence")       # 不能用技能、special
+RESIST_SOURCE, RESIST_TICKS = "resist", 6   # 暈、凍住結束後 6 秒內不會再被暈、凍住（設計文件 §2.6，不然冷卻 6 秒的影縛可以一直暈）
+
+
+def controlled(ch, kinds):
+    """ch 身上有沒有這幾種控制（HELD、MUTED）。"""
+    return any(a.control in kinds for a in ch.affects)
+
+
+def resisting(ch):
+    """ch 現在不會被暈、凍住：已經暈著或凍住（再暈沒有作用、不重算時間，mud_design 定的），或剛結束 6 秒內（抵抗）。"""
+    return controlled(ch, HELD) or any(a.source == RESIST_SOURCE for a in ch.affects)
+
+
+def has_tag(ch, tag):
+    """ch 身上有沒有這種效果（連動用，設計文件 §2.6）：看效果種類，不看是哪個技能、誰放的。"""
+    return any((a.tag or a.name) == tag for a in ch.affects)
 
 
 def changed(ch):
@@ -185,7 +213,10 @@ def tick_one(ch, out):
     if gone:
         changed(ch)
         for a in gone:
-            out.tell(compose(off_message(a), ch, to=TO_CHAR))
+            if a.source != RESIST_SOURCE:   # 抵抗結束不說
+                out.tell(compose(off_message(a), ch, to=TO_CHAR))
+        if any(a.control in HELD for a in gone):    # 暈、凍住結束：接著抵抗 6 秒
+            add(ch, Affect(source=RESIST_SOURCE, name="抵抗", duration=RESIST_TICKS))
 
 
 GAIN_COLOR, LOSS_COLOR = "{G", "{R"         # 效果跳的訊息：加的亮綠、扣的亮紅（使用者定的）
@@ -228,6 +259,7 @@ def pulse(ch, a, out):
         return False
     changes = []                            # 這一跳每種資源變了多少（change_text()），給開了 config +showbuff 的人看
     broke = []                              # 護盾被打破的那幾句：放在最後（跟戰鬥一樣，先說扣多少、再說破了）
+    covered = []                            # 有人守護他：改扣保護的人的（protect.split），自己的訊息送完再扣
     for key in PULSE_KEYS:
         if key not in a.periodic and key not in a.periodic_pct:
             continue
@@ -239,6 +271,8 @@ def pulse(ch, a, out):
         elif key == "hp":
             if has_flag(ch, AffectFlag.SANCTUARY):
                 n /= 2                      # 聖光：持續扣血也減一半（使用者定的），再扣護盾
+            left, covered = protect.split(ch, -n)
+            n = -left
             taken, broken = absorb(ch, -n)  # 持續扣血也先扣護盾（使用者選的：全部傷害）
             ch.hp = now + n + taken
             if a.hurt:                      # 跳的訊息（燃燒）：被燒的亮青、同房間的人不上色，跟戰鬥訊息一樣
@@ -253,22 +287,31 @@ def pulse(ch, a, out):
             changes.append(change_text(key, getattr(ch, key) - now))    # 實際扣到的（到 0 為止）
     out.tell(pulse_messages(ch, a, changes))
     out.tell(broke)
+    protect.cover(out, ch.fighting, ch, covered)
     if drains_hp(a) and ch.hp <= 0:
         combat.slain(out, ch.fighting, ch)
+        combos.undead(a, ch)                # 連動「死者為僕」
         return True
     return False
 
 
+MULT_NAMES = {**stats.STAT_NAMES, "dmg": "傷害點數", "aspd": "攻速", "off_attacks": "副手出手次數",
+              "hit_mult": "命中率", "dmg_out": "平砍傷害", "shield_ac": "盾的 AC"}   # 倍率的名字：「AC -50%」「攻速 -15%」
+
+
 def parts(a, listing=False):
-    """這個效果做什麼，一樣一句：持續加減（「每 3 秒 HP -10」「每 3 秒 HP +上限的 10%」）、加減屬性（「命中 +10」）、旗標（「失明」）、護盾。
+    """這個效果做什麼，一樣一句：持續加減（「每 3 秒 HP -10」「每 3 秒 HP +上限的 10%」）、加減屬性（「命中 +10」）、倍率（「AC -50%」）、
+    旗標（「失明」）、護盾。
 
     護盾：身上的寫還剩幾點（score、mstat）；listing（skills 列技能，還沒放到誰身上）寫「護盾 HP 上限的 120%」。
     """
     every = AFFECT_PULSE_TICKS * TICK_SECONDS
-    return ([f"每 {every:g} 秒 {stats.STAT_NAMES[k]} {n:+g}" for k, n in a.periodic.items()]
+    return ([f"每 {every:g} 秒 {stats.STAT_NAMES[k]} {stats.shown(n):+d}" for k, n in a.periodic.items()]   # 放的時候算好的（回春術）有小數
             + [f"每 {every:g} 秒 {stats.STAT_NAMES[k]} {'+' if f >= 0 else '-'}上限的 {abs(f) * 100:g}%" for k, f in a.periodic_pct.items()]
             + [f"{stats.STAT_NAMES[k]} {n:+g}" for k, n in a.applies.items()]
+            + [f"{MULT_NAMES[k]} {(x - 1.0) * 100:+g}%" for k, x in a.mult.items()]
             + [AFFECT_FLAG_NAMES[f] for f in AffectFlag if f in a.flags]
+            + ([CONTROL_NAMES[a.control]] if a.control else [])
             + ([f"護盾 HP 上限的 {a.shield_pct * 100:g}%" if listing else f"護盾還剩 {stats.shown(a.shield)} 點"]
                if a.shield_pct else []))
 
@@ -279,8 +322,8 @@ def describe(ch, a):
 
 
 def to_data(a):
-    """存檔用：剩下的時間、跳到哪裡都存，登入後接著跑。"""
-    return {**asdict(a), "flags": int(a.flags)}
+    """存檔用：剩下的時間、跳到哪裡都存，登入後接著跑。誰放的（by）不存：是角色，存不進去。"""
+    return {**{f.name: getattr(a, f.name) for f in fields(a) if f.name != "by"}, "flags": int(a.flags)}
 
 
 def from_data(d):

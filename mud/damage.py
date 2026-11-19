@@ -47,11 +47,17 @@ def attacks_per_round(ch):
     return lo + (hi - lo) * eff(ch.panel.get("speed", 0.0), _ref(ch, "speed"), base)
 
 
+def final(ch, key):
+    """效果、被動技能最後再乘的倍率（stats.FINAL_KEYS：攻速、副手出手次數、命中率、平砍傷害），沒有是 1。"""
+    return getattr(ch, "final", {}).get(key, 1.0)
+
+
 def hit_chance(a, d):
+    """a 打 d 的命中率；失明這種（hit_mult）最後再乘。"""
     hit = a.panel.get("hit", 0.0)
     if hit <= 0:
         return 0.0
-    return HIT_K * hit / (HIT_K * hit + d.panel.get("dodge", 0.0))
+    return HIT_K * hit / (HIT_K * hit + d.panel.get("dodge", 0.0)) * final(a, "hit_mult")
 
 
 def reduction(d, kind):
@@ -68,7 +74,7 @@ def per_hit(a, d, kind, weapon_value=None, source=None):
     """
     wpn = a.panel.get("wpn", 0.0) if weapon_value is None else weapon_value
     points = a.panel.get(f"dmg_{source or kind}", 0.0) + wpn
-    return points * (1.0 - reduction(d, kind)) * LEVEL_MOD ** (a.level - d.level)
+    return points * (1.0 - reduction(d, kind)) * LEVEL_MOD ** (a.level - d.level) * final(a, "dmg_out")
 
 
 def attack_mix(ch):
@@ -125,12 +131,12 @@ def dual_wielding(ch):
 
 def hands(ch):
     """ch 每隻手每回合出手幾次，主手在前（fight.attacks 用它）：照攻速；雙持是 [A × 0.70, A × 0.3607…]；
-    沒有屬性的角色（測試直接建的）是 1 下。"""
+    變慢（aspd）兩隻手都乘、雙持精通（off_attacks）只乘副手。沒有屬性的角色（測試直接建的）是 1 下。"""
     if not getattr(ch, "panel", None):
         return [1.0]
-    a = attacks_per_round(ch)
+    a = attacks_per_round(ch) * final(ch, "aspd")
     if dual_wielding(ch):
-        return [a * DUAL_WIELD_MAIN, a * DUAL_OFFHAND]
+        return [a * DUAL_WIELD_MAIN, a * DUAL_OFFHAND * final(ch, "off_attacks")]
     return [a]
 
 

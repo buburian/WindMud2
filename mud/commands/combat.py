@@ -1,7 +1,7 @@
 """戰鬥類指令：kill 開打、flee 逃跑。"""
 import random
 
-from .. import damage, death, fight, stats, terrain
+from .. import affects, damage, death, fight, stats, terrain
 from ..act import TO_CHAR, act
 from ..area import RoomFlag
 from ..characters import find_in_room
@@ -26,10 +26,7 @@ def do_kill(ch, arg):
     if victim is None:
         ch.send("找不到你想攻擊的人。\n")
         return
-    if not isinstance(victim, Npc):
-        ch.send("你不可以攻擊玩家。\n")
-        return
-    if protected(ch, victim):
+    if not attackable(ch, victim) or protected(ch, victim):
         return
     if ch.fighting is not None:
         ch.send("你現在正在為自己的戰鬥努力著!!\n")
@@ -75,6 +72,20 @@ def consider_text(gap):
     return next((text for bound, text in CONSIDER if gap < bound), CONSIDER_DEAD)
 
 
+SUMMONED = "你不可以攻擊召喚物。"
+
+
+def attackable(ch, victim):
+    """victim 打得打不了（kill、use 的傷害技能、物品放的技能用）：玩家、召喚物（summons.py）不行，送那一句、回傳 False。"""
+    if not isinstance(victim, Npc):
+        ch.send("你不可以攻擊玩家。\n")
+        return False
+    if victim.master is not None:
+        ch.send(SUMMONED + "\n")
+        return False
+    return True
+
+
 def protected(ch, victim):
     """victim 在安全區（RoomFlag.SAFE）：不能對牠開打，送 C 版那句、回傳 True。kill 和 use 的傷害技能用（使用者要的）。
 
@@ -93,6 +104,9 @@ def do_flee(ch, arg):
     """
     if ch.fighting is None:
         ch.send("你在害怕什麼呢？你沒有在跟任何一個人戰鬥啊。\n")
+        return
+    if affects.controlled(ch, affects.HELD):     # 暈、凍住：不能逃（設計文件 §2.6）
+        ch.send(system.HELD + "\n")
         return
     waits = getattr(ch, "cooldowns", None)  # 生物沒有冷卻：不用等
     if waits and waits.get("flee"):
