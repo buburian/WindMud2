@@ -48,7 +48,8 @@ COMMANDS = [
     ("examine", items.do_examine, P.RESTING),   # ex；只看背包和身上的（照 C 版要醒著）
     ("flee", combat.do_flee, P.FIGHTING),       # f；戰鬥中逃跑（照 C 版的最低姿勢）
     ("give", items.do_give, P.RESTING),         # g 還是 get，gi 才是 give（照 C 版的最低姿勢）
-    ("config", system.do_config, P.DEAD),       # co；什麼姿勢都能用（照 C 版）
+    ("consider", combat.do_consider, P.RESTING),    # co、con（使用者 2026-11-19 要的：排在 config 前面）；照 C 版的最低姿勢
+    ("config", system.do_config, P.DEAD),       # conf（co、con 是 consider）；什麼姿勢都能用（照 C 版）
     ("!", system.do_again, P.DEAD),             # 重複上一個指令：command() 先換掉（again()），還沒打過指令才會跑到這裡
     ("recall", system.do_recall, P.STANDING),   # rec（re 還是 reply）；回到返回點，打架中、休息、睡覺不能用（使用者要的）
     ("/", system.do_recall, P.STANDING),        # recall 的另一個名字（照 C 版）
@@ -68,7 +69,6 @@ COMMANDS = [
     ("sell", shops.do_sell, P.STANDING),        # se
     ("value", shops.do_value, P.STANDING),      # v
     ("put", items.do_put, P.RESTING),           # p（照 C 版的最低姿勢）
-    ("consider", combat.do_consider, P.RESTING),    # cons（con 是 config；照 C 版的最低姿勢）
 ]
 
 # 管理員（imm）才找得到的指令，接在 COMMANDS 後面找，原本的縮寫都不受影響

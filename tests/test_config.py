@@ -47,7 +47,7 @@ def reply(p, line):
 
 
 def test_config_is_co():
-    assert commands.command_name("co") == "config"
+    assert commands.command_name("conf") == "config"
 
 
 def test_config_lists_the_settings(ming):
@@ -76,7 +76,7 @@ def test_config_colors(ming):
 def test_toggle_autoloot(ming):
     assert reply(ming, "config +autoloot") == "Autoloot 已設定成開啟。" and ming.autoloot is True
     assert reply(ming, "config -AutoLoot") == "Autoloot 已設定成關閉。" and ming.autoloot is False   # 不分大小寫
-    assert reply(ming, "co +autoloot") == "Autoloot 已設定成開啟。"
+    assert reply(ming, "conf +autoloot") == "Autoloot 已設定成開啟。"          # co、con 是 consider
 
 
 def test_toggle_showbuff(ming):

@@ -123,13 +123,16 @@ def character_fields(r, ch):
     store = ch.vars.setdefault(r.script.area, {}) if player else ch.vars
     fields = {
         "name": ch.name, "level": getattr(ch, "level", 1),
+        "gold": ch.gold,                    # 身上的金幣，只能看（使用者 2026-11-19 要的：執法者看買不買得起火把）
         "guild": str(ch.guild) if player and ch.guild else None,
         "race": str(ch.race) if player and ch.race else None,
         "vars": vars_of(store),
         "is_player": method(ch, lambda: player),
         "is_fighting": method(ch, lambda: ch.fighting is not None),     # 正在打架（照 C 版，生物打架時不打招呼、不做平常的動作）
-        "has_item": method(ch, lambda n: any(o.vnum == number(n) for o in ch.carrying)),
+        "has_item": method(ch, lambda n: any(o.vnum == number(n) for o, _ in carried(ch))),
         "wears_item": method(ch, lambda n: any(o.vnum == number(n) for o in ch.equipment.values())),
+        "has_item_type": method(ch, lambda t: any(o.item_type == item_type(t) for o, _ in carried(ch))),
+        "wears_item_type": method(ch, lambda t: any(o.item_type == item_type(t) for o in ch.equipment.values())),
         "has_affect": method(ch, lambda name: has_affect(ch, name)),
         "tell": method(ch, lambda t: deliver(ch, colorize_text(t))),
         "transfer": method(ch, lambda n: transfer(ch, n)),
@@ -231,12 +234,33 @@ def give_item(r, ch, n, level, color):
         act(GIVEN_SEEN, giver, ch, t=objects.short(obj), to=TO_NOTVICT)
 
 
+def item_type(t):
+    """腳本寫的物品種類：區域製作手冊 item_type 表的數字（例如照明用具 1，使用者 2026-11-19 要的：不要寫死號碼，之後有別的光源）。
+    表裡沒有的算腳本出錯。"""
+    from .area import ITEM_TYPE_NAMES
+    if isinstance(t, bool) or not isinstance(t, int) or t not in ITEM_TYPE_NAMES:
+        raise ScriptError(f"物品種類要寫 item_type 表裡的數字（例如照明用具 1），不能是 {lua_repr(t)}")
+    return t
+
+
+def carried(ch):
+    """背包裡的東西，連袋子裡的（容器裡的容器、關著的也算）都找（使用者 2026-11-19 要的）：[(東西, 它放在哪個清單)]。
+    一層一層找：背包最外層的在前，所以 take_item 先拿沒裝在袋子裡的。身上穿的不算（看 wears_item）。"""
+    found, layer = [], [(o, ch.carrying) for o in ch.carrying]
+    while layer:
+        found += layer
+        layer = [(x, o.contains) for o, _ in layer for x in o.contains]
+    return found
+
+
 def take_item(ch, n):
+    """從背包拿走一件（袋子裡的也算，跟 has_item 找的一樣）：拿到了回傳 True。"""
     vnum = number(n)
-    obj = next((o for o in ch.carrying if o.vnum == vnum), None)
-    if obj is None:
+    found = next(((o, where) for o, where in carried(ch) if o.vnum == vnum), None)
+    if found is None:
         return False
-    ch.carrying.remove(obj)
+    obj, where = found
+    where.remove(obj)
     return True
 
 

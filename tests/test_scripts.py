@@ -610,6 +610,16 @@ def test_actor_fields(tmp_path, later):
     assert room.vars == {"s": "Ming1physhumantrue", "m": "nilfalse"}
 
 
+def test_gold_is_read_only(tmp_path, later):
+    """actor.gold：身上的金幣（使用者 2026-11-19 要的），跟 level 一樣只能看。"""
+    code = 'function on_say(actor, text)\n  room.vars.g = actor.gold .. "/" .. me.gold\n  actor.gold = 999\nend'
+    room = build(tmp_path, {"m.lua": code}, mobs=[mob(101, "商人", "merchant", "m.lua")], resets=[M(101)])
+    ming = person("Ming")
+    ming.gold = 37
+    say(ming, "say 嗨")
+    assert room.vars["g"] == "37/0" and ming.gold == 37
+
+
 def test_is_fighting(tmp_path, later):
     code = 'function on_say(actor, text)\n  room.vars.f = tostring(actor:is_fighting()) .. tostring(me:is_fighting())\nend'
     room = build(tmp_path, {"m.lua": code}, mobs=[mob(101, "商人", "merchant", "m.lua")], resets=[M(101)])
@@ -666,6 +676,66 @@ def test_items_and_doors(tmp_path, later):
     assert room.vars["floor"] is True
     say(person("Hua"), "say 關")                                       # 商人的腳本被 Hua 觸發
     assert zones.world.rooms[101].doors == {} or True
+
+
+def test_items_in_bags(tmp_path, later):
+    """has_item、take_item 連背包裡的袋子（袋子裡的袋子、關著的）都找（使用者 2026-11-19 要的）；take_item 先拿沒裝在袋子裡的。"""
+    from mud import objects
+    from mud.area import ContainerFlag
+    code = ('function on_say(actor, text)\n'
+            '  if text == "拿" then room.vars.took = actor:take_item(105) end\n'
+            '  room.vars.has = actor:has_item(105)\nend')
+    bag = make_object_proto(106)
+    bag.update(short="袋子", keywords="bag 袋子", item_type=15, values=[100, 0, 0, 0])
+    room = build(tmp_path, {"m.lua": code}, mobs=[mob(101, "商人", "merchant", "m.lua")], resets=[M(101)],
+                 objects=[make_object_proto(105), bag])
+    ming = person("Ming")
+    outer, inner = objects.create(106, 1, None), objects.create(106, 1, None)
+    deep = objects.create(105, 1, None)
+    inner.contains.append(deep)
+    inner.container = ContainerFlag.CLOSED                                 # 關著的袋子也找得到
+    outer.contains.append(inner)
+    ming.carrying.append(outer)
+    say(ming, "say 嗨")
+    assert room.vars["has"] is True
+    loose = objects.create(105, 1, None)
+    ming.carrying.append(loose)
+    say(ming, "say 拿")                                                    # 先拿沒裝在袋子裡的
+    assert room.vars == {"took": True, "has": True} and loose not in ming.carrying and inner.contains == [deep]
+    say(ming, "say 拿")                                                    # 再拿袋子裡的袋子裡的
+    assert room.vars == {"took": True, "has": False} and inner.contains == [] and ming.carrying == [outer]
+    say(ming, "say 拿")
+    assert room.vars == {"took": False, "has": False}
+
+
+def test_item_types(tmp_path, later, caplog):
+    """has_item_type、wears_item_type（使用者 2026-11-19 要的）：背包（連袋子裡的）、身上有沒有這種物品；種類寫 item_type 表的數字。"""
+    from mud import objects
+    code = ('function on_say(actor, text)\n'
+            '  if text == "錯" then actor:has_item_type(7) end\n'
+            '  room.vars.t = tostring(actor:has_item_type(1)) .. tostring(actor:wears_item_type(1)) .. tostring(actor:has_item_type(13))\nend')
+    lamp = make_object_proto(107)
+    lamp.update(short="油燈", keywords="lamp 油燈", item_type=1, values=[0, 0, -1, 0])
+    bag = make_object_proto(106)
+    bag.update(short="袋子", keywords="bag 袋子", item_type=15, values=[100, 0, 0, 0])
+    room = build(tmp_path, {"m.lua": code}, mobs=[mob(101, "商人", "merchant", "m.lua")], resets=[M(101)],
+                 objects=[make_object_proto(105), bag, lamp])
+    ming = person("Ming")
+    say(ming, "say 嗨")
+    assert room.vars["t"] == "falsefalsefalse"
+    sack = objects.create(106, 1, None)
+    sack.contains.append(objects.create(107, 1, None))                     # 袋子裡的油燈：背包裡有
+    ming.carrying.append(sack)
+    say(ming, "say 嗨")
+    assert room.vars["t"] == "truefalsefalse"
+    ming.carrying.clear()
+    ming.equipment["light"] = objects.create(107, 1, None)                # 穿在光源位置：身上有
+    ming.carrying.append(objects.create(105, 1, None))                    # 石頭是垃圾（13）
+    say(ming, "say 嗨")
+    assert room.vars["t"] == "falsetruetrue"
+    with caplog.at_level(logging.WARNING):
+        say(ming, "say 錯")                                                # 7 不在 item_type 表裡
+    assert "a/m.lua:2: 物品種類要寫 item_type 表裡的數字（例如照明用具 1），不能是 7" in caplog.text
 
 
 def test_give_item_messages_like_give(tmp_path, later):

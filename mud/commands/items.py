@@ -395,11 +395,20 @@ def bound_tag(obj):
 BOUND_TAG = "（綁定）"
 
 
+EMPTY_SLOT = "（空）"                        # eq：沒穿東西的部位（使用者 2026-11-19 要的：讓玩家知道那裡還能穿）
+BLOCKED_SLOT = "（雙手武器佔住）"            # eq：副手被雙手武器佔住，不能再穿
+
+
 def do_equipment(ch, arg):
-    """equipment（eq）：穿在身上的，照部位的順序（照 C 版 where_name），空的不列。"""
-    rows = [f" 【 {inventory.label(pos, ch.equipment[pos])} 】 {objects.short(ch.equipment[pos])}{bound_tag(ch.equipment[pos])}"
-            for pos, _ in inventory.SLOTS if pos in ch.equipment]
-    ch.send("\n".join(["你現在正在使用：", "", *(rows or ["沒有裝備。"])]) + "\n")
+    """equipment（eq）：每個部位一行，照部位的順序（照 C 版 where_name）。沒穿的寫「（空）」，副手被雙手武器佔住的另外寫。"""
+    rows = []
+    for pos, name in inventory.SLOTS:
+        obj = ch.equipment.get(pos)
+        if obj is not None:
+            rows.append(f" 【 {inventory.label(pos, obj)} 】 {objects.short(obj)}{bound_tag(obj)}")
+        else:
+            rows.append(f" 【 {name} 】 {BLOCKED_SLOT if inventory.blocker(ch, pos) is not None else EMPTY_SLOT}")
+    ch.send("\n".join(["你現在正在使用：", "", *rows]) + "\n")
 
 
 def do_examine(ch, arg):

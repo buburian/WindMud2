@@ -59,8 +59,9 @@ def test_refusals(world):
 
 
 def test_abbreviation():
-    assert commands.find("cons") is combat_commands.do_consider
-    assert commands.find("con") is system.do_config                          # con 還是 config
+    for word in ("co", "con", "cons"):                                       # consider 排在 config 前面（使用者要的）
+        assert commands.find(word) is combat_commands.do_consider
+    assert commands.find("conf") is system.do_config
 
 
 @pytest.mark.parametrize("gap, want", [

@@ -66,6 +66,7 @@ uv run python -m mud.areaconvert 舊.json builder_area/新.json   # 舊區域（
   `tests/test_academy.py` 用真的 `areas/` 測教學學院：一人一份、一路走到畢業（技能教官照公會教 use、掉落、穿上、`say 畢業`）、學生重新登入和死掉回學院、沒有學院的區域檔時。
   `tests/test_consider.py` 測 consider（拒絕的訊息、縮寫、7 句的分段和邊界、戰力換算跟設計文件 §4.3 對得上、受傷／聖光／護盾、打不中、只是看不改東西）。
   `tests/test_healer.py` 用真的 `areas/` 測秋風城的行醫者：1～10 級走進祭壇拿到餽贈、已經有的不再放（時間不補滿）、11 級以上和生物沒有、腳本沒出錯。
+  `tests/test_executioner.py` 用真的 `areas/` 測執法者（沒光源密語怎麼走、不到 5 級又沒錢送 3 支火把、有光源不說、生物沒有）和雜貨店的火把（等級、時間、價格、不收）。
   `tests/test_flee.py` 測 flee（DEX 的機率、戰鬥中不能走、成功、失敗要等、關著的門、沒有出口）。
   `tests/test_light.py` 測黑暗和光源（很暗的四個條件、光源在身上／地上／背包、精靈和 imm、look 的每一種、找不到人、撿不到、「某人」、走進來、對面的門、燒完、燈籠放光源位置、存檔的 hours、暗處不自動拾取）；
   `tests/test_terrain.py` 測地形（每一種擋法、船、飛行、現在站的房間也算、生物不受限制、飛和游的訊息、flee 不挑走不過去的出口、窒息）和飛翔術、水中呼吸術；
@@ -260,7 +261,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   檢查：沒在打架 → 還在等（`cooldowns["flee"]`，失敗設 `FLEE_WAIT_TICKS` 2，`skills.tick()` 減）→ 開著的出口（關著的門不算）→ 骰 `rng.random()`。
   成功：`rng.choice(出口)` → `escape()`：`death.stop_all()`（自己和打自己的都停手）→ `system.move(ch, 方向, leave=…)`（`leave` 是原本房間看到的那句）。不扣經驗。
   wimpy 的生物逃跑也用 `escape()`（出口用 `behavior.exits()`）。
-  **`consider <名字>`**（`cons`，`con` 是 config；最低姿勢 RESTING 照 C 版；使用者 2026-11-19 要的，規則在玩家角色手冊「戰鬥」）：`commands/combat.do_consider()`，找人跟 kill 一樣，不開打。
+  **`consider <名字>`**（`co`、`con`，使用者要的：排在 config 前面，config 要打 `conf`；最低姿勢 RESTING 照 C 版；使用者 2026-11-19 要的，規則在玩家角色手冊「戰鬥」）：`commands/combat.do_consider()`，找人跟 kill 一樣，不開打。
   使用者選「只算戰力」（不模擬打架：模擬一次 7～16 毫秒，巨集狂按會卡住 loop）：`damage.power_gap(ch, 對方)` ＝ 對方比你強幾級 ＝ log(戰力比) ÷ log(`stats.POWER_PER_LEVEL`)，
   戰力 ＝ `damage.round_damage()`（每回合平均傷害：`damage.hands()` × 命中 × 一下的平均 × 爆擊平均；聖光減半）× 現在的 HP（含護盾）。同級高 1 級剛好差 1.00 級、菁英 3.6、首領 4.2（跟設計文件 §4.3 對得上，有測試）。
   `CONSIDER` 是分段的表（C 版的 7 句，分段照戰力）。`fight.attacks()` 改成呼叫 `damage.hands()`（同一份算法；測試照樣可以換掉 `fight.attacks`）。
@@ -445,7 +446,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - 房間的描述就是教學（`{Y【教學】{x` 那幾行），改教學內容改區域檔就好。
 - **秋風城**（`areas/midgaard.json`，世界區域，號碼範圍 `[3000, 3399]`，使用者 2026-11-17 放進來的）：舊版 midgaard 用 `mud.areaconvert` 轉的，文字改寫成龍焚之夜一百年後、百廢待舉的樣子（世界觀在 mud_design 的 `design/世界觀.md`，改文字前先看）。`builder_area/midgaard.json` 是編輯器那份，兩份現在一樣。
   生物的平常動作（舊版 C 的 actions：有玩家走進來就招呼、每 30 秒做一件事，跟任務無關）用 Lua 寫在 `areas/midgaard/`（`builder_area/midgaard/` 一樣一份），
-  25 個檔、28 隻生物，文字照龍焚之夜一百年後重寫（行醫者 3012 另外對走進神殿祭壇 3054、1～10 級、身上還沒有餽贈（`actor:has_affect("gift")`）的玩家放餽贈 `me:use("gift", actor)`，使用者 2026-11-19 要的；他沒有治療功能，文字不寫會包紮）；叫、唱歌、喵、微笑用表情動作（`me:command("bark")`）。打架中不做（`me:is_fighting()`，照 C 版）。
+  25 個檔、28 隻生物，文字照龍焚之夜一百年後重寫（行醫者 3012 另外對走進神殿祭壇 3054、1～10 級、身上還沒有餽贈（`actor:has_affect("gift")`）的玩家放餽贈 `me:use("gift", actor)`，使用者 2026-11-19 要的；他沒有治療功能，文字不寫會包紮；神殿大廳 3001 的執法者 3011 對走進來、沒有光源的玩家密語雜貨店怎麼走，不到 5 級又不到 20 金幣的先送 3 支火把，使用者 2026-11-19 要的；火把 3030 是 1 級、120 小時、cost 13（雜貨店 20 金幣），雜貨店不收照明用具）；叫、唱歌、喵、微笑用表情動作（`me:command("bark")`）。打架中不做（`me:is_fighting()`，照 C 版）。
   坑：起始房間 `START_ROOM` 是 3001，自己做區域檔的測試裡沒有它：會用到 `zones.start_room()` 的（玩家死掉、建角、讀檔找不到房間、走進動態區域）要 `monkeypatch.setattr(zones, "START_ROOM", 101)`。
 - **秋風城外四區**（世界區域，新手區，使用者 2026-11-19 放進來的）：城西森林草原 `forest.json`（1～8 級，西城門外 3052 往西）、城東森林 `foresteast.json`（6～12 級，東城門外 3053 往東）、
   城北平原 `north_plains.json`（10～15 級，北城牆下的刻字 3217 往北）、河流區 `river.json`（12～16 級，碼頭 3049 往南，全區要船）。舊區域轉的，文字照世界觀改寫；生物、物品、重置照使用者核准的設計重做：
@@ -666,7 +667,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - get（地上、`get x 屍體`；`get all` 跳過撿不起來的，拿不動說一次就停，照 C 版）、drop、
     give（照 C 版：給同房間的人、`give N coins 名字` 給金幣、1 級不能給金幣、店主不收、對方是玩家要 `over_limit()` 放得下，給完 `keep()` 幫給的人存檔）、
     wear（`wear x` 換下原本的；`wear all` 只穿空的部位，副手武器排最後）、
-    remove（`remove all` 照 SLOTS 的順序，副手在主手前）、inventory（最後一行件數和負重，使用者選的）、equipment。最低姿勢照 C 版：前四個 RESTING（打架中可以），後兩個 DEAD。
+    remove（`remove all` 照 SLOTS 的順序，副手在主手前）、inventory（最後一行件數和負重，使用者選的）、equipment（每個部位都列，沒穿的寫「（空）」，副手被雙手武器佔住寫「（雙手武器佔住）」，使用者 2026-11-19 要的）。最低姿勢照 C 版：前四個 RESTING（打架中可以），後兩個 DEAD。
   - put（`do_put`，照 C 版 do_put，RESTING，`p`）：容器找地上（`light.floor()`）和背包，只收 `CONTAINER_ITEM_TYPE`（屍體不算）；檢查照 C 版的順序（`cannot_put()`：放自己、綁住的、
     裡面的重量 ＋ 這件 ＞ `Obj.holds`（容器的容量，values 第 1 個，存檔；舊存檔照區域檔現在的值））；`put all` 不行的靜靜跳過，一件都沒放是新加的那句；放了才 `keep()` 存檔。
     C 版把奉獻箱存到檔案，我們不存。
@@ -708,7 +709,9 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `commanding` 是正在打指令的人的堆疊（`command()` 推進來）：`act.notify()` 送給還在裡面的人時當作指令的回覆、不補 prompt
     （生物的腳本在他說話的當下回話，才不會有兩個 prompt；指令跑完 `command()` 補一個）。
   - **`docs/Lua任務教學.md`**（使用者要的，從手冊獨立出來，只講怎麼做任務）：例子都實際跑過。改了腳本的函式、訊息、規則時，教學裡的例子和畫面也要跟著對。
-  - `script_api.py`：給腳本的名字和函式（`me`、`room`、`actor` 的欄位和方法（含 `is_fighting()`、`has_affect(技能 id)`：身上有沒有這個效果，看 `Affect.source`，技能和 special 以外的名字算出錯）、`random`、`dice`（擲骰子 "4d6+2"，面數沒寫是 6）、`hour`、vars、號碼換算、`transfer`、`load_mob`、`mob:use`…）。
+  - `script_api.py`：給腳本的名字和函式（`me`、`room`、`actor` 的欄位和方法（含 `gold`（只能看）、`is_fighting()`、`has_affect(技能 id)`：身上有沒有這個效果，看 `Affect.source`，技能和 special 以外的名字算出錯）、`random`、`dice`（擲骰子 "4d6+2"，面數沒寫是 6）、`hour`、vars、號碼換算、`transfer`、`load_mob`、`mob:use`…）。
+    `has_item`、`take_item` 找背包連袋子裡的（`carried()`：一層一層找，最外層的在前，使用者 2026-11-19 要的）；`wears_item` 只看身上穿的。
+    `has_item_type`、`wears_item_type` 一樣，但比物品種類（`item_type()`：`area.ITEM_TYPE_NAMES` 裡的數字），執法者用它看有沒有光源（不寫死號碼）。
     `give_item`：主人是生物、給的是別人時，訊息跟 give 一樣（`items.GIVEN_TO_YOU`、`GIVEN_SEEN`，使用者要的）；房間的腳本不說話。
     判定「算腳本出錯」就丟 `ScriptError`。玩家的 vars 在 `player.vars[區域檔名][名字]`（存檔），生物、房間的在自己的 `vars`。
   - 觸發的地方：`commands.command()`（on_command，`quit` 不觸發）、`system.move()`（on_enter）、`do_say()`（**只有玩家說的**，使用者選的：生物之間對話用 tell）、`do_tell()`（找不到線上玩家才找同房間的生物，on_tell）、
@@ -734,7 +737,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   `logs/日期_編號.log`（例如 `2026-10-30_001.log`）：換日從 001 重新編號，超過 5MB 換下一個編號，只留最新 30 個檔。
   檔名格式不符的檔案不會被刪。
 - **設定和分頁**（規則在玩家角色手冊「設定」，使用者 2026-11-06 定的，照 C 版 do_config、show_string）：
-  - `config`（`commands/system.py`，`co`）：開關是一張表 `CONFIG_TOGGLES`（名稱、Player 的欄位、說明），加開關只要加一筆；`config lines N` 是分頁每頁幾行
+  - `config`（`commands/system.py`，`conf`）：開關是一張表 `CONFIG_TOGGLES`（名稱、Player 的欄位、說明），加開關只要加一筆；`config lines N` 是分頁每頁幾行
     （`config.PAGE_LINES` 20、`PAGE_LINES_MIN` 19、`PAGE_LINES_MAX` 60）。`Player.autoloot`、`showbuff`、`page_lines` 存檔。不做單獨的 `autoloot` 指令（會搶 imm 指令 `a` 的縮寫）。
   - 自動拾取在 `combat.slain()` 的 `loot()`：打死生物的玩家在同一間房（`death.die()` 回傳屍體），開了就 `items.take_all()`、沒開就 `objects.inside()`（look in 也用它）；
     訊息用 `inventory.Lines.pairs()` 放進同一段（`out.tell`），所以在斷氣、經驗後面、只有一個 prompt。

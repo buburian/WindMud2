@@ -5336,7 +5336,6 @@
       },
       "shop": {
         "buy_types": [
-          1,
           8,
           13,
           15,
@@ -8289,11 +8288,11 @@
       "values": [
         0,
         0,
-        24,
+        120,
         0
       ],
       "weight": 1,
-      "cost": 10,
+      "cost": 13,
       "affects": [],
       "extra_descriptions": [],
       "script": null
@@ -10930,7 +10929,7 @@
       "rare": 1,
       "obj_vnum": 3030,
       "color": null,
-      "level": 5,
+      "level": 1,
       "limit": 900,
       "comment": ""
     },

@@ -277,18 +277,24 @@ def test_orcs_carry_more(world):
     assert say(p, "i").endswith(f"（0/35 件，負重 0/213）\r\n\r\n{prompt_of(p)}")
 
 
+def eq_rows(**worn):
+    """eq 的每一行：每個部位都列，沒穿的是（空）（使用者 2026-11-19 要的）。worn 是 部位代號 → 那一行（名稱和東西）。"""
+    return [f" 【 {worn[pos]}" if pos in worn else f" 【 {name} 】 （空）" for pos, name in inventory.SLOTS]
+
+
 def test_equipment(world):
     p = person(level=5)
-    assert say(p, "eq") == reply(p, "你現在正在使用：", "", "沒有裝備。")
+    assert say(p, "eq") == reply(p, "你現在正在使用：", "", *eq_rows())
     give(p, 2, 4, 6, 6, 7)
     say(p, "wear all")
-    assert say(p, "eq") == reply(p, "你現在正在使用：", "",
-                                 " 【 左手手指 】 戒指/ring", " 【 右手手指 】 戒指/ring", " 【 穿在身上 】 皮甲/armor",
-                                 " 【 左手武器 】 匕首/dagger", " 【 右手武器 】 長劍/sword")
+    assert say(p, "eq") == reply(p, "你現在正在使用：", "", *eq_rows(
+        finger_l="左手手指 】 戒指/ring", finger_r="右手手指 】 戒指/ring", body="穿在身上 】 皮甲/armor",
+        offhand="左手武器 】 匕首/dagger", wield="右手武器 】 長劍/sword"))
     say(p, "remove all")
     give(p, 5)
     say(p, "wear greatsword")
-    assert " 【 雙手武器 】 大劍/greatsword" in say(p, "eq")
+    assert say(p, "eq") == reply(p, "你現在正在使用：", "", *eq_rows(
+        offhand="左手盾牌 】 （雙手武器佔住）", wield="雙手武器 】 大劍/greatsword"))     # 副手不能再穿，不寫（空）
 
 
 # ---- wear ----

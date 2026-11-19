@@ -148,7 +148,9 @@ def test_walk_through_the_academy_and_graduate(academy):
         assert do(p, "n").startswith("【畢業廳】")
         out = do(p, "say 畢業")                                     # 院長收回鑰匙、送到秋風城的神殿大廳 3001
         assert "院長說：『恭喜你畢業了，Ming！外面的世界很大，好好冒險吧。』\r\n\r\n【秋風城神殿大廳】" in out   # 新房間的畫面另起一段
-        assert p.room is zones.start_room() and not zones.is_student(p) and p.carrying == []
+        assert p.room is zones.start_room() and not zones.is_student(p)
+        # 鑰匙收回去了；大廳的執法者看他沒有光源、不到 5 級又沒錢，送 3 支火把（midgaard/執法者.lua，使用者 2026-11-19 要的）
+        assert [o.vnum for o in p.carrying] == [3030] * 3 and "執法者把【火把/torch】拿給你。" in out
         data = save.load_data("Ming")                               # 傳送出來就自動存好了（使用者要的）
         assert data["room"] == 3001 and data["vars"] == {"academy": {}}
         assert save.player_from(data, FakeWriter()).room is zones.start_room()   # 畢業了：照存的房間
