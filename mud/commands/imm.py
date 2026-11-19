@@ -6,10 +6,11 @@ import json
 import logging
 from collections import Counter
 
-from .. import affects, death, equipment, inventory, names, objects, skills, stats, zones
+from .. import affects, death, equipment, inventory, names, objects, paths, skills, stats, zones
 from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act, notify
 from ..area import AFFECT_FLAG_NAMES, ATTACK_NAMES, ITEM_TYPE_NAMES, WEAPON_KIND_NAMES, AffectFlag, Apply, ItemColor
 from ..characters import Position, arrive, characters, find_in_room
+from ..color import colorize
 from ..config import TICK_SECONDS
 from ..equipment import SLOT_NAMES, TWO_HANDED
 from . import items, system
@@ -50,6 +51,7 @@ def do_advance(ch, arg):
         if taken:
             names = stats.STAT_NAMES
             msg += "扣回的主屬性：" + "、".join(f"{names[k]} -{taken[k]}" for k in stats.PRIMARY_KEYS if taken[k]) + "。"
+    msg = "\n".join([msg] + [colorize(fmt.replace("$t", t)) for fmt, t in paths.level_up_lines(victim, old)])   # 選好路的自動學
     if victim is ch:
         ch.send(msg + "\n")
         return

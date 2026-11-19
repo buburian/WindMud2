@@ -5,7 +5,7 @@
 """
 import random
 
-from . import affects, damage, death, light, objects, protect, stats, stealth
+from . import affects, damage, death, light, objects, paths, protect, stats, stealth
 from .area import ATTACK_NAMES, AffectFlag
 from .act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, compose
 from .npcs import Npc
@@ -168,3 +168,5 @@ def reward(battle, player, npc):
     levels = stats.gain_exp(player, amount)
     if levels:
         battle.tell(compose(LEVEL_UP, player, t=str(player.level), T=str(levels), to=TO_CHAR))
+        for fmt, t in paths.level_up_lines(player, player.level - levels):   # 選好路的自動學會那一級的技能（paths.py）
+            battle.tell(compose(fmt, player, t=t, to=TO_CHAR))

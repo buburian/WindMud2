@@ -117,6 +117,7 @@ def vars_of(store):
 # ---- 角色（me、actor） ----
 
 def character_fields(r, ch):
+    from . import paths
     from .npcs import Npc
     from .players import Player
     player = isinstance(ch, Player)
@@ -140,6 +141,13 @@ def character_fields(r, ch):
         "take_item": method(ch, lambda n: take_item(ch, n)),
         "read_var": method(ch, lambda area, name: read_var(ch, area, name)),
     }
+    if player:                              # 選路（paths.py，分館的導師用）：只有玩家有
+        fields.update({
+            "path": method(ch, lambda: paths.big(ch)),
+            "subpath": method(ch, lambda: paths.small(ch)),
+            "path_price": method(ch, lambda name: paths.price(ch, path_name(name))),
+            "choose_path": method(ch, lambda name: choose_path(ch, path_name(name))),
+        })
     if isinstance(ch, Npc):
         fields.update({
             "command": method(ch, lambda line: mob_command(ch, line)),
@@ -162,6 +170,27 @@ def has_affect(ch, name):
     if not isinstance(name, str) or (name not in skills.SKILLS and name not in SPECIALS):
         raise ScriptError(f"沒有技能 {lua_repr(name)}（has_affect 寫技能的 id，例如 \"gift\"）")
     return any(a.source == name for a in ch.affects)
+
+
+def path_name(name):
+    """路名（paths.PATHS 的名字，例如 "戰士"）：寫錯算腳本出錯。"""
+    from . import paths
+    if not isinstance(name, str) or name not in paths.PATHS:
+        raise ScriptError(f"沒有這條路 {lua_repr(name)}（要寫 {'、'.join(paths.PATHS)} 其中一個）")
+    return name
+
+
+def choose_path(ch, name):
+    """選路（paths.choose）：回傳結果代號給腳本回話；忘掉、學會的技能一個一句告訴他，選好了就存檔。"""
+    from . import paths
+    from .commands import items             # 坑：commands 會 import 很多模組，在函式裡才 import
+    code, forgot, learned = paths.choose(ch, name)
+    lines = [paths.FORGOT.replace("$t", s.name) for s in forgot] + [paths.LEARNED.replace("$t", s.name) for s in learned]
+    if lines:
+        deliver(ch, colorize_text("\n".join(lines)))
+    if code in ("ok", "changed"):
+        items.keep(ch)
+    return code
 
 
 def read_var(ch, area, name):

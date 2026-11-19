@@ -2,7 +2,7 @@
 import logging
 import re
 
-from .. import affects, light, meals, objects, save, scripts, socials, stats, summons, terrain, weather, zones
+from .. import affects, light, meals, objects, paths, save, scripts, socials, stats, summons, terrain, weather, zones
 from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act, compose, notify
 from ..area import DIRECTIONS, PASSPROOF_LOCKS, REVERSE, AffectFlag, MobTier, RoomFlag
 from ..characters import SEX_FEMALE, SEX_MALE, Position, arrive, characters, find_in_room, in_room
@@ -417,6 +417,7 @@ def do_score(ch, arg):
     lines = [
         heavy,
         " {G【{Y" + ch.name + "{G】{x {W" + stats.RACE_NAMES[ch.race] + "{D｜{C" + stats.GUILD_NAMES[ch.guild]
+        + ("{D｜{C" + paths.title(ch) if paths.title(ch) else "")      # 稱號：走的路（使用者要的）
         + "{D｜{x" + sex + ("{D｜{Mimm{x" if ch.imm else ""),
         thin,
         " " + cell("等級 {Y" + str(ch.level) + "{x", 12) + cell(exp_text(ch), 36) + "金幣 {Y" + str(ch.gold) + "{x",
@@ -565,13 +566,14 @@ def do_say(ch, arg):
 def do_who(ch, arg):
     """線上玩家：等級高的在前面。顏色跟 score 一致；名字只有英文字母（login.py 檢查過），不會混進顏色代碼。"""
     players = sorted(online_players(), key=lambda p: (-p.level, p.name))
+    titled = any(p.panel and paths.title(p) for p in players)    # 有人有稱號才多一格（大家都沒選路時畫面不變）
     lines = ["{G【{Y線上玩家{G】{x"]
     for p in players:
         if p.panel:
             info = ("{Y" + rpad(str(p.level), 3) + "{x " + pad(stats.RACE_NAMES[p.race], 6)
-                    + " " + pad(stats.GUILD_NAMES[p.guild], 8))
+                    + " " + pad(stats.GUILD_NAMES[p.guild], 8) + (" " + pad(paths.title(p), 4) if titled else ""))
         else:                               # 沒有屬性（只有測試直接建的玩家）
-            info = pad("－", 3 + 1 + 6 + 1 + 8)
+            info = pad("－", 3 + 1 + 6 + 1 + 8 + (1 + 4 if titled else 0))
         lines.append(" [" + info + "] {W" + p.name + "{x" + ("{M（imm）{x" if p.imm else ""))
     lines.append(f"共 {len(players)} 人。")
     ch.send(colorize("\n".join(lines)) + "\n")

@@ -448,7 +448,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - 房間的描述就是教學（`{Y【教學】{x` 那幾行），改教學內容改區域檔就好。
 - **秋風城**（`areas/midgaard.json`，世界區域，號碼範圍 `[3000, 3399]`，使用者 2026-11-17 放進來的）：舊版 midgaard 用 `mud.areaconvert` 轉的，文字改寫成龍焚之夜一百年後、百廢待舉的樣子（世界觀在 mud_design 的 `design/世界觀.md`，改文字前先看）。`builder_area/midgaard.json` 是編輯器那份，兩份現在一樣。
   生物的平常動作（舊版 C 的 actions：有玩家走進來就招呼、每 30 秒做一件事，跟任務無關）用 Lua 寫在 `areas/midgaard/`（`builder_area/midgaard/` 一樣一份），
-  25 個檔、28 隻生物，文字照龍焚之夜一百年後重寫（行醫者 3012 另外對走進神殿祭壇 3054、1～10 級、身上還沒有餽贈（`actor:has_affect("gift")`）的玩家放餽贈 `me:use("gift", actor)`，使用者 2026-11-19 要的；他沒有治療功能，文字不寫會包紮；神殿大廳 3001 的執法者 3011 對走進來、沒有光源的玩家密語雜貨店怎麼走，不到 5 級又不到 20 金幣的先送 3 支火把，使用者 2026-11-19 要的；火把 3030 是 1 級、120 小時、cost 13（雜貨店 20 金幣），雜貨店不收照明用具）；叫、唱歌、喵、微笑用表情動作（`me:command("bark")`）。打架中不做（`me:is_fighting()`，照 C 版）。
+  29 個檔、32 隻生物，文字照龍焚之夜一百年後重寫（四間公會分館的導師 3194～3197 是選路用的，見下面「選路」；行醫者 3012 另外對走進神殿祭壇 3054、1～10 級、身上還沒有餽贈（`actor:has_affect("gift")`）的玩家放餽贈 `me:use("gift", actor)`，使用者 2026-11-19 要的；他沒有治療功能，文字不寫會包紮；神殿大廳 3001 的執法者 3011 對走進來、沒有光源的玩家密語雜貨店怎麼走，不到 5 級又不到 20 金幣的先送 3 支火把，使用者 2026-11-19 要的；火把 3030 是 1 級、120 小時、cost 13（雜貨店 20 金幣），雜貨店不收照明用具）；叫、唱歌、喵、微笑用表情動作（`me:command("bark")`）。打架中不做（`me:is_fighting()`，照 C 版）。
   坑：起始房間 `START_ROOM` 是 3001，自己做區域檔的測試裡沒有它：會用到 `zones.start_room()` 的（玩家死掉、建角、讀檔找不到房間、走進動態區域）要 `monkeypatch.setattr(zones, "START_ROOM", 101)`。
 - **秋風城外四區**（世界區域，新手區，使用者 2026-11-19 放進來的）：城西森林草原 `forest.json`（1～8 級，西城門外 3052 往西）、城東森林 `foresteast.json`（6～12 級，東城門外 3053 往東）、
   城北平原 `north_plains.json`（10～15 級，北城牆下的刻字 3217 往北）、河流區 `river.json`（12～16 級，碼頭 3049 往南，全區要船）。舊區域轉的，文字照世界觀改寫；生物、物品、重置照使用者核准的設計重做：
@@ -523,6 +523,10 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
       **NPC 直接呼叫 `skills.use(npc, SKILLS["gift"], 玩家)` 就能放**（不用學、不用在打架）。`skills` 指令的增益技能：那一行寫持續多久，做什麼放下一行（`system.wrap()`，不超過 79 格）。
       冷卻用 tick 數：世界每個 tick `skills.tick()` 減 1，所以實際等 5～6 秒。
       `weapon_ok()`：有限用武器的技能，主手要拿那種武器（空手不行）；技能那一下用主手的武器。`offhand_ok()`：`Skill.offhand` 是 `"shield"`（副手放護具）、`"dual"`（雙持）。
+      **選路**（`paths.py`，規則在玩家角色手冊「選路」，使用者 2026-11-19 定的）：`PATHS`（8 條小路 ＋ 4 條大路，每級的技能、導師的房間、分館在哪），`Player.paths`（[大路, 小路]，存檔）；
+      `choose()` 回傳結果代號，`refused()` 不看錢的檢查，`price()`／`change_cost()`（50 隻同級一般怪的金幣），`learn_upto()` 補齊，`level_up_lines()`（`combat.reward`、imm 的 advance：自動學和 10、40 級的提醒），
+      `title()` 稱號（score、who），`hint_lines()`、`chosen_skills()` 給 `skills` 列出整條路和還沒選的路。選路是跟秋風城四間分館的導師（3194～3197，`areas/midgaard/老教頭.lua`…）說路名，
+      腳本用 `actor:path()`、`subpath()`、`path_price()`、`choose_path()`（`script_api.choose_path` 送學會、忘掉的訊息、存檔）。`tests/test_paths.py`、`tests/test_mentors.py`（真的秋風城）。
       **路線技能**（mud_design 2026-11-19 的草案，規則在玩家角色手冊「路線技能」，數字照 `sim/skill_tree.py`，加在 `SKILLS` 最後面）：68 個和 21 個連動都做了（傷害、補血、增強、減弱、控制、保護、召喚、被動、打一群）（計畫分 6 步，`test_skill_tree.NOT_YET` 是還沒做的）。
       **控制**（`kind` `"control"`，`Affect.control`：stun、freeze、silence、slow、blind，`affects.CONTROL_NAMES`）：`skills.control()` 只擲命中（`damage.hit_chance`），打中才 `apply_effect()`；
       `hits` 不是 0 的（盾擊）走傷害那條路、打中後放 `onhit`。`apply_effect()` 管控制的規則：暈、凍住遇到 `affects.resisting()`（已經暈著、或結束後 `RESIST_TICKS` 6 秒的抵抗，`tick_one()` 放）沒有作用，首領時間減半。
@@ -542,7 +546,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
       `kind` 多了 `"heal"`（`heal()`：（法術傷害點數 ＋ 主手武器在下限～上限取的值）× ratio、會爆擊、不擲命中；`hot` 是持續補血，放的時候算好每跳）、`"passive"`（`Skill.passive` 是倍率，`stats.passives()` 在 `recompute()` 最後乘，條件不合沒效果；
       `learn()`、`forget()` 會 `affects.changed()`，所以學了馬上有效）。`friendly()`（補血、增益）是放在自己人身上、不開打的那種：use、物品放技能都用它。
       減益有 `dot` 的（毒刃）要擲命中：每跳 ＝ 這一下 × ratio（`dot_affect()` 沒寫 ratio 是 1）；只改倍率的一定放得上去（mud_design 定的）。`lifesteal`（`drain()`）、`opener`（只能開打前用，use 擋）、`onhit`（打中後放的效果）、
-      `tag`（效果種類，連動用；`skills.tag()`，`affects.has_tag()`）。被動技能不能寫進會放技能的物品（`area.check_skill_item()`）。還沒做：學習（mud_design 778eb7f 定了，見 `todo/`）、技能書、怪物打架時用技能。
+      `tag`（效果種類，連動用；`skills.tag()`，`affects.has_tag()`）。被動技能不能寫進會放技能的物品（`area.check_skill_item()`）。還沒做：技能書、怪物打架時用技能。
     - 坑：`fight` → `combat` → `death` → `fight` 繞一圈：這幾個模組互相都用 `from . import 模組`，不要 `from .fight import stop_fighting`、`from .combat import hit`。
     - 還沒做：C 版「快死了」「昏迷」（HP ≤ 0 就是死）。
   - **生物的行為**（設計文件 §4.11，使用者 2026-11-16 定案，規則在區域製作手冊 act、special）：

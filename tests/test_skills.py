@@ -499,10 +499,14 @@ def test_killing_with_a_skill(world, monkeypatch):
     assert corpse.item_type == CORPSE_NPC_ITEM_TYPE
 
 
+SWORD_HINT = ("\r\n\r\n10 級可以選路（到秋風城的公會分館找導師，跟他說路名）：\r\n"
+              "  戰士：戰士公會（大街東口往南）\r\n  刺客：盜賊公會（暗巷往南）")     # 還沒選路：最下面寫可以選的路（paths.py）
+
+
 def test_skills_listing(world):
     shabu, ming = fighter("Shabu"), fighter("Ming", guild=stats.Guild.STAFF)
     low, high = skills.display_range(shabu, SMASH)
-    assert say(shabu, "skills") == f"你會的技能：\r\n  重擊 smash  傷害 {low}~{high}  消耗 4 MV  冷卻 6 秒\r\n\r\n{prompt_of(shabu)}"
+    assert say(shabu, "skills") == f"你會的技能：\r\n  重擊 smash  傷害 {low}~{high}  消耗 4 MV  冷卻 6 秒{SWORD_HINT}\r\n\r\n{prompt_of(shabu)}"
     low, high = skills.display_range(ming, FIREBALL)
     assert say(ming, "sk").startswith(f"你會的技能：\r\n  火球 fireball  傷害 {low}~{high}  消耗 4 MP  冷卻 6 秒\r\n")
     shabu.cooldowns["smash"] = 3
@@ -571,7 +575,7 @@ def test_skills_listing_for_imm(world):
     t_low, t_high = skills.display_range(shabu, THUNDER)
     assert say(shabu, "skills") == ("你會的技能（imm 用技能不扣消耗、不用等冷卻）：\r\n"
                                     f"  重擊 smash  傷害 {low}~{high}  消耗 4 MV  冷卻 6 秒\r\n"
-                                    f"  天雷 thunder  傷害 {t_low}~{t_high}  消耗 0  冷卻 0 秒\r\n\r\n{prompt_of(shabu)}")
+                                    f"  天雷 thunder  傷害 {t_low}~{t_high}  消耗 0  冷卻 0 秒{SWORD_HINT}\r\n\r\n{prompt_of(shabu)}")
 
 
 # ---- 誰會：一開始就會、要用程式加（使用者定的） ----

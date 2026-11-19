@@ -47,6 +47,7 @@ def save_player(player):
         "primaries": player.primaries, "resource_roll": player.resource_roll,
         "points": player.points, "trained": player.trained, "imm": player.imm, "gold": player.gold,
         "skills": player.skills,
+        "paths": player.paths,
         "vars": player.vars,                # 腳本的變數：{區域檔名: {名字: 值}}
         "recall": player.recall,            # 自己的返回點（null 是起始房間）
         "autoloot": player.autoloot, "page_lines": player.page_lines, "showbuff": player.showbuff,   # 設定（config）
@@ -92,6 +93,7 @@ def player_from(data, writer):
     player.imm = data.get("imm", False)
     player.gold = data.get("gold", 0)
     player.skills = data["skills"] if "skills" in data else skills.starter(player.guild)
+    player.paths = list(data.get("paths", []))     # 舊存檔沒有：還沒選路
     player.vars = data.get("vars", {})
     player.recall = data.get("recall")
     player.autoloot = data.get("autoloot", False)

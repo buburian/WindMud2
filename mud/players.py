@@ -29,6 +29,7 @@ class Player(Character):
         self.hp = self.mp = self.mv = 0.0    # 現在的 HP、MP、MV（上限在 panel）
         self.vars = {}                       # 腳本的變數（存檔）：{區域檔名（不含 .json）: {名字: 值}}
         self.recall = None                   # 自己的返回點（遊戲號碼，存檔）：None 是起始房間。所在區域檔有寫 recall 就用區域的（zones.recall_room）
+        self.paths = []                      # 選了的路（paths.py）：[大路] 或 [大路, 小路]，存檔；舊存檔沒有是空的
         self.skills = []                     # 會的技能 id（學會的順序，存檔）：建立角色時是公會一開始就會的（skills.starter）
         self.cooldowns = {}                  # 技能 id（還有 flee 失敗的等待 "flee"）→ 還要等幾個 tick 才能再用（skills.tick() 數），不存檔
         # 設定（config 指令，存檔）

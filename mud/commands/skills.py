@@ -4,7 +4,7 @@
 誰會哪個技能看 skills.known()（技能自己設計：一開始就會、要用程式加）。傷害、減益技能可以開打（使用者定的）；
 補血、增益技能放在自己或同房間的玩家身上（"self" 的只有自己），不開打；被動技能不用放。
 """
-from .. import affects, combos, fight, skills, summons
+from .. import affects, combos, fight, paths, skills, summons
 from ..area import TWO_HANDED_KINDS, WEAPON_KIND_NAMES
 from ..characters import characters, find_in_room
 from ..config import AFFECT_PULSE_TICKS, TICK_SECONDS
@@ -140,14 +140,21 @@ def engage(ch, victim):
 def do_skills(ch, arg):
     """skills：列出會的技能和說明的數字（傷害、補血、消耗、冷卻；冷卻中的寫還要等幾秒）。
     做什麼、條件放下一行（太長就換行，不超過 79 格）。被動技能沒有消耗、冷卻。
+    選好路以後，這條路還沒學會的技能也列出來，下一行最前面寫「尚未學會（20 級）」；還沒選的路看不到技能，
+    最下面只寫可以選哪幾條、去哪裡選（paths.hint_lines，使用者要的）。
     """
     known = skills.known(ch)
-    if not known:
+    later = {s.id: lv for lv, s in paths.chosen_skills(ch) if s not in known}     # 選了的路上還沒學會的：幾級學會
+    listed = [s for s in skills.SKILLS.values() if s in known or s.id in later]
+    hint = paths.hint_lines(ch) if known else []
+    if not listed:
         ch.send("你還不會任何技能。\n")
         return
     lines = ["你會的技能（imm 用技能不扣消耗、不用等冷卻）：" if skills.free(ch) else "你會的技能："]
-    for s in known:
+    for s in listed:
         what, more = summary(ch, s)
+        if s.id in later:
+            more = [NOT_YET.format(later[s.id])] + more
         if s.kind == "passive":
             line = f"  {s.name} {s.id}  {what}"
         else:
@@ -161,7 +168,12 @@ def do_skills(ch, arg):
         more += conditions(s)
         if more:
             lines += ["    " + text for text in wrap(more, 75)]
+    if hint:
+        lines += [""] + hint
     ch.send("\n".join(lines) + "\n")
+
+
+NOT_YET = "尚未學會（{} 級）"                 # 選了的路上還沒學會的技能
 
 
 PULSE_SECONDS = AFFECT_PULSE_TICKS * TICK_SECONDS
