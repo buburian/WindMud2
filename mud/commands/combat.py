@@ -1,7 +1,7 @@
 """戰鬥類指令：kill 開打、flee 逃跑。"""
 import random
 
-from .. import death, fight, stats, terrain
+from .. import damage, death, fight, stats, terrain
 from ..act import TO_CHAR, act
 from ..area import RoomFlag
 from ..characters import find_in_room
@@ -35,6 +35,44 @@ def do_kill(ch, arg):
         ch.send("你現在正在為自己的戰鬥努力著!!\n")
         return
     fight.start_fight(ch, victim)
+
+
+CONSIDER_WHO = "你想考慮要殺誰啊？"        # 照 C 版 do_consider
+# 對方比你強幾級（damage.power_gap，戰力換算）小於這個數 → 說這句；都不是就是最後一句。
+# 句子照 C 版 do_consider，分段改照戰力（使用者 2026-11-19 定的：C 版看等級差，我們差 1 級勝率就從 95% 掉到 5%，設計文件 §4.4）
+CONSIDER = [
+    (-5.0, "你可以毫不費力的對付$N。"),
+    (-2.0, "$N根本不是你的對手。"),
+    (-0.5, "$N看起來滿容易對付的。"),
+    (0.5, "$N是一個好對手!"),
+    (1.5, "$N說，除非你有點運氣。"),
+    (3.0, "$N大笑，不把你放在眼裡。"),
+]
+CONSIDER_DEAD = "你將會受到死神的眷顧。"
+
+
+def do_consider(ch, arg):
+    """consider <名字>：跟同房間的生物比戰力，用一句話說打不打得過（照 C 版的句子，使用者 2026-11-19 要的，規則在玩家角色手冊「戰鬥」）。
+
+    只是看：不開打、不改任何人，安全區、打架中都能用。找人的檢查跟 kill 一樣。
+    """
+    words = arg.split()
+    if not words:
+        ch.send(CONSIDER_WHO + "\n")
+        return
+    victim = find_in_room(ch, words[0])
+    if victim is None:
+        ch.send("找不到你想攻擊的人。\n")
+        return
+    if not isinstance(victim, Npc):
+        ch.send("你不可以攻擊玩家。\n")
+        return
+    act(consider_text(damage.power_gap(ch, victim)), ch, victim, to=TO_CHAR)
+
+
+def consider_text(gap):
+    """對方比你強 gap 級（可以是 ±inf）：consider 說的那句。"""
+    return next((text for bound, text in CONSIDER if gap < bound), CONSIDER_DEAD)
 
 
 def protected(ch, victim):

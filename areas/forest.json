@@ -1,0 +1,4852 @@
+{
+  "schema_version": 1,
+  "file": "forest.json",
+  "area": {
+    "header": {
+      "levels": [
+        1,
+        8
+      ],
+      "author": "Shabu",
+      "title": "城西森林草原區",
+      "vnums": [
+        10100,
+        10195
+      ],
+      "type": "world"
+    },
+    "recall": null,
+    "no_teleport": null,
+    "clan_recall": null,
+    "gem": null
+  },
+  "rooms": [
+    {
+      "vnum": 10100,
+      "name": "西北角的林緣",
+      "description": "森林在這裡收了尾，再往西是一片長滿荊棘的坡地，看不出有路。\n坡地盡頭，哈翁德爾森林黑壓壓地橫在天邊。\n林緣的草叢裡立著一塊半埋在土裡的界石（stone），字早就磨平了。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "east": {
+          "description": "往東，林緣的草越長越高，草叢裡有好幾個兔子洞。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10101
+        },
+        "south": {
+          "description": "往南，樹林漸漸密了，一棵被雷劈成兩半的老橡樹很顯眼。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10107
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "界石 stone",
+          "description": "一塊半人高的灰石頭，從前大概標著誰家的地界。\n刻的字被風雨磨得只剩幾道淺痕，石腳纏滿了野葡萄藤。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10101,
+      "name": "長滿野草的林緣",
+      "description": "這裡是樹林的北緣，野草長得齊膝高，草叢裡被踩出好幾條細細的小路，\n每一條都通到一個兔子洞（burrow）。\n北邊是一片空曠的野地，風從那頭吹過來，帶著青草的味道。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "east": {
+          "description": "往東，林緣的草叢裡露出一間塌了頂的石屋。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10102
+        },
+        "south": {
+          "description": "往南走進樹林，樹幹一棵比一棵粗。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10108
+        },
+        "west": {
+          "description": "往西，林緣到了盡頭，一塊界石半埋在土裡。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10100
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "兔子洞 burrow",
+          "description": "洞口圓圓的，邊上的土被扒得很鬆，還沾著幾撮白毛。\n你一靠近，洞裡就傳來一陣窸窸窣窣的聲音。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10102,
+      "name": "林緣的石屋",
+      "description": "林緣的草叢裡蹲著一間石頭砌的小屋（hut），屋頂早就塌了，\n一棵小樹從屋子正中間長出來，枝葉從沒有屋頂的牆上探出頭。\n門口的石階磨得凹了下去，從前大概有人天天從這裡進出。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "east": {
+          "description": "往東，空氣越來越潮濕，林子外面好像起了霧。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10103
+        },
+        "south": {
+          "description": "往南的樹根底下，隱約飄來一股狐狸的騷味。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10109
+        },
+        "west": {
+          "description": "往西，齊膝的野草裡藏著好幾個兔子洞。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10101
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "石屋 小屋 hut",
+          "description": "牆是用河裡撿來的石頭一塊塊疊起來的，縫裡塞著乾泥。\n屋裡只剩一個塌了一半的爐灶，和一個生鏽的鐵鉤。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10103,
+      "name": "霧邊的林緣",
+      "description": "樹林到這裡就斷了，北邊是一片草原，草原上停著一大片白霧（fog），\n不管白天晚上，那片霧都不散，邊緣整整齊齊的，像一堵牆。\n林緣的草尖都掛著露水，空氣又冷又濕。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北是一片草原，濃濃的白霧停在上面，一動也不動。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10194
+        },
+        "east": {
+          "description": "往東，一棵歪脖子老松樹斜斜地伸出林緣。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10104
+        },
+        "south": {
+          "description": "往南的林子又暗又潮，地上冒出一些白色的蘑菇。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10110
+        },
+        "west": {
+          "description": "往西，塌了頂的石屋蹲在草叢裡。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10102
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "白霧 霧 fog",
+          "description": "霧白得發亮，邊緣清清楚楚，一點也不像山裡飄來飄去的霧。\n盯著看久了，會覺得霧裡有影子在動。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10104,
+      "name": "歪脖子松",
+      "description": "一棵老松樹歪著脖子，斜斜地朝林子外面伸出去。\n樹幹上有好幾道新的爪痕（marks），樹根旁的泥地上留著一串大腳印，\n看得出是狼。松針鋪了厚厚一層，踩上去軟綿綿的。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "east": {
+          "description": "往東，林緣到了一道深溝邊上。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10105
+        },
+        "west": {
+          "description": "往西，林子外面的草原上罩著一大片白霧。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10103
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "爪痕 marks",
+          "description": "四道平行的刮痕，深得看得到底下發白的木頭，樹脂還沒乾。\n比你的手掌還寬，那隻狼不會太小。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10105,
+      "name": "深溝邊的林緣",
+      "description": "林緣在這裡被一道深溝（ravine）截斷了，溝底長滿了荊棘，看不出有路下去。\n隔著深溝往北望，遠處的山丘上好像有一座城堡的尖頂，\n顏色亮得有點古怪，看久了，又像只是陽光照在石頭上。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "south": {
+          "description": "往南，一棵橫倒的巨木壓在林子裡，長滿了青苔。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10112
+        },
+        "west": {
+          "description": "往西，一棵歪脖子老松樹斜斜地伸出林緣。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10104
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "深溝 ravine",
+          "description": "溝很深，兩邊的土壁又陡又鬆，一踩就往下掉土。\n荊棘從溝底一路長上來，枝條上掛著幾撮動物的毛。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10106,
+      "name": "滿是樹樁的林緣",
+      "description": "林緣有一大片空地，地上全是一截截的樹樁（stumps），\n切口平整，是從前樵夫一斧一斧砍出來的。\n樹樁上爬滿了青苔，旁邊冒出來的新樹，有的已經比人還高了。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "east": {
+          "description": "往東，林子裡立著一棵被雷劈成兩半的老橡樹。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10107
+        },
+        "south": {
+          "description": "往南，一棵大樹的枝椏上架著一座破舊的木台。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10114
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "樹樁 stumps",
+          "description": "樹樁的切口上看得到一圈圈的年輪，你數到一半就數亂了。\n有幾個樹樁被挖空了，裡面積著雨水，浮著幾片落葉。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10107,
+      "name": "雷劈的老橡樹",
+      "description": "一棵老橡樹（oak）站在路邊，從樹頂到樹腰被雷劈成了兩半，\n兩半各自往旁邊歪，裂口卻長出了新的樹皮，枝頭照樣綠油油的。\n四周的樹又高又直，枝葉在頭頂上搭成一片綠色的屋頂。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，樹林到了盡頭，林緣立著一塊界石。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10100
+        },
+        "east": {
+          "description": "往東，樹幹一棵比一棵粗，林子漸漸暗下來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10108
+        },
+        "west": {
+          "description": "往西是一片空地，到處都是長了青苔的樹樁。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10106
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "橡樹 oak",
+          "description": "裂口寬得塞得進一個人，裡面的木頭被雨水泡得又黑又硬。\n樹下落滿了橡實，幾隻松鼠在樹幹上跑上跑下。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10108,
+      "name": "刻著記號的樹",
+      "description": "這裡的樹一棵比一棵粗，你得仰著頭才看得到樹梢。\n路邊一棵大樹的樹幹上刻著三道橫線（marks），刻痕已經長得鼓了起來。\n再往南，林子暗得像傍晚一樣。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，樹林外是一片齊膝的野草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10101
+        },
+        "south": {
+          "description": "往南，枝葉密得透不進光，林子黑得像夜裡。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10115
+        },
+        "west": {
+          "description": "往西，一棵被雷劈開的老橡樹擋在路邊。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10107
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "記號 橫線 marks",
+          "description": "三道橫線一樣長，刻得很深，是獵人之間通用的記號。\n意思是：前面的林子，別一個人進去。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10109,
+      "name": "狐狸洞",
+      "description": "一棵大樹的樹根拱出地面，底下挖出了一個洞（den），\n洞口散著幾根鳥的羽毛和碎骨頭，一股騷味直衝鼻子。\n附近的草被壓得扁扁的，像是有什麼小動物常常趴在這裡曬太陽。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，林緣的草叢裡露出一間塌了頂的石屋。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10102
+        },
+        "south": {
+          "description": "往南，樹根盤成一團，林子暗得看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10116
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "洞 den",
+          "description": "洞口不大，剛好鑽得進一隻狐狸。洞裡黑漆漆的，\n往裡面看，好像有兩點亮光在眨。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10110,
+      "name": "蘑菇圈",
+      "description": "這一帶又暗又潮，樹幹背陰的那一面長滿了青苔。\n地上冒出一圈白色的蘑菇（mushrooms），排成一個整整齊齊的圓。\n老人說站進蘑菇圈裡會迷路，你最好還是繞過去。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北是森林的邊緣，再過去白茫茫一片都是霧。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10103
+        },
+        "east": {
+          "description": "往東傳來一陣嗡嗡的蜂鳴聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10111
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "蘑菇 mushrooms",
+          "description": "蘑菇的傘又白又圓，摸起來滑滑的，底下的皺褶是淡粉紅色。\n圓圈裡的草長得特別綠，圈外的就沒那麼好。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10111,
+      "name": "野蜂樹",
+      "description": "一棵空心的老榆樹（tree）上，蜜蜂從樹洞裡飛進飛出，嗡嗡聲響個不停。\n樹幹上淌著一道道乾掉的蜂蜜，引來一大群螞蟻。\n樹下有幾道爪痕，看來不只你一個想吃蜂蜜。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "east": {
+          "description": "往東，一棵倒下的巨木橫在林子裡。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10112
+        },
+        "south": {
+          "description": "往南，樹梢間開了一個缺口，看得到一大塊天空。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10117
+        },
+        "west": {
+          "description": "往西，潮濕的地上長著一圈白色的蘑菇。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10110
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "榆樹 樹洞 tree hive",
+          "description": "樹洞在比人還高的地方，洞口被蜂蠟糊得黃黃的。\n靠近一點，嗡嗡聲就大得像有人在你耳邊說話。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10112,
+      "name": "橫倒的巨木",
+      "description": "一棵大得驚人的樹倒在林子裡，樹幹橫在路上，比你的頭還高。\n樹皮上長滿了青苔和蕨類，倒下的地方裂開一個大坑，\n翻起來的樹根（roots）像一面土牆，上面還卡著石頭。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北是森林的邊緣，再過去是一道深溝。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10105
+        },
+        "west": {
+          "description": "往西傳來一陣嗡嗡的蜂鳴聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10111
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "樹根 roots",
+          "description": "樹根粗得像人的手臂，盤成一團，中間夾著泥土和石塊。\n不知道倒下多少年了，樹根縫裡已經長出了新的小草。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10113,
+      "name": "往天橋的小徑口",
+      "description": "路邊立著一塊歪斜的木頭路牌（sign），箭頭指向西方，刻著「天橋」。\n往西的小徑卻被一棵連根倒下的大樹（tree）攔腰壓住，枝葉堆得比人還高。\n樹幹上有幾道新的斧痕，有人試著砍過，砍不到一半就放棄了。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "east": {
+          "description": "往東，一棵大樹的枝椏上架著一座破舊的木台。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10114
+        },
+        "south": {
+          "description": "往南，林緣被一道陡峭的石崖擋住了。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10128
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "路牌 sign",
+          "description": "路牌的木頭被太陽曬得發白，「天橋」兩個字是後來重新刻深的。\n下面還有一行更小的字：「再往西，哈撒亞」。\n"
+        },
+        {
+          "keywords": "大樹 倒樹 tree",
+          "description": "這棵樹倒下來還沒多久，葉子才剛開始發黃。\n樹幹太粗了，一個人砍上好幾天也砍不斷，只能等人多了再來搬。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10114,
+      "name": "獵人的樹台",
+      "description": "一棵大樹的枝椏上架著一座木台（platform），是獵人等獵物用的。\n木板爛了好幾塊，綁木台的繩子也鬆了，風一吹就嘎吱嘎吱地響。\n樹幹上釘著一排木條當梯子，最上面那幾根早就掉了。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北是一片空地，到處都是長了青苔的樹樁。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10106
+        },
+        "south": {
+          "description": "往南的林緣隱約飄來一股冷掉的煙灰味。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10120
+        },
+        "west": {
+          "description": "往西，路邊立著一塊歪斜的木頭路牌。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10113
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "木台 platform",
+          "description": "從底下往上看，木台上還留著一個破陶罐和一截斷掉的箭。\n不知道最後一次有人爬上去，是多少年前的事了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10115,
+      "name": "森林深處",
+      "description": "樹木的枝幹交錯在頭頂上，把天空遮得一點也不剩，這裡暗得像夜裡。\n落葉積了厚厚一層，踩下去軟綿綿的，沒有一點聲音。\n黑暗裡，一副被啃得乾乾淨淨的鹿骨（bones）散在樹根旁邊。\n",
+      "room_flags": 1,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，樹幹之間隱約透進一點光。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10108
+        },
+        "east": {
+          "description": "往東，粗大的樹根盤在地上，一不小心就會絆倒。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10116
+        },
+        "south": {
+          "description": "往南，樹上垂下一道道藤蔓，像簾子一樣。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10122
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "鹿骨 骨頭 bones",
+          "description": "骨頭上滿是牙印，連最粗的腿骨都被咬斷了。\n看樣子是狼幹的，而且不只一隻。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10116,
+      "name": "盤根錯節的林心",
+      "description": "粗大的樹根（roots）從地底拱出來，一條壓著一條，盤成一大片。\n你得一邊摸著樹幹、一邊找地方下腳，稍不留神就會絆倒。\n頭頂上的枝葉密得透不進光，只聽得到遠處有鳥在叫。\n",
+      "room_flags": 1,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，光線亮了一點，樹根底下有一股狐狸的騷味。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10109
+        },
+        "east": {
+          "description": "往東，枝葉間開了一個大缺口，林子開闊起來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10117
+        },
+        "south": {
+          "description": "往南，黑暗裡立著一棵大得嚇人的老樹。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10123
+        },
+        "west": {
+          "description": "往西，落葉又厚又軟，黑得看不見盡頭。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10115
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "樹根 roots",
+          "description": "有些樹根比你的腰還粗，表面又濕又滑，長滿了深綠色的苔蘚。\n根和根之間的縫裡積著黑水，看不出有多深。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10117,
+      "name": "林間的空地",
+      "description": "一棵大樹倒下以後，頭頂的枝葉開了一個大缺口，看得到一大塊天空。\n空地上擠滿了搶著長高的小樹苗，野莓（berries）長了一大叢。\n在密密的林子裡走了那麼久，到了這裡，你不由得鬆了一口氣。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北傳來一陣嗡嗡的蜂鳴聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10111
+        },
+        "east": {
+          "description": "往東，地上隱約有兩道長滿草的舊車轍。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10118
+        },
+        "south": {
+          "description": "往南傳來嘩啦嘩啦的流水聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10125
+        },
+        "west": {
+          "description": "往西，樹根盤成一團，林子一下子暗了下來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10116
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "野莓 berries",
+          "description": "紅紅紫紫的野莓結了一大串，好幾顆被鳥啄得只剩一半。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10118,
+      "name": "長草的舊車道",
+      "description": "兩道淺淺的車轍（ruts）鑽進林子裡，裡面長滿了草，只看得出一點痕跡。\n從前大概有馬車從西城門出來，走這條路進森林拉木頭。\n路邊半埋著一個生鏽的鐵輪箍，木頭的部分早就爛光了。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "east": {
+          "description": "往東，樹林漸漸稀了，灌木叢後面就是森林的邊緣。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10119
+        },
+        "south": {
+          "description": "往南，幾棵老果樹混在野樹中間。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10126
+        },
+        "west": {
+          "description": "往西，樹梢間開了一個缺口，底下是一片空地。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10117
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "車轍 ruts",
+          "description": "兩道車轍之間的距離剛好是一輛馬車寬，\n底下的土被壓得特別硬，草長不起來，只有一些苔蘚。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10119,
+      "name": "城西的林緣",
+      "description": "灌木一叢接一叢，從城牆外面一路長到森林的邊緣。\n從前這裡是一片麥田，現在只剩幾截矮牆（wall）從草叢裡冒出來，\n牆頭爬滿了野薔薇。往東望，灌木頂上露出西城門的兩座高塔。\n",
+      "room_flags": 4,
+      "sector": 3,
+      "exits": {
+        "south": {
+          "description": "往南，草叢裡立著一間只剩土牆的農舍。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10127
+        },
+        "west": {
+          "description": "往西，兩道長滿草的舊車轍鑽進了森林。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10118
+        },
+        "east": {
+          "description": "往東，灌木後面露出城牆和兩座高塔，塔頂搭著木板便橋。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 3052
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "矮牆 wall",
+          "description": "矮牆是用田裡撿出來的石頭疊的，到你的膝蓋那麼高。\n石縫裡卡著一塊生鏽的鐵片，看形狀像是鋤頭的頭。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10120,
+      "name": "冷掉的火堆",
+      "description": "林緣的空地上，幾塊石頭圍著一個冷掉的火堆（campfire），\n灰是冷的，旁邊丟著幾根啃過的骨頭和一截割斷的麻繩。\n火堆邊的草被壓出好幾個人形，看樣子有一群人在這裡過過夜。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，一棵大樹上架著一座破舊的木台。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10114
+        },
+        "east": {
+          "description": "往東，林子裡的地勢慢慢高起來，到處是亂石。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10121
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "火堆 campfire",
+          "description": "灰裡埋著一個空錢袋，袋口的繩子被割斷了。\n不像是獵人留下的。走在這一帶，最好多看看身後。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10121,
+      "name": "亂石坡",
+      "description": "林子裡的地勢慢慢高起來，大大小小的石頭散了一地。\n石頭中間有一個黑黝黝的洞口（cave），裡面飄出一股濃濃的腥騷味。\n洞口的泥地上全是狼的腳印，有大有小。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "east": {
+          "description": "往東，林子一下子暗了，藤蔓從樹上垂下來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10122
+        },
+        "south": {
+          "description": "往南，地上有一條兩旁排著石頭的小徑。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10129
+        },
+        "west": {
+          "description": "往西，林緣的空地上有一圈石頭圍著冷掉的火堆。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10120
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "洞口 洞 cave",
+          "description": "洞口只有半個人高，裡面黑得看不見底。\n一陣風從洞裡吹出來，帶著血腥味和狼毛。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10122,
+      "name": "垂滿藤蔓的林子",
+      "description": "樹上垂下一道道藤蔓（vines），像簾子一樣，一層一層擋在面前。\n你撥開一層，後面又是一層，林子暗得連手都看不太清楚。\n藤蔓之間結著大片的蜘蛛網，黏在臉上怎麼抹也抹不乾淨。\n",
+      "room_flags": 1,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，林子一樣黑，落葉厚得踩不出聲音。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10115
+        },
+        "south": {
+          "description": "往南，光線亮了一些，地上有一串鹿的蹄印。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10130
+        },
+        "west": {
+          "description": "往西，地勢高起來，亂石之間透進一點光。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10121
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "藤蔓 vines",
+          "description": "藤蔓有手指那麼粗，又韌又硬，用力扯也扯不斷。\n上面開著幾朵小小的白花，在黑暗裡顯得特別白。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10123,
+      "name": "空心的老樹",
+      "description": "黑暗裡立著一棵大得嚇人的老樹（tree），要五六個人才抱得過來。\n樹幹的底部裂開一個大洞，裡面空空的，站得進一個人。\n四周靜得出奇，連一聲鳥叫都聽不到。\n",
+      "room_flags": 1,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，粗大的樹根盤了一地。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10116
+        },
+        "east": {
+          "description": "往東更暗了，空氣裡有一股爛葉子的霉味。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10124
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "老樹 樹洞 tree",
+          "description": "樹洞裡又乾又暗，地上鋪著一層乾草，還有幾片碎陶片。\n好像有人在這裡躲過雨，也可能不只是躲雨。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10124,
+      "name": "林心最暗處",
+      "description": "這裡是林子裡最暗的地方，枝葉一層疊著一層，白天跟晚上沒什麼兩樣。\n腳下的土又濕又軟，一股爛葉子的霉味，一棵倒下的樹爛成了一長條泥。\n遠遠地，好像有什麼在黑暗裡看著你。\n",
+      "room_flags": 1,
+      "sector": 3,
+      "exits": {
+        "east": {
+          "description": "往東傳來嘩啦嘩啦的流水聲，光線也亮了一些。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10125
+        },
+        "south": {
+          "description": "往南，幾塊大石頭疊在林子裡。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10132
+        },
+        "west": {
+          "description": "往西，黑暗裡立著一棵大得嚇人的老樹。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10123
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10125,
+      "name": "林間小溪",
+      "description": "一條小溪（stream）從石頭間流過，水清得看得見底下的小魚。\n溪裡擺著幾塊踏腳的平石頭，被人踩得光溜溜的。\n溪邊的泥地上有鹿、兔子和狐狸的腳印，大家都來這裡喝水。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，樹梢間開了一個缺口，底下是一片空地。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10117
+        },
+        "west": {
+          "description": "往西，枝葉密得透不進光，林子黑得像夜裡。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10124
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "小溪 溪 stream",
+          "description": "溪水冰涼，嚐起來有一點石頭的味道。\n水底的石頭長著綠綠的水草，跟著水流輕輕地擺。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10126,
+      "name": "荒掉的果園",
+      "description": "幾棵老果樹（trees）混在野樹中間，排得還看得出一點整齊。\n沒人修剪，枝條亂長一通，結出來的蘋果又小又酸。\n樹下落滿了爛果子，引來一群嗡嗡叫的黃蜂。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，兩道長滿草的舊車轍穿過林子。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10118
+        },
+        "east": {
+          "description": "往東，草叢裡立著一間只剩土牆的農舍。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10127
+        },
+        "south": {
+          "description": "往南，路邊有一堆旅人疊起來的小石堆。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10137
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "果樹 trees",
+          "description": "樹幹上有一道道舊的刀口，是從前接枝留下的。\n種樹的人不知道去了哪裡，樹倒是一年一年照樣結果。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10127,
+      "name": "空農舍",
+      "description": "草叢裡立著一間農舍（farmhouse），屋頂沒了，只剩四面土牆，\n門框還立著，門板早就不見了，門檻淹沒在野草裡。\n南邊是一片又低又密的荊棘，枝條纏得像一道籬笆，鑽不過去。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北是森林的邊緣，灌木後面隱約看得到城牆。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10119
+        },
+        "west": {
+          "description": "往西，幾棵老果樹混在野樹中間，地上落滿了果子。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10126
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "農舍 farmhouse",
+          "description": "屋裡的地上長滿了草，牆角有一個破水缸。\n牆上刻著幾道直線，像是有人在數日子，數到第十七道就停了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10128,
+      "name": "石崖下的林緣",
+      "description": "林緣的南邊被一道陡峭的石崖（cliff）擋住，崖壁又高又滑，爬不上去。\n崖頂上隱約看得到一段石牆，牆後面是什麼就看不到了。\n崖腳的草裡散著從上面滾下來的碎石。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，林緣立著一塊歪斜的木頭路牌。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10113
+        },
+        "east": {
+          "description": "往東，林子裡有一條兩旁排著石頭的小徑。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10129
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "石崖 崖壁 cliff",
+          "description": "崖壁上有幾道很深的刮痕，像是有什麼很重的東西從上面拖過。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10129,
+      "name": "被吞掉的小徑",
+      "description": "地上隱約有一條往南的小徑（path），兩旁的石頭排得整整齊齊，\n像是從前有人用心鋪過。\n可是走沒幾步，小徑就被一大片荊棘吞掉了，再也找不到痕跡。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，地勢慢慢高起來，到處是亂石。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10121
+        },
+        "east": {
+          "description": "往東，泥地上有一串鹿的蹄印。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10130
+        },
+        "west": {
+          "description": "往西，林緣緊貼著一道陡峭的石崖。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10128
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "小徑 path",
+          "description": "鋪路的石頭是方的，邊角磨圓了，石縫裡長滿了草。\n不知道從前這條路通到哪裡去。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10130,
+      "name": "鹿走的小路",
+      "description": "林子裡有一條窄窄的小路，不是人走出來的，是鹿一趟一趟踩出來的。\n泥地上留著一串蹄印（tracks），路邊的樹皮被啃掉了一圈。\n偶爾聽得到遠處有樹枝斷掉的聲音。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，林子暗了下來，藤蔓從樹上一道道垂下來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10122
+        },
+        "south": {
+          "description": "往南，林緣開著一大片野花。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10134
+        },
+        "west": {
+          "description": "往西，地上有一條兩旁排著石頭的小徑。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10129
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "蹄印 tracks",
+          "description": "蹄印分成兩瓣，很新，泥巴邊上還是濕的。\n有一隻大的帶著一隻小的，剛走過去沒多久。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10131,
+      "name": "白樺林",
+      "description": "這一片全是白樺樹（birches），樹幹白得發亮，上面一道道黑色的橫紋。\n樹葉細細碎碎的，風一吹就嘩嘩地響，地上的影子跟著晃來晃去。\n比起別的地方，這裡亮得多，也乾淨得多。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "east": {
+          "description": "往東，幾塊大石頭疊在林子裡。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10132
+        },
+        "south": {
+          "description": "往南是森林的邊緣，看得到一圈倒塌的石牆。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10135
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "白樺 白樺樹 birches",
+          "description": "白樺的樹皮薄得像紙，一層層翹起來。\n有人在一棵樹上剝了一塊樹皮，大概是拿去引火了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10132,
+      "name": "裂開的大石",
+      "description": "幾塊比人還高的大石頭（boulders）疊在林子裡，像是被誰隨手丟在這裡。\n最上面那塊石頭從中間裂開，一棵小樹從裂縫裡長出來，把石頭撐成了兩半。\n石頭底下陰陰涼涼的，長著一圈蕨類。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，枝葉密得透不進光，黑得什麼也看不見。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10124
+        },
+        "east": {
+          "description": "往東，蕨類長得比腰還高，綠油油的一片。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10133
+        },
+        "west": {
+          "description": "往西是一片白樺林，樹幹白得發亮。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10131
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "大石頭 石頭 boulders",
+          "description": "石頭摸起來冰冰的，表面長著一塊塊灰綠色的地衣。\n樹根硬生生地擠進石縫裡，看得出它花了很多年。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10133,
+      "name": "蕨叢",
+      "description": "蕨類（ferns）長得比腰還高，綠油油的一大片，把路都蓋住了。\n你走過去，蕨葉上的露水沾濕了褲腳。\n蕨叢底下窸窸窣窣的，不知道藏了什麼小動物。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "south": {
+          "description": "往南傳來篤篤篤的啄木聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10136
+        },
+        "west": {
+          "description": "往西，幾塊大石頭疊在林子裡。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10132
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "蕨類 蕨葉 ferns",
+          "description": "蕨葉一片片展開，邊緣是細細的鋸齒，捲起來的嫩芽像小拳頭。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10134,
+      "name": "開滿野花的林緣",
+      "description": "林緣外是一片緩坡，開滿了黃色和白色的野花（flowers），\n蜜蜂在花叢間飛來飛去，空氣裡有一股甜甜的香味。\n坡上的草被兔子啃得短短的，好像有人特地修剪過。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，林子裡有一條鹿走出來的小路。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10130
+        },
+        "east": {
+          "description": "往東，林緣有一圈倒塌的石牆。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10135
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "野花 flowers",
+          "description": "大多是小小的黃菊和白色的三葉草花，也有幾朵紫色的薊。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10135,
+      "name": "倒塌的羊圈",
+      "description": "林緣的空地上，一圈石牆（wall）圍成一個大圓，大半已經倒了。\n從前大概是羊圈，牆裡的草比牆外的綠，大概是從前的羊糞養肥的。\n南邊的地勢慢慢低下去，地上開始變得濕濕軟軟的。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北是一片白樺林，樹幹白得發亮。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10131
+        },
+        "west": {
+          "description": "往西，林緣開著一大片野花。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10134
+        },
+        "south": {
+          "description": "往南，地上越來越濕，泥巴裡積著一窪窪的水。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10139
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "石牆 羊圈 wall",
+          "description": "石頭疊得很仔細，沒用一點泥漿，倒下的部分也只是一塊塊滾在地上。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10136,
+      "name": "啄木鳥的枯樹",
+      "description": "一棵枯死的老樹（tree）站在林子裡，樹皮剝光了，白白的樹幹上全是小洞。\n篤篤篤的聲音從頭頂上傳來，一隻紅頭的啄木鳥正在樹上鑿洞。\n樹底下落了一層木屑，像下過一場細雪。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，蕨類長得比腰還高，綠油油的一片。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10133
+        },
+        "east": {
+          "description": "往東，路邊有一堆旅人疊起來的小石堆。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10137
+        },
+        "south": {
+          "description": "往南是森林的邊緣，一棵大栗子樹撐開了樹冠。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10141
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "枯樹 老樹 tree",
+          "description": "樹幹上的洞一個挨著一個，有的大得可以伸進一隻手。\n裡面住著什麼，你最好別伸手去試。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10137,
+      "name": "路邊的石堆",
+      "description": "一條模糊的小路從林子裡穿過，路邊有一堆小石頭疊成的石堆（cairn）。\n經過的旅人習慣往上面放一顆石頭，石堆已經疊到你的胸口那麼高了。\n石堆最上面那顆石頭還是乾淨的，不久前才有人經過。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，幾棵老果樹混在野樹中間。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10126
+        },
+        "east": {
+          "description": "往東，樹林到了盡頭，外面是一大片荒草地。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10138
+        },
+        "west": {
+          "description": "往西傳來篤篤篤的啄木聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10136
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "石堆 cairn",
+          "description": "石頭有圓有扁，有的上面用刀刻了小記號，大概是誰的名字。\n最底下的石頭已經沉進土裡，長滿了青苔。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10138,
+      "name": "望得見屋頂的林緣",
+      "description": "樹林到這裡就到了盡頭，外面是一大片荒草地，草浪隨著風起伏。\n東邊遠遠地有幾片低矮的屋頂（roofs），看不出有沒有人住。\n林緣的大樹下，草被壓出好幾個窩，是狼趴過的痕跡。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "west": {
+          "description": "往西，路邊有一堆旅人疊起來的小石堆。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10137
+        },
+        "south": {
+          "description": "往南，林緣的樹縫間閃著一點水光。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10142
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "屋頂 roofs",
+          "description": "距離太遠了，只看得出是幾片灰灰的屋頂，擠在一塊兒。\n中間隔著一大片荒草地，看不到有路通過去。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10139,
+      "name": "泥濘的林緣",
+      "description": "這裡的地又濕又軟，一腳踩下去，泥巴就淹過鞋底。\n南邊是一大片長滿蘆葦的沼地（marsh），泥水深得看不見底。\n一窪窪的水裡浮著綠色的浮萍，青蛙一看到你就撲通跳進水裡。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，林緣有一圈倒塌的石牆。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10135
+        },
+        "east": {
+          "description": "往東，林緣外是一片荒掉的田地。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10140
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "沼地 蘆葦 marsh",
+          "description": "蘆葦長得比人還高，風一吹就沙沙地響，飄來一股爛泥的臭味。\n丟一顆石頭下去，連一點聲音都沒有，不知道那片泥水有多深。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10140,
+      "name": "荒田邊",
+      "description": "林緣外是一片荒掉的田地，田埂還看得出一格一格的形狀，\n裡面卻長滿了灌木和野草。草叢裡半埋著一個生鏽的犁頭（plow），\n不知道最後一次有人在這裡犁田，是多少年前的事了。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "west": {
+          "description": "往西，地上越來越濕，泥巴裡積著一窪窪的水。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10139
+        },
+        "east": {
+          "description": "往東，一棵大栗子樹撐開了樹冠，地上落滿了刺殼。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10141
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "犁頭 plow",
+          "description": "鐵做的犁頭鏽得發紅，一敲就掉下一片鏽皮。\n木頭的犁柄早就爛光了，只剩一個鐵環。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10141,
+      "name": "栗子樹下",
+      "description": "一棵大栗子樹（tree）撐開了樹冠，樹蔭底下涼涼的。\n地上落滿了帶刺的殼，有些已經裂開，栗子被吃得一顆不剩。\n樹下的三葉草長得又密又嫩，是兔子最愛來的地方。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "west": {
+          "description": "往西，林緣外是一片荒掉的田地。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10140
+        },
+        "east": {
+          "description": "往東，林緣的樹縫間閃著一點水光。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10142
+        },
+        "north": {
+          "description": "往北傳來篤篤篤的啄木聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10136
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "栗子樹 tree",
+          "description": "這棵樹少說也有一兩百歲了，樹幹上有一個用刀刻的心形，\n刻痕跟著樹一起長大，被撐得歪歪扭扭的。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10142,
+      "name": "看得到水光的林緣",
+      "description": "南邊的樹縫間，遠遠地閃著一片水光（water），像是一座湖。\n中間隔著一大片蘆葦地，蘆葦長得比人還高，看不出能怎麼過去。\n風從那頭吹過來，涼涼的，帶著一點水的味道。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "west": {
+          "description": "往西，一棵大栗子樹撐開了樹冠。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10141
+        },
+        "north": {
+          "description": "往北，林緣外是一大片荒草地。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10138
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "水光 湖 water",
+          "description": "那片水亮晃晃的，像撒了一層碎銀子。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10143,
+      "name": "夢幻草原上",
+      "description": "白霧濃得化不開，腳下的草又濕又滑，每走一步都踩出一點水聲。\n只有北邊的霧好像稀薄了一些，隱約透著一點亮光。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "往北，霧好像稀薄了一些，隱約透著亮光。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10195
+        },
+        "east": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10144
+        },
+        "south": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10149
+        },
+        "west": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10147
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10144,
+      "name": "夢幻草原上",
+      "description": "地上有一串腳印（footprints），踩得很深，一路走進霧裡。\n你低頭比了比，那串腳印跟你的鞋子一樣大。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "east": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10145
+        },
+        "south": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10150
+        },
+        "west": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10143
+        },
+        "north": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10190
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "腳印 footprints",
+          "description": "腳印很新，被踩倒的草還沒彈回來。\n走的路線歪歪扭扭的，像是走路的人也不知道自己要去哪裡。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10145,
+      "name": "白茫茫的霧裡",
+      "description": "草長得比人的腰還高，霧氣在草尖上凝成水珠，一碰就灑你一身。\n遠遠地好像有人在喊什麼，仔細一聽，又什麼都沒有。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10191
+        },
+        "east": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10146
+        },
+        "south": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10151
+        },
+        "west": {
+          "description": "看不清楚，連地勢是高是低都分不出來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10144
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10146,
+      "name": "白茫茫的霧裡",
+      "description": "一截腐朽的木樁（post）斜插在草叢裡，上面綁著一條褪色的布條，\n不知道是哪個迷路的人留下的記號。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10192
+        },
+        "east": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10147
+        },
+        "south": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10152
+        },
+        "west": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10145
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "木樁 布條 post",
+          "description": "布條原本大概是紅色的，現在褪得跟霧差不多白。\n木樁上用刀刻著一道道短短的記號，數一數，有好幾十道。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10147,
+      "name": "夢幻草原上",
+      "description": "白霧濃得化不開，四周都是一樣的灰白，連天色都看不出來。\n腳下的草又濕又滑，每走一步都踩出一點水聲。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10193
+        },
+        "east": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10143
+        },
+        "south": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10153
+        },
+        "west": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10146
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10148,
+      "name": "霧中的草原",
+      "description": "四周白茫茫一片，你走了好一會兒，回頭看，來時的路已經被霧吞掉了。\n草叢裡偶爾有什麼竄過去，快得看不清楚。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "看不清楚，連地勢是高是低都分不出來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10182
+        },
+        "east": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10149
+        },
+        "south": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10156
+        },
+        "west": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10154
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10149,
+      "name": "白茫茫的霧裡",
+      "description": "一截腐朽的木樁（post）斜插在草叢裡，上面綁著一條褪色的布條，\n不知道是哪個迷路的人留下的記號。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "看不清楚，連地勢是高是低都分不出來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10143
+        },
+        "east": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10150
+        },
+        "south": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10157
+        },
+        "west": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10148
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "木樁 布條 post",
+          "description": "布條原本大概是紅色的，現在褪得跟霧差不多白。\n木樁上用刀刻著一道道短短的記號，數一數，有好幾十道。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10150,
+      "name": "霧中的草原",
+      "description": "四周白茫茫一片，你走了好一會兒，回頭看，來時的路已經被霧吞掉了。\n草叢裡偶爾有什麼竄過去，快得看不清楚。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10144
+        },
+        "east": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10151
+        },
+        "south": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10158
+        },
+        "west": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10149
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10151,
+      "name": "白茫茫的霧裡",
+      "description": "一截腐朽的木樁（post）斜插在草叢裡，上面綁著一條褪色的布條，\n不知道是哪個迷路的人留下的記號。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10145
+        },
+        "east": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10152
+        },
+        "south": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10159
+        },
+        "west": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10150
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "木樁 布條 post",
+          "description": "布條原本大概是紅色的，現在褪得跟霧差不多白。\n木樁上用刀刻著一道道短短的記號，數一數，有好幾十道。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10152,
+      "name": "白茫茫的霧裡",
+      "description": "草長得比人的腰還高，霧氣在草尖上凝成水珠，一碰就灑你一身。\n遠遠地好像有人在喊什麼，仔細一聽，又什麼都沒有。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10146
+        },
+        "east": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10153
+        },
+        "south": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10160
+        },
+        "west": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10151
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10153,
+      "name": "白茫茫的霧裡",
+      "description": "一截腐朽的木樁（post）斜插在草叢裡，上面綁著一條褪色的布條，\n不知道是哪個迷路的人留下的記號。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10147
+        },
+        "east": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10154
+        },
+        "south": {
+          "description": "看不清楚，連地勢是高是低都分不出來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10161
+        },
+        "west": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10152
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "木樁 布條 post",
+          "description": "布條原本大概是紅色的，現在褪得跟霧差不多白。\n木樁上用刀刻著一道道短短的記號，數一數，有好幾十道。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10154,
+      "name": "霧中的草原",
+      "description": "霧裡立著一塊長滿青苔的大石頭（stone），看起來有點眼熟，\n好像剛剛才經過。四周靜得只聽得到自己的呼吸。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10188
+        },
+        "east": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10148
+        },
+        "south": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10162
+        },
+        "west": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10153
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "大石頭 石頭 stone",
+          "description": "石頭有半個人高，青苔濕濕滑滑的。\n你仔細看了看，實在說不出它跟剛才那塊有什麼不一樣。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10155,
+      "name": "霧中的草原",
+      "description": "霧裡立著一塊長滿青苔的大石頭（stone），看起來有點眼熟，\n好像剛剛才經過。四周靜得只聽得到自己的呼吸。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10173
+        },
+        "east": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10156
+        },
+        "south": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10164
+        },
+        "west": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10163
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "大石頭 石頭 stone",
+          "description": "石頭有半個人高，青苔濕濕滑滑的。\n你仔細看了看，實在說不出它跟剛才那塊有什麼不一樣。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10156,
+      "name": "霧中的草原",
+      "description": "霧忽濃忽淡，有一陣子你以為看見了遠處的樹影，\n一眨眼又被白霧蓋住了。風吹過草地，沙沙聲從四面八方傳過來。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10148
+        },
+        "east": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10157
+        },
+        "south": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10165
+        },
+        "west": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10155
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10157,
+      "name": "霧中的草原",
+      "description": "四周白茫茫一片，你走了好一會兒，回頭看，來時的路已經被霧吞掉了。\n草叢裡偶爾有什麼竄過去，快得看不清楚。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10149
+        },
+        "east": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10158
+        },
+        "south": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10166
+        },
+        "west": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10156
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10158,
+      "name": "夢幻草原上",
+      "description": "霧氣冰冰冷冷的，貼在臉上像一層濕布。\n草地上散著幾根白色的骨頭（bones），\n看不出是什麼動物的，也看不出是多久以前留下的。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10150
+        },
+        "east": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10159
+        },
+        "south": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10167
+        },
+        "west": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10157
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "骨頭 bones",
+          "description": "骨頭被雨水洗得又白又乾淨，上面沒有一點牙印。\n像是什麼動物在這裡轉了很久，最後就躺下來不走了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10159,
+      "name": "霧中的草原",
+      "description": "霧忽濃忽淡，有一陣子你以為看見了遠處的樹影，\n一眨眼又被白霧蓋住了。風吹過草地，沙沙聲從四面八方傳過來。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "看不清楚，連地勢是高是低都分不出來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10151
+        },
+        "east": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10160
+        },
+        "south": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10168
+        },
+        "west": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10158
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10160,
+      "name": "夢幻草原上",
+      "description": "霧氣冰冰冷冷的，貼在臉上像一層濕布。\n草地上散著幾根白色的骨頭（bones），\n看不出是什麼動物的，也看不出是多久以前留下的。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10152
+        },
+        "east": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10161
+        },
+        "south": {
+          "description": "看不清楚，連地勢是高是低都分不出來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10169
+        },
+        "west": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10159
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "骨頭 bones",
+          "description": "骨頭被雨水洗得又白又乾淨，上面沒有一點牙印。\n像是什麼動物在這裡轉了很久，最後就躺下來不走了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10161,
+      "name": "夢幻草原上",
+      "description": "白霧濃得化不開，四周都是一樣的灰白，連天色都看不出來。\n腳下的草又濕又滑，每走一步都踩出一點水聲。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10153
+        },
+        "east": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10162
+        },
+        "south": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10170
+        },
+        "west": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10160
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10162,
+      "name": "夢幻草原上",
+      "description": "地上有一串腳印（footprints），踩得很深，一路走進霧裡。\n你低頭比了比，那串腳印跟你的鞋子一樣大。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10154
+        },
+        "east": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10163
+        },
+        "south": {
+          "description": "看不清楚，連地勢是高是低都分不出來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10171
+        },
+        "west": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10161
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "腳印 footprints",
+          "description": "腳印很新，被踩倒的草還沒彈回來。\n走的路線歪歪扭扭的，像是走路的人也不知道自己要去哪裡。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10163,
+      "name": "夢幻草原上",
+      "description": "白霧濃得化不開，四周都是一樣的灰白，連天色都看不出來。\n腳下的草又濕又滑，每走一步都踩出一點水聲。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10181
+        },
+        "east": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10155
+        },
+        "south": {
+          "description": "看不清楚，連地勢是高是低都分不出來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10172
+        },
+        "west": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10162
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10164,
+      "name": "霧中的草原",
+      "description": "霧忽濃忽淡，有一陣子你以為看見了遠處的樹影，\n一眨眼又被白霧蓋住了。風吹過草地，沙沙聲從四面八方傳過來。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10155
+        },
+        "east": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10165
+        },
+        "south": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10173
+        },
+        "west": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10172
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10165,
+      "name": "夢幻草原上",
+      "description": "霧氣冰冰冷冷的，貼在臉上像一層濕布。\n草地上散著幾根白色的骨頭（bones），\n看不出是什麼動物的，也看不出是多久以前留下的。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "看不清楚，連地勢是高是低都分不出來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10156
+        },
+        "east": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10166
+        },
+        "south": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10174
+        },
+        "west": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10164
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "骨頭 bones",
+          "description": "骨頭被雨水洗得又白又乾淨，上面沒有一點牙印。\n像是什麼動物在這裡轉了很久，最後就躺下來不走了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10166,
+      "name": "夢幻草原上",
+      "description": "地上有一串腳印（footprints），踩得很深，一路走進霧裡。\n你低頭比了比，那串腳印跟你的鞋子一樣大。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10157
+        },
+        "east": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10167
+        },
+        "south": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10175
+        },
+        "west": {
+          "description": "看不清楚，連地勢是高是低都分不出來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10165
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "腳印 footprints",
+          "description": "腳印很新，被踩倒的草還沒彈回來。\n走的路線歪歪扭扭的，像是走路的人也不知道自己要去哪裡。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10167,
+      "name": "夢幻草原上",
+      "description": "白霧濃得化不開，四周都是一樣的灰白，連天色都看不出來。\n腳下的草又濕又滑，每走一步都踩出一點水聲。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "看不清楚，連地勢是高是低都分不出來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10158
+        },
+        "east": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10168
+        },
+        "south": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10176
+        },
+        "west": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10166
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10168,
+      "name": "白茫茫的霧裡",
+      "description": "一截腐朽的木樁（post）斜插在草叢裡，上面綁著一條褪色的布條，\n不知道是哪個迷路的人留下的記號。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10159
+        },
+        "east": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10169
+        },
+        "south": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10177
+        },
+        "west": {
+          "description": "看不清楚，連地勢是高是低都分不出來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10167
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "木樁 布條 post",
+          "description": "布條原本大概是紅色的，現在褪得跟霧差不多白。\n木樁上用刀刻著一道道短短的記號，數一數，有好幾十道。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10169,
+      "name": "白茫茫的霧裡",
+      "description": "草長得比人的腰還高，霧氣在草尖上凝成水珠，一碰就灑你一身。\n遠遠地好像有人在喊什麼，仔細一聽，又什麼都沒有。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "看不清楚，連地勢是高是低都分不出來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10160
+        },
+        "east": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10170
+        },
+        "south": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10178
+        },
+        "west": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10168
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10170,
+      "name": "霧中的草原",
+      "description": "霧忽濃忽淡，有一陣子你以為看見了遠處的樹影，\n一眨眼又被白霧蓋住了。風吹過草地，沙沙聲從四面八方傳過來。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10161
+        },
+        "east": {
+          "description": "看不清楚，連地勢是高是低都分不出來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10171
+        },
+        "south": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10179
+        },
+        "west": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10169
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10171,
+      "name": "霧中的草原",
+      "description": "霧裡立著一塊長滿青苔的大石頭（stone），看起來有點眼熟，\n好像剛剛才經過。四周靜得只聽得到自己的呼吸。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10162
+        },
+        "east": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10172
+        },
+        "south": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10180
+        },
+        "west": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10170
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "大石頭 石頭 stone",
+          "description": "石頭有半個人高，青苔濕濕滑滑的。\n你仔細看了看，實在說不出它跟剛才那塊有什麼不一樣。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10172,
+      "name": "霧中的草原",
+      "description": "四周白茫茫一片，你走了好一會兒，回頭看，來時的路已經被霧吞掉了。\n草叢裡偶爾有什麼竄過去，快得看不清楚。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10163
+        },
+        "east": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10164
+        },
+        "south": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10181
+        },
+        "west": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10171
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10173,
+      "name": "霧中的草原",
+      "description": "四周白茫茫一片，你走了好一會兒，回頭看，來時的路已經被霧吞掉了。\n草叢裡偶爾有什麼竄過去，快得看不清楚。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10164
+        },
+        "east": {
+          "description": "看不清楚，連地勢是高是低都分不出來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10174
+        },
+        "south": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10155
+        },
+        "west": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10181
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10174,
+      "name": "夢幻草原上",
+      "description": "地上有一串腳印（footprints），踩得很深，一路走進霧裡。\n你低頭比了比，那串腳印跟你的鞋子一樣大。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10165
+        },
+        "east": {
+          "description": "看不清楚，連地勢是高是低都分不出來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10175
+        },
+        "south": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10182
+        },
+        "west": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10173
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "腳印 footprints",
+          "description": "腳印很新，被踩倒的草還沒彈回來。\n走的路線歪歪扭扭的，像是走路的人也不知道自己要去哪裡。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10175,
+      "name": "霧中的草原",
+      "description": "霧裡立著一塊長滿青苔的大石頭（stone），看起來有點眼熟，\n好像剛剛才經過。四周靜得只聽得到自己的呼吸。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10166
+        },
+        "east": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10176
+        },
+        "south": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10183
+        },
+        "west": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10174
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "大石頭 石頭 stone",
+          "description": "石頭有半個人高，青苔濕濕滑滑的。\n你仔細看了看，實在說不出它跟剛才那塊有什麼不一樣。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10176,
+      "name": "夢幻草原上",
+      "description": "霧氣冰冰冷冷的，貼在臉上像一層濕布。\n草地上散著幾根白色的骨頭（bones），\n看不出是什麼動物的，也看不出是多久以前留下的。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10167
+        },
+        "east": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10177
+        },
+        "south": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10184
+        },
+        "west": {
+          "description": "看不清楚，連地勢是高是低都分不出來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10175
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "骨頭 bones",
+          "description": "骨頭被雨水洗得又白又乾淨，上面沒有一點牙印。\n像是什麼動物在這裡轉了很久，最後就躺下來不走了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10177,
+      "name": "白茫茫的霧裡",
+      "description": "草長得比人的腰還高，霧氣在草尖上凝成水珠，一碰就灑你一身。\n遠遠地好像有人在喊什麼，仔細一聽，又什麼都沒有。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10168
+        },
+        "east": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10178
+        },
+        "south": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10185
+        },
+        "west": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10176
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10178,
+      "name": "霧中的草原",
+      "description": "四周白茫茫一片，你走了好一會兒，回頭看，來時的路已經被霧吞掉了。\n草叢裡偶爾有什麼竄過去，快得看不清楚。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10169
+        },
+        "east": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10179
+        },
+        "south": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10186
+        },
+        "west": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10177
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10179,
+      "name": "夢幻草原上",
+      "description": "白霧濃得化不開，四周都是一樣的灰白，連天色都看不出來。\n腳下的草又濕又滑，每走一步都踩出一點水聲。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10170
+        },
+        "east": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10180
+        },
+        "south": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10187
+        },
+        "west": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10178
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10180,
+      "name": "白茫茫的霧裡",
+      "description": "一截腐朽的木樁（post）斜插在草叢裡，上面綁著一條褪色的布條，\n不知道是哪個迷路的人留下的記號。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10171
+        },
+        "east": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10181
+        },
+        "south": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10188
+        },
+        "west": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10179
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "木樁 布條 post",
+          "description": "布條原本大概是紅色的，現在褪得跟霧差不多白。\n木樁上用刀刻著一道道短短的記號，數一數，有好幾十道。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10181,
+      "name": "霧中的草原",
+      "description": "霧忽濃忽淡，有一陣子你以為看見了遠處的樹影，\n一眨眼又被白霧蓋住了。風吹過草地，沙沙聲從四面八方傳過來。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10172
+        },
+        "east": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10173
+        },
+        "south": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10163
+        },
+        "west": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10180
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10182,
+      "name": "夢幻草原上",
+      "description": "白霧濃得化不開，四周都是一樣的灰白，連天色都看不出來。\n腳下的草又濕又滑，每走一步都踩出一點水聲。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10174
+        },
+        "east": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10183
+        },
+        "south": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10148
+        },
+        "west": {
+          "description": "看不清楚，連地勢是高是低都分不出來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10188
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10183,
+      "name": "夢幻草原上",
+      "description": "地上有一串腳印（footprints），踩得很深，一路走進霧裡。\n你低頭比了比，那串腳印跟你的鞋子一樣大。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10175
+        },
+        "east": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10184
+        },
+        "south": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10189
+        },
+        "west": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10182
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "腳印 footprints",
+          "description": "腳印很新，被踩倒的草還沒彈回來。\n走的路線歪歪扭扭的，像是走路的人也不知道自己要去哪裡。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10184,
+      "name": "白茫茫的霧裡",
+      "description": "草長得比人的腰還高，霧氣在草尖上凝成水珠，一碰就灑你一身。\n遠遠地好像有人在喊什麼，仔細一聽，又什麼都沒有。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10176
+        },
+        "east": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10185
+        },
+        "south": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10190
+        },
+        "west": {
+          "description": "看不清楚，連地勢是高是低都分不出來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10183
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10185,
+      "name": "白茫茫的霧裡",
+      "description": "一截腐朽的木樁（post）斜插在草叢裡，上面綁著一條褪色的布條，\n不知道是哪個迷路的人留下的記號。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10177
+        },
+        "east": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10186
+        },
+        "south": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10191
+        },
+        "west": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10184
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "木樁 布條 post",
+          "description": "布條原本大概是紅色的，現在褪得跟霧差不多白。\n木樁上用刀刻著一道道短短的記號，數一數，有好幾十道。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10186,
+      "name": "霧中的草原",
+      "description": "霧裡立著一塊長滿青苔的大石頭（stone），看起來有點眼熟，\n好像剛剛才經過。四周靜得只聽得到自己的呼吸。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10178
+        },
+        "east": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10187
+        },
+        "south": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10192
+        },
+        "west": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10185
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "大石頭 石頭 stone",
+          "description": "石頭有半個人高，青苔濕濕滑滑的。\n你仔細看了看，實在說不出它跟剛才那塊有什麼不一樣。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10187,
+      "name": "夢幻草原上",
+      "description": "霧氣冰冰冷冷的，貼在臉上像一層濕布。\n草地上散著幾根白色的骨頭（bones），\n看不出是什麼動物的，也看不出是多久以前留下的。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10179
+        },
+        "east": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10188
+        },
+        "south": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10193
+        },
+        "west": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10186
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "骨頭 bones",
+          "description": "骨頭被雨水洗得又白又乾淨，上面沒有一點牙印。\n像是什麼動物在這裡轉了很久，最後就躺下來不走了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10188,
+      "name": "夢幻草原上",
+      "description": "地上有一串腳印（footprints），踩得很深，一路走進霧裡。\n你低頭比了比，那串腳印跟你的鞋子一樣大。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10180
+        },
+        "east": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10182
+        },
+        "south": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10154
+        },
+        "west": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10187
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "腳印 footprints",
+          "description": "腳印很新，被踩倒的草還沒彈回來。\n走的路線歪歪扭扭的，像是走路的人也不知道自己要去哪裡。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10189,
+      "name": "霧中的草原",
+      "description": "霧裡立著一塊長滿青苔的大石頭（stone），看起來有點眼熟，\n好像剛剛才經過。四周靜得只聽得到自己的呼吸。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "看不清楚，連地勢是高是低都分不出來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10183
+        },
+        "east": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10190
+        },
+        "south": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10143
+        },
+        "west": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10193
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "大石頭 石頭 stone",
+          "description": "石頭有半個人高，青苔濕濕滑滑的。\n你仔細看了看，實在說不出它跟剛才那塊有什麼不一樣。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10190,
+      "name": "夢幻草原上",
+      "description": "霧氣冰冰冷冷的，貼在臉上像一層濕布。\n草地上散著幾根白色的骨頭（bones），\n看不出是什麼動物的，也看不出是多久以前留下的。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10184
+        },
+        "east": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10191
+        },
+        "south": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10144
+        },
+        "west": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10189
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "骨頭 bones",
+          "description": "骨頭被雨水洗得又白又乾淨，上面沒有一點牙印。\n像是什麼動物在這裡轉了很久，最後就躺下來不走了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10191,
+      "name": "霧中的草原",
+      "description": "霧忽濃忽淡，有一陣子你以為看見了遠處的樹影，\n一眨眼又被白霧蓋住了。風吹過草地，沙沙聲從四面八方傳過來。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10185
+        },
+        "east": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10192
+        },
+        "west": {
+          "description": "霧裡飄來一股濕泥和青草的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10190
+        },
+        "south": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10145
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10192,
+      "name": "夢幻草原上",
+      "description": "地上有一串腳印（footprints），踩得很深，一路走進霧裡。\n你低頭比了比，那串腳印跟你的鞋子一樣大。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10186
+        },
+        "east": {
+          "description": "霧太濃了，只看得到腳邊幾步的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10193
+        },
+        "south": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10146
+        },
+        "west": {
+          "description": "白茫茫一片，什麼也看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10191
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "腳印 footprints",
+          "description": "腳印很新，被踩倒的草還沒彈回來。\n走的路線歪歪扭扭的，像是走路的人也不知道自己要去哪裡。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10193,
+      "name": "白茫茫的霧裡",
+      "description": "草長得比人的腰還高，霧氣在草尖上凝成水珠，一碰就灑你一身。\n遠遠地好像有人在喊什麼，仔細一聽，又什麼都沒有。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "霧裡隱約有草被風吹動的沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10187
+        },
+        "east": {
+          "description": "只有一片灰白的霧，和濕淋淋的草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10189
+        },
+        "south": {
+          "description": "霧氣翻滾著，好像有什麼影子一閃而過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10147
+        },
+        "west": {
+          "description": "那一頭的霧一樣濃，分不出遠近。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10192
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10194,
+      "name": "夢幻草原的入口",
+      "description": "森林外是一片草原，濃濃的白霧（fog）停在上面，風也吹不散。\n霧邊的草濕淋淋的，再往裡面走，大概連自己的腳都看不清楚。\n老人說霧的另一邊有一座高山，山頂就是天神住的地方，\n可是走進霧裡的人，很少有走得出來的。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "往北，白霧像一堵牆，什麼也看不見。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10191
+        },
+        "south": {
+          "description": "往南回到森林的邊緣，那裡看得清楚多了。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 10103
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "白霧 霧 fog",
+          "description": "霧白得像牛奶，伸手進去，手指就不見了。\n霧裡一點風也沒有，安靜得讓人心裡發毛。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10195,
+      "name": "夢幻草原的出口",
+      "description": "你總算從霧裡鑽了出來。回頭一看，白霧像一堵牆，分不出是從哪裡走出來的。\n北邊不遠處，一座高山（mountain）直直地插進雲裡，\n山腳下卻橫著一道又深又陡的峽谷，看不出有路可以過去。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {},
+      "extra_descriptions": [
+        {
+          "keywords": "高山 mountain",
+          "description": "山很高，山頂藏在雲裡看不見。山壁上好像有一條細細的小路，\n可是得先過得了那道峽谷才行。\n"
+        }
+      ],
+      "script": null
+    }
+  ],
+  "mobiles": [
+    {
+      "vnum": 10100,
+      "keywords": "wolf black",
+      "short": "黑狼",
+      "long": "黑狼/wolf/壓低身子齜著牙，喉嚨裡滾著低低的吼聲。\n",
+      "description": "一隻瘦長的黑狼，毛又粗又亂，肋骨隔著皮都看得出來。\n這些年林子裡沒什麼人走動，狼越來越多，膽子也越來越大。\n",
+      "level": 4,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 0,
+      "affected_by": 65568,
+      "alignment": -300,
+      "race": "animal",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 10101,
+          "color": "white",
+          "chance": 1000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 10101,
+          "color": "blue",
+          "chance": 1000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 10101,
+          "color": "purple",
+          "chance": 400,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 10101,
+          "color": "orange",
+          "chance": 100,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 10101,
+      "keywords": "wolf black",
+      "short": "黑毛母狼",
+      "long": "黑毛母狼/wolf/豎著頸毛繞著你打轉，黃色的眼睛一直盯著你。\n",
+      "description": "一隻比公狼還壯一圈的母狼，頸子上的毛豎得像一排刺。\n牠不急著撲上來，只是一圈一圈地繞，等你露出破綻。\n",
+      "level": 5,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 0,
+      "affected_by": 65568,
+      "alignment": -300,
+      "race": "animal",
+      "sex": 2,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 10101,
+          "color": "white",
+          "chance": 1000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 10101,
+          "color": "blue",
+          "chance": 1000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 10101,
+          "color": "purple",
+          "chance": 400,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 10101,
+          "color": "orange",
+          "chance": 100,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 10102,
+      "keywords": "rabbit little",
+      "short": "白兔",
+      "long": "白兔/rabbit/蹲在地上，鼻子一抽一抽地嗅著你。\n",
+      "description": "一隻毛茸茸的白兔，耳朵又長又軟，讓人忍不住想摸一下。\n聽說牠們的祖先是從前農家養的兔子，田荒了以後就跑到野地裡。\n",
+      "level": 1,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 128,
+      "affected_by": 32,
+      "alignment": 0,
+      "race": "animal",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 10100,
+          "color": null,
+          "chance": 3000,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 10103,
+      "keywords": "deer",
+      "short": "野鹿",
+      "long": "野鹿/deer/豎起耳朵站在樹下，一有動靜就準備跑。\n",
+      "description": "一頭褐色的野鹿，背上有幾點白斑，四條腿又細又長。\n從前獵人多，鹿見人就逃；現在林子裡鹿多了，膽子也大了一點。\n",
+      "level": 3,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 128,
+      "affected_by": 32,
+      "alignment": 0,
+      "race": "animal",
+      "sex": 2,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 10103,
+          "color": "white",
+          "chance": 1000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 10103,
+          "color": "blue",
+          "chance": 1000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 10103,
+          "color": "purple",
+          "chance": 400,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 10103,
+          "color": "orange",
+          "chance": 100,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 10104,
+      "keywords": "fox",
+      "short": "狐狸",
+      "long": "狐狸/fox/縮在一旁，賊頭賊腦地偷看著你。\n",
+      "description": "一隻紅褐色的狐狸，尾巴尖是白的，個子比你想的還小。\n牠的眼睛骨碌碌地轉，好像在打你乾糧的主意。\n",
+      "level": 2,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 0,
+      "affected_by": 32,
+      "alignment": 0,
+      "race": "animal",
+      "sex": 2,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 10102,
+          "color": "white",
+          "chance": 1000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 10102,
+          "color": "blue",
+          "chance": 1000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 10102,
+          "color": "purple",
+          "chance": 400,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 10102,
+          "color": "orange",
+          "chance": 100,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 10105,
+      "keywords": "bandit",
+      "short": "盜匪",
+      "long": "盜匪/bandit/蹲在路邊磨著匕首，眼睛往你的錢袋瞄。\n",
+      "description": "一個滿臉鬍渣的漢子，身上的皮甲補了又補，腰間掛著一把匕首。\n城外的路沒人管，他們就專挑落單的旅人下手。\n",
+      "level": 6,
+      "tier": "normal",
+      "tier_roll": {
+        "elite": 300
+      },
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "affected_by": 0,
+      "alignment": -300,
+      "race": "human",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 10104,
+          "color": "white",
+          "chance": 1000,
+          "tiers": [
+            "normal"
+          ]
+        },
+        {
+          "obj_vnum": 10104,
+          "color": "blue",
+          "chance": 1000,
+          "tiers": [
+            "normal"
+          ]
+        },
+        {
+          "obj_vnum": 10104,
+          "color": "purple",
+          "chance": 400,
+          "tiers": [
+            "normal"
+          ]
+        },
+        {
+          "obj_vnum": 10104,
+          "color": "orange",
+          "chance": 100,
+          "tiers": [
+            "normal"
+          ]
+        },
+        {
+          "obj_vnum": 10104,
+          "color": "blue",
+          "chance": 10000,
+          "tiers": [
+            "elite"
+          ]
+        },
+        {
+          "obj_vnum": 10104,
+          "color": "purple",
+          "chance": 5500,
+          "tiers": [
+            "elite"
+          ]
+        },
+        {
+          "obj_vnum": 10104,
+          "color": "orange",
+          "chance": 500,
+          "tiers": [
+            "elite"
+          ]
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null,
+      "act": 0
+    },
+    {
+      "vnum": 10106,
+      "keywords": "wolf mist",
+      "short": "霧狼",
+      "long": "霧狼/wolf/在霧裡若隱若現，只看得到一對發亮的眼睛。\n",
+      "description": "一隻灰白色的狼，毛上沾滿了霧水，顏色跟霧幾乎分不出來。\n牠在霧裡走得無聲無息，常常到了跟前你才發現。\n",
+      "level": 7,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "affected_by": 0,
+      "alignment": 0,
+      "race": "animal",
+      "sex": 0,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 10105,
+          "color": "white",
+          "chance": 1000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 10105,
+          "color": "blue",
+          "chance": 1000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 10105,
+          "color": "purple",
+          "chance": 400,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 10105,
+          "color": "orange",
+          "chance": 100,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null,
+      "act": 0
+    },
+    {
+      "vnum": 10107,
+      "keywords": "wolf king grey",
+      "short": "灰鬃狼王",
+      "long": "灰鬃狼王/wolf/趴在草地上，一身灰鬃被風吹得翻起來。\n",
+      "description": "一隻比牛犢還大的老狼，脖子上一圈灰白的長鬃，臉上有一道舊疤。\n霧裡的狼都繞著牠走，牠一抬頭，四周就安靜下來。\n",
+      "level": 8,
+      "tier": "boss",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "affected_by": 0,
+      "alignment": 0,
+      "race": "animal",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 10106,
+          "color": "blue",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 10106,
+          "color": "purple",
+          "chance": 7000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 10106,
+          "color": "orange",
+          "chance": 1000,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null,
+      "act": 2
+    }
+  ],
+  "objects": [
+    {
+      "vnum": 10100,
+      "keywords": "rabbit meat",
+      "short": "兔肉",
+      "long": "一塊剝了皮的兔肉擱在地上，還帶著一點血絲。",
+      "item_type": 19,
+      "extra_flags": 0,
+      "wear_flags": 1,
+      "values": [
+        1,
+        "",
+        0,
+        0
+      ],
+      "weight": 2,
+      "cost": 5,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10101,
+      "keywords": "cloak wolf",
+      "short": "狼皮披風",
+      "long": "一件狼皮縫成的披風攤在地上，毛又粗又硬。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": 1025,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 3,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10102,
+      "keywords": "gloves fox",
+      "short": "狐皮手套",
+      "long": "一雙狐皮手套落在地上，紅棕色的毛摸起來很軟。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": 129,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10103,
+      "keywords": "boots deer",
+      "short": "鹿皮靴",
+      "long": "一雙鹿皮靴歪倒在地上，靴底縫了兩層厚皮。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": 65,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 3,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10104,
+      "keywords": "dagger bandit",
+      "short": "盜匪的匕首",
+      "long": "一把刀柄纏著髒布條的匕首掉在地上，刃口磨得雪亮。",
+      "item_type": 5,
+      "extra_flags": 0,
+      "wear_flags": 8193,
+      "values": [
+        1,
+        0,
+        0,
+        2
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10105,
+      "keywords": "necklace fang wolf",
+      "short": "狼牙項鍊",
+      "long": "一條用麻繩串著幾顆狼牙的項鍊掉在地上。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": 5,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10106,
+      "keywords": "necklace fang king",
+      "short": "狼王的牙項鍊",
+      "long": "一條串著一對又長又彎的獠牙的項鍊掉在地上。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": 5,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    }
+  ],
+  "resets": [
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10102,
+      "limit": 12,
+      "room_vnum": 10101,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10102,
+      "limit": 12,
+      "room_vnum": 10103,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10102,
+      "limit": 12,
+      "room_vnum": 10106,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10102,
+      "limit": 12,
+      "room_vnum": 10134,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10102,
+      "limit": 12,
+      "room_vnum": 10138,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10102,
+      "limit": 12,
+      "room_vnum": 10139,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10102,
+      "limit": 12,
+      "room_vnum": 10140,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10102,
+      "limit": 12,
+      "room_vnum": 10142,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10102,
+      "limit": 12,
+      "room_vnum": 10100,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10102,
+      "limit": 12,
+      "room_vnum": 10105,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10102,
+      "limit": 12,
+      "room_vnum": 10128,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10102,
+      "limit": 12,
+      "room_vnum": 10118,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10104,
+      "limit": 12,
+      "room_vnum": 10109,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10104,
+      "limit": 12,
+      "room_vnum": 10110,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10104,
+      "limit": 12,
+      "room_vnum": 10111,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10104,
+      "limit": 12,
+      "room_vnum": 10112,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10104,
+      "limit": 12,
+      "room_vnum": 10107,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10104,
+      "limit": 12,
+      "room_vnum": 10108,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10104,
+      "limit": 12,
+      "room_vnum": 10126,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10104,
+      "limit": 12,
+      "room_vnum": 10127,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10104,
+      "limit": 12,
+      "room_vnum": 10135,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10104,
+      "limit": 12,
+      "room_vnum": 10141,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10104,
+      "limit": 12,
+      "room_vnum": 10133,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10104,
+      "limit": 12,
+      "room_vnum": 10136,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10103,
+      "limit": 9,
+      "room_vnum": 10130,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10103,
+      "limit": 9,
+      "room_vnum": 10131,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10103,
+      "limit": 9,
+      "room_vnum": 10125,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10103,
+      "limit": 9,
+      "room_vnum": 10132,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10103,
+      "limit": 9,
+      "room_vnum": 10133,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10103,
+      "limit": 9,
+      "room_vnum": 10134,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10103,
+      "limit": 9,
+      "room_vnum": 10141,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10103,
+      "limit": 9,
+      "room_vnum": 10117,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10103,
+      "limit": 9,
+      "room_vnum": 10129,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10100,
+      "limit": 12,
+      "room_vnum": 10115,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10100,
+      "limit": 12,
+      "room_vnum": 10116,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10100,
+      "limit": 12,
+      "room_vnum": 10122,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10100,
+      "limit": 12,
+      "room_vnum": 10123,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10100,
+      "limit": 12,
+      "room_vnum": 10124,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10100,
+      "limit": 12,
+      "room_vnum": 10121,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10100,
+      "limit": 12,
+      "room_vnum": 10112,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10100,
+      "limit": 12,
+      "room_vnum": 10104,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10100,
+      "limit": 12,
+      "room_vnum": 10113,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10100,
+      "limit": 12,
+      "room_vnum": 10114,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10100,
+      "limit": 12,
+      "room_vnum": 10132,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10100,
+      "limit": 12,
+      "room_vnum": 10136,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10101,
+      "limit": 6,
+      "room_vnum": 10116,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10101,
+      "limit": 6,
+      "room_vnum": 10124,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10101,
+      "limit": 6,
+      "room_vnum": 10122,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10101,
+      "limit": 6,
+      "room_vnum": 10115,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10101,
+      "limit": 6,
+      "room_vnum": 10123,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10101,
+      "limit": 6,
+      "room_vnum": 10121,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10105,
+      "limit": 6,
+      "room_vnum": 10120,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10105,
+      "limit": 6,
+      "room_vnum": 10120,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10105,
+      "limit": 6,
+      "room_vnum": 10120,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10105,
+      "limit": 6,
+      "room_vnum": 10118,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10105,
+      "limit": 6,
+      "room_vnum": 10118,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10105,
+      "limit": 6,
+      "room_vnum": 10118,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10106,
+      "limit": 18,
+      "room_vnum": 10144,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10106,
+      "limit": 18,
+      "room_vnum": 10146,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10106,
+      "limit": 18,
+      "room_vnum": 10148,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10106,
+      "limit": 18,
+      "room_vnum": 10150,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10106,
+      "limit": 18,
+      "room_vnum": 10153,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10106,
+      "limit": 18,
+      "room_vnum": 10155,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10106,
+      "limit": 18,
+      "room_vnum": 10157,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10106,
+      "limit": 18,
+      "room_vnum": 10159,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10106,
+      "limit": 18,
+      "room_vnum": 10162,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10106,
+      "limit": 18,
+      "room_vnum": 10164,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10106,
+      "limit": 18,
+      "room_vnum": 10166,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10106,
+      "limit": 18,
+      "room_vnum": 10168,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10106,
+      "limit": 18,
+      "room_vnum": 10172,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10106,
+      "limit": 18,
+      "room_vnum": 10175,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10106,
+      "limit": 18,
+      "room_vnum": 10178,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10106,
+      "limit": 18,
+      "room_vnum": 10181,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10106,
+      "limit": 18,
+      "room_vnum": 10186,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10106,
+      "limit": 18,
+      "room_vnum": 10190,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 10107,
+      "limit": 1,
+      "room_vnum": 10170,
+      "comment": ""
+    },
+    {
+      "cmd": "R",
+      "if_flag": 0,
+      "room_vnum": 10189,
+      "exit_count": 4,
+      "comment": ""
+    },
+    {
+      "cmd": "R",
+      "if_flag": 0,
+      "room_vnum": 10149,
+      "exit_count": 4,
+      "comment": ""
+    },
+    {
+      "cmd": "R",
+      "if_flag": 0,
+      "room_vnum": 10185,
+      "exit_count": 4,
+      "comment": ""
+    },
+    {
+      "cmd": "R",
+      "if_flag": 0,
+      "room_vnum": 10151,
+      "exit_count": 4,
+      "comment": ""
+    }
+  ]
+}

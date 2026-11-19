@@ -173,7 +173,7 @@ SUMMARY = [
     "  資訊  look score who weather skills help",
     "  溝通  chat tell reply say socials",
     "  角色  train rest sleep stand save config ! quit",
-    "  戰鬥  kill use flee",
+    "  戰鬥  kill use flee consider",
     "  物品  get drop put give wear remove inventory equipment examine eat drink fill list buy sell value quaff recite zap brandish",
     "  門    open close lock unlock",
 ]
@@ -191,7 +191,7 @@ def test_imm_sees_the_imm_category():
         "  資訊    look score who weather skills help",
         "  溝通    chat tell reply say socials",
         "  角色    train rest sleep stand save config ! quit",
-        "  戰鬥    kill use flee",
+        "  戰鬥    kill use flee consider",
         "  物品    get drop put give wear remove inventory equipment examine eat drink fill list buy sell value quaff recite zap brandish",
         "  門      open close lock unlock",
         "  管理員  advance slay oload ostat mstat restore affect sset goto givemoney",
@@ -200,7 +200,8 @@ def test_imm_sees_the_imm_category():
 
 
 def test_help_category():
-    assert say("help 戰鬥") == "【戰鬥】\r\n  kill  開打同房間的生物\r\n  use   放技能\r\n  flee  從戰鬥中逃跑\r\n\r\n> "
+    assert say("help 戰鬥") == ("【戰鬥】\r\n  kill      開打同房間的生物\r\n  use       放技能\r\n  flee      從戰鬥中逃跑\r\n"
+                              "  consider  看看打不打得過同房間的生物\r\n\r\n> ")
     assert say("help 戰鬥 kill").startswith("【戰鬥】")          # 只看第一個字
 
 

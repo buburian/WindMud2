@@ -68,6 +68,7 @@ COMMANDS = [
     ("sell", shops.do_sell, P.STANDING),        # se
     ("value", shops.do_value, P.STANDING),      # v
     ("put", items.do_put, P.RESTING),           # p（照 C 版的最低姿勢）
+    ("consider", combat.do_consider, P.RESTING),    # cons（con 是 config；照 C 版的最低姿勢）
 ]
 
 # 管理員（imm）才找得到的指令，接在 COMMANDS 後面找，原本的縮寫都不受影響

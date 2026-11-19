@@ -274,8 +274,8 @@ def test_goto_a_person_or_a_mobile():
     ming.room = zones.world.rooms[3001]
     commands.command(boss, "goto mi")                                        # 線上的玩家，名字打開頭
     assert boss.room is ming.room
-    commands.command(boss, "goto rabbit")                                    # 別的房間的生物（野兔在 102）
-    assert boss.room is zones.world.rooms[102]
+    commands.command(boss, "goto merchant")                                  # 別的房間的生物（測試商人在 101，別的區域沒有這個名字）
+    assert boss.room is zones.world.rooms[101]
 
 
 @pytest.mark.parametrize("line, want", [

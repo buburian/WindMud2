@@ -130,6 +130,7 @@ def character_fields(r, ch):
         "is_fighting": method(ch, lambda: ch.fighting is not None),     # 正在打架（照 C 版，生物打架時不打招呼、不做平常的動作）
         "has_item": method(ch, lambda n: any(o.vnum == number(n) for o in ch.carrying)),
         "wears_item": method(ch, lambda n: any(o.vnum == number(n) for o in ch.equipment.values())),
+        "has_affect": method(ch, lambda name: has_affect(ch, name)),
         "tell": method(ch, lambda t: deliver(ch, colorize_text(t))),
         "transfer": method(ch, lambda n: transfer(ch, n)),
         "give_item": method(ch, lambda n, level=None, color=None: give_item(r, ch, n, level, color)),
@@ -148,6 +149,16 @@ def character_fields(r, ch):
 def colorize_text(t):
     from .color import colorize
     return colorize(text_of(t))
+
+
+def has_affect(ch, name):
+    """身上有沒有這個效果（使用者 2026-11-19 要的）：名字是放它的技能的 id（例如 "gift"），生物的 special 放的寫 special 的名字（"spec_poison"）。
+    效果同一個來源只有一份（affects.add），所以看 source 就好。生物天生帶的 affected_by 不是效果，不算。寫錯名字算腳本出錯。"""
+    from . import skills
+    from .area import SPECIALS
+    if not isinstance(name, str) or (name not in skills.SKILLS and name not in SPECIALS):
+        raise ScriptError(f"沒有技能 {lua_repr(name)}（has_affect 寫技能的 id，例如 \"gift\"）")
+    return any(a.source == name for a in ch.affects)
 
 
 def read_var(ch, area, name):

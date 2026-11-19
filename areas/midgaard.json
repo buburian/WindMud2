@@ -1422,6 +1422,13 @@
           "locks": 0,
           "key": -1,
           "to_room": 3030
+        },
+        "south": {
+          "description": "往南就是秋風河，河水又寬又急，沒有船過不去。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 14605
         }
       },
       "extra_descriptions": [
@@ -1517,6 +1524,13 @@
           "locks": 1,
           "key": 3133,
           "to_room": 3040
+        },
+        "west": {
+          "description": "往西，灌木越長越密，再過去就是森林的邊緣。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 10119
         }
       },
       "extra_descriptions": [
@@ -1559,6 +1573,13 @@
           "locks": 1,
           "key": 3133,
           "to_room": 3041
+        },
+        "east": {
+          "description": "往東，荒掉的麥田盡頭是一片森林的邊緣。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 14762
         }
       },
       "extra_descriptions": [
@@ -4095,6 +4116,13 @@
           "locks": 0,
           "key": -1,
           "to_room": 3216
+        },
+        "north": {
+          "description": "往北，小徑穿過城牆的缺口，伸進一望無際的荒原。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 99801
         }
       },
       "extra_descriptions": [
@@ -5653,7 +5681,7 @@
       "vnum": 3012,
       "keywords": "healer",
       "short": "行醫者",
-      "long": "一個行醫者/healer/跪在祭壇邊，替排隊的人敷藥、包紮。\n",
+      "long": "一個行醫者/healer/跪在祭壇邊，替初次出城的年輕人祈福。\n",
       "description": "一個頭髮全白的老人，從前也是冒險者，膝蓋壞了才留在神殿裡。\n他的袖口沾著藥草汁，手很穩，說話很輕。\n",
       "level": 100,
       "tier": "normal",
@@ -7170,7 +7198,7 @@
       "attack": null,
       "defense": null,
       "archetype": null,
-      "act": 38,
+      "act": 6,
       "affected_by": 8,
       "alignment": 1000,
       "race": "human",
@@ -7195,7 +7223,7 @@
       "attack": null,
       "defense": null,
       "archetype": null,
-      "act": 38,
+      "act": 6,
       "affected_by": 0,
       "alignment": 1000,
       "race": "human",

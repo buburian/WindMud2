@@ -5,8 +5,10 @@
 參考值都用持有者自己的等級（角色面板上的百分比不隨對手變）。數字要跟 balance.py 一樣：tests/test_damage.py 直接比對。
 訊息、扣 HP、死掉在 combat.py；這裡不改任何角色。
 """
+import math
+
 from .equipment import G
-from .stats import REF
+from .stats import POWER_PER_LEVEL, REF
 
 HIT_K = 4.0                                 # 命中 ＝ 4 × 命中 ÷ (4 × 命中 ＋ 閃躲)：同級參考值互打 80%
 CRIT_BASE = 0.20                            # 爆擊點數 ＝ 參考值時的爆擊率
@@ -119,3 +121,48 @@ def weapon_in(ch, hand):
 def dual_wielding(ch):
     """雙持：主手、副手都拿武器（副手武器要主手有武器才穿得上，見 inventory.wear）。"""
     return weapon_in(ch, 0) is not None and weapon_in(ch, 1) is not None
+
+
+def hands(ch):
+    """ch 每隻手每回合出手幾次，主手在前（fight.attacks 用它）：照攻速；雙持是 [A × 0.70, A × 0.3607…]；
+    沒有屬性的角色（測試直接建的）是 1 下。"""
+    if not getattr(ch, "panel", None):
+        return [1.0]
+    a = attacks_per_round(ch)
+    if dual_wielding(ch):
+        return [a * DUAL_WIELD_MAIN, a * DUAL_OFFHAND]
+    return [a]
+
+
+def round_damage(a, d):
+    """a 每回合打 d 的平均傷害（consider 用，還沒算聖光、護盾）：每隻手 次數 × 一下的平均，再 × 命中率、爆擊的平均加成。
+
+    一下的平均跟 strike() 一樣：拿武器用武器傷害的中間值，空手的 ±20% 平均是 1；好幾種攻擊類型照比例加權。
+    """
+    if not getattr(a, "panel", None) or not getattr(d, "panel", None):
+        return 0.0
+    total = 0.0
+    for hand, times in enumerate(hands(a)):
+        weapon = weapon_in(a, hand)
+        value = (weapon.base["dmg_min"] + weapon.base["dmg_max"]) / 2 if weapon is not None else None
+        total += times * sum(share * per_hit(a, d, kind, value) for kind, share in attack_mix(a).items())
+    return total * hit_chance(a, d) * (1.0 + crit_chance(a) * (crit_mult(a) - 1.0))
+
+
+def power_gap(a, d):
+    """d 比 a 強幾級（consider 用）：戰力 ＝ 每回合打對方的平均傷害 × 現在的 HP（含護盾），
+    兩邊的戰力比換成等級差（每級 POWER_PER_LEVEL 倍，設計文件 §4.7）。正的是 d 比較強。
+
+    聖光：打它的傷害減一半（跟 combat.land 一樣）。打不中的那邊戰力是 0：a 是 0 回傳 inf，d 是 0 回傳 −inf，兩邊都是 0 回傳 0。
+    """
+    from . import affects                   # 坑：affects → combat → damage，放在函式裡才 import
+    from .area import AffectFlag
+
+    def power(ch, other):
+        dmg = round_damage(ch, other) / (2 if affects.has_flag(other, AffectFlag.SANCTUARY) else 1)
+        return dmg * (ch.hp + sum(af.shield for af in getattr(ch, "affects", [])))
+
+    mine, theirs = power(a, d), power(d, a)
+    if mine <= 0 or theirs <= 0:
+        return 0.0 if mine <= 0 and theirs <= 0 else (math.inf if mine <= 0 else -math.inf)
+    return math.log(theirs / mine) / math.log(POWER_PER_LEVEL)

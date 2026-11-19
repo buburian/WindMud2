@@ -155,14 +155,9 @@ def attacks(ch):
     """ch 每隻手每回合出手幾次，主手在前（都要大於 0）：照攻速（damage.attacks_per_round）。
 
     雙持（主手、副手都拿武器）是 [A × 0.70, A × 0.3607…]（玩家角色手冊「雙持」）；沒有屬性的角色（測試直接建的）是 1 下。
-    小數不用擲骰子：間隔是一回合 ÷ 次數，自然會有些回合多打一下。
+    小數不用擲骰子：間隔是一回合 ÷ 次數，自然會有些回合多打一下。算法在 damage.hands（consider 的戰力也用它）；測試可以換掉這個函式。
     """
-    if not getattr(ch, "panel", None):
-        return [1.0]
-    a = damage.attacks_per_round(ch)
-    if damage.dual_wielding(ch):
-        return [a * damage.DUAL_WIELD_MAIN, a * damage.DUAL_OFFHAND]
-    return [a]
+    return damage.hands(ch)
 
 
 def hit(ch, victim, hand):

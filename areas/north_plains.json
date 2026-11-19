@@ -1,0 +1,2271 @@
+{
+  "schema_version": 1,
+  "file": "north_plains.json",
+  "area": {
+    "header": {
+      "levels": [
+        10,
+        15
+      ],
+      "author": "-Sugar",
+      "title": "城北平原",
+      "vnums": [
+        99801,
+        99847
+      ],
+      "type": "world"
+    },
+    "recall": null,
+    "no_teleport": null,
+    "clan_recall": null,
+    "gem": null
+  },
+  "rooms": [
+    {
+      "vnum": 99801,
+      "name": "城北舊大道",
+      "description": "從前這是一條寬闊的石板大道，從城牆腳下往北，直通平原上的村子和田地。\n大部分的石板（stones）都被撬回城裡補牆了，路面只剩一個個方形的淺坑，\n坑和坑之間，被人踩出一條彎彎曲曲的小徑。\n回頭望，燻黑的北城牆橫在身後，小徑從牆上的缺口鑽了出來。\n",
+      "room_flags": 4,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "往北，殘破的大道越來越窄，最後沒進一大片荒草裡。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99802
+        },
+        "south": {
+          "description": "往南，小徑穿過城牆的缺口，回到秋風城的北城牆下。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 3217
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "石板 淺坑 stones pits",
+          "description": "留下來的幾塊石板被車輪磨出兩道淺淺的凹槽，不知道多少年沒有車走過了。\n淺坑邊上還看得到鐵撬留下的刮痕，有幾道還很新。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99802,
+      "name": "平原的入口",
+      "description": "大道的殘跡到這裡就斷了，再往前是一望無際的荒草，風一吹就像水面一樣起伏。\n路邊立著一塊半埋在土裡的里程石（milestone），上面的字被風雨磨得很淺。\n草叢深處不時傳來沙沙聲，不知道是風，還是什麼東西在走動。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "east": {
+          "description": "往東，一條小路順著從前的田埂，穿過荒草。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99813
+        },
+        "south": {
+          "description": "往南，殘破的大道通回秋風城的北城牆。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99801
+        },
+        "west": {
+          "description": "往西，荒草間有一條被踩倒的小路，彎向北邊。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99803
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "里程石 石頭 milestone stone",
+          "description": "石頭朝南的一面刻著「秋風城 一里」，朝北的一面刻著三個村子的名字。\n字都還在，村子卻早就沒有人住了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99803,
+      "name": "荒田中的小徑",
+      "description": "小路窄得只容一個人走，兩旁的野草長到你的腰，草尖上停著幾隻螞蚱。\n路邊的草叢裡半埋著一把生鏽的犁（plough），木頭的握把早就爛光了。\n這裡從前是一大片麥田，現在只剩風吹過草地的聲音。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "往北，小路在荒田之間彎彎曲曲地往前伸。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99804
+        },
+        "east": {
+          "description": "往東，荒草的盡頭是平原的入口，路邊立著一塊里程石。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99802
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "犁 plough plow",
+          "description": "犁頭的鐵已經鏽成一片一片，輕輕一碰就掉下紅褐色的鏽屑。\n看樣子是主人逃進城的時候丟下的，再也沒有回來拿。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99804,
+      "name": "田埂間的小徑",
+      "description": "草叢底下還看得出一道道田埂（ridges），把荒地分成一塊一塊的。\n田埂上到處是野兔挖的洞，洞口的土還很新鮮。\n這條小路是獵人和英雄公會的巡邏隊踩出來的，說不上安全，總比鑽草叢好。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "往北，小路繼續穿過荒田，遠處立著一個歪斜的稻草人。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99805
+        },
+        "south": {
+          "description": "往南，小路經過一把半埋在草裡的舊犁。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99803
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "田埂 ridges ridge",
+          "description": "田埂是用石頭和泥土堆起來的，有的地方塌了，石頭滾進草裡。\n從田埂的走向看得出來，從前這一帶的田又直又整齊。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99805,
+      "name": "稻草人旁的小徑",
+      "description": "路邊立著一個稻草人（scarecrow），歪歪斜斜的，破布被風吹成一條一條。\n它守的那塊田早就荒了，只剩幾株野麥混在草裡，結著瘦小的穗。\n東邊的草越長越密，一陣風過去，草浪一直翻到看不見的地方。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "往北，小路經過一間只剩石牆的農舍。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99806
+        },
+        "east": {
+          "description": "往東，野草長得比人的胸口還高，看不到路。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99828
+        },
+        "south": {
+          "description": "往南，小路沿著舊田埂走回去，田埂上滿是兔子洞。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99804
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "稻草人 scarecrow",
+          "description": "稻草人的骨架是一根生鏽的鐵條，大概是從前的田主人插的。\n身上的破衣服和麻袋做的頭倒是新的，麻袋上用炭畫了一張笑臉。\n巡邏的人把它當路標，隔一陣子就替它換一身。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99806,
+      "name": "荒廢的農舍旁",
+      "description": "路邊有一間農舍（farmhouse），屋頂早就塌了，只剩四面石牆和空門框。\n門前的石頭水槽裡積著雨水，水面上漂著幾片落葉。\n屋主大概是逃進城裡去了，一走就再也沒有回來。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "往北，小路通到一個岔路口，路口立著一塊木牌。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99807
+        },
+        "south": {
+          "description": "往南，路邊立著一個歪斜的稻草人。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99805
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "農舍 屋子 farmhouse house",
+          "description": "屋裡長出了一棵大樹，樹冠從塌掉的屋頂伸出去，把整間屋子罩住了。\n牆角堆著幾個破陶罐，門框的石頭上刻著一行字：「秋天回來收麥」。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99807,
+      "name": "荒原的岔路口",
+      "description": "幾條小路在這裡交會，路口立著一塊木牌（sign），被風吹得嘎嘎作響。\n北邊吹來的風又乾又涼，把草吹得全往同一個方向倒。\n往北望，地平線上是一排淡藍色的山，每年秋天，山後的天空會泛起紅光。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "往北，草越來越稀，地面露出乾硬的黃土。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99830
+        },
+        "east": {
+          "description": "往東，小路迎著風，爬上一道緩緩的坡。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99808
+        },
+        "south": {
+          "description": "往南，小路經過一間塌了屋頂的農舍。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99806
+        },
+        "west": {
+          "description": "往西，一條鋪滿落葉的老路鑽進稀疏的樹林。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99833
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "木牌 牌子 sign",
+          "description": "木牌上釘著兩塊指路的木板，字是用烙鐵燙上去的。\n往北的那塊只認得出一個「沙」字，往東的那塊寫著「天橋」。\n底下有人用刀補刻了一行小字：「往西，林子裡有人住。」\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99808,
+      "name": "迎風的緩坡",
+      "description": "小路爬上一道緩緩的坡，迎面的風大得讓你得瞇著眼睛走。\n坡頂孤伶伶地站著一棵枯樹（tree），樹枝全都朝南彎，像是被風一直推著。\n幾隻雲雀被你從草裡驚起，叫著飛進風裡。\n",
+      "room_flags": 0,
+      "sector": 4,
+      "exits": {
+        "east": {
+          "description": "往東，小路下坡，坡底南邊的草長得特別密。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99809
+        },
+        "west": {
+          "description": "往西，小路下坡回到立著木牌的岔路口。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99807
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "枯樹 樹 tree",
+          "description": "枯樹的樹皮剝落了大半，樹幹上綁著一條褪色的紅布。\n這是獵人留下的記號，提醒過路的人：附近有獅子出沒。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99809,
+      "name": "長草邊的小徑",
+      "description": "小路在這裡往北拐，南邊的野草長得又高又密，看不見裡面有什麼。\n泥地上交錯著好多動物的腳印（tracks），全往南邊的草叢裡去。\n路邊有一圈燒黑的石頭，是旅人生火留下的，灰燼已經冷了。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "往北，小路沿著一道乾掉的水溝往前走。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99810
+        },
+        "south": {
+          "description": "往南，高過胸口的野草密密麻麻，裡面好像有東西在動。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99827
+        },
+        "west": {
+          "description": "往西，小路爬上一道有棵枯樹的緩坡。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99808
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "腳印 tracks footprints",
+          "description": "有野兔的小爪印、鹿的蹄印，還有幾個比你的手掌還大的圓形腳印，\n腳趾的痕跡很深，前面卻沒有爪痕。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99810,
+      "name": "乾水溝邊",
+      "description": "小路旁邊是一道乾掉的水溝（ditch），從前大概是引水灌田用的。\n溝底長滿了蒲公英，溝邊的石頭倒還砌得整整齊齊，一塊也沒散。\n風從北方吹過來，帶著泥土和乾草的味道。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "east": {
+          "description": "往東，小路通到一個三岔口，草變得矮了一些。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99811
+        },
+        "south": {
+          "description": "往南，路邊的野草又高又密，往草叢裡去的腳印很多。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99809
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "水溝 ditch",
+          "description": "溝壁的石頭一塊一塊砌得很密，石縫用泥灰封著。\n溝底的泥巴乾得裂開，水源大概早就斷了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99811,
+      "name": "矮草地的岔口",
+      "description": "這裡的草矮了許多，只到你的膝蓋，地上開始露出一塊塊灰白的石頭。\n東邊的地面好像在不遠處斷掉了，風從那頭的深谷一陣陣灌上來。\n路邊有一個石頭疊成的小石堆（cairn），頂上插著一根樹枝。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "east": {
+          "description": "往東，草越來越稀，前面是一道深谷的邊緣。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99812
+        },
+        "south": {
+          "description": "往南，小路穿過一片平坦開闊的草地。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99825
+        },
+        "west": {
+          "description": "往西，小路沿著一道乾掉的水溝。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99810
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "石堆 cairn",
+          "description": "石堆是英雄公會巡邏的人疊的，每經過一次就加一塊石頭。\n樹枝上綁著幾條不同顏色的布條，被風吹得劈啪響。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99812,
+      "name": "通往天橋的入口",
+      "description": "草在這裡幾乎沒了，地面是光禿禿的灰白岩石，風颳得你站不太穩。\n往北是一道深谷，一座寬闊的天橋（bridge）跨過谷口，另一頭沒進雲霧裡。\n可是通往橋頭的那段路整段塌了下去，只剩一道深溝（ravine）和幾根斷木樁。\n",
+      "room_flags": 0,
+      "sector": 4,
+      "exits": {
+        "west": {
+          "description": "往西，小路回到長著矮草的岔口，路邊有個小石堆。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99811
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "天橋 橋 bridge",
+          "description": "天橋是用巨大的石塊架起來的，寬得可以讓兩輛馬車並排走。\n從這裡看過去，橋上空蕩蕩的，看不見有人走動。\n"
+        },
+        {
+          "keywords": "深溝 ravine",
+          "description": "深溝的邊緣還很鬆，像是哪一年的大雨把整段路沖了下去。\n溝底堆著碎石和斷木，往下看讓人頭暈。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99813,
+      "name": "老井旁的田埂",
+      "description": "小路走在一道寬寬的田埂上，兩邊的荒田長滿了薊草，開著紫色的花。\n田埂中間有一口老井（well），井口用石板蓋住了一半。\n往南回望，還看得到秋風城燻黑的城牆，和牆後面神殿的屋頂。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "east": {
+          "description": "往東，田埂慢慢彎進一片帶刺的灌木叢。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99814
+        },
+        "west": {
+          "description": "往西，小路回到大道盡頭的平原入口。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99802
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "老井 井 well",
+          "description": "井很深，丟一顆石子下去，好一會兒才聽見水聲。\n井口的石頭被繩子磨出一道道深溝，繩子和桶子早就不見了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99814,
+      "name": "灌木叢邊的小徑",
+      "description": "路邊的灌木長成一大叢一大叢的，枝上的荊棘勾住了你的衣角。\n灌木中間露出幾截矮牆（wall），圍成一個方形，從前大概是羊圈。\n北邊的草長得特別高，草尖一直在晃，可是現在並沒有風。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "往北，高過胸口的草叢裡不時傳來沙沙聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99826
+        },
+        "east": {
+          "description": "往東，小路鑽出灌木叢，通到一條小溪邊。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99815
+        },
+        "west": {
+          "description": "往西，小路順著田埂走，田中間有一口老井。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99813
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "矮牆 羊圈 wall",
+          "description": "矮牆是用沒打磨的石頭堆起來的，只剩膝蓋高。\n牆角有一堆白白的骨頭，被啃得乾乾淨淨，看不出是什麼動物。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99815,
+      "name": "小石橋邊",
+      "description": "小路經過一條快乾掉的小溪，溪上搭著一塊長長的石板當橋（bridge）。\n溪水細得只剩一條線，兩岸的泥地被曬得裂成一塊一塊的。\n幾隻小鳥站在石板上喝水，一看到你就飛走了。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "往北，小路通到一個被踩得光禿禿的四岔路口。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99816
+        },
+        "west": {
+          "description": "往西，小路鑽進一片帶刺的灌木叢。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99814
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "石板 橋 bridge slab",
+          "description": "石板中間裂了一道縫，踩上去會輕輕晃一下。\n邊緣長滿了青苔，看得出來很久沒有人修過了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99816,
+      "name": "草原的四岔路口",
+      "description": "四條小路在這裡交會，路口的地面被踩得光禿禿的，露出黃色的泥土。\n路邊半埋著一圈生鏽的鐵輪框（wheel），木頭的輪子早就爛光了。\n東北方的地勢慢慢高起來，看得到一片綠色的山坡和一道小山崖。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "往北，小路從一道陡峭的小山崖底下經過。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99822
+        },
+        "east": {
+          "description": "往東，一條長長的小路通向翠綠的山坡。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99817
+        },
+        "south": {
+          "description": "往南，小路經過一條快乾掉的小溪。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99815
+        },
+        "west": {
+          "description": "往西，草叢密得看不見路，裡面好像有東西在動。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99826
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "輪框 車輪 wheel rim",
+          "description": "輪框比你還高，從前大概是一輛大牛車的，鐵皮已經鏽穿了好幾處。\n不知道是哪一戶人家逃進城時丟下的，車子的其他部分早就不見了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99817,
+      "name": "山坡間的小路",
+      "description": "一條東西向的長長小路，兩邊是翠綠色的山坡，越往東越高。\n山坡上除了野草，還散著幾棵矮樹，枝頭結著酸澀的小野果（fruit）。\n從前這裡大概是果園，現在樹沒人修剪，枝條長得亂七八糟。\n",
+      "room_flags": 0,
+      "sector": 4,
+      "exits": {
+        "east": {
+          "description": "往東，小路走進一片稀疏的樹林，樹蔭越來越濃。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99818
+        },
+        "west": {
+          "description": "往西，小路下坡回到四岔路口。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99816
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "野果 果子 fruit",
+          "description": "野果只有指頭大，青裡帶紅，咬一口酸得讓人皺眉。\n樹底下落了一地爛掉的果子，引來一大群嗡嗡叫的蒼蠅。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99818,
+      "name": "樹蔭下的小路",
+      "description": "高大的樹雖然不多，枝葉卻已經把陽光遮掉了大半，路上又陰又涼。\n再往東，小路被一大片坍下來的土石（rocks）埋住，上面長滿了雜草和小樹。\n從土石堆上看過去，東邊是一片黑壓壓的叢林，一直連到遠處的山。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "west": {
+          "description": "往西，小路走出樹蔭，回到翠綠的山坡之間。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99817
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "土石 石頭 rocks",
+          "description": "土石堆有兩個人高，看樣子是山坡哪一年整片滑了下來。\n石頭之間長出的小樹已經有手臂粗了，這條路斷了很久。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99819,
+      "name": "巨大的岩壁",
+      "description": "一面陡峭的岩壁（cliff）擋在面前，上面長滿了青苔和藤蔓，根本爬不上去。\n岩壁底下有一道細細的狹縫（crack），從前剛好容得下一個人側身擠過去，\n現在卻被落下來的大石頭堵得死死的。\n",
+      "room_flags": 0,
+      "sector": 5,
+      "exits": {
+        "west": {
+          "description": "往西，矮樹叢一直長到岩壁腳下。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99820
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "岩壁 cliff wall",
+          "description": "岩壁又濕又滑，藤蔓的根扎在石縫裡，一拉就斷。\n"
+        },
+        {
+          "keywords": "狹縫 crack",
+          "description": "狹縫裡吹出一陣陣涼涼的風，帶著霉味，另一頭好像是個山洞。\n堵住縫口的石頭太大了，憑你的力氣推不動。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99820,
+      "name": "矮樹叢裡",
+      "description": "四周都是比人高一點的矮樹叢，枝葉密得要用手撥開才走得過去。\n東邊是一面巨大的岩壁，西邊的樹叢外面亮亮的，像是一道山崖的邊緣。\n樹枝間藏著一個鳥巢（nest），旁邊的樹叢裡只聽得到蟲子在叫。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "east": {
+          "description": "往東，樹叢盡頭是一面長滿青苔的大岩壁。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99819
+        },
+        "west": {
+          "description": "往西，樹叢外是一道小山崖，看得到底下的草原。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99821
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "鳥巢 nest",
+          "description": "鳥巢是用細樹枝和羽毛編的，裡面只剩幾片碎蛋殼，小鳥早就飛走了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99821,
+      "name": "小山崖上",
+      "description": "你站在一道小山崖上，底下是一大片草原，綠色的草浪一路翻到遠方。\n往南看得到秋風城的城牆，小得像一圈灰色的石頭。\n崖邊的石縫裡長著一叢叢黃色的小野花，東邊則是一片矮樹叢。\n",
+      "room_flags": 0,
+      "sector": 4,
+      "exits": {
+        "east": {
+          "description": "往東，矮樹叢長得密密麻麻。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99820
+        },
+        "down": {
+          "description": "往下，崖邊有一道雨水沖出來的溝，可以順著滑下去，但爬不回來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99822
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 99822,
+      "name": "山崖下的小徑",
+      "description": "小路貼著一道小山崖（cliff）的底下走，崖壁又陡又滑，爬不上去。\n崖腳堆著從上面滾下來的碎石，碎石間長著幾叢野薄荷，聞起來涼涼的。\n",
+      "room_flags": 0,
+      "sector": 4,
+      "exits": {
+        "north": {
+          "description": "往北，小路往一片山丘的方向走。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99823
+        },
+        "south": {
+          "description": "往南，小路回到四岔路口，路邊半埋著一圈鐵輪框。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99816
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "山崖 崖壁 cliff",
+          "description": "崖壁上有一道被雨水沖出來的溝，從上面滑下來容易，想爬上去可就難了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99823,
+      "name": "野花叢間的小徑",
+      "description": "小路兩旁開滿了白色和黃色的野花，蜜蜂在花叢間嗡嗡地飛。\n路邊的草叢裡藏著一個細繩做的套索（snare），繩子綁在削尖的木樁上。\n東北邊的地勢慢慢隆起，變成一片起伏的山丘。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "往北，小路通到一個岔口，東邊是一片山丘。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99824
+        },
+        "south": {
+          "description": "往南，小路貼著一道小山崖的底下。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99822
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "套索 陷阱 snare trap",
+          "description": "套索的繩結打得很仔細，是行家的手法。\n旁邊的泥地上有新鮮的腳印，設陷阱的獵人應該剛走不久。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99824,
+      "name": "山丘下的岔口",
+      "description": "東邊是一片起伏的山丘，山坳裡隱隱約約看得到幾片屋頂。\n路邊倒著一塊石碑（stone），上面刻的字只剩「奧夫卡」三個字還看得清楚。\n西邊的草原一片平坦，風吹過去，草浪一波接著一波。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "east": {
+          "description": "往東，小路爬上山丘，通到奧夫卡村外。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99838
+        },
+        "south": {
+          "description": "往南，小路兩旁開滿了野花。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99823
+        },
+        "west": {
+          "description": "往西，小路穿過一片平坦的草原。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99825
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "石碑 stone",
+          "description": "石碑原本是立在路邊指路的，碑腳斷了，整塊倒在草叢裡。\n背面刻著一個箭頭，指著東邊的山丘。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99825,
+      "name": "平坦的草地",
+      "description": "這一帶的地勢又平又開闊，草長得整整齊齊，像是有人修剪過一樣。\n草地上散著一團一團的鹿糞，大概常有野鹿來這裡吃草。\n天空很高，幾隻老鷹在頭頂上慢慢地盤旋。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "往北，草越來越矮，地上露出灰白的石頭。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99811
+        },
+        "east": {
+          "description": "往東，小路通到山丘腳下的一個岔口。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99824
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 99826,
+      "name": "茂密的草叢",
+      "description": "四周的草高到你的胸口，密得看不見腳下的路，只能用手撥開往前走。\n草叢裡有一塊被壓平的空地，散著幾根帶血的羽毛和啃過的骨頭（bones）。\n空氣裡有一股野獸的腥臊味。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "east": {
+          "description": "往東，草叢外是一個四岔路口。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99816
+        },
+        "south": {
+          "description": "往南，草叢外有幾截圍成方形的矮牆。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99814
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "骨頭 羽毛 bones feathers",
+          "description": "骨頭上留著很深的齒痕，大概是野鹿的腿骨，被咬得裂開了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99827,
+      "name": "水塘北邊的草叢",
+      "description": "草長得比你的胸口還高，草葉邊緣利得像刀子，一不小心就劃破手。\n南邊傳來青蛙的叫聲，空氣也變得濕濕的，前面應該有一個水塘。\n地上有一條被踩出來的獸徑，彎彎曲曲地往水邊去。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "往北，草叢外是一條小路，路邊有一圈燒黑的石頭。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99809
+        },
+        "south": {
+          "description": "往南，草叢間閃著水光，是一個小水塘。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99829
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 99828,
+      "name": "水塘西邊的草叢",
+      "description": "四周的草高到你的胸口，風一吹，草葉就沙沙地刮著你的臉。\n草叢裡有一塊平平的大石頭（boulder），曬得暖暖的，上面留著幾道抓痕。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "east": {
+          "description": "往東，草叢外有一個小水塘，聽得到青蛙在叫。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99829
+        },
+        "west": {
+          "description": "往西，草叢外是一條小路，路邊立著一個稻草人。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99805
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "大石頭 抓痕 boulder rock",
+          "description": "抓痕一道一道並排著，很深，看樣子是什麼大貓在上面磨爪子。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99829,
+      "name": "小水塘",
+      "description": "一個不大的水塘，四周長滿了蘆葦（reeds），水面映著天上的雲。\n整片草原的動物都靠它喝水，泥岸上密密麻麻全是各種腳印。\n青蛙在蘆葦間叫個不停，偶爾有一隻水鳥從水面上掠過。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "往北，草叢高得看不到盡頭。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99827
+        },
+        "west": {
+          "description": "往西，又是一片高過胸口的草叢。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99828
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "蘆葦 reeds",
+          "description": "蘆葦長得比人還高，莖又硬又直，從前的人大概拿它來編草蓆。\n蘆葦叢裡卡著一個爛掉的竹魚簍，不知道是誰留下的。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99830,
+      "name": "乾硬的小路",
+      "description": "這裡的草稀疏多了，一叢一叢地長在乾硬的黃土上，地面裂出一道道細紋。\n風從北邊吹過來，帶著一點點細沙，打在臉上有點刺。\n聽說從前這條路一直往北通到沙地，現在已經很少有人走了。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "south": {
+          "description": "往南，小路回到立著木牌的岔路口。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99807
+        },
+        "west": {
+          "description": "往西，小路在乾土上拐了一個彎。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99831
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 99831,
+      "name": "乾土上的彎路",
+      "description": "小路在乾裂的黃土上拐了個彎，路邊長著一叢叢灰綠色的苦艾，聞起來很嗆。\n一具牛的骨架（skeleton）躺在路邊，被太陽曬得白白的。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "往北，小路通到一個岔口，地面越來越乾。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99832
+        },
+        "east": {
+          "description": "往東，小路沿著草原的邊緣走。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99830
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "骨架 牛 skeleton bones",
+          "description": "骨架很完整，角還在，脖子上套著一個爛掉的皮項圈。\n大概是哪一支商隊走失的牛，就這樣一路走到這裡倒下了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99832,
+      "name": "草原盡頭的岔口",
+      "description": "綠色的草原到這裡差不多到頭了，往北是一片光禿禿的黃土地，\n往西的地勢慢慢低下去，看起來又暗又濕。\n路邊有一間塌了一半的石頭小屋（hut），從前大概是給旅人歇腳的。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "往北，草全不見了，只剩一條被曬得發白的乾土路。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99845
+        },
+        "south": {
+          "description": "往南，路邊躺著一具曬白的牛骨。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99831
+        },
+        "west": {
+          "description": "往西，地勢低下去，草又長了回來，地面濕濕的。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99844
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "小屋 屋子 hut",
+          "description": "小屋的屋頂塌了一半，剩下的那半還能遮雨。\n牆角有一堆乾草和一圈冷掉的灰燼，看得出常有人在這裡過夜。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99833,
+      "name": "鋪滿落葉的老路",
+      "description": "一條很老的小路，路面鋪著一層厚厚的落葉，踩上去軟軟的、沙沙響。\n路兩旁開始出現樹，一棵一棵稀稀落落的，越往西越密。\n落葉底下隱約看得到從前鋪的碎石。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "east": {
+          "description": "往東，樹林外是立著木牌的岔路口。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99807
+        },
+        "west": {
+          "description": "往西，鋪滿落葉的老路鑽進樹林裡。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99834
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 99834,
+      "name": "老橡樹下",
+      "description": "路邊有一棵很大的老橡樹（oak），樹幹要三個人才圍得起來。\n它的根把路面拱起一大塊，落葉在樹根間積得厚厚的。\n樹上的松鼠吱吱叫著，一顆橡實掉在你的腳邊。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "east": {
+          "description": "往東，老路慢慢走出樹林。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99833
+        },
+        "west": {
+          "description": "往西，老路在樹之間彎來彎去。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99835
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "老橡樹 橡樹 oak tree",
+          "description": "樹幹上有人用刀刻了好幾個名字，旁邊還刻了一顆心。\n刻痕早就長得又寬又模糊，大概是很多很多年以前的事了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99835,
+      "name": "林間的老路",
+      "description": "樹越來越密，頭頂的枝葉交錯在一起，只有幾道陽光從縫隙裡漏下來。\n路邊倒著一根空心的大樹幹（log），裡面不知道住著什麼小動物。\n林子裡很安靜，只聽得到你自己踩落葉的聲音。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "east": {
+          "description": "往東，老路經過一棵很大的老橡樹。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99834
+        },
+        "west": {
+          "description": "往西，老路上的落葉被什麼東西翻得亂七八糟。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99836
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "樹幹 log",
+          "description": "樹幹裡塞滿了乾草和羽毛，是一個舒服的窩，主人現在不在家。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99836,
+      "name": "被翻亂的老路",
+      "description": "這段路上的落葉被翻得亂七八糟，到處是小小的爪印和挖了一半的土洞。\n幾株野胡蘿蔔長在路邊，葉子被啃得只剩下梗。\n南邊的樹林變得又黑又密。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "east": {
+          "description": "往東，老路邊倒著一根空心的大樹幹。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99835
+        },
+        "west": {
+          "description": "往西，老路走到一個三岔口，地上開始有松針。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99837
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 99837,
+      "name": "林邊的三岔口",
+      "description": "老路走到這裡，落葉少了，地上開始鋪著細細的松針。\n北邊是一座長滿松樹的小山坡，往坡上去的小路被人踩得很平。\n南邊的森林又黑又密，林子裡傳來不知名的鳥叫。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，一條小路爬上長滿松樹的山坡。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99846
+        },
+        "east": {
+          "description": "往東，落葉鋪滿的老路被翻得亂七八糟。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99836
+        },
+        "south": {
+          "description": "往南，小路鑽進一片茂密的森林。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99841
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 99838,
+      "name": "奧夫卡村外",
+      "description": "你站在奧夫卡村的外面，村子在北邊的山坳裡，從這裡只看得到幾片屋頂。\n往北的路被一棵倒下的大樹（tree）橫著擋住，樹冠和荊棘纏成一大團。\n路邊有一段石頭矮牆，牆頭上長著一排紫色的野花。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "south": {
+          "description": "往南，一條小路沿著山丘往下走。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99839
+        },
+        "west": {
+          "description": "往西，小路下坡，回到山丘腳下的岔口。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99824
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "大樹 樹 tree",
+          "description": "樹倒下來的地方根都翻出來了，帶起一大片泥土。\n樹幹太粗，又纏滿了帶刺的藤蔓，怎麼也爬不過去。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99839,
+      "name": "山丘上的小路",
+      "description": "小路在起伏的山丘上繞來繞去，西邊吹來一陣清涼的風，讓人精神一振。\n山坡上散著幾塊大石頭，背風的那一面長著厚厚的青苔。\n從這裡往西望，整片草原攤在腳下，像一張綠色的毯子。\n",
+      "room_flags": 0,
+      "sector": 4,
+      "exits": {
+        "north": {
+          "description": "往北，小路通到奧夫卡村外。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99838
+        },
+        "east": {
+          "description": "往東，小路爬上山丘的頂上，風越來越大。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99840
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 99840,
+      "name": "山丘頂上",
+      "description": "你站在長滿綠草的山丘頂上，這裡的風又強又猛，吹得你幾乎站不穩。\n東邊不遠處有一座山，再往東南邊，高高的山峰聳立在天邊。\n北邊的天空特別遼闊，地平線上那一排山的後面，聽說就是龍塔。\n",
+      "room_flags": 0,
+      "sector": 4,
+      "exits": {
+        "west": {
+          "description": "往西，小路下坡，在山丘之間繞回去。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99839
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 99841,
+      "name": "幽暗的林間小徑",
+      "description": "四周都是高大的樹，濃密的樹蔭把陽光擋得幾乎透不進來。\n小路上的落葉又濕又滑，空氣裡有一股苔蘚和爛木頭的味道。\n北邊的樹木稀疏一點，看得到林子外面的亮光。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，樹林外是一個三岔口，地上鋪著松針。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99837
+        },
+        "south": {
+          "description": "往南，小路往森林深處走，越來越暗。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99842
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 99842,
+      "name": "森林深處的小徑",
+      "description": "樹幹上長滿了白色的菌菇（mushrooms），一層一層像小小的架子。\n林子裡暗得像傍晚，偶爾聽得到樹枝斷掉的聲音，不知道是什麼東西踩的。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，小路往樹林的邊緣走，光線慢慢亮起來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99841
+        },
+        "south": {
+          "description": "往南，小路走到樹林更深的地方，四周的樹密得像牆。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99843
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "菌菇 mushrooms mushroom",
+          "description": "菌菇摸起來又冷又滑，有幾朵被什麼動物啃掉了一半。\n獵人說這種菌菇不能吃，吃了會一直笑，笑到天亮。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99843,
+      "name": "林中小徑的盡頭",
+      "description": "小路往南走到這裡就斷了，四周的樹密得像一面牆。\n西邊看得出有一條小路的痕跡，沒走幾步就被倒下的大樹和荊棘封死了。\n倒下的樹幹（trunk）上長滿了苔蘚，看樣子已經倒了很多年。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，小路回到森林深處，樹幹上長滿了白色的菌菇。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99842
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "樹幹 trunk",
+          "description": "樹幹比你還高，中間已經爛空了，裡面積著黑黑的雨水。\n樹皮上有人用斧頭砍過幾下，砍到一半就放棄了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99844,
+      "name": "草原邊緣的窪地",
+      "description": "地勢在這裡低了下去，草又長了回來，腳下的泥土變得又濕又軟。\n南邊是一片陰暗的灌木林，枝葉間掛滿了灰白色的蜘蛛網（webs），\n密得連一條路都找不到，偶爾有什麼東西在網上爬動。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "east": {
+          "description": "往東，地勢慢慢升高，回到草原盡頭的岔口。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99832
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "蜘蛛網 蛛網 webs web",
+          "description": "蛛網一層疊著一層，有的上面黏著乾掉的小鳥。\n網絲比縫衣線還粗，用手一拉，整片灌木都跟著晃。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99845,
+      "name": "乾燥的小道",
+      "description": "這裡又乾又熱，地上幾乎沒有一根草，太陽曬得黃土發燙。\n再往北，風吹來的細沙把路整個埋掉了，眼前只剩一片起伏的沙丘（dunes）。\n沙丘的另一頭什麼也看不見，只有熱氣在地平線上晃動。\n",
+      "room_flags": 0,
+      "sector": 10,
+      "exits": {
+        "south": {
+          "description": "往南，乾土路回到草原盡頭的岔口。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99832
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "沙丘 細沙 dunes sand",
+          "description": "沙丘上被風吹出一道道細細的波紋，踩上去腳會陷進去。\n沙裡露出半截木頭路標，上面的字已經被沙子磨平了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99846,
+      "name": "松樹坡上",
+      "description": "你站在一座小山坡上，四周都是松樹，風吹過松針，發出沙沙的聲音。\n西邊的松樹後面藏著一間小茅舍（hut），不走近根本看不出來。\n坡的另一邊原本有條斜坡往下通到低地，被雨水沖垮了，只剩一片爛泥。\n",
+      "room_flags": 0,
+      "sector": 4,
+      "exits": {
+        "south": {
+          "description": "往南，小路下坡，回到樹林邊的三岔口。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99837
+        },
+        "west": {
+          "description": "往西，松樹後面是一間小茅舍的門。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99847
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "茅舍 hut",
+          "description": "茅舍的屋頂用乾草和樹皮蓋得很密，牆是泥巴和石頭糊成的。\n門口掃得乾乾淨淨，看得出有人住。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99847,
+      "name": "小茅舍裡",
+      "description": "茅舍裡很小，只擺得下一張木床、一張桌子和一個小火爐。\n屋子很舊了，藏在松樹後面，擋得住北邊吹來的強風，也躲得開野獸。\n牆上掛著一張舊弓（bow），弓弦已經拆下來了，屋裡有一股松脂的味道。\n",
+      "room_flags": 12,
+      "sector": 0,
+      "exits": {
+        "east": {
+          "description": "往東，門外是長滿松樹的小山坡。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 99846
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "舊弓 弓 bow",
+          "description": "弓是用紫杉木做的，握把被手磨得發亮，看得出主人年輕時常用它。\n"
+        }
+      ],
+      "script": null
+    }
+  ],
+  "mobiles": [
+    {
+      "vnum": 99801,
+      "keywords": "traveller",
+      "short": "旅行者",
+      "long": "旅行者/traveller/揹著一大包行李，拄著木杖慢慢地趕路。\n",
+      "description": "他的行李堆得比頭還高，鍋子、繩子、毯子全綁在背上，走起來叮叮噹噹響。\n靴子磨破了好幾個洞，用布條纏著。看樣子他打算去很遠的地方。\n路上看到什麼還能用的東西，他都會撿起來塞進行李裡。\n",
+      "level": 12,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 4,
+      "affected_by": 0,
+      "alignment": 0,
+      "race": "human",
+      "sex": 1,
+      "position": 7,
+      "drops": [],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 99802,
+      "keywords": "rabbit",
+      "short": "小野兔",
+      "long": "小野兔/rabbit/蹦蹦跳跳的，一對長耳朵抖個不停。\n",
+      "description": "一隻灰褐色的小野兔，毛茸茸的，粉紅色的鼻子不停地抽動。\n一有風吹草動，牠就豎起耳朵，隨時準備逃走。\n",
+      "level": 9,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 128,
+      "affected_by": 0,
+      "alignment": 0,
+      "race": "animal",
+      "sex": 0,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 99801,
+          "color": null,
+          "chance": 3000,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 99803,
+      "keywords": "lion",
+      "short": "兇猛的獅子",
+      "long": "兇猛的獅子/lion/壓低了身子，金黃色的眼睛死死地盯著你。\n",
+      "description": "一頭精瘦的母獅，黃褐色的毛跟枯草一個顏色，趴著不動時很難發現牠。\n牠的肚子扁扁的，肋骨一根根看得清清楚楚，好像好幾天沒吃東西了。\n",
+      "level": 12,
+      "tier": "normal",
+      "tier_roll": {
+        "elite": 300
+      },
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 0,
+      "affected_by": 0,
+      "alignment": 0,
+      "race": "animal",
+      "sex": 2,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 99803,
+          "color": "white",
+          "chance": 1000,
+          "tiers": [
+            "normal"
+          ]
+        },
+        {
+          "obj_vnum": 99803,
+          "color": "blue",
+          "chance": 1000,
+          "tiers": [
+            "normal"
+          ]
+        },
+        {
+          "obj_vnum": 99803,
+          "color": "purple",
+          "chance": 400,
+          "tiers": [
+            "normal"
+          ]
+        },
+        {
+          "obj_vnum": 99803,
+          "color": "orange",
+          "chance": 100,
+          "tiers": [
+            "normal"
+          ]
+        },
+        {
+          "obj_vnum": 99803,
+          "color": "blue",
+          "chance": 10000,
+          "tiers": [
+            "elite"
+          ]
+        },
+        {
+          "obj_vnum": 99803,
+          "color": "purple",
+          "chance": 5500,
+          "tiers": [
+            "elite"
+          ]
+        },
+        {
+          "obj_vnum": 99803,
+          "color": "orange",
+          "chance": 500,
+          "tiers": [
+            "elite"
+          ]
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 99804,
+      "keywords": "elder",
+      "short": "白髮老人",
+      "long": "白髮老人/elder/坐在木床邊，慢慢地削著一根木頭。\n",
+      "description": "他老得看不出年紀，背卻挺得很直，一雙眼睛清亮得好像什麼都看得穿。\n他說這間茅舍是他祖父蓋的，龍焚那年附近的人都逃進城裡，只有他家沒走。\n屋裡沒有點燈，他的身上卻好像透著一層淡淡的白光。\n",
+      "level": 50,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 2,
+      "affected_by": 168,
+      "alignment": 0,
+      "race": "human",
+      "sex": 1,
+      "position": 7,
+      "drops": [],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 99805,
+      "keywords": "jackal",
+      "short": "豺狼",
+      "long": "豺狼/jackal/在乾土上嗅來嗅去，嘴角掛著口水。\n",
+      "description": "一隻毛色土黃的豺狼，耳朵又大又尖，瘦得連肋骨都數得出來。\n牠們總是好幾隻一起出現，專找受傷、落單的東西下手。\n",
+      "level": 11,
+      "tier": "normal",
+      "tier_roll": {
+        "elite": 300
+      },
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "affected_by": 0,
+      "alignment": 0,
+      "race": "animal",
+      "sex": 0,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 99802,
+          "color": "white",
+          "chance": 1000,
+          "tiers": [
+            "normal"
+          ]
+        },
+        {
+          "obj_vnum": 99802,
+          "color": "blue",
+          "chance": 1000,
+          "tiers": [
+            "normal"
+          ]
+        },
+        {
+          "obj_vnum": 99802,
+          "color": "purple",
+          "chance": 400,
+          "tiers": [
+            "normal"
+          ]
+        },
+        {
+          "obj_vnum": 99802,
+          "color": "orange",
+          "chance": 100,
+          "tiers": [
+            "normal"
+          ]
+        },
+        {
+          "obj_vnum": 99802,
+          "color": "blue",
+          "chance": 10000,
+          "tiers": [
+            "elite"
+          ]
+        },
+        {
+          "obj_vnum": 99802,
+          "color": "purple",
+          "chance": 5500,
+          "tiers": [
+            "elite"
+          ]
+        },
+        {
+          "obj_vnum": 99802,
+          "color": "orange",
+          "chance": 500,
+          "tiers": [
+            "elite"
+          ]
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null,
+      "act": 0
+    },
+    {
+      "vnum": 99806,
+      "keywords": "vulture",
+      "short": "禿鷹",
+      "long": "禿鷹/vulture/停在一塊石頭上，歪著光禿禿的頭打量你。\n",
+      "description": "一隻翅膀張開比人還寬的禿鷹，脖子上沒有毛，皮皺得像老人的手。\n荒原上哪裡有死掉的東西，牠們總是第一個知道。\n",
+      "level": 13,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "affected_by": 0,
+      "alignment": 0,
+      "race": "animal",
+      "sex": 0,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 99804,
+          "color": "white",
+          "chance": 1000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 99804,
+          "color": "blue",
+          "chance": 1000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 99804,
+          "color": "purple",
+          "chance": 400,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 99804,
+          "color": "orange",
+          "chance": 100,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null,
+      "act": 0
+    },
+    {
+      "vnum": 99807,
+      "keywords": "lion king",
+      "short": "獅王",
+      "long": "獅王/lion/趴在草叢深處，金黃的鬃毛蓋住了半張臉。\n",
+      "description": "一頭雄壯的公獅，鬃毛又長又密，一直披到肩膀，身上有好幾道舊傷。\n草原上的獅子都是牠的，牠打個呵欠，連禿鷹都不敢落下來。\n",
+      "level": 15,
+      "tier": "boss",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "affected_by": 0,
+      "alignment": 0,
+      "race": "animal",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 99805,
+          "color": "blue",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 99805,
+          "color": "purple",
+          "chance": 7000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 99805,
+          "color": "orange",
+          "chance": 1000,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null,
+      "act": 2
+    }
+  ],
+  "objects": [
+    {
+      "vnum": 99801,
+      "keywords": "hare meat",
+      "short": "野兔肉",
+      "long": "一隻剝了皮的野兔擱在地上，腿上的肉很結實。",
+      "item_type": 19,
+      "extra_flags": 0,
+      "wear_flags": 1,
+      "values": [
+        1,
+        "",
+        0,
+        0
+      ],
+      "weight": 2,
+      "cost": 5,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 99802,
+      "keywords": "necklace fang jackal",
+      "short": "豺牙項鍊",
+      "long": "一條串著一排尖細豺牙的皮繩項鍊掉在地上。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": 5,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 99803,
+      "keywords": "armor hide lion",
+      "short": "獅皮胸甲",
+      "long": "一件黃褐色的獅皮胸甲攤在地上，縫線又密又粗。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": 9,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 10,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 99804,
+      "keywords": "cloak feather vulture",
+      "short": "禿鷹羽披風",
+      "long": "一件綴滿黑灰色長羽的披風攤在地上。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": 1025,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 3,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 99805,
+      "keywords": "helmet mane lion",
+      "short": "獅鬃頭盔",
+      "long": "一頂邊上縫著一圈金黃獅鬃的皮頭盔掉在地上。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": 17,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 3,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    }
+  ],
+  "resets": [
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99802,
+      "limit": 9,
+      "room_vnum": 99803,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99802,
+      "limit": 9,
+      "room_vnum": 99804,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99802,
+      "limit": 9,
+      "room_vnum": 99809,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99802,
+      "limit": 9,
+      "room_vnum": 99813,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99802,
+      "limit": 9,
+      "room_vnum": 99816,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99802,
+      "limit": 9,
+      "room_vnum": 99823,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99802,
+      "limit": 9,
+      "room_vnum": 99825,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99802,
+      "limit": 9,
+      "room_vnum": 99836,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99802,
+      "limit": 9,
+      "room_vnum": 99829,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99805,
+      "limit": 12,
+      "room_vnum": 99830,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99805,
+      "limit": 12,
+      "room_vnum": 99831,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99805,
+      "limit": 12,
+      "room_vnum": 99832,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99805,
+      "limit": 12,
+      "room_vnum": 99845,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99805,
+      "limit": 12,
+      "room_vnum": 99811,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99805,
+      "limit": 12,
+      "room_vnum": 99812,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99805,
+      "limit": 12,
+      "room_vnum": 99844,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99805,
+      "limit": 12,
+      "room_vnum": 99810,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99805,
+      "limit": 12,
+      "room_vnum": 99830,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99805,
+      "limit": 12,
+      "room_vnum": 99831,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99805,
+      "limit": 12,
+      "room_vnum": 99845,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99805,
+      "limit": 12,
+      "room_vnum": 99832,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99803,
+      "limit": 12,
+      "room_vnum": 99826,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99803,
+      "limit": 12,
+      "room_vnum": 99827,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99803,
+      "limit": 12,
+      "room_vnum": 99828,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99803,
+      "limit": 12,
+      "room_vnum": 99809,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99803,
+      "limit": 12,
+      "room_vnum": 99814,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99803,
+      "limit": 12,
+      "room_vnum": 99825,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99803,
+      "limit": 12,
+      "room_vnum": 99829,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99803,
+      "limit": 12,
+      "room_vnum": 99823,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99803,
+      "limit": 12,
+      "room_vnum": 99826,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99803,
+      "limit": 12,
+      "room_vnum": 99827,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99803,
+      "limit": 12,
+      "room_vnum": 99828,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99803,
+      "limit": 12,
+      "room_vnum": 99844,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99801,
+      "limit": 6,
+      "room_vnum": 99809,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99801,
+      "limit": 6,
+      "room_vnum": 99838,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99801,
+      "limit": 6,
+      "room_vnum": 99807,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99801,
+      "limit": 6,
+      "room_vnum": 99816,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99801,
+      "limit": 6,
+      "room_vnum": 99837,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99801,
+      "limit": 6,
+      "room_vnum": 99824,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99806,
+      "limit": 9,
+      "room_vnum": 99808,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99806,
+      "limit": 9,
+      "room_vnum": 99817,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99806,
+      "limit": 9,
+      "room_vnum": 99822,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99806,
+      "limit": 9,
+      "room_vnum": 99839,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99806,
+      "limit": 9,
+      "room_vnum": 99840,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99806,
+      "limit": 9,
+      "room_vnum": 99846,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99806,
+      "limit": 9,
+      "room_vnum": 99812,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99806,
+      "limit": 9,
+      "room_vnum": 99824,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99806,
+      "limit": 9,
+      "room_vnum": 99808,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99807,
+      "limit": 1,
+      "room_vnum": 99826,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 99804,
+      "limit": 1,
+      "room_vnum": 99847,
+      "comment": ""
+    }
+  ]
+}

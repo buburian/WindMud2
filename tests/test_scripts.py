@@ -622,6 +622,28 @@ def test_is_fighting(tmp_path, later):
     assert room.vars["f"] == "truetrue"
 
 
+def test_has_affect(tmp_path, later, caplog):
+    """actor:has_affect(技能 id)：身上有沒有這個效果（使用者 2026-11-19 要的）；special 的名字也行；寫錯名字算腳本出錯。"""
+    from mud import affects, skills
+    code = ('function on_say(actor, text)\n'
+            '  if text == "錯" then actor:has_affect("gfit") end\n'
+            '  room.vars.a = tostring(actor:has_affect("gift")) .. tostring(actor:has_affect("spec_poison"))'
+            ' .. tostring(me:has_affect("gift"))\nend')
+    room = build(tmp_path, {"m.lua": code}, mobs=[mob(101, "商人", "merchant", "m.lua")], resets=[M(101)])
+    ming = person("Ming")
+    say(ming, "say 嗨")
+    assert room.vars["a"] == "falsefalsefalse"
+    ming.affects.append(skills.make_affect(skills.SKILLS["gift"]))
+    say(ming, "say 嗨")
+    assert room.vars["a"] == "truefalsefalse"
+    ming.affects.append(affects.Affect("spec_poison", "劇毒", 30))
+    say(ming, "say 嗨")
+    assert room.vars["a"] == "truetruefalse"
+    with caplog.at_level(logging.WARNING):
+        say(ming, "say 錯")
+    assert "a/m.lua:2: 沒有技能 'gfit'" in caplog.text
+
+
 def test_items_and_doors(tmp_path, later):
     code = ('function on_say(actor, text)\n'
             '  if text == "給" then actor:give_item(105, 3) end\n'

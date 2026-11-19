@@ -64,6 +64,8 @@ uv run python -m mud.areaconvert 舊.json builder_area/新.json   # 舊區域（
   `tests/test_again.py` 測 `!`（重複、Enter 不記、`!` 開頭都算、分頁中、腳本看到真的指令）。
   `tests/test_config.py` 測 config（列出、開關 autoloot 和 showbuff、lines 的範圍、存檔）；`tests/test_pager.py` 測分頁（假指令 many 送很多行：每個按鍵、打別的指令、別人的訊息、quit、出錯）。
   `tests/test_academy.py` 用真的 `areas/` 測教學學院：一人一份、一路走到畢業（技能教官照公會教 use、掉落、穿上、`say 畢業`）、學生重新登入和死掉回學院、沒有學院的區域檔時。
+  `tests/test_consider.py` 測 consider（拒絕的訊息、縮寫、7 句的分段和邊界、戰力換算跟設計文件 §4.3 對得上、受傷／聖光／護盾、打不中、只是看不改東西）。
+  `tests/test_healer.py` 用真的 `areas/` 測秋風城的行醫者：1～10 級走進祭壇拿到餽贈、已經有的不再放（時間不補滿）、11 級以上和生物沒有、腳本沒出錯。
   `tests/test_flee.py` 測 flee（DEX 的機率、戰鬥中不能走、成功、失敗要等、關著的門、沒有出口）。
   `tests/test_light.py` 測黑暗和光源（很暗的四個條件、光源在身上／地上／背包、精靈和 imm、look 的每一種、找不到人、撿不到、「某人」、走進來、對面的門、燒完、燈籠放光源位置、存檔的 hours、暗處不自動拾取）；
   `tests/test_terrain.py` 測地形（每一種擋法、船、飛行、現在站的房間也算、生物不受限制、飛和游的訊息、flee 不挑走不過去的出口、窒息）和飛翔術、水中呼吸術；
@@ -258,6 +260,10 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   檢查：沒在打架 → 還在等（`cooldowns["flee"]`，失敗設 `FLEE_WAIT_TICKS` 2，`skills.tick()` 減）→ 開著的出口（關著的門不算）→ 骰 `rng.random()`。
   成功：`rng.choice(出口)` → `escape()`：`death.stop_all()`（自己和打自己的都停手）→ `system.move(ch, 方向, leave=…)`（`leave` 是原本房間看到的那句）。不扣經驗。
   wimpy 的生物逃跑也用 `escape()`（出口用 `behavior.exits()`）。
+  **`consider <名字>`**（`cons`，`con` 是 config；最低姿勢 RESTING 照 C 版；使用者 2026-11-19 要的，規則在玩家角色手冊「戰鬥」）：`commands/combat.do_consider()`，找人跟 kill 一樣，不開打。
+  使用者選「只算戰力」（不模擬打架：模擬一次 7～16 毫秒，巨集狂按會卡住 loop）：`damage.power_gap(ch, 對方)` ＝ 對方比你強幾級 ＝ log(戰力比) ÷ log(`stats.POWER_PER_LEVEL`)，
+  戰力 ＝ `damage.round_damage()`（每回合平均傷害：`damage.hands()` × 命中 × 一下的平均 × 爆擊平均；聖光減半）× 現在的 HP（含護盾）。同級高 1 級剛好差 1.00 級、菁英 3.6、首領 4.2（跟設計文件 §4.3 對得上，有測試）。
+  `CONSIDER` 是分段的表（C 版的 7 句，分段照戰力）。`fight.attacks()` 改成呼叫 `damage.hands()`（同一份算法；測試照樣可以換掉 `fight.attacks`）。
   **找同房間的角色一律用 `characters.find_in_room()`**（使用者定的：kill、slay、use，**之後要找生物的指令都用它**，不要另外寫比對）：
   名字跟指令一樣只要打開頭（任何一個 `names()` 用輸入開頭，英文不分大小寫）；`3.dog` 是第 3 個對得上的（照 C 版 number_argument，`0.dog`、`3.` 找不到）；
   順序照 look 畫面（`characters.in_room()`：生物在前、玩家在後，look 也用它），自己排最後（自己也找得到）。
@@ -439,8 +445,12 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - 房間的描述就是教學（`{Y【教學】{x` 那幾行），改教學內容改區域檔就好。
 - **秋風城**（`areas/midgaard.json`，世界區域，號碼範圍 `[3000, 3399]`，使用者 2026-11-17 放進來的）：舊版 midgaard 用 `mud.areaconvert` 轉的，文字改寫成龍焚之夜一百年後、百廢待舉的樣子（世界觀在 mud_design 的 `design/世界觀.md`，改文字前先看）。`builder_area/midgaard.json` 是編輯器那份，兩份現在一樣。
   生物的平常動作（舊版 C 的 actions：有玩家走進來就招呼、每 30 秒做一件事，跟任務無關）用 Lua 寫在 `areas/midgaard/`（`builder_area/midgaard/` 一樣一份），
-  25 個檔、28 隻生物，文字照龍焚之夜一百年後重寫；叫、唱歌、喵、微笑用表情動作（`me:command("bark")`）。打架中不做（`me:is_fighting()`，照 C 版）。
+  25 個檔、28 隻生物，文字照龍焚之夜一百年後重寫（行醫者 3012 另外對走進神殿祭壇 3054、1～10 級、身上還沒有餽贈（`actor:has_affect("gift")`）的玩家放餽贈 `me:use("gift", actor)`，使用者 2026-11-19 要的；他沒有治療功能，文字不寫會包紮）；叫、唱歌、喵、微笑用表情動作（`me:command("bark")`）。打架中不做（`me:is_fighting()`，照 C 版）。
   坑：起始房間 `START_ROOM` 是 3001，自己做區域檔的測試裡沒有它：會用到 `zones.start_room()` 的（玩家死掉、建角、讀檔找不到房間、走進動態區域）要 `monkeypatch.setattr(zones, "START_ROOM", 101)`。
+- **秋風城外四區**（世界區域，新手區，使用者 2026-11-19 放進來的）：城西森林草原 `forest.json`（1～8 級，西城門外 3052 往西）、城東森林 `foresteast.json`（6～12 級，東城門外 3053 往東）、
+  城北平原 `north_plains.json`（10～15 級，北城牆下的刻字 3217 往北）、河流區 `river.json`（12～16 級，碼頭 3049 往南，全區要船）。舊區域轉的，文字照世界觀改寫；生物、物品、重置照使用者核准的設計重做：
+  沒有主動攻擊（使用者定的：主動攻擊只規劃在副本）、菁英和首領以外都會走動；掉落一般怪白 10%／藍 10%／紫 4%／橘 1%，菁英藍 100%／紫 55%／橘 5%，首領藍 100%／紫 70%／橘 10%（各自骰，藍色保底），兔、豬、魚另外 30% 掉肉。
+  通到還沒轉的區域的出口轉換時拿掉了，所以有幾間進不去或出不來（只能 recall），等那些區域轉過來再接。
 - **tick 和戰鬥的 loop**（使用者定的；C 版是全遊戲一個鐘，我們不照它）：
   - tick loop：世界和全部動態區域**共用一個**（世界 tick，`zones.start()` 開始），每次先做世界、再做每個動態區域；
     **副本每份自己一個**（建立時開始，釋放時結束）。間隔 `TICK_SECONDS` 固定 1 秒（使用者 2026-11-04 從 30 秒改成 1 秒，不加亂數）。
@@ -501,7 +511,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
       **增益技能**（`kind` `"buff"`、`target` `"ally"`）走 `buff()`：把 `make_affect(skill)`（`skill.affect` 是 `Affect` 的欄位，每次 deepcopy 一份；
       **`source`、`name` 沒寫就用技能的 id、名稱**，使用者定的，不一樣才寫）放到目標身上、送訊息，不開打。
       use 指令對增益技能：沒打名字是自己，打了名字用 `find_in_room()`，只能放玩家（`ready()` 是冷卻、MV／MP、武器的檢查，兩種技能共用）。
-      **餽贈**（`gift`，使用者定的，之後教學區的 NPC 送給玩家）：每 3 秒補 HP 上限的 10%、主屬性各 +3，3600 秒，死掉後還在；要用程式加、不扣消耗、沒有冷卻。
+      **餽贈**（`gift`，使用者定的；教學學院的教官、秋風城的行醫者（1～10 級）用腳本送給玩家）：每 3 秒補 HP 上限的 10%、主屬性各 +3，3600 秒，死掉後還在；要用程式加、不扣消耗、沒有冷卻。
       **打中最低 `MIN_SKILL_DAMAGE` 1 點**（使用者定的，技能不是平砍；失手還是 0）。**持續傷害** `Skill.dot`（火球的燃燒：name、ratio 0.3、jumps 3、hurt 燒傷）：
       第一發打中、目標沒死就 `dot_affect(source, dot, first)`（每 3 tick 跳、共 jumps 次、每跳 ＝ 第一發 × ratio 最低 1，來源是技能 id；生物的 spec_poison 也用它），
       走 `affects.pulse()` 的持續扣 HP（護盾、扣死、矮人照舊），`Affect.hurt` 有寫就每跳說「你被【燃燒】燒傷了.(6)」（`combat.damage_tail()` 跟戰鬥訊息共用）。
@@ -698,7 +708,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `commanding` 是正在打指令的人的堆疊（`command()` 推進來）：`act.notify()` 送給還在裡面的人時當作指令的回覆、不補 prompt
     （生物的腳本在他說話的當下回話，才不會有兩個 prompt；指令跑完 `command()` 補一個）。
   - **`docs/Lua任務教學.md`**（使用者要的，從手冊獨立出來，只講怎麼做任務）：例子都實際跑過。改了腳本的函式、訊息、規則時，教學裡的例子和畫面也要跟著對。
-  - `script_api.py`：給腳本的名字和函式（`me`、`room`、`actor` 的欄位和方法（含 `is_fighting()`）、`random`、`dice`（擲骰子 "4d6+2"，面數沒寫是 6）、`hour`、vars、號碼換算、`transfer`、`load_mob`、`mob:use`…）。
+  - `script_api.py`：給腳本的名字和函式（`me`、`room`、`actor` 的欄位和方法（含 `is_fighting()`、`has_affect(技能 id)`：身上有沒有這個效果，看 `Affect.source`，技能和 special 以外的名字算出錯）、`random`、`dice`（擲骰子 "4d6+2"，面數沒寫是 6）、`hour`、vars、號碼換算、`transfer`、`load_mob`、`mob:use`…）。
     `give_item`：主人是生物、給的是別人時，訊息跟 give 一樣（`items.GIVEN_TO_YOU`、`GIVEN_SEEN`，使用者要的）；房間的腳本不說話。
     判定「算腳本出錯」就丟 `ScriptError`。玩家的 vars 在 `player.vars[區域檔名][名字]`（存檔），生物、房間的在自己的 `vars`。
   - 觸發的地方：`commands.command()`（on_command，`quit` 不觸發）、`system.move()`（on_enter）、`do_say()`（**只有玩家說的**，使用者選的：生物之間對話用 tell）、`do_tell()`（找不到線上玩家才找同房間的生物，on_tell）、

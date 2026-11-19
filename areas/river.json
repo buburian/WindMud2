@@ -1,0 +1,1734 @@
+{
+  "schema_version": 1,
+  "file": "river.json",
+  "area": {
+    "header": {
+      "levels": [
+        12,
+        16
+      ],
+      "author": "Shabu",
+      "title": "河流區",
+      "vnums": [
+        14600,
+        14636
+      ],
+      "type": "world"
+    },
+    "recall": null,
+    "no_teleport": null,
+    "clan_recall": null,
+    "gem": null
+  },
+  "rooms": [
+    {
+      "vnum": 14600,
+      "name": "河面最寬處",
+      "description": "河面在這裡寬得像一座湖，西岸遠得只剩一條灰綠色的線。\n河水從東邊沿著北岸流過來，到這裡放慢了，轉個彎往南去。\n往東望去，河中央浮著一座小島，島上的柳樹綠成一團。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "east": {
+          "description": "往東，北岸有一道舊石階從水邊爬上河堤，上頭長滿了荊棘。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14601
+        },
+        "south": {
+          "description": "往南，水面平得出奇，西岸那頭露出一片光禿禿的灘地。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14606
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 14601,
+      "name": "北岸石階下",
+      "description": "北岸有一道石階（steps）從水邊爬上河堤，從前是獵人上岸的地方。\n如今石階塌了一大段，剩下的被荊棘和野莓蓋住，上不去了。\n堤後是一片起伏的山丘，山谷裡偶爾傳來一聲狼嚎。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "east": {
+          "description": "往東，一棵大柳樹連根倒在河裡，擋住了半邊河面。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14602
+        },
+        "west": {
+          "description": "往西，河面越來越寬，西岸遠得看不清楚。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14600
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "石階 steps",
+          "description": "石階是整塊青石鑿的，下半截泡在水裡，長滿了青苔。\n上半截塌進荊棘叢裡，石塊滾得到處都是，像一條路被人一刀切斷。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 14602,
+      "name": "倒柳下",
+      "description": "一棵大柳樹（willow）連根倒在河裡，樹幹橫過半邊河面，\n垂下來的枝條拖在水上，被水流梳成一束一束的。\n河水從南邊轉過來，貼著北岸往西流。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "south": {
+          "description": "往南，水裡插著一排排發黑的木樁，是從前攔魚的魚梁。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14607
+        },
+        "west": {
+          "description": "往西，北岸有一道塌了一半的石階，被荊棘蓋住了。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14601
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "柳樹 倒柳 willow",
+          "description": "翻起來的樹根比人還高，泥土早就被沖光了，只剩一團白白的根鬚。\n倒下的樹幹上又冒出了幾根新枝，葉子綠油油的。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 14603,
+      "name": "柳島西北",
+      "description": "你在一座小島的西北邊，島上擠滿了柳樹，枝條一直垂到水面。\n這裡的水又清又靜，從船邊往下看，看得到自己的倒影，\n連水底的小石頭都數得出來。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "east": {
+          "description": "往東，沿著小島的北岸，樹叢裡露出一間小屋的屋頂。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14604
+        },
+        "south": {
+          "description": "往南，水道繞過小島的西頭，水面上漂著落葉。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14608
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 14604,
+      "name": "柳島東北",
+      "description": "小島的北岸有一間漁寮（hut），是用木頭和蘆葦搭的，\n屋頂塌了一半，門口還晾著一張破漁網，網上纏滿了乾掉的水草。\n看樣子主人很多年前就走了，再也沒有回來。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "south": {
+          "description": "往南，水道繞過小島的東頭，那裡堆著一大堆漂流木。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14609
+        },
+        "west": {
+          "description": "往西，水又清又靜，看得到水底的小石頭。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14603
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "漁寮 hut",
+          "description": "從船上看進去，屋裡只剩一張歪掉的木床和一口生鏽的鐵鍋。\n牆上掛著幾根魚叉，叉頭鏽得跟牆一樣黑。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 14605,
+      "name": "碼頭底下的河面",
+      "description": "你在碼頭底下的河面上，頭頂是高低不平的木板，\n一排粗木樁插在水裡，下半截長滿了滑溜溜的水藻。\n碼頭邊垂著一道繩梯，打魚的船都在這裡靠岸。\n河水往西慢慢流，遠遠看得到那座斷橋，斷掉的地方接著木板。\n",
+      "room_flags": 4,
+      "sector": 7,
+      "exits": {
+        "south": {
+          "description": "往南，河面越來越開闊，水也急了起來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14610
+        },
+        "north": {
+          "description": "往北是碼頭，最粗的那根纜樁是一截發黃的龍骨，纏著舊纜繩。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 3049
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 14606,
+      "name": "西岸荒灘前",
+      "description": "河水在這裡往南流，水面平靜得出奇，連一點漣漪都沒有。\n西岸是一片光禿禿的灘地，草也不長，只露著一顆顆灰色的石頭。\n撐船的人說那裡是地界的入口，經過時都不太敢往那邊看。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "north": {
+          "description": "往北，河面寬得像一座湖，西岸遠得只剩一條線。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14600
+        },
+        "south": {
+          "description": "往南，這股水匯進主河道，南邊是一座長長的島。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14614
+        },
+        "west": {
+          "description": "往西是那片光禿禿的灘地，一陣陰冷的風從那裡吹過來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14636
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 14607,
+      "name": "舊魚梁",
+      "description": "水裡插著好幾排木樁（stakes），排成一個尖尖的口子。\n從前漁夫在這裡擺竹簍攔魚，叫做魚梁。竹簍早就爛光了，\n木樁也泡得發黑，水從中間流過去，發出細細的嗚嗚聲。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "north": {
+          "description": "往北，一棵倒下的大柳樹橫在河裡，枝條拖在水上。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14602
+        },
+        "east": {
+          "description": "往東，河水繞著一座長滿柳樹的小島。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14608
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "木樁 魚梁 stakes",
+          "description": "木樁頂上被水鳥站得發白。有一根上面還掛著半個竹簍，\n簍口朝著下游，不知道在那裡掛了多少年。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 14608,
+      "name": "柳島西南",
+      "description": "小島西南角的柳樹根上，纏著一艘半沉的小船（rowboat），\n船底破了個洞，積滿了泥水，裡面長出一叢水草。\n北邊的水道繞過小島流下來，跟這裡的河水匯在一起往西流。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "north": {
+          "description": "往北，水又清又靜，柳樹的枝條垂到水面。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14603
+        },
+        "east": {
+          "description": "往東，小島的東南角卡著一大堆漂流木。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14609
+        },
+        "west": {
+          "description": "往西，水裡插著一排排發黑的木樁。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14607
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "小船 rowboat",
+          "description": "小船的纜繩早就爛斷了，是柳樹根把它纏住，才沒被水沖走。\n船頭用紅漆畫過一隻眼睛，漆已經褪成淡淡的粉紅色。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 14609,
+      "name": "柳島東南",
+      "description": "小島的東南角卡著一大堆漂流木（driftwood），\n樹幹、樹枝、破木板全擠在一起，像一道小小的堤。\n南邊的主河道在這裡分出一股水，往北繞著小島流。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "north": {
+          "description": "往北，小島的北岸有一間塌了半邊屋頂的漁寮。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14604
+        },
+        "south": {
+          "description": "往南，水道接回秋風河的主河道，水聲轟轟的。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14618
+        },
+        "west": {
+          "description": "往西，柳樹根上纏著一艘半沉的小船。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14608
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "漂流木 driftwood",
+          "description": "漂流木被太陽曬得發白，縫裡卡著破布、斷槳，\n還有一塊寫了半個字的門牌，不知道是從哪一戶人家沖下來的。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 14610,
+      "name": "開闊的河面",
+      "description": "河面在這裡一下子開闊起來，水是混濁的土黃色，流得又急又穩。\n回頭往北看，秋風城的城牆一塊黑一塊白，像打了補丁，\n牆後露出神殿的石頂，是城裡最高的東西。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "north": {
+          "description": "往北，河面收窄，前面就是秋風城的碼頭。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14605
+        },
+        "east": {
+          "description": "往東，河岸有一道石砌的斜坡伸進水裡，像是從前的渡口。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14611
+        },
+        "south": {
+          "description": "往南，河水越來越深，顏色從土黃轉成深綠。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14619
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 14611,
+      "name": "荒廢的渡口",
+      "description": "東岸有一道石砌的斜坡伸進水裡，是從前的渡口。\n坡頂立著一根拴渡船的石柱（pillar），柱上的鐵環鏽成了一團。\n坡後的路早就被灌木吞掉了，看不出從前通到哪裡。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "south": {
+          "description": "往南，岸邊有一座倒塌的水車，輪子斜插在泥裡。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14620
+        },
+        "west": {
+          "description": "往西，河面開闊，回頭看得到秋風城的城牆。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14610
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "石柱 pillar",
+          "description": "石柱上刻著渡船的價錢：「人一錢，牛羊三錢，車五錢。」\n字縫裡塞滿了泥。這一百年兩岸的人都搬進了城裡，渡船也就停了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 14612,
+      "name": "蘆葦死水灣",
+      "description": "這條水灣走不通，四面都是比人還高的蘆葦，風一吹就沙沙作響。\n水不流動，表面浮著一層綠綠的浮萍，聞起來有點臭。\n水灣盡頭擋著一艘翻過來的舊船（hull），再過去就是爛泥了。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "east": {
+          "description": "往東回到河道上，聽得到南邊急流的聲音。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14613
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "舊船 hull",
+          "description": "船底朝天，木板爛出了好幾個大洞，裡面住滿了青蛙。\n船身上釘著一塊小木牌，寫著船主的名字，已經認不出來了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 14613,
+      "name": "河道南轉處",
+      "description": "河水在這裡轉向南方，水聲一下子大了起來，南邊翻著白浪，\n水急得很，順著下去就回不了頭。東南邊的長島長滿了荊棘，靠不了岸。\n西邊有一條窄窄的水灣，蘆葦長得比人還高，水是不流動的。\n",
+      "room_flags": 4,
+      "sector": 7,
+      "exits": {
+        "east": {
+          "description": "往東，長島的西頭長滿了荊棘，掛著上游漂來的破布。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14614
+        },
+        "south": {
+          "description": "往南，河水越流越急，翻著白浪，順著水下去就划不回來了。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14628
+        },
+        "west": {
+          "description": "往西，一條窄窄的水灣，蘆葦長得比人還高。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14612
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 14614,
+      "name": "長島西頭",
+      "description": "北邊流下來的一股水在這裡匯進主河道，兩股水一撞，翻起一圈圈水紋。\n南邊就是長島的西頭，岸上長滿了荊棘，\n枝條上掛著上游漂下來的破布和稻草。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "north": {
+          "description": "往北，水面平得出奇，西岸是一片光禿禿的灘地。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14606
+        },
+        "east": {
+          "description": "往東，長島上長著一大片野桑樹，枝條垂到水面。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14615
+        },
+        "west": {
+          "description": "往西，河水轉向南方，水聲越來越大。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14613
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 14615,
+      "name": "野桑樹下",
+      "description": "南邊的長島上長著一大片桑樹（mulberry），從前大概是人種的，\n一百年沒人修剪，長得又高又亂，枝條一直垂到水面。\n熟透的桑葚掉進河裡，引來一群魚在樹下搶食。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "east": {
+          "description": "往東，河中央露出一根桅桿，是一艘沉船。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14616
+        },
+        "west": {
+          "description": "往西，北邊流下來的一股水在那裡匯進主河道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14614
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "桑樹 桑葚 mulberry",
+          "description": "桑樹之間還看得到幾截矮矮的石牆，是從前圍桑園用的。\n樹上的桑葚紫得發黑，從船上伸手就摘得到，吃起來又甜又酸。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 14616,
+      "name": "沉船旁",
+      "description": "河中央沉著一艘平底貨船（barge），只剩桅桿斜斜地露出水面，\n桅桿頂上還纏著半截繩子。從前這條河上有很多這樣的船，\n載著麥子和木材往城裡送，現在一艘也看不到了。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "east": {
+          "description": "往東，北岸的坡上有一間沒有屋頂的石頭農舍。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14617
+        },
+        "west": {
+          "description": "往西，長島上的桑樹長得又高又亂，枝條垂到水面。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14615
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "貨船 沉船 barge",
+          "description": "從船邊往下看，船身長滿了水草，船艙裡有魚游進游出。\n艙口卡著一個木桶，桶蓋上烙著一個商號的印記，已經認不出字了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 14617,
+      "name": "北岸的空農舍",
+      "description": "北岸的坡上有一間石頭農舍（farmhouse），屋頂只剩幾根梁，\n院子裡的果樹沒人修剪，枝條長得跟屋子一樣高。\n南邊的長島長滿了灌木，找不到地方上岸。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "east": {
+          "description": "往東，長島的東頭像船頭一樣，把河水劈成兩半。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14618
+        },
+        "west": {
+          "description": "往西，河中央露出一根桅桿，斜斜地指著天。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14616
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "農舍 farmhouse",
+          "description": "門板上用炭寫著幾個大字：「去城裡了，田留給你們。」\n底下又有別人補了一行：「我們也去城裡了。」\n字被雨水淋得模糊，看得出來寫了很多年。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 14618,
+      "name": "長島東頭",
+      "description": "長島的東頭像船頭一樣尖尖的，把河水劈成兩半。\n大部分的水沿著長島的北岸往西流，\n一小股鑽進北邊窄窄的水道，繞向一座長滿柳樹的小島。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "north": {
+          "description": "往北，窄窄的水道通向一座長滿柳樹的小島。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14609
+        },
+        "south": {
+          "description": "往南，河水夾在長島和東岸之間，蘆葦裡蛙聲不斷。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14623
+        },
+        "west": {
+          "description": "往西，河水沿著長島的北岸流去，北岸的坡上有一間石頭農舍。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14617
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 14619,
+      "name": "沉著龍骨的深水",
+      "description": "這是秋風河最深的一段，水色深綠，竹篙插下去碰不到底。\n水清的日子從船邊往下看，看得到水底橫著一排白色的龍骨（bones），\n彎彎的，像一艘翻過來的大船。打魚的人經過這裡，都繞得遠遠的。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "north": {
+          "description": "往北，河面開闊，回頭看得到秋風城的城牆。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14610
+        },
+        "east": {
+          "description": "往東，岸邊有一座倒塌的水車，一半泡在水裡。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14620
+        },
+        "south": {
+          "description": "往南，河水撞上一道高高的土岸，轉了個大彎。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14625
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "龍骨 bones",
+          "description": "那是一副龍的肋骨，一根根比桅桿還長，半埋在河底的泥裡。\n龍焚之夜，有一條龍被打下來，落進了這段河。\n碼頭那根龍骨纜樁，聽說就是當年從這裡撈上去的。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 14620,
+      "name": "倒塌的水車",
+      "description": "岸上的荒田一直延伸到天邊，田埂上的矮牆東倒西歪。\n水邊有一座倒塌的水車（wheel），輪子斜插在泥裡，\n一半泡在水中，葉片一片片爛掉了，只剩下骨架。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "north": {
+          "description": "往北，岸邊有一道石砌的斜坡，是從前的渡口。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14611
+        },
+        "south": {
+          "description": "往南，河中央有一片沙洲，蘆葦裡有野鴨在叫。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14626
+        },
+        "west": {
+          "description": "往西是河最深的地方，水色深綠，看不見底。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14619
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "水車 磨坊 wheel mill",
+          "description": "水車後面是一間石頭磨坊，屋頂沒了，磨盤還在裡面，長滿了青苔。\n從前兩岸的麥子都送到這裡磨，現在城裡的麵粉要從西京運來。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 14621,
+      "name": "湍急的河段",
+      "description": "這裡的河水突然加快，浪頭一個接一個打過來。\n水流推著你往下游走，想往回划是不可能的，只能硬著頭皮順著水走。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "south": {
+          "description": "往南，急流翻著白浪，兩岸的景色看起來都一樣。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14621
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 14622,
+      "name": "翻著白浪的急流",
+      "description": "河水在兩岸的岩石之間擠成一條白色的急流，轟隆隆地響。\n船被浪拋上拋下，你只能抓緊船舷，跟著水往前衝。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "west": {
+          "description": "往西，白浪一道接一道，怎麼看都是同一段急流。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14622
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 14623,
+      "name": "長島東岸",
+      "description": "河水夾在兩岸之間往北流，西邊是一座長長的島，\n島上的灌木和荊棘長得密不透風，找不到地方上岸。\n東岸的蘆葦裡傳來青蛙的叫聲，此起彼落。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "north": {
+          "description": "往北，長島的東頭尖尖的，把河水劈成兩半。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14618
+        },
+        "south": {
+          "description": "往南，好幾股水交會在一起，水面打著小漩渦。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14631
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 14624,
+      "name": "枯樹下的河彎",
+      "description": "河水從東邊流過來，在這裡又轉向南方。\n岸邊站著一棵枯死的大樹（tree），樹枝光禿禿的，\n上面停滿了黑色的鸕鶿，一隻隻張著翅膀在曬太陽。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "east": {
+          "description": "往東，河水撞上高高的土岸，轉了個大彎。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14625
+        },
+        "south": {
+          "description": "往南，河底越來越淺，水面下看得到一片圓圓的石頭。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14632
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "大樹 枯樹 tree",
+          "description": "樹皮早就剝光了，樹幹被鳥糞染得一片白。\n鸕鶿時不時一頭扎進水裡，浮上來的時候，嘴裡已經叼著一條魚。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 14625,
+      "name": "土岸下的河彎",
+      "description": "河水從北邊流下來，一頭撞上高高的土岸（bank），轉個大彎往西流。\n土岸被水掏空了一大塊，上面的樹根懸在半空，像一把把掃帚。\n轉彎的地方水流得特別急，船頭不知不覺就被推向西邊。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "north": {
+          "description": "往北，河水深得看不見底。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14619
+        },
+        "west": {
+          "description": "往西，河水沿著土岸流過去，岸邊站著一棵枯死的大樹。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14624
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "土岸 bank",
+          "description": "土岸有兩三個人高，上面滿是拳頭大的小洞，是翠鳥挖的巢。\n船一靠近，就有藍色的小鳥從洞裡竄出來，貼著水面飛走。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 14626,
+      "name": "蘆葦沙洲",
+      "description": "河中央浮著一片沙洲，蘆葦長得又密又高，風一吹就倒向一邊。\n蘆葦叢裡躲著一窩野鴨，船一靠近，就嘎嘎叫著拍翅飛走。\n沙洲頭插著一根竹竿，綁在上面的紅布條早就褪成了白色。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "north": {
+          "description": "往北，岸邊有一座倒塌的水車，輪子斜插在泥裡。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14620
+        },
+        "south": {
+          "description": "往南，河道轉向東方，轉彎處堆滿了漂流木。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14633
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 14627,
+      "name": "地洞口",
+      "description": "河水在這裡流進一個黑黝黝的地洞（hole），嘩嘩地往下灌。\n洞口原本大得進得了一艘船，現在被崩下來的岩石堵住了大半，\n水從石縫間擠過去，急流把你頂在石頭前面，想退也退不回去。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {},
+      "extra_descriptions": [
+        {
+          "keywords": "地洞 hole",
+          "description": "從石縫往裡看，底下很深的地方好像透著一點光，\n還有說不出的涼意。岩石大得推不動，水過得去，人過不去。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 14628,
+      "name": "急流分岔處",
+      "description": "河水在這裡流得又快又急，推著你往前走，想往回划是不可能的。\n河中央一塊大岩石（rock）把水劈成兩股：往西的那股灌進一個地洞，\n往東的那股打著轉，越轉越快。水花濺在臉上，冰冷刺骨。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "east": {
+          "description": "往東，水打著轉，一圈比一圈快，中間凹下去一個大洞。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14629
+        },
+        "west": {
+          "description": "往西，河水嘩嘩地灌進一個黑黝黝的地洞。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14627
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "岩石 rock",
+          "description": "大岩石被水磨得光溜溜的，迎著水的那一面卡著斷槳和碎船板，\n不知道是哪些人的船在這裡翻了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 14629,
+      "name": "大漩渦",
+      "description": "你被捲在一個大漩渦裡，四周的水像一道牆，轉個不停。\n漂流木、破船板跟著你一起打轉，一圈一圈往中間的大洞靠過去。\n不管怎麼划，都划不出去。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {},
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 14630,
+      "name": "鷺鷥島北",
+      "description": "你在石頭小島的北邊。島上的鷺鷥一看到有人來，\n就呱呱叫著飛起來，在頭頂繞一圈又落回去，水上漂著白色的羽毛。\n北邊隔著水道，就是那座長滿灌木的長島。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "east": {
+          "description": "往東，好幾股水在那裡交會，水面打著小漩渦。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14631
+        },
+        "south": {
+          "description": "往南，水道繞過小島的西邊，岸上是一整片黑色的岩壁。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14634
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 14631,
+      "name": "水道交會處",
+      "description": "好幾股水在這裡交會，水面打著一個個小漩渦，漂著泡沫和草屑。\n大部分的水往北流，剩下的繞向西南邊一座石頭小島（islet），\n島上白花花的一片，全是鷺鷥。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "north": {
+          "description": "往北，河水夾在一座長滿灌木的長島和東岸之間。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14623
+        },
+        "east": {
+          "description": "往東，淺灘上卡著一塊白白的東西，像是一節大骨頭。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14632
+        },
+        "south": {
+          "description": "往南，水道繞著石頭小島的東邊，水很淺。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14635
+        },
+        "west": {
+          "description": "往西，水道繞著石頭小島的北邊，鷺鷥叫個不停。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14630
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "小島 石頭小島 islet",
+          "description": "小島是一大塊黑色的岩石，上面長著幾棵歪歪扭扭的小松樹。\n樹上、石頭上全是鷺鷥和牠們的糞，遠遠就聞得到一股腥味。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 14632,
+      "name": "龍脊淺灘",
+      "description": "這裡的河底很淺，水下鋪滿了大大小小的圓石，船底擦得嘎嘎響。\n淺灘中間卡著一塊白白的大東西，乍看像石頭，\n其實是一節龍的脊椎骨（spine）。河水在這裡又轉了個彎，往西流去。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "north": {
+          "description": "往北，岸邊一棵枯樹上停滿了黑色的鸕鶿。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14624
+        },
+        "west": {
+          "description": "往西，好幾股水在那裡交會，水面打著小小的漩渦。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14631
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "脊椎骨 龍骨 spine bones",
+          "description": "這節骨頭有一張桌子那麼大，中間的洞鑽得過一個小孩。\n上面長滿了青苔和小螺，水鳥常站在上面休息。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 14633,
+      "name": "漂流木堵住的河彎",
+      "description": "河道在這裡轉了個大彎，向東方伸過去。\n轉彎處卡著一大堆漂流木（logjam），一層壓一層，比房子還高，\n把往東的河道堵得死死的，船過不去。\n從木頭縫裡往東看，遠處是一大片亮晶晶的水面，像是一座湖。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "north": {
+          "description": "往北，河中央有一片長滿蘆葦的沙洲，野鴨在裡面叫。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14626
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "漂流木 logjam driftwood",
+          "description": "整棵整棵的大樹橫七豎八地卡在一起，根和枝條纏成一團，\n上面積了泥土，還長出了小樹，看樣子已經堵了很多年。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 14634,
+      "name": "鷺鷥島西南",
+      "description": "小島的西邊是一整片黑色的岩壁（cliff），被水沖得又光又滑。\n岩壁上用白漆畫了一道橫線，比水面高出一個人還多，\n是從前發大水時留下的記號。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "north": {
+          "description": "往北，鷺鷥在小島上叫個不停。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14630
+        },
+        "east": {
+          "description": "往東，水道繞過小島的南邊，砂灘上滿是鳥的腳印。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14635
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "岩壁 白線 cliff",
+          "description": "白線旁邊寫著幾個字，已經褪得很淡了，只認得出「大水到此」，\n年份被水沖掉了。看著那道線，很難想像河水曾經漲得那麼高。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 14635,
+      "name": "鷺鷥島東南",
+      "description": "小島的南岸有一片小小的砂灘，上面滿是鳥的腳印，\n像有人用細樹枝在砂上寫了一大堆看不懂的字。\n水很淺，清得看得到小魚一群一群地游過去。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "north": {
+          "description": "往北，好幾股水在那裡交會，水面打著小漩渦。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14631
+        },
+        "west": {
+          "description": "往西，小島的西邊是一整片黑色的岩壁。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14634
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 14636,
+      "name": "地界入口",
+      "description": "這是西岸凹進去的一灣死水，四周的灘地光禿禿的，什麼都不長。\n水灣盡頭有一道岩縫（crack），陰冷的風一陣陣從底下吹上來，\n讓人背脊發涼。縫口堆滿了崩下來的大石頭，只剩幾道窄窄的縫。\n",
+      "room_flags": 0,
+      "sector": 7,
+      "exits": {
+        "east": {
+          "description": "往東回到河面上，河水平靜地往南流。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 14606
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "岩縫 crack",
+          "description": "把耳朵靠近石縫，隱約聽得到底下很深的地方有水聲。\n縫口的石頭大得推不動，人是鑽不進去的。\n船夫說底下就是地界，掉下去的東西從來沒有浮上來過。\n"
+        }
+      ],
+      "script": null
+    }
+  ],
+  "mobiles": [
+    {
+      "vnum": 14600,
+      "keywords": "fish fat",
+      "short": "肥魚",
+      "long": "肥魚/fish/在水草間慢吞吞地游著，肚子圓得像個水瓢。\n",
+      "description": "一條好肥的大魚，鱗片泛著金黃色，嘴邊垂著兩條長鬚。\n大概是吃多了樹上掉下來的桑葚，游得慢吞吞的，一點也不怕人。\n",
+      "level": 12,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 128,
+      "affected_by": 0,
+      "alignment": 1,
+      "race": "fish",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 14600,
+          "color": null,
+          "chance": 3000,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 14601,
+      "keywords": "fish flying",
+      "short": "雷魚",
+      "long": "雷魚/fish/在水面上一躍一躍的，拍起一陣陣水花。\n",
+      "description": "看起來是一條魚，兩邊的胸鰭卻又寬又長，像鳥的翅膀。\n牠躍出水面時會用胸鰭拍水，啪的一聲像打雷，打魚的人就叫牠雷魚。\n",
+      "level": 13,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": "spell",
+      "defense": null,
+      "archetype": null,
+      "act": 0,
+      "affected_by": 0,
+      "alignment": 1,
+      "race": "fish",
+      "sex": 0,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 14601,
+          "color": "white",
+          "chance": 1000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 14601,
+          "color": "blue",
+          "chance": 1000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 14601,
+          "color": "purple",
+          "chance": 400,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 14601,
+          "color": "orange",
+          "chance": 100,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 14602,
+      "keywords": "snake water",
+      "short": "水蛇",
+      "long": "水蛇/snake/在水面上扭著身子游過去，只露出一個三角形的頭。\n",
+      "description": "一條手臂粗的水蛇，背上是黑綠相間的花紋，在水裡幾乎看不見。\n船夫說被牠咬一口，整條腿會腫上好幾天。\n",
+      "level": 14,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "affected_by": 0,
+      "alignment": 0,
+      "race": "snake",
+      "sex": 0,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 14602,
+          "color": "white",
+          "chance": 1000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 14602,
+          "color": "blue",
+          "chance": 1000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 14602,
+          "color": "purple",
+          "chance": 400,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 14602,
+          "color": "orange",
+          "chance": 100,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": "spec_poison",
+      "special_ratio": null,
+      "poison_ratio": null,
+      "act": 0
+    },
+    {
+      "vnum": 14603,
+      "keywords": "pirate river",
+      "short": "水賊",
+      "long": "水賊/pirate/撐著一條小船貼著岸邊划，眼睛四處張望。\n",
+      "description": "一個曬得黝黑的漢子，光著腳，腰上別著一把彎刀，身上一股河泥味。\n渡口廢了以後，河上就只剩他們這種人在來來去去。\n",
+      "level": 14,
+      "tier": "normal",
+      "tier_roll": {
+        "elite": 300
+      },
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "affected_by": 0,
+      "alignment": -300,
+      "race": "human",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 14603,
+          "color": "white",
+          "chance": 1000,
+          "tiers": [
+            "normal"
+          ]
+        },
+        {
+          "obj_vnum": 14603,
+          "color": "blue",
+          "chance": 1000,
+          "tiers": [
+            "normal"
+          ]
+        },
+        {
+          "obj_vnum": 14603,
+          "color": "purple",
+          "chance": 400,
+          "tiers": [
+            "normal"
+          ]
+        },
+        {
+          "obj_vnum": 14603,
+          "color": "orange",
+          "chance": 100,
+          "tiers": [
+            "normal"
+          ]
+        },
+        {
+          "obj_vnum": 14603,
+          "color": "blue",
+          "chance": 10000,
+          "tiers": [
+            "elite"
+          ]
+        },
+        {
+          "obj_vnum": 14603,
+          "color": "purple",
+          "chance": 5500,
+          "tiers": [
+            "elite"
+          ]
+        },
+        {
+          "obj_vnum": 14603,
+          "color": "orange",
+          "chance": 500,
+          "tiers": [
+            "elite"
+          ]
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null,
+      "act": 0
+    },
+    {
+      "vnum": 14604,
+      "keywords": "catfish giant",
+      "short": "巨鯰",
+      "long": "巨鯰/catfish/沉在深水裡，兩根長鬚在水面上慢慢擺動。\n",
+      "description": "一條比小船還長的黑鯰魚，嘴巴大得能吞下一個人，鬚有手臂那麼粗。\n船夫說牠在這段河裡活了不知道多少年，靠著水底的龍骨過冬。\n",
+      "level": 16,
+      "tier": "boss",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "affected_by": 0,
+      "alignment": 0,
+      "race": "fish",
+      "sex": 0,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 14604,
+          "color": "blue",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 14604,
+          "color": "purple",
+          "chance": 7000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 14604,
+          "color": "orange",
+          "chance": 1000,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null,
+      "act": 2
+    }
+  ],
+  "objects": [
+    {
+      "vnum": 14600,
+      "keywords": "fish meat",
+      "short": "魚肉",
+      "long": "一大塊雪白的魚肉擱在地上，還在滴水。",
+      "item_type": 19,
+      "extra_flags": 0,
+      "wear_flags": 1,
+      "values": [
+        1,
+        "",
+        0,
+        0
+      ],
+      "weight": 2,
+      "cost": 5,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 14601,
+      "keywords": "bracers scale fish",
+      "short": "魚鱗護臂",
+      "long": "一對縫滿銀灰色魚鱗的護臂落在地上，閃著水光。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": 257,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 3,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 14602,
+      "keywords": "belt skin snake",
+      "short": "蛇皮腰帶",
+      "long": "一條帶著黑綠花紋的蛇皮腰帶盤在地上。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": 2049,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 2,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 14603,
+      "keywords": "scimitar pirate",
+      "short": "水賊的彎刀",
+      "long": "一把刀背生了鏽的彎刀躺在地上，刀刃倒是很亮。",
+      "item_type": 5,
+      "extra_flags": 0,
+      "wear_flags": 8193,
+      "values": [
+        3,
+        0,
+        0,
+        9
+      ],
+      "weight": 4,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 14604,
+      "keywords": "leggings skin catfish",
+      "short": "鯰皮護腿",
+      "long": "一雙用滑溜溜的黑鯰魚皮做的護腿攤在地上。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": 33,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 5,
+      "cost": 0,
+      "affects": [],
+      "extra_descriptions": [],
+      "script": null
+    }
+  ],
+  "resets": [
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14600,
+      "limit": 12,
+      "room_vnum": 14600,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14600,
+      "limit": 12,
+      "room_vnum": 14602,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14600,
+      "limit": 12,
+      "room_vnum": 14603,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14600,
+      "limit": 12,
+      "room_vnum": 14604,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14600,
+      "limit": 12,
+      "room_vnum": 14606,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14600,
+      "limit": 12,
+      "room_vnum": 14607,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14600,
+      "limit": 12,
+      "room_vnum": 14608,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14600,
+      "limit": 12,
+      "room_vnum": 14609,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14600,
+      "limit": 12,
+      "room_vnum": 14610,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14600,
+      "limit": 12,
+      "room_vnum": 14612,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14600,
+      "limit": 12,
+      "room_vnum": 14614,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14600,
+      "limit": 12,
+      "room_vnum": 14615,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14601,
+      "limit": 9,
+      "room_vnum": 14618,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14601,
+      "limit": 9,
+      "room_vnum": 14619,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14601,
+      "limit": 9,
+      "room_vnum": 14620,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14601,
+      "limit": 9,
+      "room_vnum": 14623,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14601,
+      "limit": 9,
+      "room_vnum": 14624,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14601,
+      "limit": 9,
+      "room_vnum": 14625,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14601,
+      "limit": 9,
+      "room_vnum": 14626,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14601,
+      "limit": 9,
+      "room_vnum": 14630,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14601,
+      "limit": 9,
+      "room_vnum": 14631,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14602,
+      "limit": 9,
+      "room_vnum": 14612,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14602,
+      "limit": 9,
+      "room_vnum": 14626,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14602,
+      "limit": 9,
+      "room_vnum": 14632,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14602,
+      "limit": 9,
+      "room_vnum": 14633,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14602,
+      "limit": 9,
+      "room_vnum": 14634,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14602,
+      "limit": 9,
+      "room_vnum": 14635,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14602,
+      "limit": 9,
+      "room_vnum": 14601,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14602,
+      "limit": 9,
+      "room_vnum": 14617,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14602,
+      "limit": 9,
+      "room_vnum": 14611,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14603,
+      "limit": 6,
+      "room_vnum": 14616,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14603,
+      "limit": 6,
+      "room_vnum": 14616,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14603,
+      "limit": 6,
+      "room_vnum": 14616,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14603,
+      "limit": 6,
+      "room_vnum": 14611,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14603,
+      "limit": 6,
+      "room_vnum": 14611,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14603,
+      "limit": 6,
+      "room_vnum": 14611,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14604,
+      "limit": 1,
+      "room_vnum": 14619,
+      "comment": ""
+    }
+  ]
+}
