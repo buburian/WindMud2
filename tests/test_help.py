@@ -119,6 +119,42 @@ def not_text_in_commands(d):
     entry(d, "kill")["commands"].append(5)
 
 
+def topic(d):
+    return d["topics"][0]
+
+
+def topic_caught_by_command(d):
+    topic(d)["names"].append("con")
+
+
+def topic_name_twice(d):
+    topic(d)["names"].append("STR")
+
+
+def topic_named_like_category(d):
+    topic(d)["names"].append("戰鬥")
+
+
+def topic_unknown_category(d):
+    topic(d)["category"] = "魔法"
+
+
+def topic_missing_field(d):
+    del topic(d)["summary"]
+
+
+def topic_no_names(d):
+    topic(d)["names"] = []
+
+
+def topic_not_big5(d):
+    topic(d)["text"].append("笑臉 😀")
+
+
+def no_topics(d):
+    del d["topics"]
+
+
 @pytest.mark.parametrize("change, want", [
     (remove_use, "use 沒有說明"),
     (kill_twice, "kill 已經寫在 entries 第"),
@@ -135,6 +171,14 @@ def not_text_in_commands(d):
     (same_category_twice, "分類「戰鬥」重複了"),
     (no_commands, "commands 是空的"),
     (not_text_in_commands, "commands、text 裡面要都是文字"),
+    (topic_caught_by_command, "help con 會先找到指令 consider，這個名字用不到"),
+    (topic_name_twice, "名字 STR 已經寫在 topics 第 1 筆了"),
+    (topic_named_like_category, "名字 戰鬥 跟分類同名"),
+    (topic_unknown_category, "topics 第 1 筆（屬性）：沒有「魔法」這個分類"),
+    (topic_missing_field, "topics 第 1 筆 少了欄位：summary"),
+    (topic_no_names, "names 不能是空的"),
+    (topic_not_big5, "「😀」（U+1F600）轉不成 Big5"),
+    (no_topics, "檔案最上層 少了欄位：topics"),
 ])
 def test_check_finds_problems(change, want):
     d = data()
@@ -172,7 +216,7 @@ SUMMARY = [
     "  移動  north east south west up down recall /",
     "  資訊  look score who weather skills help",
     "  溝通  chat tell reply say socials",
-    "  角色  train rest sleep stand save config ! quit",
+    "  角色  train rest sleep stand save config ! quit 屬性",
     "  戰鬥  kill use flee consider",
     "  物品  get drop put give wear remove inventory equipment examine eat drink fill list buy sell value quaff recite zap brandish",
     "  門    open close lock unlock",
@@ -190,7 +234,7 @@ def test_imm_sees_the_imm_category():
         "  移動    north east south west up down recall /",
         "  資訊    look score who weather skills help",
         "  溝通    chat tell reply say socials",
-        "  角色    train rest sleep stand save config ! quit",
+        "  角色    train rest sleep stand save config ! quit 屬性",
         "  戰鬥    kill use flee consider",
         "  物品    get drop put give wear remove inventory equipment examine eat drink fill list buy sell value quaff recite zap brandish",
         "  門      open close lock unlock",
@@ -246,6 +290,29 @@ def test_help_is_h_and_works_while_sleeping():
     assert commands.find("h") is help_command.do_help
     assert commands.command_name("h") == "help"
     assert say("h", position=Position.SLEEPING) == "\r\n".join(SUMMARY) + "\r\n\r\n> "
+
+
+# ---- 不是指令的說明（topics，help 屬性）----
+
+def test_help_attributes():
+    text = say("help 屬性")
+    assert text.startswith("屬性\r\n主屬性有五項")               # 不是指令：標題沒有縮寫
+    assert "CON 體質：HP、物理抗性、MV。" in text and "沒有練習點數" in text
+    for line in ("help str", "help STR", "help 力量", "help 主屬性", "help 次要屬性", "help AC", "help mv"):
+        assert say(line) == text, line
+
+
+def test_topics_need_the_whole_name_and_commands_come_first():
+    assert say("help 屬") == NOT_FOUND                     # 要打全名
+    assert say("help 力") == NOT_FOUND
+    assert say("help st").startswith("stand")             # 指令照舊可以縮寫
+    assert say("help con").startswith("consider")         # con 是 consider 的縮寫：指令先找
+    assert say("help 角色").startswith("【角色】") and "  屬性    每個屬性做什麼" in say("help 角色")
+
+
+def test_score_and_train_point_to_help_attributes():
+    for line in ("help score", "help train"):
+        assert "屬性做什麼，看 help 屬性。" in say(line), line
 
 
 def test_help_use():

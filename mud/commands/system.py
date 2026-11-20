@@ -84,6 +84,7 @@ CONDITIONS = [
     (30, "身上都是鮮紅的血液。"), (20, "腸子流了出來。"), (10, "快要死了。"),
 ]
 DYING = "瀕臨死亡。"
+POSSIBLE_DROPS = "可能掉落："                  # look 生物：受傷狀態後面（設計文件 §4.10，只給名字）；太長換行，接在名字那裡對齊
 
 
 def condition(c):
@@ -109,6 +110,11 @@ def look_at(ch, victim):
         act("你看不出來$M有任何特殊的地方。", ch, victim, to=TO_CHAR)
     if getattr(victim, "panel", None):
         act("$N" + condition(victim), ch, victim, to=TO_CHAR)
+    drops = objects.possible_drops(victim) if isinstance(victim, Npc) else []
+    if drops:                               # 可能掉落（設計文件 §4.10）：名字是區域作者寫的，照寫、不轉顏色代碼（跟物品名字一樣）
+        indent = width(POSSIBLE_DROPS)
+        lines = wrap(drops[:-1] + [drops[-1] + "。"], SCORE_WIDTH - indent)
+        ch.send(POSSIBLE_DROPS + ("\n" + " " * indent).join(lines) + "\n")
 
 
 def block(text):

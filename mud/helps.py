@@ -4,6 +4,9 @@
 - categories：[{"name": 分類名稱, "imm": 是不是只有 imm 看得到}]，順序就是 help 畫面的順序。
 - entries：[{"category": 分類, "commands": [這筆說明的指令，一筆可以好幾個], "usage": 標題（用法）,
   "summary": 分類畫面裡的一句話, "text": [說明，一行一個字串]}]。
+- topics：不是指令的說明（例如屬性，2026-11-20）：[{"category": 分類, "names": [help 後面打的字，第一個列在分類畫面],
+  "usage": 標題, "summary": 分類畫面裡的一句話, "text": [說明]}]。名字要打全名（英文不分大小寫），指令找不到才找它，
+  所以會先找到指令的名字（例如 con 是 consider）不能用。
 標題後面的「（縮寫 k）」由程式照指令表算，不寫在檔案裡。
 規則只有一份：check()，開機（load）和測試都用它。每個指令都要剛好有一筆說明，所以新增指令沒寫說明就開不了機。
 """
@@ -12,19 +15,21 @@ from pathlib import Path
 
 from .config import ENCODING
 
-TOP_KEYS = {"categories": list, "entries": list}
+TOP_KEYS = {"categories": list, "entries": list, "topics": list}
 CATEGORY_KEYS = {"name": str, "imm": bool}
 ENTRY_KEYS = {"category": str, "commands": list, "usage": str, "summary": str, "text": list}
+TOPIC_KEYS = {"category": str, "names": list, "usage": str, "summary": str, "text": list}
 TYPE_NAMES = {str: "要是文字", bool: "要寫 true 或 false", list: "要是清單（[…]）"}
 
 categories = []     # 載入的分類（照檔案的順序）
 entries = []        # 載入的說明
+topics = []         # 載入的不是指令的說明
 
 
 def load(path):
     """讀說明檔、檢查。有問題就 ValueError（第一個問題加總數），原本載入的不動。"""
     from .commands import COMMANDS, IMM_COMMANDS    # 坑：commands 會 import 回這裡（commands/help.py），要在函式裡才 import
-    global categories, entries
+    global categories, entries, topics
     try:
         data = json.loads(Path(path).read_text(encoding="utf-8"))
     except OSError:
@@ -34,7 +39,7 @@ def load(path):
     problems = check(data, [c for c, _, _ in COMMANDS], [c for c, _, _ in IMM_COMMANDS])
     if problems:
         raise ValueError(f"{path}：{problems[0]}（共 {len(problems)} 個問題）")
-    categories, entries = data["categories"], data["entries"]
+    categories, entries, topics = data["categories"], data["entries"], data["topics"]
 
 
 def check(data, commands, imm_commands):
@@ -80,6 +85,7 @@ def check(data, commands, imm_commands):
                                     f"（「{e['category']}」的 imm 是 {str(imm_of[e['category']]).lower()}）")
         for text in (e["usage"], e["summary"], *e["text"]):
             _big5(where, text, problems)
+    check_topics(data["topics"], imm_of, used, [*commands, *imm_commands], problems)
     for name in imm_of:
         if name not in used:
             problems.append(f"分類「{name}」沒有任何說明")
@@ -87,6 +93,36 @@ def check(data, commands, imm_commands):
     if missing:
         problems.append(f"{'、'.join(missing)} 沒有說明")
     return problems
+
+
+def check_topics(items, imm_of, used, all_commands, problems):
+    """topics：分類存在；名字是文字、不重複、不跟分類同名，也不能被指令先找到（help 先找指令）。"""
+    seen = {}                                   # 名字（小寫）→ 寫在第幾筆
+    for i, t in enumerate(items, 1):
+        where = f"topics 第 {i} 筆"
+        if not _fields(where, t, TOPIC_KEYS, problems):
+            continue
+        if not all(isinstance(x, str) for x in t["names"] + t["text"]) or not t["names"]:
+            problems.append(f"{where}：names 不能是空的，names、text 裡面要都是文字")
+            continue
+        where = f"topics 第 {i} 筆（{t['names'][0]}）"
+        if t["category"] not in imm_of:
+            problems.append(f"{where}：沒有「{t['category']}」這個分類（categories 裡有：{'、'.join(imm_of)}）")
+        used.add(t["category"])
+        for name in t["names"]:
+            key = name.lower()
+            hit = next((c for c in all_commands if c.startswith(key)), None)
+            if not key or " " in key:
+                problems.append(f"{where}：名字 {name!r} 要是一個字（不能空的、不能有空白）")
+            elif key in seen:
+                problems.append(f"{where}：名字 {name} 已經寫在 topics 第 {seen[key]} 筆了")
+            elif name in imm_of:
+                problems.append(f"{where}：名字 {name} 跟分類同名，help {name} 會看到分類")
+            elif hit is not None:
+                problems.append(f"{where}：help {name} 會先找到指令 {hit}，這個名字用不到")
+            seen.setdefault(key, i)
+        for text in (*t["names"], t["usage"], t["summary"], *t["text"]):
+            _big5(where, text, problems)
 
 
 def _fields(where, item, keys, problems):

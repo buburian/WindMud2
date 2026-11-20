@@ -6,6 +6,7 @@ import pytest
 import mud.commands as commands
 from area_helpers import make_exit, make_room, write_area
 from mud import stats, zones
+from mud.area import MobTier
 from mud.characters import SEX_NEUTRAL, Position, characters
 from mud.commands import system
 from mud.config import ENCODING
@@ -292,11 +293,55 @@ def test_npc_can_walk(world, dog):
 def test_look_at_a_mobile(world):
     ming, hua, bob = world["小明"], world["阿華"], world["Bob"]
     commands.command(ming, "look merchant")
-    # areas/test.json 的測試商人：區域檔的描述，接著受傷狀態（剛出現，HP 是滿的）
-    want = "這是測試區域的商人，臉上一直掛著笑容。\r\n測試商人十分的健康，完整。\r\n\r\n> "
+    # areas/test.json 的測試商人：區域檔的描述，接著受傷狀態（剛出現，HP 是滿的），最後是可能掉落
+    # （一般怪：測試長劍那行只有首領會掉，不列；重置 G 給牠的東西不列）
+    want = "這是測試區域的商人，臉上一直掛著笑容。\r\n測試商人十分的健康，完整。\r\n可能掉落：測試藥水。\r\n\r\n> "
     assert ming.writer.data == want.encode(ENCODING)
     for p in (hua, bob):
         assert p.writer.data == "\r\n小明對測試商人仔細地上下打量了一番。\r\n\r\n> ".encode(ENCODING)
+
+
+def test_possible_drops_go_by_its_tier(world):
+    # 設計文件 §4.10：照掉落表的順序，只列這隻的種類會骰的行；首領的測試商人多了測試長劍
+    ming = world["小明"]
+    merchant = next(c for c in characters if isinstance(c, Npc) and c.vnum == 101)
+    merchant.tier = MobTier.BOSS
+    commands.command(ming, "look merchant")
+    assert "可能掉落：測試長劍、測試藥水。\r\n".encode(ENCODING) in ming.writer.data
+
+
+def line(vnum, chance=10000, color="white", tiers=None):
+    return {"obj_vnum": vnum, "color": color, "chance": chance, "tiers": tiers}
+
+
+def test_possible_drops_only_names_each_once(world, dog):
+    # 同一件寫好幾行（不同顏色）只列一次；機率 0、找不到的號碼不列；只有名字，不上顏色
+    dog.keywords, dog.tier = ["dog"], MobTier.NORMAL
+    dog.drops = [line(105, color="blue"), line(999), line(102, chance=0), line(105, color="orange"), line(101, color=None)]
+    ming = world["小明"]
+    commands.command(ming, "look dog")
+    assert ming.writer.data == "你看不出來它有任何特殊的地方。\r\n可能掉落：測試盾牌、測試藥水。\r\n\r\n> ".encode(ENCODING)
+
+
+def test_long_possible_drops_wrap_at_79(world, dog):
+    # 太長換行（不超過 79 格），接在第一個名字那裡對齊
+    dog.keywords, dog.tier = ["dog"], MobTier.NORMAL
+    dog.drops = [line(v) for v in range(101, 112)]
+    ming = world["小明"]
+    commands.command(ming, "look dog")
+    text = ming.writer.data.decode(ENCODING).split("\r\n")
+    drops = text[1:text.index("")]
+    assert drops[0].startswith("可能掉落：測試藥水、") and len(drops) == 2
+    assert drops[1].startswith(" " * 10 + "測試") and drops[1].endswith("裝備綁定戒指。")
+    assert all(len(d.encode(ENCODING)) <= 79 for d in drops)
+
+
+def test_no_line_without_possible_drops(world, dog):
+    dog.keywords, dog.tier = ["dog"], MobTier.NORMAL
+    dog.drops = [line(102, tiers=["boss"])]
+    ming = world["小明"]
+    commands.command(ming, "look dog")
+    assert ming.writer.data == "你看不出來它有任何特殊的地方。\r\n\r\n> ".encode(ENCODING)
 
 
 def test_look_at_a_player(world):

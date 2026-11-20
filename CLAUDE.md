@@ -284,6 +284,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - **說明文字在 `help/help.json`**（`config.HELP_FILE`，使用者選的：不用改程式就能改說明），格式寫在 `helps.py` 開頭：
     `categories`（順序就是畫面的順序、`imm`）、`entries`（`category`、`commands`（一筆可以好幾個，走路的六個方向是一筆）、`usage`、`summary`、`text` 一行一個字串）。
     標題後面的「（縮寫 k）」由程式照指令表算（`shortest()`），不寫在檔案裡。說明不寫會隨等級變的數字（消耗這類），改成「用 skills 看」。
+    `topics` 是不是指令的說明（`help 屬性`，2026-11-20 mud_design 的規則）：`category`、`names`（第一個列在分類畫面）、`usage`、`summary`、`text`；
+    指令找不到才找（`topic_of()`，名字要打全名、英文不分大小寫），所以 `check_topics()` 擋會被指令先找到的名字（con 是 consider）、重複、跟分類同名。
   - 檢查只有一份 `helps.check()`：欄位剛好、型別、分類存在不重複、每個分類都有說明、指令是真的、**每個指令剛好一筆**、imm 指令放 imm 的分類、
     **每個字都轉得成 Big5**。`__main__` 開機時 `helps.load()`，有問題就停止開機（跟區域檔一樣）：**新增或改指令、改規則時，`help/help.json` 要一起改**，
     沒寫說明伺服器開不了機、`test_help.py` 也會失敗。
@@ -316,7 +318,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   **`look 名字`**（`look_at()`，照 C 版 show_char_to_char_1，使用者 2026-11-16 選的三樣，規則在玩家角色手冊「看別人」）：方向也對不上才用 `find_in_room()` 找角色
   （C 版最先找；名字只比開頭，放前面的話 `look d`、`look n` 會變成看人）。對方 `TO_VICT`、旁人 `TO_NOTVICT` 送「$n對…仔細地上下打量了一番。」（看自己不送）→
   描述（生物的 `description` 用 `block()`，可以用顏色代碼；沒寫是「你看不出來$M有任何特殊的地方。」）→ 有 `panel` 才有受傷狀態（`condition()`，`CONDITIONS` 11 句照 C 版）。
-  C 版的種族那行、裝備、偷看背包不做。
+  C 版的種族那行、裝備、偷看背包不做。生物最後多一行「可能掉落：…。」（`objects.possible_drops()`，設計文件 §4.10，2026-11-20）：
+  `drop_lines()`（跟 `roll_drops()` 共用：tiers 是 null 或有牠的種類）裡的物品名字，同一件只列一次、機率 0 和找不到的號碼不列，只給名字、照寫不轉顏色代碼；G 給的不列。
   **look 物品**（`look_object()`，照 C 版）：角色也找不到才找背包、身上、地上（照這個順序）的物品：先找物品的 `extra_descriptions`（`objects.extra_descriptions()` 照區域檔現在寫的，存檔不帶；
   名字要整個字一樣，例如 `look pit` 看奉獻箱），再用 `objects.find()` 找名字、送它的 `long`。房間、物品的 extra_descriptions 都用 `area.extra_descriptions()` 解析。
 - **區域**（`area.py`、`areas/`）：`area.py` 只管區域檔的格式、檢查和 `build_room()`；開機後真的在跑的區域在 `zones.py`（見下面「區域物件」）。

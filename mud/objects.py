@@ -233,20 +233,38 @@ def money(amount):
     return obj
 
 
+def drop_lines(npc):
+    """npc 的掉落表裡這隻會骰的那幾行：tiers 是 null 或包含牠的種類（roll_drops、possible_drops 共用）。"""
+    return [line for line in npc.drops if line["tiers"] is None or npc.tier in line["tiers"]]
+
+
 def roll_drops(npc, rng=random):
     """照 npc 的掉落表，每一行各自骰（設計文件 §4.10）：tiers 是 null 或包含牠的種類才骰，機率是萬分之一。
 
     掉出來的物品等級是牠的等級、顏色是那一行的顏色。照掉落表的順序回傳。
     """
     found = []
-    for line in npc.drops:
-        if line["tiers"] is not None and npc.tier not in line["tiers"]:
-            continue
+    for line in drop_lines(npc):
         if rng.randrange(CHANCE_MAX) < line["chance"]:
             obj = create(line["obj_vnum"], npc.level, line["color"], rng)
             if obj is not None:
                 found.append(obj)
     return found
+
+
+def possible_drops(npc):
+    """look 生物時的「可能掉落」（設計文件 §4.10，2026-11-20）：這隻死掉時可能骰到的物品名字（區域檔的 short），
+    照掉落表的順序，同一件（obj_vnum）寫了好幾行只列一次；機率 0、找不到的號碼不列。只給名字：不給顏色、機率、屬性。
+    重置 G 給的東西不列（look 不偷看背包）。
+    """
+    names, seen = [], set()
+    for line in drop_lines(npc):
+        vnum = line["obj_vnum"]
+        if vnum in seen or line["chance"] <= 0 or vnum not in protos:
+            continue
+        seen.add(vnum)
+        names.append(protos[vnum]["short"])
+    return names
 
 
 def short(obj):
