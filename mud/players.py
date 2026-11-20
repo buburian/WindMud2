@@ -34,6 +34,8 @@ class Player(Character):
         self.cooldowns = {}                  # 技能 id（還有 flee 失敗的等待 "flee"）→ 還要等幾個 tick 才能再用（skills.tick() 數），不存檔
         # 設定（config 指令，存檔）
         self.autoloot = False                # 打死生物後自動拾取屍體（使用者選的：預設關，照 C 版）
+        self.temper_stones = 0               # 淬火石（temper.py，存檔）：像金幣，不是物品
+        self.temper_pending = None           # 淬火石的預覽（commands/temper.py）：再打一次同樣的指令才用掉，不存檔
         self.page_lines = PAGE_LINES         # 分頁：每頁幾行
         self.showbuff = False                # 戰鬥中看得到效果加減 HP／MP／MV 的訊息（affects.watching，使用者要的：預設關）
         # 分頁（pager.py，不存檔）

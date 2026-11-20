@@ -465,7 +465,8 @@ def do_score(ch, arg):
         + ("{D｜{C" + paths.title(ch) if paths.title(ch) else "")      # 稱號：走的路（使用者要的）
         + "{D｜{x" + sex + ("{D｜{Mimm{x" if ch.imm else ""),
         thin,
-        " " + cell("等級 {Y" + str(ch.level) + "{x", 12) + cell(exp_text(ch), 36) + "金幣 {Y" + str(ch.gold) + "{x",
+        " " + cell("等級 {Y" + str(ch.level) + "{x", 12) + cell(exp_text(ch), 36) + "金幣 {Y" + str(ch.gold) + "{x"
+        + "  淬火石 {Y" + str(getattr(ch, "temper_stones", 0)) + "{x",
         " " + "   ".join(names[k] + " {W" + rpad(str(stats.shown(ch.primaries[k] + gear[k])), 3) + "{x" for k in stats.PRIMARY_KEYS)
         + (f"     {{Y可分配 {ch.points}{{x" if ch.points else ""),
         thin,

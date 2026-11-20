@@ -37,12 +37,33 @@ def online():
 
 
 NOTICE = colorize("{Y【系統公告】伺服器 30 秒後重新啟動（更新新版本），請先找個安全的地方。{x")
+LAST = colorize("{Y【系統公告】伺服器 10 秒後重新啟動（更新新版本），請先找個安全的地方。{x")
 
 
 def test_everyone_online_is_told(online):
-    restart.announce()
+    restart.tell(30)
     for p in online:                                                  # 睡著的也收得到
         assert NOTICE in p.writer.data.decode(ENCODING)
+
+
+def test_told_again_10_seconds_before(online, monkeypatch):
+    # 30 秒的通知之後，剩 10 秒時再說一次（使用者 2026-11-20 要的）：loop 排在 20 秒後
+    monkeypatch.setattr(restart, "NOTICE_SECONDS", 0.03)
+    monkeypatch.setattr(restart, "LAST_SECONDS", 0.01)
+
+    async def main():
+        restart.announce()
+        first = online[0].writer.data.decode(ENCODING)
+        await asyncio.sleep(0.05)
+        return first, online[0].writer.data.decode(ENCODING)
+
+    first, later = asyncio.run(main())
+    assert "伺服器 0.03 秒後" in first and "0.01 秒後" not in first
+    assert "伺服器 0.01 秒後" in later
+
+
+def test_the_second_notice_is_10_seconds():
+    assert (restart.NOTICE_SECONDS, restart.LAST_SECONDS) == (30, 10)
 
 
 @pytest.mark.skipif(not hasattr(signal, "SIGUSR1"), reason="這個系統沒有 SIGUSR1")
@@ -56,7 +77,7 @@ def test_sigusr1_tells_them(online):
             await asyncio.sleep(0.01)
 
     asyncio.run(main())
-    assert NOTICE in online[0].writer.data.decode(ENCODING)
+    assert NOTICE in online[0].writer.data.decode(ENCODING) and LAST not in online[0].writer.data.decode(ENCODING)
 
 
 def test_update_script_waits_as_long_as_the_notice_says():

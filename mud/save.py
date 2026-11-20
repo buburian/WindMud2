@@ -46,6 +46,7 @@ def save_player(player):
         "race": player.race, "guild": player.guild, "level": player.level, "exp": player.exp,
         "primaries": player.primaries, "resource_roll": player.resource_roll,
         "points": player.points, "trained": player.trained, "imm": player.imm, "gold": player.gold,
+        "temper_stones": player.temper_stones,
         "skills": player.skills,
         "paths": player.paths,
         "vars": player.vars,                # 腳本的變數：{區域檔名: {名字: 值}}
@@ -92,6 +93,7 @@ def player_from(data, writer):
     player.trained = {k: data.get("trained", {}).get(k, 0) for k in stats.PRIMARY_KEYS}
     player.imm = data.get("imm", False)
     player.gold = data.get("gold", 0)
+    player.temper_stones = data.get("temper_stones", 0)     # 舊存檔沒有：0
     player.skills = data["skills"] if "skills" in data else skills.starter(player.guild)
     player.paths = list(data.get("paths", []))     # 舊存檔沒有：還沒選路
     player.vars = data.get("vars", {})

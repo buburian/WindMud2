@@ -4,7 +4,7 @@
 誰會哪個技能看 skills.known()（技能自己設計：一開始就會、要用程式加）。傷害、減益技能可以開打（使用者定的）；
 補血、增益技能放在自己或同房間的玩家身上（"self" 的只有自己），不開打；被動技能不用放。
 """
-from .. import affects, combos, fight, paths, skills, summons
+from .. import affects, combos, fight, paths, skills, summons, temper
 from ..area import TWO_HANDED_KINDS, WEAPON_KIND_NAMES
 from ..characters import characters, find_in_room
 from ..config import AFFECT_PULSE_TICKS, TICK_SECONDS
@@ -19,6 +19,10 @@ def do_use(ch, arg):
     words = arg.split()
     if not words:
         ch.send("你想要用什麼技能？\n")
+        return
+    if words[0].lower() in temper.WORDS:    # 淬火石（設計文件 §3.11）：不是技能，要打完整的名字
+        from . import temper as temper_command      # 坑：commands/temper.py 用到 items，items 跟技能的模組互相用，在函式裡才 import
+        temper_command.use(ch, words[1:])
         return
     skill = skills.find(ch, words[0])
     if skill is None:                       # 沒學過的、imm 的技能也是這句
@@ -281,6 +285,12 @@ def conditions(s):
         out.append("打房間裡全部的怪" + (SPLIT if s.hits else ""))
     elif s.target == "allies":
         out.append("同房間的其他玩家" if s.kind == "protect" else "自己和同房間的玩家" + SPLIT)
+    return out + requirements(s)
+
+
+def requirements(s):
+    """用的條件（skills 列出來、help 技能名共用）：限定武器、副手、只能開打前用。"""
+    out = []
     if s.weapon_kinds:
         kinds = set(s.weapon_kinds)
         out.append("要拿雙手武器" if kinds == TWO_HANDED_KINDS else "要拿" + "、".join(WEAPON_KIND_NAMES[k] for k in s.weapon_kinds))

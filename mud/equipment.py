@@ -200,3 +200,42 @@ def roll_item(slot, level, color, rng, offhand_weapon=False, forced=None):
             affixes[target] = affixes.get(target, 0) + left
     name = f"{AFFIX_WORD[sub]}之{AFFIX_WORD[main]}" if sub else (AFFIX_WORD[main] if main else "")
     return {"name": name, "base": base, "affixes": affixes}
+
+
+# 淬火石（設計文件 §3.11，使用者 2026-11-20 核准，照 balance.py 的 Model.temper_item）
+TEMPER_COLOR = "orange"                     # 淬火後的顏色（balance.py 的 TEMPER_RARITY）
+
+
+def temper(affixes, base, slot, old_level, color, level, main_affix=None):
+    """把一件裝備變成 level 級、橘色，屬性組合不變（淬火石）。回傳 (新的 affixes, 新的 base)；不能淬火就 ValueError。
+
+    affixes 是 [(屬性代號, 數值)]，照主、次、第三條、補零頭的順序（roll_item 回傳的 dict 就是這個順序，Obj.affects 照存）。
+    - 點數用滿 level 級、這個部位、橘色的上限（有必出主詞綴再多 MAIN_AFFIX_BONUS），照每個屬性原本花的點數比例分：
+      舊的點數用舊等級的單價（主屬性 +1 看裝備等級），再用新等級的單價換回數值、取整數。
+    - 零頭補到這件原本就有的 1:1 屬性（照順序找第一個）；都沒有就不補，不會多出新的屬性。
+    - 龍焰抗性這種不算點數的（單價 0）原樣留著，不參加分配（balance.py 沒有這種，固定裝備才有）。
+    - 武器傷害上下限都乘新、舊等級的武器基本傷害比（保留原本骰到的浮動）；護甲 AC 照新等級、部位重算。
+    不能淬火：灰色、沒有算點數的屬性、沒有點數的部位（持握、光源）、有 0 或負的屬性（固定裝備才可能）、
+    等級比 level 高、已經是 level 級橘色。
+    """
+    priced = [(k, n) for k, n in affixes if price(k, old_level) > 0]
+    new_cap = cap(level, slot) * COLOR_BONUS[TEMPER_COLOR] if slot else 0.0
+    if COLOR_BONUS[color or "gray"] <= 0 or new_cap <= 0 or not priced or any(n <= 0 for _, n in priced):
+        raise ValueError(f"這件不能淬火：{color}、{slot}、{affixes}")
+    if old_level > level or (old_level == level and color == TEMPER_COLOR):
+        raise ValueError(f"這件不能淬火：{old_level} 級 {color}，目標 {level} 級")
+    old_points = {k: n * price(k, old_level) for k, n in priced}
+    total = new_cap * (1.0 + (MAIN_AFFIX_BONUS if main_affix else 0.0))
+    points = {k: total * v / sum(old_points.values()) for k, v in old_points.items()}
+    new = {k: int(v // price(k, level)) for k, v in points.items()}
+    used = sum(n * price(k, level) for k, n in new.items())
+    one = next((k for k in new if k not in PRIMARY_KEYS and abs(SECONDARY_PRICE[k] - 1.0) < 1e-6), None)
+    if one:
+        new[one] += int((total - used) // SECONDARY_PRICE[one])
+    base = dict(base)
+    if "dmg_min" in base:
+        ratio = G(level) / G(old_level)     # 武器基本傷害 ∝ G(L)（雙手的倍率前後一樣，約掉）
+        base = {k: v * ratio for k, v in base.items()}
+    elif "ac" in base:
+        base = {"ac": cap(level, slot) * ARMOR_AC}
+    return [(k, new.get(k, n)) for k, n in affixes], base

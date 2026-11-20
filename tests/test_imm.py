@@ -333,8 +333,8 @@ def test_givemoney_to_yourself():
 
 
 @pytest.mark.parametrize("line, want", [
-    ("givemoney", "用法：givemoney <名字> <數量>"),
-    ("givemoney ming", "用法：givemoney <名字> <數量>"),
+    ("givemoney", "用法：givemoney <名字> <數量> [temper]"),
+    ("givemoney ming", "用法：givemoney <名字> <數量> [temper]"),
     ("givemoney nobody 5", "沒有找到這個玩家。"),
     ("givemoney ming 0", "數量要是正整數。"),
     ("givemoney ming -5", "數量要是正整數。"),

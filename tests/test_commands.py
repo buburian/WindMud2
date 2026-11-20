@@ -441,7 +441,7 @@ def test_score_layout():
         heavy,
         " 【Zzqa】 獸人｜劍之公會｜男",
         thin,
-        " 等級 1      經驗 0 / 100                        金幣 0",          # 經驗：這一級累積的 / 升級要的
+        " 等級 1      經驗 0 / 100                        金幣 0  淬火石 0",   # 經驗：這一級累積的 / 升級要的；淬火石（temper.py）
         " 力量  14   智慧  11   知識  11   體質  12   敏捷  12",
         thin,
         " HP  [=====---------------]       16 / 62",
@@ -461,14 +461,14 @@ def test_score_layout():
 
 
 def test_score_has_room_for_big_numbers():
-    # 經驗 7 位數、金幣 10 位數、HP 和屬性 5 位數，每一行都不超過 79 格，位置也不會跑掉
+    # 經驗 7 位數、金幣 10 位數、淬火石 4 位數、HP 和屬性 5 位數，每一行都不超過 79 格，位置也不會跑掉
     p = stat_player()
-    p.level, p.exp, p.gold, p.points = 99, 9999999, 2147483647, 98
+    p.level, p.exp, p.gold, p.points, p.temper_stones = 99, 9999999, 2147483647, 98, 9999
     p.panel = {k: 99999.0 for k in p.panel}
     p.hp = p.mp = p.mv = 99999.0
     lines = re.sub(r"\x1b\[[0-9;]*m", "", score_of(p)).split("\r\n")[:-2]
     assert max(len(line.encode(ENCODING)) for line in lines) == 79
-    assert lines[3].startswith(" 等級 99     經驗 9999999 / ") and lines[3].endswith("金幣 2147483647")
+    assert lines[3].startswith(" 等級 99     經驗 9999999 / ") and lines[3].endswith("金幣 2147483647  淬火石 9999")
     assert lines[3].index("金幣") == " 等級 1      經驗 0 / 100                        金幣 0".index("金幣")
     assert lines[6] == " HP  [====================]    99999 / 99999"
     assert lines[10] == " 攻擊  物理傷害    99999       法術傷害    99999       命中        99999"
@@ -480,7 +480,7 @@ def test_score_shows_exp_until_max_level():
     assert " 等級 1      經驗 35 / 100 " in re.sub(r"\x1b\[[0-9;]*m", "", score_of(p))
     p.level = stats.MAX_LEVEL                       # 滿等不再拿經驗，不顯示；金幣照樣在原本的位置
     text = re.sub(r"\x1b\[[0-9;]*m", "", score_of(p))
-    assert " 等級 100" + " " * 40 + "金幣 0\r\n" in text and "經驗" not in text
+    assert " 等級 100" + " " * 40 + "金幣 0  淬火石 0\r\n" in text and "經驗" not in text
 
 
 def test_score_without_stats():

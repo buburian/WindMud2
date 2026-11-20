@@ -408,10 +408,14 @@ def do_goto(ch, arg):
 
 
 def do_givemoney(ch, arg):
-    """givemoney <名字> <數量>：給線上的玩家金幣（使用者 2026-11-18 定的：不用在同一間房、只能給正數、自己的金幣不會少），給完幫他存檔、記 log。"""
+    """givemoney <名字> <數量> [temper]：給線上的玩家金幣（使用者 2026-11-18 定的：不用在同一間房、只能給正數、自己的金幣不會少），給完幫他存檔、記 log。
+    最後寫 temper 是給淬火石（temper.py；測試用，2026-11-20）。"""
     words = arg.split()
+    stones = len(words) == 3 and words[2].lower() == "temper"
+    if stones:
+        words = words[:2]
     if len(words) != 2:
-        ch.send("用法：givemoney <名字> <數量>\n")
+        ch.send("用法：givemoney <名字> <數量> [temper]\n")
         return
     victim = names.pick(online_players(), words[0], lambda c: c.names())
     if victim is None:
@@ -421,14 +425,18 @@ def do_givemoney(ch, arg):
         ch.send("數量要是正整數。\n")
         return
     amount = int(words[1])
-    victim.gold += amount
-    log.info(f"{ch.name} 給了 {victim.name} {amount} 枚金幣")
+    unit = "顆淬火石" if stones else "枚金幣"
+    if stones:
+        victim.temper_stones += amount
+    else:
+        victim.gold += amount
+    log.info(f"{ch.name} 給了 {victim.name} {amount} {unit}")
     items.keep(victim)
     if victim is ch:
-        ch.send(f"你給了自己【{amount}】枚金幣。\n")
+        ch.send(f"你給了自己【{amount}】{unit}。\n")
         return
-    act("你給了$N【$t】枚金幣。", ch, victim, t=str(amount), to=TO_CHAR)
-    act("$n給你【$t】枚金幣。", ch, victim, t=str(amount), to=TO_VICT)
+    act("你給了$N【$t】" + unit + "。", ch, victim, t=str(amount), to=TO_CHAR)
+    act("$n給你【$t】" + unit + "。", ch, victim, t=str(amount), to=TO_VICT)
 
 
 VNUMS_USED = "區域檔用掉的號碼（照號碼排；房間、生物、物品都在檔案自己的範圍裡）："

@@ -7,6 +7,8 @@
 - topics：不是指令的說明（例如屬性，2026-11-20）：[{"category": 分類, "names": [help 後面打的字，第一個列在分類畫面],
   "usage": 標題, "summary": 分類畫面裡的一句話, "text": [說明]}]。名字要打全名（英文不分大小寫），指令找不到才找它，
   所以會先找到指令的名字（例如 con 是 consider）不能用。
+- skills：技能做什麼（help 技能名，2026-11-20，使用者要的：不寫數字，數字用 skills 看）：[{"skill": 技能的 id, "text": [說明]}]。
+  每個不是 imm 的技能剛好一筆（新增技能要一起寫）；誰會、幾級、種類、打誰、條件由程式照技能的資料寫（commands/help.py）。
 標題後面的「（縮寫 k）」由程式照指令表算，不寫在檔案裡。
 規則只有一份：check()，開機（load）和測試都用它。每個指令都要剛好有一筆說明，所以新增指令沒寫說明就開不了機。
 """
@@ -15,21 +17,24 @@ from pathlib import Path
 
 from .config import ENCODING
 
-TOP_KEYS = {"categories": list, "entries": list, "topics": list}
+TOP_KEYS = {"categories": list, "entries": list, "topics": list, "skills": list}
 CATEGORY_KEYS = {"name": str, "imm": bool}
 ENTRY_KEYS = {"category": str, "commands": list, "usage": str, "summary": str, "text": list}
 TOPIC_KEYS = {"category": str, "names": list, "usage": str, "summary": str, "text": list}
+SKILL_KEYS = {"skill": str, "text": list}
+SCREEN_WIDTH = 79                           # 技能說明一行最多幾格（中文兩格，跟 score 一樣寬）
 TYPE_NAMES = {str: "要是文字", bool: "要寫 true 或 false", list: "要是清單（[…]）"}
 
 categories = []     # 載入的分類（照檔案的順序）
 entries = []        # 載入的說明
 topics = []         # 載入的不是指令的說明
+skill_texts = {}    # 技能的 id → 說明（[一行一個字串]）
 
 
 def load(path):
     """讀說明檔、檢查。有問題就 ValueError（第一個問題加總數），原本載入的不動。"""
     from .commands import COMMANDS, IMM_COMMANDS    # 坑：commands 會 import 回這裡（commands/help.py），要在函式裡才 import
-    global categories, entries, topics
+    global categories, entries, topics, skill_texts
     try:
         data = json.loads(Path(path).read_text(encoding="utf-8"))
     except OSError:
@@ -40,6 +45,7 @@ def load(path):
     if problems:
         raise ValueError(f"{path}：{problems[0]}（共 {len(problems)} 個問題）")
     categories, entries, topics = data["categories"], data["entries"], data["topics"]
+    skill_texts = {s["skill"]: s["text"] for s in data["skills"]}
 
 
 def check(data, commands, imm_commands):
@@ -86,6 +92,7 @@ def check(data, commands, imm_commands):
         for text in (e["usage"], e["summary"], *e["text"]):
             _big5(where, text, problems)
     check_topics(data["topics"], imm_of, used, [*commands, *imm_commands], problems)
+    check_skills(data["skills"], problems)
     for name in imm_of:
         if name not in used:
             problems.append(f"分類「{name}」沒有任何說明")
@@ -93,6 +100,37 @@ def check(data, commands, imm_commands):
     if missing:
         problems.append(f"{'、'.join(missing)} 沒有說明")
     return problems
+
+
+def check_skills(items, problems):
+    """skills：每個不是 imm 的技能剛好一筆（技能要真的有），說明是文字、轉得成 Big5。"""
+    from .skills import SKILLS              # 坑：skills 會 import 戰鬥的模組，戰鬥的又會用到指令，在函式裡才 import
+    want = [s.id for s in SKILLS.values() if not s.imm_only]
+    seen = {}
+    for i, item in enumerate(items, 1):
+        where = f"skills 第 {i} 筆"
+        if not _fields(where, item, SKILL_KEYS, problems):
+            continue
+        sid = item["skill"]
+        where = f"skills 第 {i} 筆（{sid}）"
+        if sid not in want:
+            problems.append(f"{where}：沒有這個技能（imm 的技能不用寫）")
+        elif sid in seen:
+            problems.append(f"{where}：已經寫在 skills 第 {seen[sid]} 筆了")
+        seen.setdefault(sid, i)
+        if not item["text"] or not all(isinstance(x, str) for x in item["text"]):
+            problems.append(f"{where}：text 不能是空的，裡面要都是文字")
+            continue
+        for text in item["text"]:
+            _big5(where, text, problems)
+            try:
+                if len(text.encode(ENCODING)) > SCREEN_WIDTH:
+                    problems.append(f"{where}：這行超過 {SCREEN_WIDTH} 格，要拆成兩行：{text}")
+            except UnicodeEncodeError:
+                pass                        # 轉不成 Big5 的 _big5 已經說了
+    missing = [sid for sid in want if sid not in seen]
+    if missing:
+        problems.append(f"技能 {'、'.join(missing)} 沒有說明（help.json 的 skills）")
 
 
 def check_topics(items, imm_of, used, all_commands, problems):

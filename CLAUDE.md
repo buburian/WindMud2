@@ -20,7 +20,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 使用者 2026-11-20 要的、選的流程：**每次 push 後 GitHub 測試過了，照 `mud.patchnote since` 寫 `patch/草稿.md`、貼給使用者看，他說「發」才跑 `send`**（不能自己發）。
 只寫玩家感受得到的（新指令、技能、區域、數值、修掉的錯），**imm 的指令不寫**（使用者選的），**系統相關的也不寫**（部署、重開伺服器的公告這類，使用者 2026-11-20 說的），程式結構、測試、手冊同步也不寫。
 只有不寫的修改就不用寫草稿、不用問；`since` 會一直列出它們，直到下一次發（發的時候紀錄記到當時的 HEAD）。
-webhook 網址在 `patch/discord-webhook`（`.gitignore` 排除，是密碼：不要印出來、不要讀進回覆）。紀錄 `patch/紀錄.md` 跟著下一次 commit 進 git。
+webhook 網址在 `patch/discord-webhook`（`.gitignore` 排除，是密碼：不要印出來、不要讀進回覆）。
+討論區發文章（使用者 2026-11-20 要的）：`forum`，用另一個 webhook `patch/discord-forum-webhook`（建在討論區頻道上）；一樣先給使用者看、他說「發」才發，不記紀錄。
+超過 2000 字切開，第一則開文章（`thread_name`，回傳的 `channel_id` 是文章編號），後面的用 `thread_id` 接在底下。
+文章放在 `patch/討論區/`（mud_design 的 `design/職業介紹.md`、`常見問題.md` 轉的：表格改清單（Discord 不支援表格）、拿掉寫給作者的註解和還沒做的功能）。
+**文章改了不修改舊的**（使用者 2026-11-20 選的，覺得改舊文章太複雜）：使用者自己在 Discord 刪掉舊的，我照新的內容重貼一篇。紀錄 `patch/紀錄.md` 跟著下一次 commit 進 git。
 
 ## 待辦
 
@@ -36,7 +40,8 @@ uv run python -m mud --port 4055 --host 0.0.0.0   # 給別台電腦連
 ./serve.sh                                        # 0.0.0.0:8080，掛掉 5 秒後自動重開（PORT=、HOST= 可以換）；開機不到 10 秒就結束不重開
 sudo systemctl restart windmud                    # Linux：deploy/windmud.service（裝法見 README）用 systemctl 管；stop 送 SIGINT 會存玩家，KillMode 要 mixed（坑寫在檔案裡）
 journalctl -u windmud-update -f                   # 正式機的自動部署：GitHub Action 測試過就推 release 分支，主機每分鐘 deploy/update.sh 拉下來、重開（README「自動部署」）
-                                                  # 重開前 update.sh 送 SIGUSR1 給 python，遊戲裡通知「30 秒後重新啟動」、等 30 秒才換檔案（mud/restart.py，使用者 2026-11-20 要的）。
+                                                  # 重開前 update.sh 送 SIGUSR1 給 python，遊戲裡通知「30 秒後重新啟動」、等 30 秒才換檔案（mud/restart.py，使用者 2026-11-20 要的）；
+                                                  # 剩 10 秒時伺服器自己再通知一次（restart.announce 用 loop.call_later 排，update.sh 不用再送）。
                                                   # 坑：舊版沒接 SIGUSR1 收到會直接結束、沒存檔，所以 update.sh 先 grep restart.py 的 SIGNAL_MARK；送給 python 不送給 uv（uv 不一定轉送）
 uv run pytest                                     # 全部測試
 uv run pytest tests/test_telnet.py::test_encode   # 單一測試
@@ -46,6 +51,7 @@ uv run python -m mud.builder                      # 區域編輯器，瀏覽器�
 uv run python -m mud.areaconvert 舊.json builder_area/新.json   # 舊區域（area2json 的輸出）轉成我們的格式，印出拿掉了什麼
 uv run python -m mud.patchnote since              # Discord 的 patch 通知：上次發過之後的 commit（寫草稿用）
 uv run python -m mud.patchnote send --dry-run     # 試跑 patch/草稿.md（拿掉 --dry-run 才真的發，發完記進 patch/紀錄.md）
+uv run python -m mud.patchnote forum 文章.md --title 標題 --dry-run   # 討論區開新文章（webhook 在 patch/discord-forum-webhook）
 ```
 
 - `tests/test_telnet.py` 是 `Telnet` 狀態機的單元測試；`tests/test_commands.py` 測指令縮寫比對、tell、reply、quit 和 look（`look 名字` 的描述、11 句受傷狀態、打量、方向先於角色）；`tests/test_color.py` 測顏色代碼；`tests/test_act.py` 測 `act()` 的代換和送給誰；
@@ -312,6 +318,10 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     標題後面的「（縮寫 k）」由程式照指令表算（`shortest()`），不寫在檔案裡。說明不寫會隨等級變的數字（消耗這類），改成「用 skills 看」。
     `topics` 是不是指令的說明（`help 屬性`，2026-11-20 mud_design 的規則）：`category`、`names`（第一個列在分類畫面）、`usage`、`summary`、`text`；
     指令找不到才找（`topic_of()`，名字要打全名、英文不分大小寫），所以 `check_topics()` 擋會被指令先找到的名字（con 是 consider）、重複、跟分類同名。
+  - **`help 技能名`**（使用者 2026-11-20 要的：做什麼，不寫數字）：指令、topic 都找不到才找技能（`skill_of()`：英文或中文全名，imm 的技能沒有）。
+    `skill_detail()`：名字、誰會幾級（`who_learns()`：starter、`paths.GUILD_SKILLS`、`paths.PATHS`，都不是是「學不到」）、說明（help.json 的 `skills`）、
+    種類打誰條件（`kind_text()`，條件跟 skills 共用 `commands/skills.requirements()`）、「數字用 skills 看」。說明照抄 mud_design 職業介紹的「做什麼」（`test_help.py` 比對），
+    另外 11 個不是學的是我們寫的。**新增技能要在 help.json 的 `skills` 寫一筆**（`check_skills()`：每個不是 imm 的技能剛好一筆、一行不超過 79 格），不然開不了機。
   - 檢查只有一份 `helps.check()`：欄位剛好、型別、分類存在不重複、每個分類都有說明、指令是真的、**每個指令剛好一筆**、imm 指令放 imm 的分類、
     **每個字都轉得成 Big5**。`__main__` 開機時 `helps.load()`，有問題就停止開機（跟區域檔一樣）：**新增或改指令、改規則時，`help/help.json` 要一起改**，
     沒寫說明伺服器開不了機、`test_help.py` 也會失敗。
@@ -769,6 +779,11 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     remove（`remove all` 照 SLOTS 的順序，副手在主手前）、inventory（最後一行件數和負重，使用者選的）、equipment（每個部位都列，沒穿的寫「（空）」，副手被雙手武器佔住寫「（雙手武器佔住）」，使用者 2026-11-19 要的）。最低姿勢照 C 版：前四個 RESTING（打架中可以），後兩個 DEAD。
   - donate（`do_donate`，`don`，RESTING，使用者 2026-11-20 要的，照 C 版 do_donate）：背包裡的裝備（`is_gear()`：有部位、有顏色）送進 `config.DONATION_PIT` 3010（`donation_pit()` 找世界區域地上的，秋風城神殿祭壇 3054）；
     穿著的要先脫、綁定的不行（`can_let_go()`）、放不下不行（`cannot_donate()`）；祭壇醒著的玩家聽到 `DONATE_SOUND`（一次 donate 一次），捐完 `keep()` 存檔。`tests/test_donate.py`。
+  - **淬火石**（設計文件 §3.11，使用者 2026-11-20 核准，規則在玩家角色手冊「淬火石」）：`Player.temper_stones`（存檔，不是物品），score 金幣後面。
+    算法 `equipment.temper()`（照 balance.py 的 `temper_item`，`test_equipment.py` 用同一個種子比對；Obj.affects 存的順序就是主、次、第三條、補零頭，零頭照它補；
+    單價 0 的龍焰抗性原樣留著）。`temper.py`：掉落 `drop()`（`combat.slain()` 經驗後面，亂數 `temper.rng`，不動 combat.rng）、`result()`／`apply()`（綁住 `BIND_PICKUP`）。
+    指令 `commands/temper.py`：`use` 的第一個字是 `temper.WORDS`（「淬火石」「temper」，不縮寫：不然會搶技能的縮寫）就交給它；先預覽、`Player.temper_pending` 記著，
+    再打一次同樣的才用掉（等級、那件變了就重新預覽）。imm 的 `givemoney 名字 數量 temper`。`tests/test_temper.py`。
   - put（`do_put`，照 C 版 do_put，RESTING，`p`）：容器找地上（`light.floor()`）和背包，只收 `CONTAINER_ITEM_TYPE`（屍體不算）；檢查照 C 版的順序（`cannot_put()`：放自己、綁住的、
     裡面的重量 ＋ 這件 ＞ `Obj.holds`（容器的容量，values 第 1 個，存檔；舊存檔照區域檔現在的值））；`put all` 不行的靜靜跳過，一件都沒放是新加的那句；放了才 `keep()` 存檔。
     C 版把奉獻箱存到檔案，我們不存。

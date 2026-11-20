@@ -6,8 +6,11 @@
     uv run python -m mud.patchnote since          # 上次發過之後的 commit（寫草稿用）
     uv run python -m mud.patchnote send --dry-run # 試跑：印出會發的幾則，不發、不記
     uv run python -m mud.patchnote send           # 發到 Discord，記進紀錄
+    uv run python -m mud.patchnote forum 文章.md --title 標題 [--dry-run]   # 在討論區開一篇新文章（一樣先給使用者看）
+文章改了不修改舊的（使用者 2026-11-20 選的）：使用者自己在 Discord 刪掉舊的，再重貼一篇。
 
-webhook 網址（知道它就能發訊息到頻道，所以是密碼）放在 patch/discord-webhook，.gitignore 排除，不進 git。
+webhook 網址（知道它就能發訊息到頻道，所以是密碼）放在 patch/discord-webhook（patch 通知的頻道）、
+patch/discord-forum-webhook（討論區，webhook 要建在討論區頻道上），.gitignore 排除，不進 git。
 只用標準庫，不 import 遊戲的模組。
 """
 import argparse
@@ -17,6 +20,7 @@ import re
 import subprocess
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -24,7 +28,9 @@ PATCH_DIR = Path("patch")
 DRAFT = PATCH_DIR / "草稿.md"
 RECORD = PATCH_DIR / "紀錄.md"
 WEBHOOK = PATCH_DIR / "discord-webhook"
+FORUM_WEBHOOK = PATCH_DIR / "discord-forum-webhook"   # 討論區頻道的 webhook（使用者 2026-11-20 要的：在討論區發文章）
 LIMIT = 2000                                # Discord 一則訊息最多 2000 個字
+TITLE_LIMIT = 100                           # 討論區文章的標題最多 100 個字
 USER_AGENT = "WindMud-patchnote/1.0"        # 坑：urllib 預設的 User-Agent 會被 Discord 前面的 Cloudflare 擋掉（403）
 TIMEOUT = 15
 SENT = re.compile(r"^<!-- 發到 ([0-9a-f]{7,40}) -->$", re.M)   # 紀錄裡每一筆的標記：這一筆發到哪個 commit
@@ -54,8 +60,37 @@ def since(record=RECORD):
     return git("log", "--reverse", "--format=%h %ad %s", "--date=short", *span)
 
 
+def paragraphs(text):
+    """照空行切成段落；``` 包起來的區塊裡的空行不切（不然區塊會斷在兩則訊息中間，Discord 上就亂了）。"""
+    out, current, fenced = [], [], False
+    for line in text.split("\n"):
+        if line.startswith("```"):
+            fenced = not fenced
+        if not line.strip() and not fenced:
+            if current:
+                out.append("\n".join(current))
+                current = []
+            continue
+        current.append(line)
+    if current:
+        out.append("\n".join(current))
+    return out
+
+
+def sections(text):
+    """段落照標題（# 開頭）分節：一節是一個標題到下一個標題前（標題前面的那些自己一節）。"""
+    groups = []
+    for para in paragraphs(text.strip()):
+        if para.startswith("#") or not groups:
+            groups.append([para])
+        else:
+            groups[-1].append(para)
+    return groups
+
+
 def split(text, limit=LIMIT):
-    """切成每則不超過 limit 個字：照段落（空行）切，一段太長再照行切，一行太長才硬切。"""
+    """切成每則不超過 limit 個字：盡量整節放在同一則（標題和它底下的內容不分開），一節太長再照段落（空行）切，
+    一段太長再照行切，一行太長才硬切。"""
     chunks, current = [], ""
 
     def add(piece, sep):
@@ -72,14 +107,17 @@ def split(text, limit=LIMIT):
             return True
         return False
 
-    for para in text.strip().split("\n\n"):
-        if add(para, "\n\n"):
+    for group in sections(text):
+        if add("\n\n".join(group), "\n\n"):
             continue
-        for line in para.split("\n"):
-            if add(line, "\n"):
+        for para in group:
+            if add(para, "\n\n"):
                 continue
-            for i in range(0, len(line), limit):
-                add(line[i:i + limit], "\n")
+            for line in para.split("\n"):
+                if add(line, "\n"):
+                    continue
+                for i in range(0, len(line), limit):
+                    add(line[i:i + limit], "\n")
     if current:
         chunks.append(current)
     return chunks
@@ -95,14 +133,16 @@ def webhook_url(path=WEBHOOK):
     return url
 
 
-def post(url, content):
-    """發一則訊息到 Discord（webhook）。"""
-    body = json.dumps({"content": content}).encode("utf-8")
-    request = urllib.request.Request(url, data=body, method="POST",
+def post(url, content, thread_name=None, thread_id=None):
+    """發一則訊息到 Discord（webhook），回傳 Discord 回的訊息（wait=true）。
+    thread_name：在討論區開一篇新文章（標題），回傳的 channel_id 是文章的編號；thread_id：接在那篇文章底下。"""
+    payload = {"content": content, **({"thread_name": thread_name} if thread_name else {})}
+    query = urllib.parse.urlencode({"wait": "true", **({"thread_id": thread_id} if thread_id else {})})
+    request = urllib.request.Request(f"{url}?{query}", data=json.dumps(payload).encode("utf-8"), method="POST",
                                      headers={"Content-Type": "application/json", "User-Agent": USER_AGENT})
     try:
-        with urllib.request.urlopen(request, timeout=TIMEOUT):
-            pass
+        with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
+            return json.loads(response.read() or b"{}")
     except urllib.error.HTTPError as e:
         raise PatchError(f"Discord 回了 {e.code}：{e.read().decode('utf-8', 'replace')[:200]}") from None
     except urllib.error.URLError as e:
@@ -130,24 +170,59 @@ def send(dry_run=False, draft=DRAFT, record=RECORD, webhook=WEBHOOK):
     return chunks
 
 
+def forum(path, title, dry_run=False, webhook=FORUM_WEBHOOK):
+    """在討論區開一篇新文章：path 是文章（Markdown），title 是標題。回傳發了（或試跑會發）的幾則。
+    超過 2000 字就切開（split()）：第一則是文章本體，後面的接在同一篇文章底下。不記紀錄。"""
+    text = Path(path).read_text(encoding="utf-8").strip() if Path(path).exists() else ""
+    if not text:
+        raise PatchError(f"{path} 是空的或找不到，沒有東西可以發")
+    title = title.strip()
+    if not title:
+        raise PatchError("要有標題（--title）")
+    if len(title) > TITLE_LIMIT:
+        raise PatchError(f"標題最多 {TITLE_LIMIT} 個字，現在是 {len(title)} 個字")
+    chunks = split(text)
+    if dry_run:
+        return chunks
+    url = webhook_url(webhook)
+    thread = post(url, chunks[0], thread_name=title).get("channel_id")
+    if len(chunks) > 1 and not thread:
+        raise PatchError("Discord 沒有回文章的編號，後面幾則接不上去（webhook 是不是建在討論區頻道上？）")
+    for chunk in chunks[1:]:
+        post(url, chunk, thread_id=thread)
+    return chunks
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="python -m mud.patchnote", description="Discord 的 patch 通知")
     sub = parser.add_subparsers(dest="action", required=True)
     sub.add_parser("since", help="上次發過之後的 commit")
     p = sub.add_parser("send", help="把 patch/草稿.md 發到 Discord")
     p.add_argument("--dry-run", action="store_true", help="只印出會發的內容，不發、不記")
+    f = sub.add_parser("forum", help="在討論區開一篇新文章")
+    f.add_argument("file", help="文章（Markdown）")
+    f.add_argument("--title", required=True, help=f"標題（最多 {TITLE_LIMIT} 個字）")
+    f.add_argument("--dry-run", action="store_true", help="只印出會發的內容，不發")
     args = parser.parse_args(argv)
     try:
         if args.action == "since":
             print(since() or "上次發過之後沒有新的 commit。")
             return 0
-        chunks = send(dry_run=args.dry_run)
+        if args.action == "forum":
+            chunks = forum(args.file, args.title, dry_run=args.dry_run)
+        else:
+            chunks = send(dry_run=args.dry_run)
     except PatchError as e:
         print(e, file=sys.stderr)
         return 1
     for i, chunk in enumerate(chunks, 1):
         print(f"----- 第 {i}／{len(chunks)} 則（{len(chunk)} 字） -----\n{chunk}")
-    print("試跑：沒有發，也沒有記。" if args.dry_run else f"發好了，共 {len(chunks)} 則，記進 {RECORD}。")
+    if args.dry_run:
+        print("試跑：沒有發" + ("。" if args.action == "forum" else "，也沒有記。"))
+    elif args.action == "forum":
+        print(f"發好了：討論區的新文章「{args.title.strip()}」，共 {len(chunks)} 則。")
+    else:
+        print(f"發好了，共 {len(chunks)} 則，記進 {RECORD}。")
     return 0
 
 

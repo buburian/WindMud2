@@ -3,3 +3,4 @@ logs/
 players/
 .codegraph/
 patch/discord-webhook
+patch/discord-forum-webhook

@@ -97,7 +97,7 @@ push 到 master 以後，正式機自己更新、重開伺服器：
 
 1. GitHub Action（`.github/workflows/test.yml`）跑全部測試和區域檔檢查，都過了就把 `release` 分支推到這個 commit。
 2. 正式機每分鐘跑一次 `deploy/update.sh`（`windmud-update.timer`），去 GitHub 看 `release` 分支：
-   - 有新版：先在遊戲裡跟線上的玩家說「伺服器 30 秒後重新啟動」，等 30 秒，再 `git merge --ff-only`、`uv sync`、`sudo systemctl restart windmud`，等 30 秒內 port 8080 開起來。
+   - 有新版：先在遊戲裡跟線上的玩家說「伺服器 30 秒後重新啟動」（剩 10 秒時伺服器自己再說一次），等 30 秒，再 `git merge --ff-only`、`uv sync`、`sudo systemctl restart windmud`，等 30 秒內 port 8080 開起來。
      通知是送 `SIGUSR1` 給伺服器的 python（`mud/restart.py`）；伺服器沒在跑就不通知、不等。
    - 開不起來：退回原本的版本再重開，那個版本記下來不再試；修好再 push 新的 commit 就會再更新。
 
@@ -139,6 +139,11 @@ webhook 網址（Discord 頻道設定 → 整合 → Webhook 複製的網址）�
 ```sh
 pbpaste > patch/discord-webhook && chmod 600 patch/discord-webhook
 ```
+
+討論區發文章：`uv run python -m mud.patchnote forum 文章.md --title 標題`（`--dry-run` 試跑）。一樣先給人看過才發。
+討論區要另外一個 webhook（webhook 綁在一個頻道上，要建在討論區頻道），放在 `patch/discord-forum-webhook`（`.gitignore` 排除）。
+超過 2000 字會切開：第一則是文章本體，後面的接在同一篇文章底下；標題最多 100 個字。
+文章改了不修改舊的：自己在 Discord 刪掉舊的那篇，再重貼一篇。發過的文章放在 `patch/討論區/`。
 
 ## 連線
 
