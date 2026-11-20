@@ -17,7 +17,7 @@ async def main():
     p.add_argument("--port", type=int, default=4000)
     args = p.parse_args()
     setup()                                         # 放在 parse_args 後面，--help 才不會建出 logs/
-    health.mark_start()                             # 開機時間：imm 的 health 看跑了多久、平均 CPU
+    health.mark_start()                             # 開機時間、git 版本號：imm 的 health 看跑了多久、平均 CPU；系統公告寫版本
     try:
         zones.load(AREA_DIR)
     except ValueError as e:
@@ -36,9 +36,11 @@ async def main():
     except ValueError as e:
         log.error(f"表情動作載入失敗：{e}")
         raise SystemExit(1)
+    if health.boot_commit is None:
+        log.warning("讀不到 git 的版本號：系統公告不寫版本")
     try:
         login.load_screen(LOGIN_SCREEN)
-        announce.load(ANNOUNCE_FILE)
+        announce.load(ANNOUNCE_FILE, health.boot_commit)
     except ValueError as e:
         log.error(f"登入畫面或系統公告載入失敗：{e}")
         raise SystemExit(1)

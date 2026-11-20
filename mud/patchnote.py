@@ -1,11 +1,12 @@
 """Discord 的 patch 通知（給玩家看的更新說明，使用者 2026-11-20 要的）。
 
 流程（使用者選的：先給他看，他說好才發）：上線後把上次發過之後的修改寫成草稿 patch/草稿.md，
-給使用者看過、他說「發」才跑 send，發完記進 patch/紀錄.md、草稿清空。只寫玩家感受得到的，imm 的指令不寫（使用者選的）。
+給使用者看過、他說「發」才跑 send，發完記進 patch/紀錄.md（連 Discord 回的訊息 ID）、草稿清空。只寫玩家感受得到的，imm 的指令不寫（使用者選的）。
 
     uv run python -m mud.patchnote since          # 上次發過之後的 commit（寫草稿用）
     uv run python -m mud.patchnote send --dry-run # 試跑：印出會發的幾則，不發、不記
     uv run python -m mud.patchnote send           # 發到 Discord，記進紀錄
+    uv run python -m mud.patchnote edit 訊息ID [--dry-run]   # 改發過的：先改紀錄裡那一筆，再把它送去蓋掉 Discord 上的（一樣先給使用者看）
     uv run python -m mud.patchnote forum 文章.md --title 標題 [--dry-run]   # 在討論區開一篇新文章（一樣先給使用者看）
 文章改了不修改舊的（使用者 2026-11-20 選的）：使用者自己在 Discord 刪掉舊的，再重貼一篇。
 
@@ -34,6 +35,7 @@ TITLE_LIMIT = 100                           # 討論區文章的標題最多 100
 USER_AGENT = "WindMud-patchnote/1.0"        # 坑：urllib 預設的 User-Agent 會被 Discord 前面的 Cloudflare 擋掉（403）
 TIMEOUT = 15
 SENT = re.compile(r"^<!-- 發到 ([0-9a-f]{7,40}) -->$", re.M)   # 紀錄裡每一筆的標記：這一筆發到哪個 commit
+ENTRY = re.compile(r"^## .*\n<!-- 發到 [0-9a-f]{7,40} -->\n(?:<!-- 訊息 ID：([0-9? ]*) -->\n)?\n", re.M)   # 一筆的開頭，[1] 是訊息 ID
 RECORD_HEAD = "# 發過的 patch 通知\n\n`uv run python -m mud.patchnote send` 發完自動加在最後面；最後一筆的 commit 是下一次草稿的起點。\n"
 
 
@@ -138,7 +140,12 @@ def post(url, content, thread_name=None, thread_id=None):
     thread_name：在討論區開一篇新文章（標題），回傳的 channel_id 是文章的編號；thread_id：接在那篇文章底下。"""
     payload = {"content": content, **({"thread_name": thread_name} if thread_name else {})}
     query = urllib.parse.urlencode({"wait": "true", **({"thread_id": thread_id} if thread_id else {})})
-    request = urllib.request.Request(f"{url}?{query}", data=json.dumps(payload).encode("utf-8"), method="POST",
+    return call(f"{url}?{query}", payload)
+
+
+def call(url, payload, method="POST"):
+    """送一個要求給 Discord，回傳它回的 JSON（沒有內容是 {}）。"""
+    request = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), method=method,
                                      headers={"Content-Type": "application/json", "User-Agent": USER_AGENT})
     try:
         with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
@@ -160,14 +167,43 @@ def send(dry_run=False, draft=DRAFT, record=RECORD, webhook=WEBHOOK):
     url = webhook_url(webhook)
     head = git("rev-parse", "--short", "HEAD")
     start = last_sent(record)
-    for chunk in chunks:
-        post(url, chunk)
+    ids = [str(post(url, chunk).get("id", "?")) for chunk in chunks]   # Discord 的訊息 ID（使用者 2026-11-20 要的：以後要找、要刪用）
     old = record.read_text(encoding="utf-8") if record.exists() else RECORD_HEAD
     today = datetime.date.today().isoformat()
     span = f"{start}..{head}" if start else f"到 {head}"
-    record.write_text(f"{old.rstrip()}\n\n## {today}（{span}）\n<!-- 發到 {head} -->\n\n{text}\n", encoding="utf-8")
+    record.write_text(f"{old.rstrip()}\n\n## {today}（{span}）\n<!-- 發到 {head} -->\n<!-- 訊息 ID：{' '.join(ids)} -->\n\n{text}\n",
+                      encoding="utf-8")
     draft.write_text("", encoding="utf-8")
     return chunks
+
+
+def entry_of(message_id, record=RECORD):
+    """紀錄裡記著這個訊息 ID 的那一筆：(這一筆的全部 ID, 內容)。"""
+    text = record.read_text(encoding="utf-8") if record.exists() else ""
+    heads = list(ENTRY.finditer(text))
+    for i, head in enumerate(heads):
+        ids = (head[1] or "").split()
+        if message_id in ids:
+            end = heads[i + 1].start() if i + 1 < len(heads) else len(text)
+            return ids, text[head.end():end].strip()
+    raise PatchError(f"{record} 裡找不到訊息 ID {message_id}")
+
+
+def edit(message_id, dry_run=False, record=RECORD, webhook=WEBHOOK):
+    """把 Discord 上發過的那一筆改成紀錄裡現在寫的（先改 patch/紀錄.md 那一筆，再跑這個）。
+    message_id 是那一筆的任何一個 ID；回傳 [(ID, 內容)]。Discord 只能改內容、不能多一則或少一則。"""
+    ids, text = entry_of(message_id, record)
+    chunks = split(text)
+    if "?" in ids or len(chunks) != len(ids):
+        raise PatchError(f"這一筆發的時候是 {len(ids)} 則（ID：{' '.join(ids)}），改完切成 {len(chunks)} 則："
+                         "則數不一樣改不了，要在 Discord 刪掉再重發")
+    pairs = list(zip(ids, chunks))
+    if dry_run:
+        return pairs
+    url = webhook_url(webhook)
+    for message, chunk in pairs:
+        call(f"{url}/messages/{message}", {"content": chunk}, method="PATCH")
+    return pairs
 
 
 def forum(path, title, dry_run=False, webhook=FORUM_WEBHOOK):
@@ -203,10 +239,19 @@ def main(argv=None):
     f.add_argument("file", help="文章（Markdown）")
     f.add_argument("--title", required=True, help=f"標題（最多 {TITLE_LIMIT} 個字）")
     f.add_argument("--dry-run", action="store_true", help="只印出會發的內容，不發")
+    e = sub.add_parser("edit", help="把 Discord 上發過的那一筆改成 patch/紀錄.md 現在寫的")
+    e.add_argument("id", help="那一筆的訊息 ID（紀錄裡的「訊息 ID」）")
+    e.add_argument("--dry-run", action="store_true", help="只印出會改成什麼，不改")
     args = parser.parse_args(argv)
     try:
         if args.action == "since":
             print(since() or "上次發過之後沒有新的 commit。")
+            return 0
+        if args.action == "edit":
+            pairs = edit(args.id, dry_run=args.dry_run)
+            for message, chunk in pairs:
+                print(f"----- 訊息 {message}（{len(chunk)} 字） -----\n{chunk}")
+            print("試跑：沒有改。" if args.dry_run else f"改好了，共 {len(pairs)} 則。")
             return 0
         if args.action == "forum":
             chunks = forum(args.file, args.title, dry_run=args.dry_run)

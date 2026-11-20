@@ -519,6 +519,6 @@ def do_health(ch, arg):
         ("負載", *loads),
         ("遊戲", f"線上玩家 {len(online_players())}", f"角色 {len(characters)}", f"戰鬥 {fights}", "task " + shown(health.tasks())),
         ("區域", f"世界 {1 if zones.world else 0}", f"動態 {len(zones.dynamic)}", f"副本 {len(zones.instances)}"),
-        ("版本", f"Python {health.python_version()}", f"Lua {lua_version}", f"lupa {lupa_version}"),
+        ("版本", "git " + shown(health.boot_commit), f"Python {health.python_version()}", f"Lua {lua_version}", f"lupa {lupa_version}"),
     ]
     ch.send("\n".join(health_row(*row) for row in rows) + "\n")

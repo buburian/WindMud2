@@ -13,9 +13,14 @@ ROOT = Path(__file__).resolve().parent.parent
 
 @pytest.fixture
 def files(tmp_path, monkeypatch):
-    """草稿、紀錄、webhook 都放 tmp_path；發出去的記在 sent，HEAD 是 abc1234。"""
+    """草稿、紀錄、webhook 都放 tmp_path；發出去的記在 sent，Discord 回的訊息 ID 是 101、102…，HEAD 是 abc1234。"""
     sent = []
-    monkeypatch.setattr(patchnote, "post", lambda url, content: sent.append((url, content)))
+
+    def fake_post(url, content):
+        sent.append((url, content))
+        return {"id": str(100 + len(sent))}
+
+    monkeypatch.setattr(patchnote, "post", fake_post)
     monkeypatch.setattr(patchnote, "git", lambda *args: "abc1234")
     paths = {"draft": tmp_path / "草稿.md", "record": tmp_path / "紀錄.md", "webhook": tmp_path / "discord-webhook"}
     paths["webhook"].write_text("https://discord.com/api/webhooks/1/x\n", encoding="utf-8")
@@ -63,9 +68,17 @@ def test_send_posts_records_and_clears_the_draft(files):
     patchnote.send(**paths)
     assert sent == [("https://discord.com/api/webhooks/1/x", "新的區域：邪龍教派。")]
     record = paths["record"].read_text(encoding="utf-8")
-    assert "<!-- 發到 abc1234 -->" in record and "新的區域：邪龍教派。" in record
+    assert "<!-- 發到 abc1234 -->\n<!-- 訊息 ID：101 -->" in record and "新的區域：邪龍教派。" in record
     assert patchnote.last_sent(paths["record"]) == "abc1234"
     assert paths["draft"].read_text(encoding="utf-8") == ""
+
+
+def test_long_notes_record_every_message_id(files):
+    # 切成好幾則：每一則的 ID 都記（使用者 2026-11-20 要的）
+    paths, sent = files
+    paths["draft"].write_text("甲" * 1500 + "\n\n" + "乙" * 1500, encoding="utf-8")
+    patchnote.send(**paths)
+    assert len(sent) == 2 and "<!-- 訊息 ID：101 102 -->" in paths["record"].read_text(encoding="utf-8")
 
 
 def test_next_send_starts_after_the_last_one(files, monkeypatch):
@@ -220,3 +233,68 @@ def test_split_never_breaks_a_code_block():
     block = "```\n" + "樹" * 995 + "\n\n" + "枝" * 995 + "\n```"      # 區塊裡有空行，整個 2000 字
     assert patchnote.split("前面\n\n" + block) == ["前面", block]          # 整個區塊放到下一則，不從中間的空行切開
 
+
+
+# ---- 改發過的（edit，使用者 2026-11-20 要的）----
+
+RECORD = """# 發過的 patch 通知
+
+## 2026-11-20（到 aaa1111）
+<!-- 發到 aaa1111 -->
+<!-- 訊息 ID：11 -->
+
+## 📜 第一次
+
+## 2026-11-20（aaa1111..bbb2222）
+<!-- 發到 bbb2222 -->
+<!-- 訊息 ID：21 22 -->
+
+{long}
+"""
+
+
+@pytest.fixture
+def record(tmp_path, monkeypatch):
+    """兩筆紀錄（第二筆發了兩則）；送出去的記在 calls：(網址, 內容, 方法)。"""
+    calls = []
+    monkeypatch.setattr(patchnote, "call", lambda url, payload, method="POST": calls.append((url, payload, method)) or {})
+    path = tmp_path / "紀錄.md"
+    path.write_text(RECORD.format(long="甲" * 1500 + "\n\n" + "乙" * 1500), encoding="utf-8")
+    webhook = tmp_path / "discord-webhook"
+    webhook.write_text("https://discord.com/api/webhooks/1/x", encoding="utf-8")
+    return path, webhook, calls
+
+
+def test_edit_finds_the_entry_by_any_id(record):
+    path, _webhook, _calls = record
+    assert patchnote.entry_of("11", path) == (["11"], "## 📜 第一次")    # 內容裡的 ## 標題不算下一筆
+    assert patchnote.entry_of("22", path)[0] == ["21", "22"]
+    with pytest.raises(PatchError, match="找不到訊息 ID 99"):
+        patchnote.entry_of("99", path)
+
+
+def test_edit_patches_each_message(record):
+    path, webhook, calls = record
+    patchnote.edit("21", record=path, webhook=webhook)
+    assert calls == [("https://discord.com/api/webhooks/1/x/messages/21", {"content": "甲" * 1500}, "PATCH"),
+                     ("https://discord.com/api/webhooks/1/x/messages/22", {"content": "乙" * 1500}, "PATCH")]
+
+
+def test_edit_dry_run_sends_nothing(record):
+    path, webhook, calls = record
+    assert patchnote.edit("11", dry_run=True, record=path, webhook=webhook) == [("11", "## 📜 第一次")] and calls == []
+
+
+def test_edit_cannot_change_how_many_messages(record):
+    path, webhook, calls = record
+    path.write_text(RECORD.format(long="短短的"), encoding="utf-8")       # 原本兩則，改完一則
+    with pytest.raises(PatchError, match="這一筆發的時候是 2 則（ID：21 22），改完切成 1 則"):
+        patchnote.edit("21", record=path, webhook=webhook)
+    assert calls == []
+
+
+def test_old_entries_without_ids_still_parse(record):
+    path, _webhook, _calls = record
+    path.write_text("## 2026-11-20（到 aaa1111）\n<!-- 發到 aaa1111 -->\n\n內容\n" + RECORD.split("\n", 2)[2], encoding="utf-8")
+    assert patchnote.entry_of("11", path) == (["11"], "## 📜 第一次")   # 沒有 ID 的舊筆不會吃掉下一筆
+    assert patchnote.last_sent(path) == "bbb2222"

@@ -129,3 +129,32 @@ def test_read_lists_what_can_be_read(line):
 
 def test_read_keeps_the_old_abbreviations():
     assert commands.find("r") is commands.find("reply") and commands.find("rea") is commands.find("read")
+
+
+# ---- 版本號（使用者 2026-11-20 要的）----
+
+def test_version_is_the_last_line(tmp_path):
+    announce.load(write(tmp_path, "邪龍教派開放了。"), "7d3539e")
+    assert box(announce.text) == ["+------------------+",
+                                  "| 【系統公告】     |",
+                                  "| 邪龍教派開放了。 |",
+                                  "| 版本 7d3539e     |",
+                                  "+------------------+"]
+
+
+def test_no_announcement_no_version(tmp_path):
+    announce.load(write(tmp_path, ""), "7d3539e")
+    assert announce.text == ""
+
+
+def test_version_does_not_count_in_the_height(tmp_path):
+    announce.load(write(tmp_path, "\n".join(["一行"] * announce.HEIGHT)), "7d3539e")   # 10 行剛好，加版本也行
+    assert box(announce.text)[-2] == "| 版本 7d3539e |"
+
+
+def test_commit_is_the_git_head(tmp_path):
+    import subprocess
+    from mud import health
+    head = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
+    assert health.commit() == head
+    assert health.commit(tmp_path) is None                           # 不是 git 的資料夾

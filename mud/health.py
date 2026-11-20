@@ -6,8 +6,10 @@
 import asyncio
 import os
 import platform
+import subprocess
 import sys
 import time
+from pathlib import Path
 from typing import NamedTuple
 
 try:
@@ -19,6 +21,8 @@ PROC_STATUS = "/proc/self/status"           # Linux：VmRSS 是現在佔的記�
 KB = 1024
 MAXRSS_IN_BYTES = ("darwin",)               # getrusage 的 ru_maxrss：macOS 是 byte，其他（Linux）是 KB
 PERCENT = 100
+ROOT = Path(__file__).resolve().parent.parent   # 專案的資料夾（git 的版本從這裡讀）
+GIT_TIMEOUT = 5                             # 秒：開機時讀 git 版本最多等多久
 
 
 class Start(NamedTuple):
@@ -29,12 +33,14 @@ class Start(NamedTuple):
 
 
 started = None                              # 開機時記下的 Start；沒從 __main__ 開機（測試）是 None
+boot_commit = None                          # 開機時的 git 版本號（commit()）：系統公告、health 用；沒開機、讀不到是 None
 
 
 def mark_start():
-    """開機時呼叫一次（__main__）。"""
-    global started
+    """開機時呼叫一次（__main__）：記開機時間和 git 版本號（health 指令在 loop 裡跑，不能每次都去讀 git）。"""
+    global started, boot_commit
     started = Start(time.time(), time.monotonic(), time.process_time())
+    boot_commit = commit()
 
 
 def uptime():
@@ -116,3 +122,14 @@ def tasks():
 
 def python_version():
     return platform.python_version()
+
+
+def commit(root=ROOT):
+    """這一版的 git commit 短號碼（例如 7d3539e，系統公告最後一行用）；不是 git 的資料夾、沒有 git、讀不到是 None。
+    開機時讀一次就好：正式機的 deploy/update.sh 是先換檔案再重開，所以開機時的 HEAD 就是跑著的版本。"""
+    try:
+        done = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=root, capture_output=True, text=True,
+                              timeout=GIT_TIMEOUT, check=True)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return done.stdout.strip() or None

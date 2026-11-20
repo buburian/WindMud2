@@ -18,8 +18,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Discord 的 patch 通知
 
 使用者 2026-11-20 要的、選的流程：**每次 push 後 GitHub 測試過了，照 `mud.patchnote since` 寫 `patch/草稿.md`、貼給使用者看，他說「發」才跑 `send`**（不能自己發）。
-只寫玩家感受得到的（新指令、技能、區域、數值、修掉的錯），**imm 的指令不寫**（使用者選的），**系統相關的也不寫**（部署、重開伺服器的公告這類，使用者 2026-11-20 說的），程式結構、測試、手冊同步也不寫。
+只寫玩家感受得到的（新指令、技能、區域、修掉的錯），**imm 的指令不寫**（使用者選的），**系統相關的也不寫**（部署、重開伺服器的公告這類，使用者 2026-11-20 說的），程式結構、測試、手冊同步也不寫。
+**遊戲裡看不到的數字不寫**（使用者 2026-11-20 說的，之前發的 4 則因此改過）：機率（掉落、淬火石、recall 成功率）、治療和傷害的數字（×1.5、回 10%）、經驗的 %、怪變多幾倍這類都不寫，改成「變多了」「更常掉」；
+**等級、秒數（重生的分鐘）可以寫**，遊戲裡畫面上看得到的也可以（例如「打 2 次」、必出 INT）。
 只有不寫的修改就不用寫草稿、不用問；`since` 會一直列出它們，直到下一次發（發的時候紀錄記到當時的 HEAD）。
+紀錄每一筆也記 Discord 回的訊息 ID（`<!-- 訊息 ID：… -->`，切成好幾則就每則一個；使用者 2026-11-20 要的，之前發的 4 筆是使用者補給我的）。
+**改發過的**（`edit 訊息ID`，使用者 2026-11-20 要的）：先改紀錄裡那一筆的內容，`--dry-run` 給使用者看，他說「發」才跑；webhook 用 PATCH 蓋掉 Discord 上的那幾則（`call()`），則數不能變（變了就要刪掉重發）。
 webhook 網址在 `patch/discord-webhook`（`.gitignore` 排除，是密碼：不要印出來、不要讀進回覆）。
 討論區發文章（使用者 2026-11-20 要的）：`forum`，用另一個 webhook `patch/discord-forum-webhook`（建在討論區頻道上）；一樣先給使用者看、他說「發」才發，不記紀錄。
 超過 2000 字切開，第一則開文章（`thread_name`，回傳的 `channel_id` 是文章編號），後面的用 `thread_id` 接在底下。
@@ -51,6 +55,7 @@ uv run python -m mud.builder                      # 區域編輯器，瀏覽器�
 uv run python -m mud.areaconvert 舊.json builder_area/新.json   # 舊區域（area2json 的輸出）轉成我們的格式，印出拿掉了什麼
 uv run python -m mud.patchnote since              # Discord 的 patch 通知：上次發過之後的 commit（寫草稿用）
 uv run python -m mud.patchnote send --dry-run     # 試跑 patch/草稿.md（拿掉 --dry-run 才真的發，發完記進 patch/紀錄.md）
+uv run python -m mud.patchnote edit 訊息ID --dry-run   # 改發過的：Discord 上那一則改成紀錄裡現在寫的
 uv run python -m mud.patchnote forum 文章.md --title 標題 --dry-run   # 討論區開新文章（webhook 在 patch/discord-forum-webhook）
 ```
 
@@ -195,7 +200,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     沒呼叫 `load_screen()`（測試）就是空的，直接問名字。
   - **系統公告**（`mud/announce.py`，使用者 2026-11-20 要的，規則在玩家角色手冊「系統公告」）：`screens/announce.txt`（`config.ANNOUNCE_FILE`），`__main__` 開機時 `announce.load()`，
     `check()` 不過就停止開機（最多 `HEIGHT` 10 行、每行 `WIDTH` 75 格、Big5）；沒有檔案、只有空白是沒有公告（`announce.text` 是空的）。
-    `box()` 做亮黃外框（半形 `+ - |`，照最寬的一行）。舊角色登入（`login.enter()`）接在「歡迎回來」和房間之間、前後空一行；接手、建角不送。
+    `box()` 做亮黃外框（半形 `+ - |`，照最寬的一行）；有公告才在框裡最後加「版本 7d3539e」（`health.mark_start()` 開機時讀 git 存在 `health.boot_commit`，`__main__` 傳給 `load()`，不算在 HEIGHT；讀不到就不加，使用者 2026-11-20 要的；imm 的 health 版本那行第一格也是它）。舊角色登入（`login.enter()`）接在「歡迎回來」和房間之間、前後空一行；接手、建角不送。
     指令 `read`（`commands/read.py`，`rea`，什麼姿勢都能用）：`TOPICS` 是能讀的東西（現在只有 announce，之後的 mail 加在這裡）。`tests/test_announcement.py`。
   - **登入和建立角色**（`login.py`，一問一答照順序寫）：名字 3～12 個英文字母（照 C 版，保留字不行），存成第一個字大寫。
     有存檔就問密碼（錯了就斷線）；沒有就建立：密碼兩次（至少 5 個字）、性別、種族、公會，選完就建好、`zones.enroll()`、站在 `zones.home()`、存檔。
@@ -253,7 +258,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   `sset <名字> <技能> [off]`（`ss`，照 C 版的名字，讓線上的玩家學會／忘掉技能，imm_only 的不能給）、
   `goto <號碼或名字>`（`go`，照 C 版 find_location：號碼用 `zones.room_at()`（副本的房間去不了），名字先同房間、再線上玩家、再全部角色；`death.stop_all()` 停手、旋風的兩句、不觸發 on_enter）、
   `givemoney <名字> <數量>`（`givem`，使用者 2026-11-18 要的：線上的玩家、正整數、自己的不少，`items.keep()` 幫對方存檔）、
-  `health`（`hea`，使用者 2026-11-20 要的：伺服器的健康度：開機多久、記憶體、CPU、系統負載、遊戲裡的數量、Lua 記憶體、版本；
+  `health`（`hea`，使用者 2026-11-20 要的：伺服器的健康度：開機多久、記憶體、CPU、系統負載、遊戲裡的數量、Lua 記憶體、版本（git 的版本號、Python、Lua、lupa）；
   `mud/health.py` 只用標準庫，讀不到的寫「看不到」（macOS 沒有 /proc，記憶體只有最高用量；正式機的 Linux 才有現在的），`__main__` 開機時 `health.mark_start()`，
   `lua.memory_used()`／`version()`；`tests/test_health.py` 只比標籤和格式，因為 CI 是 Linux、開發機是 macOS，看得到的值不一樣）、
   `vnums`（`vn`，使用者 2026-11-20 要的：伺服器載入的區域檔（世界的 `zones.world.areas`、動態和副本的 `zones.templates`）各自的 `header.vnums`，照號碼排，再列中間還沒用的，最後「N 以上」）。

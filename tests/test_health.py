@@ -47,6 +47,7 @@ class FakeWriter:
 def world(monkeypatch):
     zones.load(AREAS)
     monkeypatch.setattr(health, "started", None)        # 測試沒從 __main__ 開機
+    monkeypatch.setattr(health, "boot_commit", None)
     yield
     characters.clear()
 
@@ -104,8 +105,15 @@ def test_imm_sees_every_section_within_the_screen_width():
     assert re.fullmatch(r"CPU     累積 \d+\.\d 秒 +平均 看不到 +核心 (\d+|看不到)", row(lines, "CPU"))    # 沒開機：沒有平均
     assert row(lines, "開機") == "開機    看不到"
     assert row(lines, "區域") == "區域    世界 1            動態 0            副本 0"
-    assert row(lines, "版本").startswith(f"版本    Python {sys.version_info.major}.{sys.version_info.minor}.")
+    assert row(lines, "版本").startswith(f"版本    git 看不到        Python {sys.version_info.major}.{sys.version_info.minor}.")   # 沒開機：沒有版本號
     assert "Lua 5.4" in row(lines, "版本")
+
+
+def test_boot_reads_the_git_version():
+    # 開機時讀一次 git 的版本號（使用者 2026-11-20 要的），health 第一格
+    health.mark_start()
+    assert health.boot_commit == health.commit() and health.boot_commit
+    assert row(screen(player("Boss", is_imm=True)), "版本").startswith(f"版本    git {health.boot_commit}  ")
 
 
 def test_columns_line_up():

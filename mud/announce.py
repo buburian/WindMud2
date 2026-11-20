@@ -10,6 +10,7 @@ from .color import colorize
 from .config import ENCODING
 
 TITLE = "【系統公告】"
+VERSION = "版本 "                            # 框裡最後一行：「版本 7d3539e」
 WIDTH = 75                                  # 每行最多幾格：整個框不超過 79 格（外框左右的「| 」「 |」各佔 2 格）
 HEIGHT = 10                                 # 最多幾行（不算標題）：太長會把登入時房間的畫面擠出去
 COLOR = "{Y"                                # 外框和標題亮黃（跟換區域的提示一樣）；內容照檔案寫的，可以用顏色代碼
@@ -23,8 +24,9 @@ def shown_width(line):
     return len(ANSI.sub("", colorize(line)).encode(ENCODING))
 
 
-def load(path):
-    """讀公告、檢查、做好外框。有問題就 ValueError（第一個問題加總數），原本載入的不動。開機時呼叫（__main__）。"""
+def load(path, version=None):
+    """讀公告、檢查、做好外框。有問題就 ValueError（第一個問題加總數），原本載入的不動。開機時呼叫（__main__）。
+    version 是 git 的版本號（health.commit()）：有公告才在框裡最後加一行「版本 …」（使用者 2026-11-20 要的），不算在 HEIGHT 裡。"""
     global text
     try:
         raw = Path(path).read_text(encoding="utf-8")
@@ -36,7 +38,7 @@ def load(path):
     problems = check(lines)
     if problems:
         raise ValueError(f"{path}：{problems[0]}（共 {len(problems)} 個問題）")
-    text = box(lines)
+    text = box(lines + [VERSION + version] if lines and version else lines)
 
 
 def check(lines):
