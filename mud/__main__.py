@@ -3,7 +3,7 @@ import argparse
 import asyncio
 import logging
 
-from . import helps, login, socials, zones
+from . import health, helps, login, socials, zones
 from .config import AREA_DIR, ENCODING, HELP_FILE, LOGIN_SCREEN, SOCIAL_FILE, START_ROOM
 from .log import setup
 from .server import handle
@@ -17,6 +17,7 @@ async def main():
     p.add_argument("--port", type=int, default=4000)
     args = p.parse_args()
     setup()                                         # 放在 parse_args 後面，--help 才不會建出 logs/
+    health.mark_start()                             # 開機時間：imm 的 health 看跑了多久、平均 CPU
     try:
         zones.load(AREA_DIR)
     except ValueError as e:

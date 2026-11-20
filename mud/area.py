@@ -95,7 +95,7 @@ class AreaType(enum.StrEnum):
     """區域的種類（area.header.type）。值就是區域檔裡寫的字串，要跟手冊「三種區域」的表一樣。"""
     WORLD = "world"                         # 世界區域：開機就建好，沒人也不釋放
     DYNAMIC = "dynamic"                     # 動態區域：有人走進去才建立，大家共用一份；沒有玩家一段時間就釋放
-    INSTANCE = "instance"                   # 副本區域：用 enter 進去、recall 出來，一個隊伍一份；沒有玩家一段時間就釋放
+    INSTANCE = "instance"                   # 副本區域：入口的傳送門 enter 進去、副本裡的傳送門 enter 出來，一個隊伍一份；沒有玩家一段時間就釋放
 
 
 # 生物的種類、攻擊類型、攻防傾向、原型（mud_design 設計文件 §4.1～§4.3）。值是區域檔裡寫的代號，要跟手冊的表一樣。
@@ -548,14 +548,14 @@ def check_files(paths, reference=(), script_root=None):
     # 每個檔案是哪一種區域（檔名 → AreaType），出口通到別的檔案時要看
     kinds = {path.name: area_kind(path) for path in reference if path.resolve() not in checked}
     kinds.update({path.name: info.kind for path, info in found.items()})
-    # 出口和 recall 指到的房間要存在；副本只能用 enter 進去、recall 出來，所以出口不能跨進或跨出副本
+    # 出口和 recall 指到的房間要存在；副本只能用傳送門 enter 進去、出來，所以出口不能跨進或跨出副本
     for path, info in found.items():
         for vnum, d, target in info.exits:
             if target not in owner:
                 problems[path].append(f"{path.name}：房間 {vnum} 往 {d} 的出口指到不存在的房間 {target}")
             elif owner[target] != path.name and info.kind == AreaType.INSTANCE:
                 problems[path].append(f"{path.name}：房間 {vnum} 往 {d} 的出口通到 {owner[target]} 的房間 {target}，"
-                                      f"副本的出口不能通到別的區域（要用 recall 出來）")
+                                      f"副本的出口不能通到別的區域（要用副本裡的傳送門出來）")
             elif owner[target] != path.name and kinds.get(owner[target]) == AreaType.INSTANCE:
                 problems[path].append(f"{path.name}：房間 {vnum} 往 {d} 的出口通到副本 {owner[target]} 的房間 {target}，"
                                       f"副本不能走進去（要用 enter）")

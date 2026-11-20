@@ -13,6 +13,7 @@ tick loop：世界和全部的動態區域共用一個（世界 tick），副本
 import asyncio
 import json
 import logging
+from collections import deque
 from pathlib import Path
 
 from . import affects, area, behavior, fight, light, meals, objects, resets, scripts, skills, stats, terrain, weather
@@ -92,6 +93,7 @@ world = None                # 世界區域（Zone）
 dynamic = {}                # 動態區域的檔名 → 現在有建立的那一份（Zone）
 instances = {}              # (副本的檔名, 擁有者) → 那一份副本（Zone）
 templates = {}              # 動態區域、副本的檔名 → (AreaType, 讀好的區域檔)
+routes = {}                 # 檔名 → 從起始房間怎麼走到那個區域（"3s4wn"，"" 是就在這裡，None 是走不到）：area 指令用，load() 算；副本不在裡面
 dynamic_rooms = {}          # 動態區域的房間遊戲號碼 → 檔名：走到這些號碼時要找到（或建立）那個動態區域
 world_task = None           # 世界 tick
 
@@ -102,7 +104,7 @@ def load(directory):
     有任何問題就丟 ValueError（訊息是第一個問題），原本的區域物件不動。
     沒問題才停掉舊的區域物件（和它們的 loop），換成新的。世界 tick 要另外呼叫 start()。
     """
-    global world, templates, dynamic_rooms
+    global world, templates, dynamic_rooms, routes
     paths = sorted(Path(directory).glob("*.json"))
     problems = area.check_files(paths, paths)
     found = [p for path in paths for p in problems[path]]
@@ -128,11 +130,60 @@ def load(directory):
                 new_dynamic_rooms[r["vnum"]] = path.name
     stop()
     world, templates, dynamic_rooms = new_world, new_templates, new_dynamic_rooms
+    routes = find_routes(entries, START_ROOM)
     resets.mobiles, objects.protos = new_mobiles, new_objects
     resets.reset_zone(world)                # 世界一開機就放好生物
     counts = {k: sum(1 for t in templates.values() if t[0] == k) for k in (AreaType.DYNAMIC, AreaType.INSTANCE)}
     log.info(f"載入 {len(paths)} 個區域檔：世界 {len(world.rooms)} 間房；"
              f"動態區域 {counts[AreaType.DYNAMIC]} 個、副本區域 {counts[AreaType.INSTANCE]} 個，要用時才建立")
+
+
+def find_routes(entries, start):
+    """每個區域檔從 start（神殿大廳）怎麼走過去（使用者 2026-11-20 要的：文字遊戲沒有地圖，area 告訴玩家怎麼去）。
+
+    從 start 一間一間往外找（照出口，門照樣走；方向照 DIRECTIONS 的順序，結果才固定），每個區域檔取走得最近的那一間。
+    只算世界、動態區域：副本的入口（enter 的地方）還沒做，入口跟副本的 recall 點是不同的（使用者說的），所以副本不算。
+    回傳 {檔名: 路徑}：路徑寫成 "3s4wn"（同一個方向連走好幾步寫次數），"" 是起點就在這個區域裡，None 是走不到。
+    區域檔開機時讀好就不會變，所以 load() 算一次就好。
+    """
+    owner, exits = {}, {}
+    for path, data in entries:
+        for r in data["rooms"]:
+            owner[r["vnum"]] = path.name
+            exits[r["vnum"]] = [(d, r["exits"][d]["to_room"]) for d in area.DIRECTIONS if d in r["exits"]]
+    came = {start: None} if start in exits else {}
+    todo = deque(came)
+    while todo:
+        room = todo.popleft()
+        for d, to in exits[room]:
+            if to in exits and to not in came:
+                came[to] = (room, d)
+                todo.append(to)
+    order = {room: i for i, room in enumerate(came)}    # 找到的順序：越前面越近
+    out = {}
+    for path, data in entries:
+        if AreaType(data["area"]["header"]["type"]) == AreaType.INSTANCE:
+            continue
+        reached = [r["vnum"] for r in data["rooms"] if r["vnum"] in order]
+        out[path.name] = walk(came, min(reached, key=order.get)) if reached else None
+    return out
+
+
+def walk(came, room):
+    """從起點走到 room 的方向，壓成 "3s4wn"。"""
+    steps = []
+    while came[room] is not None:
+        room, d = came[room]
+        steps.append(d[0])
+    steps.reverse()
+    out, i = "", 0
+    while i < len(steps):
+        j = i
+        while j < len(steps) and steps[j] == steps[i]:
+            j += 1
+        out += (str(j - i) if j - i > 1 else "") + steps[i]
+        i = j
+    return out
 
 
 def stop():
@@ -192,10 +243,10 @@ def is_student(player):
 
 
 def recall_room(ch):
-    """recall 會送到哪間房（使用者定的）：所在的區域檔有寫 recall 就用區域的（通常是副本：送回入口），
+    """recall 會送到哪間房（使用者定的）：所在的區域檔有寫 recall 就用區域的（通常是副本：副本裡的 recall 點，人還在副本裡），
     沒寫就用玩家自己的返回點（player.recall，沒設定是起始房間 START_ROOM）。找不到是 None。
 
-    所以在副本裡要先 recall 回入口、離開副本，才會 recall 到自己的返回點。
+    副本的入口不是 recall 點：入口是世界裡放傳送門的那間，離開副本要用副本裡的傳送門（使用者 2026-11-20 定的，enter 還沒做）。
     """
     area = getattr(ch.room, "area", None)
     vnum = area.data["area"]["recall"] if area is not None else None

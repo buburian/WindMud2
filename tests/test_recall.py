@@ -93,7 +93,7 @@ def test_own_recall_point(world):
 
 
 def test_the_area_recall_comes_first(world):
-    """副本寫了 recall：先回到入口（101），離開副本以後才回自己的返回點（103）。"""
+    """區域檔寫的 recall 比自己的返回點先：這個副本寫的是世界的 101（區域作者也可以寫副本裡的房間），離開副本以後才回自己的返回點（103）。"""
     async def main():
         ming = person("Ming", 101)
         ming.recall = 103

@@ -670,21 +670,30 @@ def do_save(ch, arg):
 
 
 AREA_KINDS = {AreaType.WORLD: "世界", AreaType.DYNAMIC: "動態", AreaType.INSTANCE: "副本"}   # area 指令寫的區域種類
-AREA_HEAD = ("區域", "等級", "種類", "作者")
+AREA_HEAD = ("區域", "等級", "種類", "入口", "作者")
+AREA_TITLE = "遊戲裡的區域（入口：從神殿大廳出發怎麼走，3s 是往南走 3 步）："
+AREA_HERE, AREA_NO_ENTRANCE = "就在這裡", "-----"   # 走不到、副本的入口（enter）還沒做：使用者 2026-11-20 要的，不寫字
 
 
 def do_area(ch, arg):
-    """area：遊戲裡有哪些區域（使用者 2026-11-20 要的，照 C 版 areas）：名稱、適合的等級、種類（世界、動態、副本）、作者，照等級排。
+    """area：遊戲裡有哪些區域（使用者 2026-11-20 要的，照 C 版 areas）：名稱、適合的等級、種類（世界、動態、副本）、
+    入口（從神殿大廳怎麼走，zones.routes，開機時算好；文字遊戲沒有地圖，使用者要的；沒有入口的寫 -----）、作者，照等級排。
 
     資料是區域檔的 header（title、levels、type、author）：世界的在 zones.world.areas，動態、副本的在 zones.templates。
     """
-    found = [a.data for a in (zones.world.areas if zones.world else [])] + [data for _kind, data in zones.templates.values()]
+    found = [(a.name, a.data) for a in (zones.world.areas if zones.world else [])]
+    found += [(name, data) for name, (_kind, data) in zones.templates.items()]
     rows = []
-    for data in found:
+    for name, data in found:
         h = data["area"]["header"]
         low, high = h["levels"]
-        rows.append(((low, high, h["title"]), (h["title"], f"{low}～{high} 級", AREA_KINDS[AreaType(h["type"])], h["author"])))
+        route = zones.routes.get(name)
+        if AreaType(h["type"]) == AreaType.INSTANCE or route is None:
+            way = AREA_NO_ENTRANCE
+        else:
+            way = route or AREA_HERE
+        rows.append(((low, high, h["title"]), (h["title"], f"{low}～{high} 級", AREA_KINDS[AreaType(h["type"])], way, h["author"])))
     table = [AREA_HEAD] + [cells for _key, cells in sorted(rows)]
     widths = [max(width(r[i]) for r in table) for i in range(len(AREA_HEAD))]
     lines = ["  " + "  ".join(pad(c, w) for c, w in zip(r, widths)).rstrip() for r in table]
-    ch.send("遊戲裡的區域：\n" + "\n".join(lines) + "\n")
+    ch.send(AREA_TITLE + "\n" + "\n".join(lines) + "\n")

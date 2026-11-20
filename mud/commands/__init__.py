@@ -86,6 +86,7 @@ IMM_COMMANDS = [
     ("goto", imm.do_goto, P.DEAD),              # go（照 C 版的最低姿勢）
     ("givemoney", imm.do_givemoney, P.DEAD),    # give 還是 give，givem 才是 givemoney
     ("vnums", imm.do_vnums, P.DEAD),            # vn（v 還是 value）：區域檔的號碼範圍和還沒用的
+    ("health", imm.do_health, P.DEAD),          # hea（h、he 還是 help）：伺服器的健康度
 ]
 
 # 姿勢不夠時的訊息（照 C 版 interp.c）

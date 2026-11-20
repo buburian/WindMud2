@@ -41,7 +41,7 @@ uv run python -m mud.areaconvert 舊.json builder_area/新.json   # 舊區域（
   `tests/test_log.py` 測紀錄檔的編號、換檔和刪舊檔；`tests/test_area.py` 測區域載入，也比對手冊的數字表跟程式的定義；`tests/test_areacheck.py` 測區域檔檢查的每條規則；
   要自己做區域檔的測試，用 `tests/area_helpers.py` 做出完整的檔案再改欄位（直接 `from area_helpers import …`）；
   `tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit；另一個測試讓 tick 和幾場戰鬥一直跑，確認玩家打字照樣馬上回應。
-  `tests/test_login.py` 也開真的伺服器，測建立角色、密碼、名字規則、存檔、斷線存檔、重複登入接手。`tests/test_imm.py` 測 imm 指令、advance、train、goto（號碼、名字、副本去不了、停手）、givemoney、vnums；`tests/test_position.py` 測姿勢、rest／sleep／stand、睡覺時能用的指令、say、who、save。`tests/test_resets.py` 測生物的重置（M、limit、rare、tier_roll、時機、look）。`tests/test_doors.py` 測門（兩邊都要寫的檢查、走路、open／close／lock／unlock、對面看得到、look、重置 D、副本各自的門）。
+  `tests/test_login.py` 也開真的伺服器，測建立角色、密碼、名字規則、存檔、斷線存檔、重複登入接手。`tests/test_imm.py` 測 imm 指令、advance、train、goto（號碼、名字、副本去不了、停手）、givemoney、vnums；`tests/test_health.py` 測 health；`tests/test_position.py` 測姿勢、rest／sleep／stand、睡覺時能用的指令、say、who、save。`tests/test_resets.py` 測生物的重置（M、limit、rare、tier_roll、時機、look）。`tests/test_doors.py` 測門（兩邊都要寫的檢查、走路、open／close／lock／unlock、對面看得到、look、重置 D、副本各自的門）。
   `tests/test_objects.py` 測物品（固定、隨機裝備、掉落表、屍體、slay、look 和 look in、屍體消失、區域物件釋放後不見、基本價格 `base_price()`、cost 存檔）。
   `tests/test_behavior.py` 測生物平常的行為（走動的出口和機率、scavenger、主動攻擊和半身人的不起眼、生物回血、wimpy），亂數換成 `behavior.rng`；
   `tests/test_specials.py` 測 special（打架用的時間、傷害 × 倍率、招式名稱、劇毒，janitor、fido，名字的表跟手冊比對），`damage.strike` 換成固定值、`fight.hit` 不打。
@@ -232,14 +232,19 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   `sset <名字> <技能> [off]`（`ss`，照 C 版的名字，讓線上的玩家學會／忘掉技能，imm_only 的不能給）、
   `goto <號碼或名字>`（`go`，照 C 版 find_location：號碼用 `zones.room_at()`（副本的房間去不了），名字先同房間、再線上玩家、再全部角色；`death.stop_all()` 停手、旋風的兩句、不觸發 on_enter）、
   `givemoney <名字> <數量>`（`givem`，使用者 2026-11-18 要的：線上的玩家、正整數、自己的不少，`items.keep()` 幫對方存檔）、
+  `health`（`hea`，使用者 2026-11-20 要的：伺服器的健康度：開機多久、記憶體、CPU、系統負載、遊戲裡的數量、Lua 記憶體、版本；
+  `mud/health.py` 只用標準庫，讀不到的寫「看不到」（macOS 沒有 /proc，記憶體只有最高用量；正式機的 Linux 才有現在的），`__main__` 開機時 `health.mark_start()`，
+  `lua.memory_used()`／`version()`；`tests/test_health.py` 只比標籤和格式，因為 CI 是 Linux、開發機是 macOS，看得到的值不一樣）、
   `vnums`（`vn`，使用者 2026-11-20 要的：伺服器載入的區域檔（世界的 `zones.world.areas`、動態和副本的 `zones.templates`）各自的 `header.vnums`，照號碼排，再列中間還沒用的，最後「N 以上」）。
   **玩家的指令排在 imm 指令前面**：同字首的玩家指令會搶走 imm 指令的縮寫（之前加了 affects，imm 打 `a` 就變成 affects）。
   **`area`**（`a`，`system.do_area()`，使用者 2026-11-20 要的，照 C 版 areas）：世界（`zones.world.areas`）、動態和副本（`zones.templates`）全部的區域檔，
-  寫 header 的 title、levels、type（`AREA_KINDS`）、author，照等級排；imm 的 advance 因此要打 `ad`。
+  寫 header 的 title、levels、type（`AREA_KINDS`）、入口、author，照等級排；imm 的 advance 因此要打 `ad`。
+  入口（從神殿大廳怎麼走）是 `zones.routes`（`load()` 呼叫 `find_routes()` 算一次：從 `START_ROOM` 照出口往外找，門照樣走，每個區域檔最近的一間，`walk()` 壓成 `3s4wn`）；
+  走不到的、副本寫 `-----`（使用者要的；副本的入口跟 recall 點不同，enter 還沒做，見 `todo/進副本.md`）。
   **`kill <名字>`**（`commands/combat.py`，`k`，最低姿勢 FIGHTING 照 C 版）：開打同房間的生物，牠自動還手；**不可以打玩家**（使用者要的，自己也不行）。
   **安全區**（`RoomFlag.SAFE`，使用者要的）：`commands/combat.protected()` 送 C 版「$N正在受到神力所保護的房間內。」，kill 和 use 的傷害技能都在扣消耗之前呼叫它；主動攻擊在 `behavior.aggress()` 自己看。開打只有這三個地方，所以安全區裡不會有戰鬥。
   **`recall`**（`rec`，也可以打 `/`，最低姿勢 STANDING，所以打架中、休息、睡覺不能用；規則在玩家角色手冊「回城」，使用者 2026-11-17 定的）：
-  `system.do_recall()`，回到 `zones.recall_room()`：所在區域檔寫了 `recall` 就用它（通常是副本：送回入口），沒寫就用 `Player.recall`（自己的返回點，存檔，None 是 `START_ROOM`；改返回點的方法之後做）。
+  `system.do_recall()`，回到 `zones.recall_room()`：所在區域檔寫了 `recall` 就用它（通常是副本：副本裡的 recall 點，不是入口），沒寫就用 `Player.recall`（自己的返回點，存檔，None 是 `START_ROOM`；改返回點的方法之後做）。
   no_recall 房間、學生（`zones.is_student()`）不能用；不扣 MV；訊息照 C 版；到了跟腳本的 transfer 一樣觸發 on_enter(actor, nil)。
   **表情動作（socials，使用者 2026-11-17 要的，規則在玩家角色手冊「表情動作」）**：資料在 `socials/socials.json`（`config.SOCIAL_FILE`，格式寫在 `socials.py` 開頭），
   `__main__` 開機時 `socials.load()`，有問題就停止開機（跟 help 一樣；檢查只有一份 `socials.check()`，打全名會先找到指令的動作算錯）。
@@ -434,7 +439,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - 世界區域（`world`）：開機時把所有 world 檔建進**一個**區域物件 `zones.world`，永遠不釋放。
   - 動態區域（`dynamic`）：有人走進去才建立（`room_at()`），大家共用一份（`zones.dynamic`，檔名 → Zone）。
   - 副本區域（`instance`）：`zones.instance(檔名, 擁有者)` 建立，一個擁有者一份（擁有者用名字；之後是隊長的名字）。
-    只能用 enter 進去、recall 出來，所以 `check_files()` 不准出口跨進或跨出副本。recall 回到副本寫的 `area.recall`（見上面的 recall 指令）；enter、傳送門（之後做成物品）、組隊**還沒做**。
+    只能在入口的傳送門用 enter 進去、用副本裡的傳送門 enter 出來（使用者 2026-11-20 定的：入口是世界裡放傳送門的那間，跟副本的 recall 點不同），所以 `check_files()` 不准出口跨進或跨出副本。recall 回到副本寫的 `area.recall`（見上面的 recall 指令）；enter、傳送門（之後做成物品）、組隊**還沒做**。
   - 動態區域和副本連續 `RELEASE_TICKS`（1200 tick，20 分鐘）沒有玩家就 `release()`：停掉裡面的戰鬥、移走留下的角色、從名單拿掉。
     在 tick 裡數（`zone.empty_ticks`），有玩家就歸 0，所以實際上是 20 分鐘再加 0～1 秒。下一個人進去時重新建立，裡面全部重來。
   - 區域檔開機時就讀好、檢查好（`templates`），建立動態區域和副本時不讀檔。
@@ -463,6 +468,14 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   城北平原 `north_plains.json`（10～15 級，北城牆下的刻字 3217 往北）、河流區 `river.json`（12～16 級，碼頭 3049 往南，全區要船）。舊區域轉的，文字照世界觀改寫；生物、物品、重置照使用者核准的設計重做：
   沒有主動攻擊（使用者定的：主動攻擊只規劃在副本）、菁英和首領以外都會走動；掉落一般怪白 30%／藍 30%／紫 10%／橘 5%（使用者 2026-11-19 從 10／10／4／1 改的），菁英藍 100%／紫 55%／橘 5%，首領藍 100%／紫 70%／橘 10%（各自骰，藍色保底），兔、豬、魚另外 30% 掉肉。2026-11-20 使用者要的：首領以外的生物數量加倍（M 筆數和 limit 一起 ×2，城北平原的旅行者、白髮老人沒動），重生是 `reset_empty` 3、`reset_players` 5 分鐘（秋風城照舊 null）。
   通到還沒轉的區域的出口轉換時拿掉了，所以有幾間進不去或出不來（只能 recall），等那些區域轉過來再接。
+- **牛頭人要塞**（`mahntor.json`，世界區域，20～30 級，號碼 `[2300, 2399]`，重生 2／4 分鐘，使用者 2026-11-20 放進來的）：舊的 mahntor1.are 轉的，
+  城西森林草原「石崖下的林緣」10128 往南進黑森林 2300。地圖：黑森林 → 山坡、山洞 → 海岸 → 祭壇「血海入口」2324 的藍光入口 → 漂浮在藍光中 2326 → 冰河聖殿 2353 → 雪原 → 峭壁 → 要塞（石堡、競技場的八個鬥士、牛頭人王曼托爾）；
+  黑森林往東是沼澤和迷霧迷宮（R 亂數出口），盡頭是巨魔村（不通要塞）。世界觀在 mud_design 的「牛頭人要塞」那節，種類和掉落是 mud_design 設計、使用者改過機率的：
+  首領是巨魔酋長、曼托爾；菁英是幽靈騎士、守門者、菁英守衛、競技場管理者、八個鬥士；高級守衛、皇家守衛 tier_roll 菁英 20%；侍女是垃圾怪；主動攻擊全拿掉。
+  掉落看種類不看件數：一般怪 白 70%／藍 50%／紫 10%／橘 5%、菁英 藍 100%／紫 55%／橘 7%、首領 藍 100%／紫 70%／橘 10%，身上好幾件就平分機率，
+  菁英、首領的藍色 100% 給代表的那一件（武器優先）。原本沒穿東西的怪掉新加的四件（使用者要的）：霧骨戒指（必出 crit）、牛頭人圓盾（必出 res_phys）、冰蟲皮披風、柳條腰帶。
+  坑：八把鬥士房門的鑰匙是重置 P 放進「競技場鑰匙環」2382 的，所以鑰匙環一定要 G 給競技場管理者帶著（掉落表的東西重置時還不在，P 找不到容器）。
+  文字照世界觀改寫（分四段寫的），武器種類照名字改過（弩弓改成獵人長矛：遊戲沒有弓）。
 - **棕仙巷**（`brownie.json`，動態區域（有人走進去才建立，使用者 2026-11-20 從世界區域改的），1～10 級，號碼 `[300, 399]`，使用者 2026-11-20 放進來的）：舊的小精靈村（`smurf1.are`，照卡通做的）轉過來，
   號碼全部加 200，名字和文字照世界觀（mud_design 的「棕仙巷」那節）改成原創的：西城門內側 3040 往北的藤蔓巷、小棕仙、半塌鐘樓裡的瘋煉金師和獨眼野貓。
   使用者定的物品（裝備等級 3）：眼鏡 int、草編小帽 dex、小斧頭 str、莓核項鍊 int 都寫 `main_affix`，掉落都是紫色 100%、另外橘色 5%

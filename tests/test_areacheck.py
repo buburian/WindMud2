@@ -298,12 +298,12 @@ def test_exit_into_instance_is_an_error(tmp_path):
 
 
 def test_exit_out_of_instance_is_an_error(tmp_path):
-    # 副本只能用 recall 出來：副本的出口不能通到別的區域
+    # 副本只能用傳送門出來：副本的出口不能通到別的區域
     a = write_area(tmp_path, "a.json", [make_room(101)], vnums=(100, 199))
     b = write_area(tmp_path, "b.json", [make_room(201, south=101)], vnums=(200, 299), kind="instance")
     found = area.check_files([a, b], [a, b])
     assert found[a] == []
-    assert found[b] == ["b.json：房間 201 往 south 的出口通到 a.json 的房間 101，副本的出口不能通到別的區域（要用 recall 出來）"]
+    assert found[b] == ["b.json：房間 201 往 south 的出口通到 a.json 的房間 101，副本的出口不能通到別的區域（要用副本裡的傳送門出來）"]
 
 
 def test_exits_inside_instance_and_into_dynamic_are_fine(tmp_path):

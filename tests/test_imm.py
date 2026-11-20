@@ -365,15 +365,28 @@ def test_vnums_is_only_for_imm():
     assert ming.writer.text().startswith("什麼？")
 
 
-def test_area_lists_every_area(tmp_path):
-    # area（玩家也能用，使用者 2026-11-20 要的）：世界、動態、副本的區域檔都列，照等級排
+def test_area_lists_every_area(tmp_path, monkeypatch):
+    # area（玩家也能用，使用者 2026-11-20 要的）：世界、動態、副本的區域檔都列，照等級排；
+    # 入口是從起始房間怎麼走，同一個方向連走寫次數；走不到、副本（enter 還沒做，入口跟 recall 點不同）寫 -----
+    monkeypatch.setattr(zones, "START_ROOM", 101)
+    rooms = {"a.json": [make_room(101, east=102), make_room(102, west=101, east=201)],
+             "b.json": [make_room(201, west=102)], "c.json": [make_room(301)], "d.json": [make_room(401)]}
     for name, vnums, kind, levels, title in (("a.json", (100, 199), "world", [5, 9], "乙地"), ("b.json", (200, 299), "dynamic", [1, 3], "甲地"),
-                                             ("c.json", (300, 399), "instance", [5, 20], "丙地")):
-        data = make_area(name, [make_room(vnums[0] + 1)], vnums, kind=kind)
+                                             ("c.json", (300, 399), "instance", [5, 20], "丙地"), ("d.json", (400, 499), "world", [30, 40], "丁地")):
+        data = make_area(name, rooms[name], vnums, kind=kind)
         data["area"]["header"].update(levels=levels, title=title, author="Shabu")
+        if kind == "instance":
+            data["area"]["recall"] = 102                             # recall 點不是入口：照樣是 -----
         write_json(tmp_path, name, data)
     zones.load(tmp_path)
     ming = player("Ming")
     commands.command(ming, "a")
-    assert ming.writer.text().startswith("遊戲裡的區域：\r\n  區域  等級      種類  作者\r\n"
-                                         "  甲地  1～3 級   動態  Shabu\r\n  乙地  5～9 級   世界  Shabu\r\n  丙地  5～20 級  副本  Shabu\r\n\r\n")
+    assert ming.writer.text().startswith(
+        "遊戲裡的區域（入口：從神殿大廳出發怎麼走，3s 是往南走 3 步）：\r\n  區域  等級       種類  入口      作者\r\n"
+        "  甲地  1～3 級    動態  2e        Shabu\r\n  乙地  5～9 級    世界  就在這裡  Shabu\r\n"
+        "  丙地  5～20 級   副本  -----     Shabu\r\n  丁地  30～40 級  世界  -----     Shabu\r\n\r\n")
+
+
+def test_routes_squash_repeated_directions():
+    came = {1: None, 2: (1, "south"), 3: (2, "south"), 4: (3, "west"), 5: (4, "north")}
+    assert zones.walk(came, 5) == "2swn" and zones.walk(came, 1) == ""

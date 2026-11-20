@@ -1015,6 +1015,13 @@
           "locks": 0,
           "key": 0,
           "to_room": 10129
+        },
+        "south": {
+          "description": "往南，石崖底下有一條小路，鑽進一片黑壓壓的森林。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 2300
         }
       },
       "extra_descriptions": [

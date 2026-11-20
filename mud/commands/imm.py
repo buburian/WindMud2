@@ -4,9 +4,10 @@
 """
 import json
 import logging
+import time
 from collections import Counter
 
-from .. import affects, death, equipment, inventory, names, objects, paths, skills, stats, zones
+from .. import affects, death, equipment, health, inventory, lua, names, objects, paths, skills, stats, zones
 from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act, notify
 from ..area import AFFECT_FLAG_NAMES, ATTACK_NAMES, ITEM_TYPE_NAMES, MIN_VNUM, WEAPON_KIND_NAMES, AffectFlag, Apply, ItemColor, vnum_range
 from ..characters import Position, arrive, characters, find_in_room
@@ -456,3 +457,60 @@ def do_vnums(ch, arg):
         start = max(start, high + 1)
     lines.append("  " + VNUMS_FROM.format(start))
     ch.send("\n".join(lines) + "\n")
+
+
+HEALTH_LABEL = 8                # health 畫面左邊名稱那一欄的寬度
+HEALTH_CELL = 18                # 後面每一格的寬度（太長的照樣隔開 HEALTH_GAP 格，最後一格不補空白）
+HEALTH_GAP = 2
+UNSEEN = "看不到"               # 這個平台讀不到的值
+BOOT_FORMAT = "%Y-%m-%d %H:%M"
+LOAD_MINUTES = (1, 5, 15)       # os.getloadavg() 那三個數字各是幾分鐘的平均
+MB = 1024 * 1024
+SECONDS_PER_MINUTE = 60
+SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE
+SECONDS_PER_DAY = 24 * SECONDS_PER_HOUR
+
+
+def uptime_text(seconds):
+    """跑了多久：「2 天 03:04:05」，不到一天是「03:04:05」。"""
+    days, rest = divmod(int(seconds), SECONDS_PER_DAY)
+    hours, rest = divmod(rest, SECONDS_PER_HOUR)
+    minutes, secs = divmod(rest, SECONDS_PER_MINUTE)
+    clock = f"{hours:02}:{minutes:02}:{secs:02}"
+    return f"{days} 天 {clock}" if days else clock
+
+
+def shown(value, fmt="{}"):
+    """讀不到（None）是「看不到」，不然照 fmt 寫。"""
+    return UNSEEN if value is None else fmt.format(value)
+
+
+def megabytes(n):
+    """byte 數寫成 MB；讀不到是「看不到」。"""
+    return shown(None if n is None else n / MB, "{:.1f} MB")
+
+
+def health_row(label, *cells):
+    """health 的一行：名稱，後面每一格對齊 HEALTH_CELL。"""
+    *front, last = cells
+    return pad(label, HEALTH_LABEL) + "".join(pad(c + " " * HEALTH_GAP, HEALTH_CELL) for c in front) + last
+
+
+def do_health(ch, arg):
+    """health：伺服器的健康度（使用者 2026-11-20 要的）：開機多久、記憶體、CPU、系統負載、遊戲裡的數量、版本。讀不到的寫「看不到」。"""
+    start, load = health.started, health.load()
+    boot = (UNSEEN,) if start is None else (time.strftime(BOOT_FORMAT, time.localtime(start.wall)), "跑了 " + uptime_text(health.uptime()))
+    loads = (UNSEEN,) if load is None else tuple(f"{m} 分 {n:.2f}" for m, n in zip(LOAD_MINUTES, load))
+    now, peak = health.memory()
+    lua_version, lupa_version = lua.version()
+    fights = sum(len(z.fights) for z in (zones.world, *zones.dynamic.values(), *zones.instances.values()) if z is not None)
+    rows = [
+        ("開機", *boot),
+        ("記憶體", "現在 " + megabytes(now), "最高 " + megabytes(peak), f"Lua {lua.memory_used() / MB:.2f} / {lua.MAX_MEMORY / MB:g} MB"),
+        ("CPU", f"累積 {health.cpu_seconds():.1f} 秒", "平均 " + shown(health.cpu_average(), "{:.1f}%"), "核心 " + shown(health.cores())),
+        ("負載", *loads),
+        ("遊戲", f"線上玩家 {len(online_players())}", f"角色 {len(characters)}", f"戰鬥 {fights}", "task " + shown(health.tasks())),
+        ("區域", f"世界 {1 if zones.world else 0}", f"動態 {len(zones.dynamic)}", f"副本 {len(zones.instances)}"),
+        ("版本", f"Python {health.python_version()}", f"Lua {lua_version}", f"lupa {lupa_version}"),
+    ]
+    ch.send("\n".join(health_row(*row) for row in rows) + "\n")

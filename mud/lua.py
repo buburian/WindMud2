@@ -13,6 +13,7 @@
 """
 import weakref
 
+import lupa
 from lupa import lua54
 from lupa.lua54 import LuaError, LuaMemoryError
 
@@ -197,6 +198,16 @@ def rt():
     if _rt is None:
         _rt = _Runtime()
     return _rt
+
+
+def memory_used():
+    """全遊戲共用的 Lua 現在用了多少記憶體（byte，上限是 MAX_MEMORY）；還沒建立（沒跑過腳本）是 0。health 指令用。"""
+    return _rt.lua.get_memory_used() if _rt is not None else 0
+
+
+def version():
+    """(Lua 的版本, lupa 的版本)，例如 ("5.4", "2.8")。health 指令用。"""
+    return ".".join(map(str, lua54.LUA_VERSION)), lupa.__version__
 
 
 def table(d):
