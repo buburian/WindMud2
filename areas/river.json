@@ -1084,7 +1084,7 @@
       "attack": null,
       "defense": null,
       "archetype": null,
-      "act": 128,
+      "act": 0,
       "affected_by": 0,
       "alignment": 1,
       "race": "fish",
