@@ -55,10 +55,12 @@ def M(mob_vnum, room_vnum, limit=1, rare=0):
     return {"cmd": "M", "rare": rare, "mob_vnum": mob_vnum, "limit": limit, "room_vnum": room_vnum, "comment": ""}
 
 
-def load(folder, mobiles, reset_list, rooms=None, vnums=(100, 199), name="a.json", kind="world"):
-    """rooms 沒寫是範圍裡的前兩間（vnums 最小 ＋ 1、＋ 2）。"""
+def load(folder, mobiles, reset_list, rooms=None, vnums=(100, 199), name="a.json", kind="world", **header):
+    """rooms 沒寫是範圍裡的前兩間（vnums 最小 ＋ 1、＋ 2）。header 是要改的 area.header 欄位（reset_empty、reset_players）。"""
     rs = [make_room(v) for v in (rooms or (vnums[0] + 1, vnums[0] + 2))]
-    write_json(folder, name, make_area(name, rs, vnums, mobiles=mobiles, resets=reset_list, kind=kind))
+    data = make_area(name, rs, vnums, mobiles=mobiles, resets=reset_list, kind=kind)
+    data["area"]["header"].update(header)
+    write_json(folder, name, data)
 
 
 def npcs():
@@ -188,6 +190,75 @@ def test_with_players_footsteps_at_14_and_reset_at_15(folder):
     assert asleep.writer.data == b"" and npcs() == []
     resets.update(zones.world, FixedRng())  # 第 15 次：有玩家也重置
     assert len(npcs()) == 1 and zones.world.areas[0].age == 0
+
+
+# ---- 每個區域檔自己定重生多快（header 的 reset_empty、reset_players） ----
+
+def test_reset_empty_1_resets_every_update(folder):
+    load(folder, [mob(101)], [M(101, 101)], reset_empty=1)
+    zones.load(folder)
+    for _ in range(3):
+        characters.remove(npcs()[0])
+        resets.update(zones.world, FixedRng())  # 每一次都重置
+        assert len(npcs()) == 1
+
+
+def test_reset_players_5_footsteps_at_4_and_reset_at_5(folder):
+    load(folder, [mob(101)], [M(101, 101)], reset_players=5)
+    zones.load(folder)
+    characters.remove(npcs()[0])
+    awake = player("Ming", zones.world.rooms[102])
+    for _ in range(3):
+        resets.update(zones.world, FixedRng())
+    assert npcs() == [] and awake.writer.data == b""
+    resets.update(zones.world, FixedRng())  # 第 4 次：腳步聲
+    assert "你聽到一陣腳步聲。".encode(ENCODING) in awake.writer.data and npcs() == []
+    resets.update(zones.world, FixedRng())  # 第 5 次：重置
+    assert len(npcs()) == 1
+
+
+def test_footsteps_even_when_both_are_the_same(folder):
+    # 腳步聲（第 4 次）比沒有玩家的 5 分鐘早：也要聽得到
+    load(folder, [mob(101)], [M(101, 101)], reset_empty=5, reset_players=5)
+    zones.load(folder)
+    characters.remove(npcs()[0])
+    awake = player("Ming", zones.world.rooms[102])
+    for _ in range(4):
+        resets.update(zones.world, FixedRng())
+    assert "你聽到一陣腳步聲。".encode(ENCODING) in awake.writer.data and npcs() == []
+    resets.update(zones.world, FixedRng())
+    assert len(npcs()) == 1
+
+
+def test_null_is_3_and_15(folder):
+    load(folder, [], [])
+    zones.load(folder)
+    area = zones.world.areas[0]
+    assert (area.empty, area.players) == (3, 15)
+
+
+class Jitter:
+    """記下 randint 的範圍，回傳最大值。"""
+
+    def __init__(self):
+        self.asked = []
+
+    def randint(self, a, b):
+        self.asked.append((a, b))
+        return b
+
+
+def test_after_a_reset_it_starts_0_to_3_early(folder):
+    # 不管寫幾分鐘，重置完 age 都從 0～3 隨機開始（照 C 版）：10 分鐘的實際是 7～10 分鐘
+    load(folder, [], [], reset_empty=10, reset_players=20)
+    zones.load(folder)
+    area, rng = zones.world.areas[0], Jitter()
+    for _ in range(10):
+        resets.update(zones.world, rng)
+    assert rng.asked == [(0, 3)] and area.age == 3
+    for _ in range(7):
+        resets.update(zones.world, rng)
+    assert rng.asked == [(0, 3), (0, 3)]
 
 
 def test_zone_tick_updates_every_area_ticks(folder, monkeypatch):

@@ -70,6 +70,10 @@ export const AREA_TYPES = [
   ["instance", "副本區域"],
 ];
 
+// 重生多快（header.reset_empty、reset_players，分鐘）：空著是 null，用這兩個預設值（跟 area.py 的 RESET_EMPTY、RESET_PLAYERS 一樣）
+export const RESET_EMPTY = 3;
+export const RESET_PLAYERS = 15;
+
 // 區域設定的三個特殊規則：勾＝1，不勾＝null。on() 照手冊判斷檔案裡的值算不算有勾
 export const AREA_RULES = [
   { key: "no_teleport", label: "傳送術不會傳到這個區域", tip: "傳送術隨機挑落點時，不會挑到這個區域", on: (v) => v === 1 },
@@ -347,7 +351,7 @@ export function newMobile(vnum) {
 export function newObject(vnum) {
   return {
     vnum, keywords: "新物品", short: "新物品", long: "", item_type: 8, extra_flags: 0, wear_flags: 1,
-    values: [0, 0, 0, 0], weight: 1, cost: 0, affects: [], extra_descriptions: [], script: null,
+    values: [0, 0, 0, 0], weight: 1, cost: 0, affects: [], main_affix: null, extra_descriptions: [], script: null,
   };
 }
 

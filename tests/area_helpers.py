@@ -29,7 +29,7 @@ def make_object(vnum):
     return {
         "vnum": vnum, "keywords": f"obj{vnum}", "short": f"物品{vnum}", "long": "",
         "item_type": 5, "extra_flags": 0, "wear_flags": "1|8192", "values": [2, 1, 4, 3], "weight": 1, "cost": 0,
-        "affects": [{"location": 1, "modifier": 1}],
+        "affects": [{"location": 1, "modifier": 1}], "main_affix": None,
         "extra_descriptions": [{"keywords": "劍 sword", "description": ""}],
         "script": {"trigger": {"value": 64, "names": ["say"]}, "function": "os_test"},
     }
@@ -54,7 +54,8 @@ def make_area(filename, rooms, vnums=(100, 199), mobiles=(), resets=(), objects=
         "schema_version": 1,
         "file": filename,
         "area": {
-            "header": {"levels": [1, 5], "author": "Test", "title": "測試", "vnums": list(vnums), "type": kind},
+            "header": {"levels": [1, 5], "author": "Test", "title": "測試", "vnums": list(vnums), "type": kind,
+                       "reset_empty": None, "reset_players": None},
             "recall": None, "no_teleport": None, "clan_recall": None, "gem": None,
         },
         "rooms": rooms,

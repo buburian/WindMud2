@@ -2,24 +2,24 @@
 
 M（把生物放進房間）、G（給生物物品）、O（物品放進房間）、P（物品放進容器）、D（門的狀態）、R（打亂出口）都照手冊 resets 那章做。
 每個區域物件記住它有哪些區域檔（世界有很多個），每個區域檔各自算時間：
-建立區域物件時重置一次；之後每 AREA_TICKS 個 tick 呼叫 update()：
-沒有玩家時大約 3 分鐘重置一次，有玩家時大約 15 分鐘，重置前 1 分鐘醒著的玩家會聽到腳步聲。
+建立區域物件時重置一次；之後每 AREA_TICKS 個 tick（1 分鐘）呼叫 update()：
+沒有玩家時大約 header.reset_empty 分鐘重置一次，有玩家時大約 header.reset_players 分鐘（null 是 3、15，area.reset_minutes()），
+重置前 1 分鐘醒著的玩家會聽到腳步聲。
 """
 import logging
 import random
 
 from . import doors, objects, scripts
 from .act import notify
-from .area import BUYER_LEVEL, CHANCE_MAX, DIRECTIONS, ActFlag, DoorState, parse_flags
+from .area import BUYER_LEVEL, CHANCE_MAX, DIRECTIONS, ActFlag, DoorState, parse_flags, reset_minutes
 from .characters import Position, characters
 from .npcs import Npc, spawn
 from .players import online_players
 
 log = logging.getLogger(__name__)
 
-RESET_MIN_AGE = 3                           # age 到這個數字以後，沒有玩家就重置（約 3 分鐘）
-RESET_AGE = 15                              # 有玩家時 age 到這個數字才重置（約 15 分鐘）
-FOOTSTEPS = "你聽到一陣腳步聲。"              # 有玩家時，重置前 1 分鐘（age 14）送給區域裡醒著的玩家
+RESET_JITTER = 3                            # 重置完 age 隨機從 0～3 開始（照 C 版），所以實際會早 0～3 分鐘，各區域不會同時重置
+FOOTSTEPS = "你聽到一陣腳步聲。"              # 有玩家時，重置前 1 分鐘送給區域裡醒著的玩家
 SURE_RARE = 10                              # 出現機率 rare 0～10 一定出現；大於 10 是 (rare − 10) ÷ 10000
 
 mobiles = {}                                # 遊戲號碼 → 區域檔的生物（zones.load 填，跨檔案也找得到）
@@ -32,22 +32,22 @@ class AreaReset:
         self.name = name                    # 檔名
         self.data = data                    # 讀好、檢查過的區域檔
         self.age = 0                        # 上次重置後過了幾次 update（C 版的 pArea->age）
+        self.empty, self.players = reset_minutes(data["area"]["header"])   # 沒有玩家、有玩家時 age 到多少就重置
 
 
 def update(zone, rng=random):
-    """照 C 版的 area_update：zone 裡每個區域檔 age 加 1，該重置的就重置。"""
+    """照 C 版的 area_update：zone 裡每個區域檔 age 加 1，該重置的就重置（每個區域檔自己的 empty、players）。"""
     for area in zone.areas:
         area.age += 1
-        if area.age < RESET_MIN_AGE:
-            continue
         players = [p for p in online_players() if p.room.zone is zone and p.room.area is area]
-        if players and area.age == RESET_AGE - 1:
+        # 腳步聲先看：放在「還沒到 empty 就跳過」後面的話，empty 和 players 一樣時永遠聽不到
+        if players and area.age == area.players - 1:
             for p in players:
                 if p.position > Position.SLEEPING:
                     notify(p, FOOTSTEPS)
-        if not players or area.age >= RESET_AGE:
+        if area.age >= (area.players if players else area.empty):
             reset_area(zone, area, mobiles, rng)
-            area.age = rng.randint(0, RESET_MIN_AGE)
+            area.age = rng.randint(0, RESET_JITTER)
 
 
 def reset_zone(zone, rng=random):

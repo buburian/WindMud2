@@ -35,6 +35,7 @@ AFFIX_WORD = {
     "crit": "致命", "critdmg": "殘暴", "speed": "疾風", "res_phys": "鐵壁", "res_spell": "抗魔",
 }
 AFFIX_SPLIT = (0.60, 0.20, 0.20)            # 主詞綴、次詞綴、剩下的
+MAIN_AFFIX_BONUS = 0.3                      # 區域檔指定了主詞綴（main_affix）的橘色裝備：主詞綴另外多拿這件總點數的 30%（使用者 2026-11-19 定的）
 AFFIX_THIRD_CHANCE = 0.5                    # 剩下的有一半機率給第三條，不然給主或次詞綴
 
 # 顏色（稀有度）的點數加成，代號同 area.ItemColor
@@ -144,11 +145,19 @@ def base_values(slot, level, rng, offhand_weapon=False):
     return {}
 
 
-def roll_item(slot, level, color, rng, offhand_weapon=False):
+def extra_points(budget, color):
+    """區域檔指定了主詞綴的裝備，主詞綴另外多拿的點數：只有橘色，這件總點數（budget）× MAIN_AFFIX_BONUS。"""
+    return budget * MAIN_AFFIX_BONUS if color == "orange" else 0.0
+
+
+def roll_item(slot, level, color, rng, offhand_weapon=False, forced=None):
     """隨機產生一件裝備的基本值和屬性（設計文件 §3.3），照 balance.py 的 Model.roll_item 寫，同一個種子結果一樣（有測試）。
 
     可配點數 ＝ 上限 × 顏色加成（color 是 None 當灰色，×0）。主詞綴拿 60%、次詞綴 20%；剩下 20% 一半機率給第三條，
     不然給主或次詞綴。每條都從「分到的點數買得起 +1」的屬性裡抽、不重複，取整數；零頭補到 1 點 ＝ 1 單位的屬性。
+    forced 是區域檔指定的主詞綴（main_affix，使用者 2026-11-19 定的）：主詞綴不抽、直接用它；橘色的話它再另外多拿 extra_points()，
+    零頭一樣補到 1 點的屬性。60% 買不起 1 點（小件裝備的主屬性、傷害）就全部點數都給它、沒有次詞綴和第三條（使用者選的），
+    全部也買不起才照舊抽。沒有 forced 的亂數用法不變。
     回傳 {"name": "[次]之[主]"（沒有屬性是空字串）, "base": 基本值, "affixes": {屬性代號: 加多少}}。
     """
     budget = cap(level, slot) * COLOR_BONUS[color or "gray"]
@@ -160,11 +169,18 @@ def roll_item(slot, level, color, rng, offhand_weapon=False):
         return rng.choice(options) if options else None
 
     p_main, p_sub, p_rest = (budget * s for s in AFFIX_SPLIT)
-    main = pick(p_main, ())
-    sub = pick(p_sub, (main,)) if main else None
+    extra = extra_points(budget, color) if forced else 0.0
+    alone = bool(forced) and p_main < prices[forced] <= budget + extra     # 60% 買不起：全部點數給它
+    if forced and prices[forced] <= (budget + extra if alone else p_main):
+        main = forced
+    else:
+        main, extra = pick(p_main, ()), 0.0
+    sub = pick(p_sub, (main,)) if main and not alone else None
     third = None
     share = {}
-    if main:
+    if alone:
+        share = {main: budget}
+    elif main:
         share = {main: p_main, sub: p_sub} if sub else {main: p_main + p_sub}
         if rng.random() < AFFIX_THIRD_CHANCE:
             third = pick(p_rest, (main, sub))
@@ -172,12 +188,14 @@ def roll_item(slot, level, color, rng, offhand_weapon=False):
             share[third] = p_rest
         else:
             share[rng.choice([k for k in (main, sub) if k])] += p_rest
+    if extra:
+        share[main] += extra                # 橘色的必出主詞綴：另外多拿的點數
     affixes = {k: int(v // prices[k]) for k, v in share.items()}
     if main:                                # 零頭補到 1 點 ＝ 1 單位的屬性：優先主、次、第三條，都不是才另外抽一條
         used = sum(n * prices[k] for k, n in affixes.items())
         one = [k for k in AFFIX_WORD if k not in PRIMARY_KEYS and abs(prices[k] - 1.0) < 1e-6]
         target = next((k for k in (main, sub, third) if k in one), None) or rng.choice([k for k in one if k not in affixes])
-        left = int((budget - used) // prices[target])
+        left = int((budget + extra - used) // prices[target])
         if left > 0:
             affixes[target] = affixes.get(target, 0) + left
     name = f"{AFFIX_WORD[sub]}之{AFFIX_WORD[main]}" if sub else (AFFIX_WORD[main] if main else "")

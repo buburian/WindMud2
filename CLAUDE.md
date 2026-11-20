@@ -156,6 +156,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     （常數 `TIER_DIFFICULTY`、`TIER_EXP_MULT`… 有測試比對）；`gain_exp()` 滿了就 `set_level(等級 ＋ 1)`、扣掉需求，可以連升，滿等不加。
     **前期經驗加成**（`exp_early()`，2026-11-05 使用者定）：打怪的 `kill_exp()` 乘（1 ＋ 加成），1 級 ＋50%、到 99 級 0（`EXP_EARLY_BONUS`、`EXP_EARLY_CURVE`）；
     升級需求 `exp_to_level()` 用 `kill_exp(..., early=False)`，不乘加成。跟種類的經驗加成（`TIER_EXP_MULT`）是兩回事。
+    打怪拿的最後再乘 `EXP_GAIN_MULT` 1.1（使用者 2026-11-20 要的，也在 `early=True` 那條路，升級需求不乘）。
     `advance` 改等級時 `exp` 歸 0。`score` 的等級那行寫「經驗 35 / 139」。
     `cooldowns`：技能 id → 還要等幾個 tick（見下面「技能」），不存檔。
     `imm`：管理員（存檔的 `imm`），找得到 `IMM_COMMANDS`。舊存檔沒有 `imm`、`points`、`trained`、`exp`，讀檔時當作 False、0、0、0。
@@ -353,10 +354,10 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     房間沒有 `area_number`，號碼範圍寫在 `area.header.vnums`；等級範圍只有一個 `header.levels`（`[最低, 最高]`）；
     沒有 `area.name`，之後遊戲要用 header 的資料自己組出顯示的名稱；
     `room_flags`（數字或字串）、`sector`（整數）不是 `{"value": …, "names": …}` 這種 dict；沒有 `overridden_exits`。
-    `areas/test.json` 是測試區域（世界區域，`type` 是 `world`）：號碼範圍 `[100, 199]`，房間 101（南）、102（北）南北相連；
+    `areas/test.json` 是測試區域（世界區域，`type` 是 `world`）：號碼範圍 `[100, 199]`，重生的 `reset_empty`、`reset_players` 寫 3、15（跟 null 一樣，示範寫法），房間 101（南）、102（北）南北相連；
     起始房間 `config.START_ROOM` 是秋風城的神殿大廳 3001（`areas/midgaard.json`，見下面「秋風城」）。之後會照使用者的指示繼續改格式。`area`、每個房間、每隻生物、每個物品和每筆重置的欄位**一個都不能少**，
     巢狀欄位也要有範例值（`extra_descriptions` 放一筆；`script`：房間 102 用 `areas/test/鐘聲.lua`、生物 101 用 `商人.lua`、物品 102 是物品的舊格式；生物 101「測試商人」的每個欄位都有值，生物 102「測試坐騎」示範 null／空的寫法；生物 103「野兔」是練功用的 1 級一般怪，重置放 3 隻在房間 102（使用者要的）；
-    物品 101～104 是藥水、長劍、箱子、麵包（重置用到 101、103、104），物品 102「測試長劍」每個欄位都有值；物品 105～109 是給 `oload` 試裝備用的（盾牌、匕首（副手）、大劍（雙手）、戒指、皮甲，都沒寫 affects，給顏色就抽隨機屬性；不在重置裡，使用者同意加的）；
+    物品 101～104 是藥水、長劍、箱子、麵包（重置用到 101、103、104），物品 102「測試長劍」每個欄位都有值；物品 105～109 是給 `oload` 試裝備用的（盾牌、匕首（副手）、大劍（雙手）、戒指、皮甲，都沒寫 affects，給顏色就抽隨機屬性；不在重置裡，使用者同意加的；105 盾牌的 `main_affix` 是 `"hp"`，試必出的主詞綴）；
     物品 110、111 是拾取後綁定、裝備後綁定的戒指（給 `oload` 試綁定，不在重置裡，使用者同意加的）；
     `resets` 每種指令各一筆；房間 101 往北、房間 102 往南的出口是同一扇木門（門兩邊都要寫），給 `D` 的範例用）：使用者靠它看系統還缺哪些功能。
     房間的文字可以用顏色代碼。
@@ -433,8 +434,10 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - 區域檔開機時就讀好、檢查好（`templates`），建立動態區域和副本時不讀檔。
   - 每個區域物件記住它有哪些區域檔（`zone.areas`，`resets.AreaReset`，世界有很多個），每間 Room 的 `room.area` 指到它的那個。
     **重置時機照 C 版**（使用者選的）：建立時 `resets.reset_zone()` 一次（世界在 `load()`、動態區域在 `room_at()`、副本在 `instance()`）；
-    `Zone.tick()` 每 `AREA_TICKS`（60）呼叫 `resets.update()`：每個區域檔 `age` 加 1，到 3 以後沒有玩家就重置，有玩家到 15 才重置，
-    14 時那個區域檔房間裡醒著的玩家收到「你聽到一陣腳步聲。」；重置後 `age` 骰 0～3。
+    `Zone.tick()` 每 `AREA_TICKS`（60）呼叫 `resets.update()`：每個區域檔 `age` 加 1，到 `empty` 以後沒有玩家就重置，有玩家到 `players` 才重置，
+    `players − 1` 時那個區域檔房間裡醒著的玩家收到「你聽到一陣腳步聲。」（先看腳步聲，兩個一樣也聽得到）；重置後 `age` 骰 0～`RESET_JITTER` 3。
+    `empty`、`players` 是 `AreaReset` 從 `header.reset_empty`、`reset_players`（分鐘，使用者 2026-11-20 要的）讀的，null 是 `area.RESET_EMPTY` 3、`RESET_PLAYERS` 15（`area.reset_minutes()`）；
+    `check_reset_minutes()`：null 或至少 1 的整數，沒有玩家的不能比有玩家的長。編輯器的區域設定有兩格（`model.js` 的 `RESET_EMPTY`、`RESET_PLAYERS` 是空著時顯示的預設值，`test_builder.py` 比對）。
     重新載入（`load()` → `stop()`）會把所有生物從 `characters` 拿掉再重放；釋放區域物件本來就會移走留下的角色。
   - 每間 Room 有 `zone` 指回它的區域物件。走路用 `room_at(from_room, vnum)`：先找自己所在的區域物件
     （所以在副本、動態區域裡走會留在同一份），再找世界，最後是動態區域。
@@ -452,7 +455,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   坑：起始房間 `START_ROOM` 是 3001，自己做區域檔的測試裡沒有它：會用到 `zones.start_room()` 的（玩家死掉、建角、讀檔找不到房間、走進動態區域）要 `monkeypatch.setattr(zones, "START_ROOM", 101)`。
 - **秋風城外四區**（世界區域，新手區，使用者 2026-11-19 放進來的）：城西森林草原 `forest.json`（1～8 級，西城門外 3052 往西）、城東森林 `foresteast.json`（6～12 級，東城門外 3053 往東）、
   城北平原 `north_plains.json`（10～15 級，北城牆下的刻字 3217 往北）、河流區 `river.json`（12～16 級，碼頭 3049 往南，全區要船）。舊區域轉的，文字照世界觀改寫；生物、物品、重置照使用者核准的設計重做：
-  沒有主動攻擊（使用者定的：主動攻擊只規劃在副本）、菁英和首領以外都會走動；掉落一般怪白 10%／藍 10%／紫 4%／橘 1%，菁英藍 100%／紫 55%／橘 5%，首領藍 100%／紫 70%／橘 10%（各自骰，藍色保底），兔、豬、魚另外 30% 掉肉。
+  沒有主動攻擊（使用者定的：主動攻擊只規劃在副本）、菁英和首領以外都會走動；掉落一般怪白 30%／藍 30%／紫 10%／橘 5%（使用者 2026-11-19 從 10／10／4／1 改的），菁英藍 100%／紫 55%／橘 5%，首領藍 100%／紫 70%／橘 10%（各自骰，藍色保底），兔、豬、魚另外 30% 掉肉。2026-11-20 使用者要的：首領以外的生物數量加倍（M 筆數和 limit 一起 ×2，城北平原的旅行者、白髮老人沒動），重生是 `reset_empty` 3、`reset_players` 5 分鐘（秋風城照舊 null）。
   通到還沒轉的區域的出口轉換時拿掉了，所以有幾間進不去或出不來（只能 recall），等那些區域轉過來再接。
 - **tick 和戰鬥的 loop**（使用者定的；C 版是全遊戲一個鐘，我們不照它）：
   - tick loop：世界和全部動態區域**共用一個**（世界 tick，`zones.start()` 開始），每次先做世界、再做每個動態區域；
@@ -677,6 +680,10 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     部位用 `area.wear_slots()` ＋ `equipment.best_slot()`（固定裝備檢查上限也用這兩個，所以是同一個部位）；副手的武器是副手武器。號碼找不到記 log、回傳 None。
   - **`equipment.roll_item()` 照 balance.py 的 `Model.roll_item` 寫，亂數的用法和順序一模一樣**：`tests/test_equipment.py` 用同一個種子比對每個部位、顏色、等級，
     結果要完全一樣（詞綴、名稱）。改它時不能多叫或少叫一次亂數，`AFFIX_WORD` 的順序也不能動（`rng.choice` 照順序挑）。
+    **必出的主詞綴**（物品的 `main_affix`，使用者 2026-11-19 定的，規則在區域製作手冊「main_affix」）：`roll_item(..., forced=)` 主詞綴不抽、直接用它；
+    60% 買不起 1 點就全部點數給它（`alone`，沒有次詞綴、第三條），全部也買不起才照舊抽；橘色另外多 `extra_points()`（總點數 × `MAIN_AFFIX_BONUS` 0.3）。
+    balance.py 的 `roll_item` 也有（`main_affix` 參數），`test_equipment.py` 用同一個種子比對（持握、光源沒有點數，不能寫）。`objects.create()` 從區域檔傳進去、記在 `Obj.main_affix`（`full_price()` 橘色乘 1.3）；
+    `area.check_main_affix()`：代號要是 `equipment.AFFIX_WORD`、只有隨機裝備、有點數的部位。編輯器的選單 `tables.js` 的 `MAIN_AFFIXES`。`tests/test_main_affix.py`。
   - `make_corpse(npc, rng)`：「野狗的屍體」（`area.CORPSE_NPC_ITEM_TYPE`）、地上「野狗的屍體橫躺在地上。」（後面由 `on_floor()` 接 /corpse，使用者定的）、名字只有 `corpse`（使用者定的：生物、物品的名字一律英文）、`timer` 10～14（照 C 版）；
     `roll_drops()` 每一行各自骰（`tiers` 對不上不骰，萬分之一），物品等級是生物等級、顏色是那一行的。
   - **金幣**（玩家角色手冊「金幣」，使用者 2026-11-18 定的）：`make_corpse()` 最後（亂數也是最後骰，原本的順序不變）放 `money(stats.drop_gold(等級, 種類) ＋ npc.gold)`，0 就不放；

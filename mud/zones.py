@@ -60,7 +60,7 @@ class Zone:
         self.ticks += 1
         scripts.tick(self)                  # 腳本的 on_timer（坑：跟 objects.update 一樣要在下面兩個 return 前面）
         if self.ticks % AREA_TICKS == 0:
-            resets.update(self)             # 照 C 版：沒有玩家約 3 分鐘、有玩家約 15 分鐘重置一次
+            resets.update(self)             # 照 C 版：沒有玩家、有玩家各自幾分鐘重置一次（區域檔的 header 可以改）
         if self.ticks % OBJ_TICKS == 0:
             # 坑：要放在下面兩個 return 前面，不然世界的屍體、有人站著的副本裡的屍體永遠不會爛
             objects.update(self)            # 地上有 timer 的物品（屍體）減 1，到了就消失

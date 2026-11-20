@@ -122,7 +122,7 @@ def convert(old, name, vnums=None):
         "file": name,
         "area": {
             "header": {"levels": levels, "author": header["author"] if header else "", "title": header["title"] if header else name,
-                       "vnums": list(vnums), "type": area.AreaType.WORLD.value},
+                       "vnums": list(vnums), "type": area.AreaType.WORLD.value, "reset_empty": None, "reset_players": None},
             "recall": recall,
             "no_teleport": old["area"].get("no_teleport") if old.get("area") else None,
             "clan_recall": old["area"].get("clan_recall") if old.get("area") else None,
@@ -233,7 +233,7 @@ def convert_object(o, report):
         report.dropped.append(f"{where}的 C 版腳本 {o['script']['function']}")
     return {"vnum": o["vnum"], "keywords": o["keywords"], "short": o["short"], "long": o["long"], "item_type": item_type,
             "extra_flags": extra, "wear_flags": wear, "values": values, "weight": o["weight"], "cost": o["cost"],
-            "affects": [], "extra_descriptions": [dict(ed) for ed in o["extra_descriptions"]], "script": None}
+            "affects": [], "main_affix": None, "extra_descriptions": [dict(ed) for ed in o["extra_descriptions"]], "script": None}
 
 
 def spells_to_skills(where, item_type, values, report):

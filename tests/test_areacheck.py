@@ -70,6 +70,17 @@ RULES = [
                  id="vnums 用到保留的"),
     pytest.param(lambda d: d["area"]["header"].update(vnums=[199, 100]), "area.header.vnums 要寫 [最小, 最大]", id="vnums 反了"),
     pytest.param(lambda d: d["area"]["header"].update(vnums=100), "area.header.vnums 要寫 [最小, 最大]", id="vnums 只有一個"),
+    pytest.param(lambda d: d["area"]["header"].pop("reset_players"), "area.header 少了欄位 reset_players", id="少了 reset_players"),
+    pytest.param(lambda d: d["area"]["header"].update(reset_empty=0),
+                 "area.header.reset_empty 要是 null 或至少 1 的整數（分鐘），不能是 0", id="reset_empty 是 0"),
+    pytest.param(lambda d: d["area"]["header"].update(reset_players="15"),
+                 "area.header.reset_players 要是 null 或至少 1 的整數（分鐘），不能是 '15'", id="reset_players 是字串"),
+    pytest.param(lambda d: d["area"]["header"].update(reset_empty=True), "area.header.reset_empty 要是 null 或至少 1 的整數",
+                 id="reset_empty 是 true"),
+    pytest.param(lambda d: d["area"]["header"].update(reset_empty=20),
+                 "area.header.reset_empty 是 20 分鐘，比 reset_players 的 15 分鐘還長", id="reset_empty 比預設的 reset_players 長"),
+    pytest.param(lambda d: d["area"]["header"].update(reset_players=2),
+                 "area.header.reset_empty 是 3 分鐘，比 reset_players 的 2 分鐘還長", id="預設的 reset_empty 比 reset_players 長"),
     pytest.param(lambda d: d["area"].update(recall=109), "area.recall 指到不存在的房間 109", id="recall 不存在"),
     pytest.param(lambda d: d["area"].update(recall=1),
                  "area.recall 要寫完整的遊戲號碼（100 以上，1～99 是保留的），不能是 1", id="recall 保留的號碼"),
@@ -224,6 +235,13 @@ RULES = [
     pytest.param(lambda d: reset(d, "R").update(exit_count="4"), "exit_count 要是整數", id="R exit_count"),
     pytest.param(lambda d: reset(d, "*").update(comment=None), "comment 要是字串", id="註解不是字串"),
 ]
+
+
+@pytest.mark.parametrize("empty, players", [(1, 1), (5, None), (None, 20), (3, 15), (None, 3)])
+def test_reset_minutes_that_are_fine(tmp_path, empty, players):
+    data = good_area()
+    data["area"]["header"].update(reset_empty=empty, reset_players=players)
+    assert problems_of(tmp_path, data) == []
 
 
 @pytest.mark.parametrize("break_it, want", RULES)

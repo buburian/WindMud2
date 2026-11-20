@@ -13,7 +13,9 @@
         14701,
         14764
       ],
-      "type": "world"
+      "type": "world",
+      "reset_empty": 3,
+      "reset_players": 5
     },
     "recall": null,
     "no_teleport": null,
@@ -1872,25 +1874,25 @@
         {
           "obj_vnum": 14706,
           "color": "white",
-          "chance": 1000,
+          "chance": 3000,
           "tiers": null
         },
         {
           "obj_vnum": 14706,
           "color": "blue",
-          "chance": 1000,
+          "chance": 3000,
           "tiers": null
         },
         {
           "obj_vnum": 14706,
           "color": "purple",
-          "chance": 400,
+          "chance": 1000,
           "tiers": null
         },
         {
           "obj_vnum": 14706,
           "color": "orange",
-          "chance": 100,
+          "chance": 500,
           "tiers": null
         }
       ],
@@ -1921,25 +1923,25 @@
         {
           "obj_vnum": 14705,
           "color": "white",
-          "chance": 1000,
+          "chance": 3000,
           "tiers": null
         },
         {
           "obj_vnum": 14705,
           "color": "blue",
-          "chance": 1000,
+          "chance": 3000,
           "tiers": null
         },
         {
           "obj_vnum": 14705,
           "color": "purple",
-          "chance": 400,
+          "chance": 1000,
           "tiers": null
         },
         {
           "obj_vnum": 14705,
           "color": "orange",
-          "chance": 100,
+          "chance": 500,
           "tiers": null
         },
         {
@@ -1979,7 +1981,7 @@
         {
           "obj_vnum": 14707,
           "color": "white",
-          "chance": 1000,
+          "chance": 3000,
           "tiers": [
             "normal"
           ]
@@ -1987,7 +1989,7 @@
         {
           "obj_vnum": 14707,
           "color": "blue",
-          "chance": 1000,
+          "chance": 3000,
           "tiers": [
             "normal"
           ]
@@ -1995,7 +1997,7 @@
         {
           "obj_vnum": 14707,
           "color": "purple",
-          "chance": 400,
+          "chance": 1000,
           "tiers": [
             "normal"
           ]
@@ -2003,7 +2005,7 @@
         {
           "obj_vnum": 14707,
           "color": "orange",
-          "chance": 100,
+          "chance": 500,
           "tiers": [
             "normal"
           ]
@@ -2103,6 +2105,7 @@
       "weight": 10000,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "屍體 corpse",
@@ -2128,6 +2131,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "紙條 note",
@@ -2153,6 +2157,7 @@
       "weight": 10000,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "路標 sign",
@@ -2178,6 +2183,7 @@
       "weight": 2,
       "cost": 5,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -2198,6 +2204,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -2218,6 +2225,7 @@
       "weight": 2,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -2238,6 +2246,7 @@
       "weight": 8,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -2258,6 +2267,7 @@
       "weight": 6,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -2278,6 +2288,7 @@
       "weight": 4,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     }
@@ -2287,7 +2298,7 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14703,
-      "limit": 12,
+      "limit": 24,
       "room_vnum": 14711,
       "comment": ""
     },
@@ -2295,7 +2306,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14703,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14711,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14703,
+      "limit": 24,
       "room_vnum": 14712,
       "comment": ""
     },
@@ -2303,7 +2322,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14703,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14712,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14703,
+      "limit": 24,
       "room_vnum": 14713,
       "comment": ""
     },
@@ -2311,7 +2338,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14703,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14713,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14703,
+      "limit": 24,
       "room_vnum": 14714,
       "comment": ""
     },
@@ -2319,7 +2354,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14703,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14714,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14703,
+      "limit": 24,
       "room_vnum": 14715,
       "comment": ""
     },
@@ -2327,7 +2370,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14703,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14715,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14703,
+      "limit": 24,
       "room_vnum": 14731,
       "comment": ""
     },
@@ -2335,7 +2386,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14703,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14731,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14703,
+      "limit": 24,
       "room_vnum": 14732,
       "comment": ""
     },
@@ -2343,7 +2402,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14703,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14732,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14703,
+      "limit": 24,
       "room_vnum": 14733,
       "comment": ""
     },
@@ -2351,7 +2418,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14703,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14733,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14703,
+      "limit": 24,
       "room_vnum": 14734,
       "comment": ""
     },
@@ -2359,7 +2434,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14703,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14734,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14703,
+      "limit": 24,
       "room_vnum": 14735,
       "comment": ""
     },
@@ -2367,7 +2450,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14703,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14735,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14703,
+      "limit": 24,
       "room_vnum": 14716,
       "comment": ""
     },
@@ -2375,7 +2466,23 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14703,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14716,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14703,
+      "limit": 24,
+      "room_vnum": 14741,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14703,
+      "limit": 24,
       "room_vnum": 14741,
       "comment": ""
     },
@@ -2383,7 +2490,7 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14702,
-      "limit": 12,
+      "limit": 24,
       "room_vnum": 14702,
       "comment": ""
     },
@@ -2391,7 +2498,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14702,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14702,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14702,
+      "limit": 24,
       "room_vnum": 14703,
       "comment": ""
     },
@@ -2399,7 +2514,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14702,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14703,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14702,
+      "limit": 24,
       "room_vnum": 14704,
       "comment": ""
     },
@@ -2407,7 +2530,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14702,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14704,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14702,
+      "limit": 24,
       "room_vnum": 14705,
       "comment": ""
     },
@@ -2415,7 +2546,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14702,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14705,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14702,
+      "limit": 24,
       "room_vnum": 14706,
       "comment": ""
     },
@@ -2423,7 +2562,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14702,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14706,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14702,
+      "limit": 24,
       "room_vnum": 14707,
       "comment": ""
     },
@@ -2431,7 +2578,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14702,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14707,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14702,
+      "limit": 24,
       "room_vnum": 14708,
       "comment": ""
     },
@@ -2439,7 +2594,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14702,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14708,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14702,
+      "limit": 24,
       "room_vnum": 14709,
       "comment": ""
     },
@@ -2447,7 +2610,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14702,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14709,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14702,
+      "limit": 24,
       "room_vnum": 14720,
       "comment": ""
     },
@@ -2455,7 +2626,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14702,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14720,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14702,
+      "limit": 24,
       "room_vnum": 14721,
       "comment": ""
     },
@@ -2463,7 +2642,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14702,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14721,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14702,
+      "limit": 24,
       "room_vnum": 14722,
       "comment": ""
     },
@@ -2471,7 +2658,23 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14702,
-      "limit": 12,
+      "limit": 24,
+      "room_vnum": 14722,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14702,
+      "limit": 24,
+      "room_vnum": 14723,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14702,
+      "limit": 24,
       "room_vnum": 14723,
       "comment": ""
     },
@@ -2479,7 +2682,7 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14704,
-      "limit": 9,
+      "limit": 18,
       "room_vnum": 14716,
       "comment": ""
     },
@@ -2487,7 +2690,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14704,
-      "limit": 9,
+      "limit": 18,
+      "room_vnum": 14716,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14704,
+      "limit": 18,
       "room_vnum": 14717,
       "comment": ""
     },
@@ -2495,7 +2706,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14704,
-      "limit": 9,
+      "limit": 18,
+      "room_vnum": 14717,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14704,
+      "limit": 18,
       "room_vnum": 14740,
       "comment": ""
     },
@@ -2503,7 +2722,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14704,
-      "limit": 9,
+      "limit": 18,
+      "room_vnum": 14740,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14704,
+      "limit": 18,
       "room_vnum": 14741,
       "comment": ""
     },
@@ -2511,7 +2738,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14704,
-      "limit": 9,
+      "limit": 18,
+      "room_vnum": 14741,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14704,
+      "limit": 18,
       "room_vnum": 14742,
       "comment": ""
     },
@@ -2519,7 +2754,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14704,
-      "limit": 9,
+      "limit": 18,
+      "room_vnum": 14742,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14704,
+      "limit": 18,
       "room_vnum": 14716,
       "comment": ""
     },
@@ -2527,7 +2770,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14704,
-      "limit": 9,
+      "limit": 18,
+      "room_vnum": 14716,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14704,
+      "limit": 18,
       "room_vnum": 14717,
       "comment": ""
     },
@@ -2535,7 +2786,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14704,
-      "limit": 9,
+      "limit": 18,
+      "room_vnum": 14717,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14704,
+      "limit": 18,
       "room_vnum": 14740,
       "comment": ""
     },
@@ -2543,7 +2802,23 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14704,
-      "limit": 9,
+      "limit": 18,
+      "room_vnum": 14740,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14704,
+      "limit": 18,
+      "room_vnum": 14742,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14704,
+      "limit": 18,
       "room_vnum": 14742,
       "comment": ""
     },
@@ -2551,7 +2826,15 @@
       "cmd": "M",
       "rare": 0,
       "mob_vnum": 14705,
-      "limit": 1,
+      "limit": 2,
+      "room_vnum": 14736,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 14705,
+      "limit": 2,
       "room_vnum": 14736,
       "comment": ""
     },

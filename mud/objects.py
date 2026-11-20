@@ -55,6 +55,7 @@ class Obj:
         self.timer = None                   # 還剩幾次 OBJ_TICKS 就消失；None 是不會消失
         self.for_sale = False               # 店裡賣的（重置 G 給店主的，shops.py）：賣不完，買的時候照區域檔重做一件。不存檔
         self.unrolled = False               # 店裡的隨機裝備：還沒抽屬性（買的時候才抽，使用者 2026-11-18 定的），只有名字。不存檔
+        self.main_affix = None              # 區域檔寫的必出主詞綴（隨機裝備才有，equipment.roll_item 的 forced）：店裡還沒抽的算價錢用。不存檔
         self.weight = 0                     # 重量（區域檔的 weight）
         self.cost = 0                       # 價格（區域檔的 cost）：裝備以外的物品的基本價格（base_price）
         self.take = False                  # 撿不撿得起來（wear_flags 有 1 take）；屍體撿不起來
@@ -134,10 +135,11 @@ def create(vnum, level, color, rng=random, for_sale=False):
             obj.base = equipment.base_values(slot, level, rng, offhand_weapon)
         obj.affects = [(Apply(a["location"]), a["modifier"]) for a in proto["affects"]]
         return obj
+    obj.main_affix = proto["main_affix"]    # 必出的主詞綴（使用者 2026-11-19 定的）：null 是照舊隨機
     if for_sale:                            # 隨機裝備：買的時候才抽（使用者 2026-11-18 定的），list 只看得到名字
         obj.unrolled = color is not None and color != ItemColor.GRAY
         return obj
-    rolled = equipment.roll_item(slot, level, color, rng, offhand_weapon)
+    rolled = equipment.roll_item(slot, level, color, rng, offhand_weapon, obj.main_affix)
     obj.base = rolled["base"]
     obj.affects = [(Apply[stat.upper()], n) for stat, n in rolled["affixes"].items()]
     obj.name = rolled["name"] + obj.name
@@ -194,9 +196,11 @@ def base_price(obj, level=None):
 
 
 def full_price(obj, level):
-    """店裡還沒抽屬性的隨機裝備（obj.unrolled）的基本價格：level 級、這個顏色的點數用滿（部位上限 × 顏色加成）。
-    抽出來的點數不會超過上限，所以買到的那件賣回去不會比買的貴。"""
-    return max(1, gear_price(equipment.cap(level, obj.slot) * equipment.COLOR_BONUS[obj.color], level))
+    """店裡還沒抽屬性的隨機裝備（obj.unrolled）的基本價格：level 級、這個顏色的點數用滿（部位上限 × 顏色加成）；
+    寫了必出主詞綴的橘色再加主詞綴多拿的（equipment.extra_points）。抽出來的點數不會超過它，所以買到的那件賣回去不會比買的貴。"""
+    budget = equipment.cap(level, obj.slot) * equipment.COLOR_BONUS[obj.color]
+    extra = equipment.extra_points(budget, obj.color) if obj.main_affix else 0.0
+    return max(1, gear_price(budget + extra, level))
 
 
 def make_corpse(npc, rng=random):

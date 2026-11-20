@@ -173,6 +173,7 @@ TIER_EXP_MULT = {MobTier.TRASH: 0.1, MobTier.NORMAL: 1.2, MobTier.ELITE: 1.1, Mo
 # 前期經驗加成（§4.7，2026-11-05 使用者定）：打怪經驗 ×（1 ＋ 加成），1 級 ＋50%，前期減得慢、後期快，到滿等前一級（99）是 0。升級需求不乘
 EXP_EARLY_BONUS = 0.5                       # 1 級的前期經驗加成
 EXP_EARLY_CURVE = 3.0                       # 曲線陡度（跟怪物進度加成同一種曲線）：0 是直線，越大越「前期減得慢」
+EXP_GAIN_MULT = 1.1                         # 打怪拿的經驗最後再乘這個（2026-11-20 使用者定：多 10%）。升級需求不乘
 
 
 def exp_base(level):
@@ -192,13 +193,13 @@ def exp_early(level):
 def kill_exp(player_level, mob_level, tier, early=True):
     """player_level 級的玩家打死 mob_level 級、tier 種類的怪物拿到的經驗（小數）。低 EXP_ZERO_GAP 級以上是 0。
 
-    early：乘上前期經驗加成（打怪拿的都要乘）；False 是原本的值（升級需求用）。
+    early：乘上前期經驗加成和最後的 EXP_GAIN_MULT（打怪拿的都要乘）；False 是原本的值（升級需求用）。
     """
     if player_level - mob_level >= EXP_ZERO_GAP:
         return 0.0
     tier = MobTier(tier)
     difficulty = TIER_DIFFICULTY[tier] * POWER_PER_LEVEL ** (mob_level - player_level)
-    bonus = 1.0 + exp_early(player_level) if early else 1.0
+    bonus = (1.0 + exp_early(player_level)) * EXP_GAIN_MULT if early else 1.0
     return exp_base(player_level) * difficulty * TIER_EXP_MULT[tier] * bonus
 
 

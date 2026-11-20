@@ -13,7 +13,9 @@
         3000,
         3399
       ],
-      "type": "world"
+      "type": "world",
+      "reset_empty": null,
+      "reset_players": null
     },
     "recall": null,
     "no_teleport": null,
@@ -6733,7 +6735,14 @@
       "race": "human",
       "sex": 1,
       "position": 7,
-      "drops": [],
+      "drops": [
+        {
+          "obj_vnum": 3045,
+          "color": "white",
+          "chance": 10000,
+          "tiers": null
+        }
+      ],
       "script": null,
       "shop": null,
       "special": null,
@@ -7203,7 +7212,32 @@
       "race": "human",
       "sex": 1,
       "position": 7,
-      "drops": [],
+      "drops": [
+        {
+          "obj_vnum": 3365,
+          "color": "white",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 3364,
+          "color": "white",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 3350,
+          "color": "white",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 3353,
+          "color": "white",
+          "chance": 10000,
+          "tiers": null
+        }
+      ],
       "script": null,
       "shop": null,
       "special": null,
@@ -7228,7 +7262,26 @@
       "race": "human",
       "sex": 1,
       "position": 7,
-      "drops": [],
+      "drops": [
+        {
+          "obj_vnum": 3365,
+          "color": "white",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 3364,
+          "color": "white",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 3350,
+          "color": "white",
+          "chance": 10000,
+          "tiers": null
+        }
+      ],
       "script": null,
       "shop": null,
       "special": null,
@@ -7644,7 +7697,14 @@
       "race": "human",
       "sex": 2,
       "position": 7,
-      "drops": [],
+      "drops": [
+        {
+          "obj_vnum": 3106,
+          "color": "white",
+          "chance": 10000,
+          "tiers": null
+        }
+      ],
       "script": null,
       "shop": null,
       "special": null,
@@ -8131,6 +8191,7 @@
       "weight": 65,
       "cost": 300,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8151,6 +8212,7 @@
       "weight": 10,
       "cost": 20,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8171,6 +8233,7 @@
       "weight": 10,
       "cost": 10,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8191,6 +8254,7 @@
       "weight": 10,
       "cost": 50,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8211,6 +8275,7 @@
       "weight": 10,
       "cost": 20,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8231,6 +8296,7 @@
       "weight": 60,
       "cost": 30000,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "斧頭 axe blade",
@@ -8256,6 +8322,7 @@
       "weight": 5,
       "cost": 100,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8276,6 +8343,7 @@
       "weight": 0,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "奉獻箱 donation pit",
@@ -8301,6 +8369,7 @@
       "weight": 1,
       "cost": 300,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "許可狀 license",
@@ -8326,6 +8395,7 @@
       "weight": 10,
       "cost": 50000,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8346,6 +8416,7 @@
       "weight": 1,
       "cost": 10,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8366,6 +8437,7 @@
       "weight": 3,
       "cost": 60,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8386,6 +8458,7 @@
       "weight": 8,
       "cost": 100,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8406,6 +8479,7 @@
       "weight": 1,
       "cost": 13,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8426,6 +8500,7 @@
       "weight": 4,
       "cost": 60,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "小字 letters",
@@ -8455,6 +8530,7 @@
       "weight": 2,
       "cost": 20,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8475,6 +8551,7 @@
       "weight": 5,
       "cost": 50,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8495,6 +8572,7 @@
       "weight": 1,
       "cost": 400,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "藥水 potion green",
@@ -8520,6 +8598,7 @@
       "weight": 40,
       "cost": 1000,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8540,6 +8619,7 @@
       "weight": 80,
       "cost": 7000,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8560,6 +8640,7 @@
       "weight": 75,
       "cost": 400,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "木筏 raft",
@@ -8585,6 +8666,7 @@
       "weight": 32,
       "cost": 1000,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "獨木舟 canoe",
@@ -8610,6 +8692,7 @@
       "weight": 5,
       "cost": 100,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8630,6 +8713,7 @@
       "weight": 1,
       "cost": 50,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8650,6 +8734,7 @@
       "weight": 5,
       "cost": 50,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8670,6 +8755,7 @@
       "weight": 3,
       "cost": 50,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8690,6 +8776,7 @@
       "weight": 1,
       "cost": 50,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8710,6 +8797,7 @@
       "weight": 3,
       "cost": 50,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8730,6 +8818,7 @@
       "weight": 10,
       "cost": 200,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8750,6 +8839,7 @@
       "weight": 2,
       "cost": 100,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8770,6 +8860,7 @@
       "weight": 8,
       "cost": 100,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8790,6 +8881,7 @@
       "weight": 4,
       "cost": 100,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8810,6 +8902,7 @@
       "weight": 1,
       "cost": 100,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8830,6 +8923,7 @@
       "weight": 4,
       "cost": 100,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8850,6 +8944,7 @@
       "weight": 20,
       "cost": 500,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8870,6 +8965,7 @@
       "weight": 4,
       "cost": 250,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8890,6 +8986,7 @@
       "weight": 20,
       "cost": 250,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8910,6 +9007,7 @@
       "weight": 6,
       "cost": 250,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8930,6 +9028,7 @@
       "weight": 2,
       "cost": 250,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8950,6 +9049,7 @@
       "weight": 8,
       "cost": 250,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8970,6 +9070,7 @@
       "weight": 3,
       "cost": 500,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -8990,6 +9091,7 @@
       "weight": 3,
       "cost": 5,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "茶杯 cup",
@@ -9015,6 +9117,7 @@
       "weight": 3,
       "cost": 7,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "杯子 cup",
@@ -9040,6 +9143,7 @@
       "weight": 3,
       "cost": 2,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "杯子 cup",
@@ -9065,6 +9169,7 @@
       "weight": 8,
       "cost": 2500,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -9085,6 +9190,7 @@
       "weight": 8,
       "cost": 5000,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -9105,6 +9211,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key iron",
@@ -9130,6 +9237,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key rusty",
@@ -9155,6 +9263,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key wooden",
@@ -9180,6 +9289,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key brass",
@@ -9205,6 +9315,7 @@
       "weight": 8,
       "cost": 600,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "長劍 sword long",
@@ -9230,6 +9341,7 @@
       "weight": 4,
       "cost": 200,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -9250,6 +9362,7 @@
       "weight": 100,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "抽屜 drawer",
@@ -9275,6 +9388,7 @@
       "weight": 100,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "保險箱 safe",
@@ -9300,6 +9414,7 @@
       "weight": 0,
       "cost": 52385,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -9320,6 +9435,7 @@
       "weight": 10,
       "cost": 10000,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key city",
@@ -9345,6 +9461,7 @@
       "weight": 100,
       "cost": 600,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "長椅 bench",
@@ -9370,6 +9487,7 @@
       "weight": 500,
       "cost": 3000,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "噴泉 fountain water",
@@ -9395,6 +9513,7 @@
       "weight": 0,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -9415,6 +9534,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key steel",
@@ -9440,6 +9560,7 @@
       "weight": 5,
       "cost": 30,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -9460,6 +9581,7 @@
       "weight": 999,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "辭職信 letter resignation",
@@ -9485,6 +9607,7 @@
       "weight": 999,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "告示 notice liquidation bank",
@@ -9510,6 +9633,7 @@
       "weight": 999,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "告示 規則 sign notice note rules",
@@ -9535,6 +9659,7 @@
       "weight": 1,
       "cost": 3000,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -9555,6 +9680,7 @@
       "weight": 3,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -9575,6 +9701,7 @@
       "weight": 0,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "徽章 badge",
@@ -9600,6 +9727,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "地圖 hazaryae map",
@@ -9625,6 +9753,7 @@
       "weight": 5,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "長劍 standard sword",
@@ -9650,6 +9779,7 @@
       "weight": 5,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "匕首 standard dagger",
@@ -9675,6 +9805,7 @@
       "weight": 5,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "釘頭鎚 standard mace",
@@ -9700,6 +9831,7 @@
       "weight": 5,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "護甲 standard vest",
@@ -9725,6 +9857,7 @@
       "weight": 5,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "盾牌 standard shield",
@@ -9750,6 +9883,7 @@
       "weight": 5,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "護袍 standard cloak",
@@ -9775,6 +9909,7 @@
       "weight": 5,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "頭盔 standard helmet",
@@ -9800,6 +9935,7 @@
       "weight": 5,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "脛甲 standard leggings",
@@ -9825,6 +9961,7 @@
       "weight": 5,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "長靴 standard boots",
@@ -9850,6 +9987,7 @@
       "weight": 5,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "手套 standard gloves",
@@ -9875,6 +10013,7 @@
       "weight": 5,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "護臂 standard sleeves",
@@ -9900,6 +10039,7 @@
       "weight": 5,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "披風 standard cape",
@@ -9925,6 +10065,7 @@
       "weight": 5,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "腰帶 standard belt",
@@ -9950,6 +10091,7 @@
       "weight": 5,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "護腕 standard bracer",
@@ -9975,6 +10117,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -9995,6 +10138,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "戰旗 banner",
@@ -10020,6 +10164,7 @@
       "weight": 10,
       "cost": 1000,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "大刀 bardiche",
@@ -10045,6 +10190,7 @@
       "weight": 22,
       "cost": 20000,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "木棒 club large",
@@ -10070,6 +10216,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "地圖 desert map",
@@ -10095,6 +10242,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "地圖 mountain map",
@@ -10120,6 +10268,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "地圖 highmountain map",
@@ -10145,6 +10294,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "戒指 ring diamond wedding",
@@ -10170,6 +10320,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "指環 band gold wedding",
@@ -10195,6 +10346,7 @@
       "weight": 1,
       "cost": 300,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "目錄 citizen notebook",
@@ -10236,6 +10388,7 @@
       "weight": 1,
       "cost": 300,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "地圖 日記 map",
@@ -10261,6 +10414,7 @@
       "weight": 1,
       "cost": 300,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "地圖 map",
@@ -10286,6 +10440,7 @@
       "weight": 1,
       "cost": 300,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "地圖 map",
@@ -10311,6 +10466,7 @@
       "weight": 1,
       "cost": 300,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "地圖 遊記 map",
@@ -10336,6 +10492,7 @@
       "weight": 1,
       "cost": 300,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "地圖 map",
@@ -10361,6 +10518,7 @@
       "weight": 1,
       "cost": 300,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "地圖 map",
@@ -10386,6 +10544,7 @@
       "weight": 1,
       "cost": 300,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "地圖 map",
@@ -10411,6 +10570,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -10431,6 +10591,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -10451,6 +10612,7 @@
       "weight": 0,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "戰旗 banner",
@@ -10476,6 +10638,7 @@
       "weight": 3,
       "cost": 10000,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -10496,6 +10659,7 @@
       "weight": 1,
       "cost": 1000,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -10516,6 +10680,7 @@
       "weight": 1,
       "cost": 1,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -10536,6 +10701,7 @@
       "weight": 1,
       "cost": 1,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -10556,6 +10722,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "手鐲 bracelet lazurite",
@@ -10581,6 +10748,7 @@
       "weight": 500,
       "cost": 3000,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "噴泉 fountain lazurite",
@@ -10606,6 +10774,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "地圖 marsh map",
@@ -10631,6 +10800,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "地圖 plateau map",
@@ -10656,6 +10826,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "地圖 seching map",
@@ -10681,6 +10852,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "地圖 westforest map",
@@ -10706,6 +10878,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "地圖 eastforest map",
@@ -10731,6 +10904,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "地圖 northplain map",
@@ -10756,6 +10930,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "地圖 river map",
@@ -10781,6 +10956,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "地圖 laker map",
@@ -10806,6 +10982,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [
         {
           "keywords": "地圖 icemountain map",

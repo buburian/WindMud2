@@ -54,6 +54,7 @@ def test_new_area_has_no_problems(builder):
     assert result["data"]["file"] == "new.json"
     assert result["data"]["area"]["header"]["vnums"] == [3000, 3399]
     assert result["data"]["area"]["header"]["type"] == "world"
+    assert result["data"]["area"]["header"]["reset_empty"] is None and result["data"]["area"]["header"]["reset_players"] is None
     assert [(r["vnum"], r["name"]) for r in result["data"]["rooms"]] == [(3000, "新房間")]   # 第一間是範圍的最小值
     _, listing, _ = call(f"{base}/api/areas")
     assert listing == [{"file": "new.json", "title": "新區域", "vnums": [3000, 3399], "rooms": 1}]
@@ -216,6 +217,13 @@ def test_object_tables_match_area_definitions():
     assert tables_js("WEAR_FLAGS") == [f.value for f in WearFlag]
 
 
+def test_reset_defaults_match_area_definitions():
+    # 區域設定的重生分鐘，空著時顯示的預設值要跟 area.py 一樣
+    text = (STATIC / "model.js").read_text(encoding="utf-8")
+    assert int(re.search(r"export const RESET_EMPTY = (\d+);", text)[1]) == area.RESET_EMPTY
+    assert int(re.search(r"export const RESET_PLAYERS = (\d+);", text)[1]) == area.RESET_PLAYERS
+
+
 def test_area_type_options_match_area_definitions():
     # 區域設定的「區域種類」選單，值是字串，要跟 AreaType 一樣
     text = (STATIC / "model.js").read_text(encoding="utf-8")
@@ -312,3 +320,15 @@ def test_page_special_groups_match_server():
     assert len(kinds) == len(area.SPECIALS)
     assert {name for name, kind in kinds if kind == "戰鬥"} == set(specials.FIGHTING)
     assert {name for name, kind in kinds if kind == "平常"} == set(specials.IDLE) | set(specials.NOT_YET)
+
+
+def test_main_affixes_match_equipment_and_manual():
+    # 物品的必出主詞綴（main_affix）：編輯器的選單、手冊的表、equipment.AFFIX_WORD 三邊一樣，名字是「屬性（詞綴）」
+    from mud import equipment
+    rows = manual_rows("### main_affix（必出的主詞綴）")
+    assert tables_js("MAIN_AFFIXES") == [row[0] for row in rows] == list(equipment.AFFIX_WORD)
+    assert [(row[1], row[2]) for row in rows] == [(equipment.STAT_NAMES[k], w) for k, w in equipment.AFFIX_WORD.items()]
+    text = (STATIC / "tables.js").read_text(encoding="utf-8")
+    block = re.search(r"export const MAIN_AFFIXES = \[(.*?)\n\];", text, re.S)[1]
+    assert re.findall(r'\["[a-z_]+", "([^"]*)"\]', block) == [f"{equipment.STAT_NAMES[k]}（{w}）" for k, w in equipment.AFFIX_WORD.items()]
+    assert "affects: [], main_affix: null," in (STATIC / "model.js").read_text(encoding="utf-8")    # 新物品照舊隨機

@@ -13,7 +13,9 @@
         200,
         299
       ],
-      "type": "instance"
+      "type": "instance",
+      "reset_empty": null,
+      "reset_players": null
     },
     "recall": 3001,
     "no_teleport": null,
@@ -322,6 +324,7 @@
       "weight": 1,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -342,6 +345,7 @@
       "weight": 5,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -362,6 +366,7 @@
       "weight": 8,
       "cost": 0,
       "affects": [],
+      "main_affix": null,
       "extra_descriptions": [],
       "script": null
     }

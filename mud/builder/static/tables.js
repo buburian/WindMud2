@@ -271,6 +271,26 @@ export const APPLY = [
   [16, "龍焰抗性"],
 ];
 
+// 物品的 main_affix（必出的主詞綴，使用者 2026-11-19 定的）：隨機裝備可以抽到的屬性（equipment.AFFIX_WORD，順序一樣）。
+// 名字是「屬性（詞綴）」；null 是照舊隨機
+export const MAIN_AFFIXES = [
+  ["str", "力量（蠻力）"],
+  ["int", "智慧（睿智）"],
+  ["wis", "知識（賢者）"],
+  ["con", "體質（堅毅）"],
+  ["dex", "敏捷（靈巧）"],
+  ["hp", "HP（活力）"],
+  ["dmg_phys", "物理傷害（鋒銳）"],
+  ["dmg_spell", "法術傷害（奧術）"],
+  ["hit", "命中（精準）"],
+  ["dodge", "閃躲（幻影）"],
+  ["crit", "爆擊率（致命）"],
+  ["critdmg", "爆擊傷害（殘暴）"],
+  ["speed", "攻速（疾風）"],
+  ["res_phys", "物理抗性（鐵壁）"],
+  ["res_spell", "法術抗性（抗魔）"],
+];
+
 // 武器 values 第 1 個：武器種類（area.WeaponKind，手冊的武器種類表）
 export const WEAPON_KINDS = [
   [1, "匕首（單手）"],

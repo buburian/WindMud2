@@ -128,6 +128,7 @@ def test_exp_numbers_match_mud_design(balance, model):
     assert stats.EXP_ZERO_GAP == c.exp_zero_gap
     assert stats.EXP_KILLS == (c.exp_kills_first, c.exp_kills_last)
     assert (stats.EXP_EARLY_BONUS, stats.EXP_EARLY_CURVE) == (c.exp_early_bonus, c.exp_early_curve)
+    assert stats.EXP_GAIN_MULT == c.exp_gain_mult
     assert stats.MAX_LEVEL == c.max_level
     assert {str(k): v for k, v in stats.TIER_DIFFICULTY.items()} == pytest.approx(model.tier_difficulty, rel=1e-9)
     assert {str(k): v for k, v in stats.TIER_EXP_MULT.items()} == {k: v["exp_mult"] for k, v in balance.MOB_TIERS.items()}
@@ -145,13 +146,18 @@ def test_exp_formulas_match_mud_design(model):
 
 
 def test_design_doc_exp_examples():
-    # 設計文件 §4.7：1 級一般怪 10（前期經驗加成 ＋50% 後是 15）、升 2 級要 100（升級需求不乘加成）；低 10 級以上是 0
+    # 設計文件 §4.7：1 級一般怪 10（前期經驗加成 ＋50%、最後 × 1.1 後是 16.5）、升 2 級要 100（升級需求不乘加成）；低 10 級以上是 0
     assert stats.kill_exp(1, 1, MobTier.NORMAL, early=False) == pytest.approx(10.0)
-    assert stats.kill_exp(1, 1, MobTier.NORMAL) == pytest.approx(15.0)
+    assert stats.kill_exp(1, 1, MobTier.NORMAL) == pytest.approx(16.5)
     assert stats.exp_to_level(1) == pytest.approx(100.0)
     assert (stats.exp_early(1), stats.exp_early(99), stats.exp_early(100)) == (pytest.approx(0.5), 0.0, 0.0)
-    # 玩家角色手冊的例子：20 級打同級的垃圾怪 0.8、一般怪 36.0、菁英怪 85.2、Boss 91.0
+    # 玩家角色手冊的例子：20 級打同級的垃圾怪 0.8、一般怪 39.6、菁英怪 93.7、Boss 100.1
     got = [round(stats.kill_exp(20, 20, tier), 1) for tier in (MobTier.TRASH, MobTier.NORMAL, MobTier.ELITE, MobTier.BOSS)]
-    assert got == [0.8, 36.0, 85.2, 91.0]
+    assert got == [0.8, 39.6, 93.7, 100.1]
+    # 手冊：Lv1 → 2 實際打 6.1 隻，1 級到滿級總共 6,361 隻（都沒有是 8,512 隻）
+    def kills(early):
+        return sum(stats.exp_to_level(lv) / stats.kill_exp(lv, lv, MobTier.NORMAL, early) for lv in range(1, stats.MAX_LEVEL))
+    assert round(100 / stats.kill_exp(1, 1, MobTier.NORMAL), 1) == 6.1
+    assert (round(kills(True)), round(kills(False))) == (6361, 8512)
     assert stats.kill_exp(20, 10, MobTier.BOSS) == 0.0
     assert stats.kill_exp(20, 11, MobTier.BOSS) > 0

@@ -1,7 +1,7 @@
 // 物品畫面：左欄是物品清單，右邊表單佔滿（沒有地圖）。
 // 分頁照使用者的規則：只有一份的欄位全部放「基本資料」（含 values、旗標），可以一直新增的清單（加成、可以細看的東西）各自一個分頁。
 import {
-  extraList, flagsField, numberField, removeButton, scriptRow, section, selectField, tabBar, textField, textOf,
+  codeField, extraList, flagsField, numberField, removeButton, scriptRow, section, selectField, tabBar, textField, textOf,
   vnumField,
 } from "./forms.js";
 import * as M from "./model.js";
@@ -78,6 +78,9 @@ function basicTab(ctx, obj) {
       numberField({ id: "obj-weight", label: "重量", code: "weight", obj, key: "weight", style: "flex: 0 0 120px", done }),
       numberField({ id: "obj-cost", label: "價格", code: "cost", obj, key: "cost", style: "flex: 0 0 120px",
         tip: "可以是 0；商店買賣的價格是它乘上店主的 profit_buy、profit_sell", done })),
+    // 必出的主詞綴：只有隨機裝備（affects 是 []）能寫，橘色另外多 30%（手冊 main_affix）
+    codeField({ id: "obj-main-affix", label: "必出的主詞綴", code: "main_affix", obj, key: "main_affix",
+      options: [[null, "照舊隨機"], ...T.MAIN_AFFIXES], done }),
     section("數值", "values", valuesGrid(ctx, obj)),
     h("div", { class: "stack sep" },
       flagsField({ legend: "特性", code: "extra_flags", obj, key: "extra_flags", table: T.EXTRA_FLAGS, columns: 3, done }),

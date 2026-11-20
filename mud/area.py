@@ -351,10 +351,21 @@ ATTACK_NAMES = {
 MOB_ONLY_ATTACKS = {Attack.HIT, Attack.BITE, Attack.SUCTION}   # 只給怪物用，武器不能用
 
 
+# 重生多快（header 的 reset_empty、reset_players，分鐘；null 用這兩個預設值，照 C 版）
+RESET_EMPTY = 3                             # 區域檔的房間裡沒有玩家：大約幾分鐘重置一次
+RESET_PLAYERS = 15                          # 有玩家：大約幾分鐘重置一次
+
+
+def reset_minutes(header):
+    """header 寫的 (沒有玩家, 有玩家) 幾分鐘重置一次，null 換成預設值。"""
+    empty, players = header.get("reset_empty"), header.get("reset_players")
+    return (RESET_EMPTY if empty is None else empty), (RESET_PLAYERS if players is None else players)
+
+
 # 每一層要剛好有這些欄位
 TOP_KEYS = ("schema_version", "file", "area", "rooms", "mobiles", "objects", "resets")
 AREA_KEYS = ("header", "recall", "no_teleport", "clan_recall", "gem")
-HEADER_KEYS = ("levels", "author", "title", "vnums", "type")
+HEADER_KEYS = ("levels", "author", "title", "vnums", "type", "reset_empty", "reset_players")
 ROOM_KEYS = ("vnum", "name", "description", "room_flags", "sector", "exits", "extra_descriptions", "script")
 EXIT_KEYS = ("description", "keywords", "locks", "key", "to_room")
 EXTRA_KEYS = ("keywords", "description")
@@ -386,7 +397,7 @@ SPECIALS = (
 DROP_KEYS = ("obj_vnum", "color", "chance", "tiers")    # 掉落表的一行
 SHOP_KEYS = ("buy_types", "profit_buy", "profit_sell", "open_hour", "close_hour")
 OBJECT_KEYS = ("vnum", "keywords", "short", "long", "item_type", "extra_flags", "wear_flags",
-               "values", "weight", "cost", "affects", "extra_descriptions", "script")
+               "values", "weight", "cost", "affects", "main_affix", "extra_descriptions", "script")
 AFFECT_KEYS = ("location", "modifier")
 # 重置：每種指令的欄位（照順序執行，G 跟著前面最近的 M）。舊版的 E（穿裝備、給坐騎）拿掉了：生物不穿裝備
 RESET_KEYS = {
@@ -915,6 +926,21 @@ def check_mobiles(name, data, vnums, problems):
     return seen
 
 
+def check_reset_minutes(name, header, problems):
+    """reset_empty、reset_players：null 或至少 1 的整數（分鐘）；沒有玩家的不能比有玩家的長（null 用預設值比）。"""
+    good = True
+    for k in ("reset_empty", "reset_players"):
+        v = header.get(k)
+        if v is not None and not (is_int(v) and v >= 1):
+            problems.append(f"{name}：area.header.{k} 要是 null 或至少 1 的整數（分鐘），不能是 {v!r}")
+            good = False
+    if good:
+        empty, players = reset_minutes(header)
+        if empty > players:
+            problems.append(f"{name}：area.header.reset_empty 是 {empty} 分鐘，比 reset_players 的 {players} 分鐘還長："
+                            f"沒有玩家時重生不能比有玩家時慢（null 是預設的 {RESET_EMPTY}、{RESET_PLAYERS} 分鐘）")
+
+
 def check_area(name, area, problems):
     """檢查 area 區塊。回傳 (號碼範圍 (最小, 最大), recall, type)，不對的就是 None。"""
     vnums = recall = kind = None
@@ -934,6 +960,7 @@ def check_area(name, area, problems):
             if vnums is None:
                 problems.append(f"{name}：area.header.vnums 要寫 [最小, 最大] 兩個整數，最小不能小於 {MIN_VNUM}"
                                 f"（1～99 是保留的）、不能大於最大，不能是 {header['vnums']!r}")
+        check_reset_minutes(name, header, problems)
         if "type" in header:
             if header["type"] in codes(AreaType):
                 kind = AreaType(header["type"])
@@ -1108,10 +1135,32 @@ def check_object(where, o, problems):
                 w = f"{where}的 affects 第 {j + 1} 項"
                 if check_keys(a, AFFECT_KEYS, w, problems):
                     check_ints(w, a, AFFECT_KEYS, problems)
+    if o.get("main_affix") is not None:
+        check_main_affix(where, o, problems)
     if "extra_descriptions" in o:
         check_extra_descriptions(where, o["extra_descriptions"], problems)
     if o.get("script") is not None:
         check_object_script(f"{where}的 script ", o["script"], problems)
+
+
+def check_main_affix(where, o, problems):
+    """必出的主詞綴（main_affix，使用者 2026-11-19 定的）：寫隨機裝備可以抽到的屬性代號（equipment.AFFIX_WORD），
+    只有隨機裝備（有穿戴部位、affects 是 []）能寫。null 是照舊隨機（不用檢查）。"""
+    value = o["main_affix"]
+    if value not in equipment.AFFIX_WORD:
+        problems.append(f"{where}的 main_affix 要寫 {'、'.join(equipment.AFFIX_WORD)} 其中一個或 null，不能是 {value!r}")
+        return
+    if o.get("affects"):
+        problems.append(f"{where}寫了 affects 是固定裝備，屬性已經寫死了，main_affix 要寫 null（不能是 {value!r}）")
+    try:
+        slots, two_handed = wear_slots(o)
+    except ValueError:
+        return                              # wear_flags 寫錯：上面已經報了
+    slot = equipment.best_slot(slots, two_handed)
+    if slot is None:
+        problems.append(f"{where}沒有穿戴部位、不是裝備，main_affix 要寫 null（不能是 {value!r}）")
+    elif equipment.cap(1, slot) == 0:
+        problems.append(f"{where}穿在{equipment.SLOT_NAMES[slot]}，這個部位沒有點數、抽不到屬性，main_affix 要寫 null（不能是 {value!r}）")
 
 
 

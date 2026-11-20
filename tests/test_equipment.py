@@ -101,6 +101,22 @@ def test_roll_item_matches_mud_design(balance, level):
                 assert got["base"] == pytest.approx(want["base"], rel=1e-9), where
 
 
+@pytest.mark.parametrize("level", [1, 5, 30, 100])
+def test_main_affix_matches_mud_design(balance, level):
+    # 必出的主詞綴（main_affix）：balance.py 的 roll_item 也有，同一個種子結果要一樣（含 60% 買不起、全部點數給它的情況）
+    m = balance.Model()
+    assert balance.MAIN_AFFIX_BONUS == equipment.MAIN_AFFIX_BONUS
+    slots = [(name, slot, False) for name, slot in SLOT_KEYS.items() if equipment.cap(1, slot) > 0]   # 持握、光源沒有點數，不能寫
+    slots += [(balance.TWO_HANDED_SLOT, equipment.TWO_HANDED, False), ("副手 offhand", "offhand", True)]
+    for forced in ("str", "dmg_phys", "hp", "speed"):
+        for seed in range(10):
+            for name, slot, offhand_weapon in slots:
+                for rarity, color in COLOR_KEYS.items():
+                    want = m.roll_item(name, level, rarity, random.Random(seed), offhand_weapon=offhand_weapon, main_affix=forced)
+                    got = equipment.roll_item(slot, level, color, random.Random(seed), offhand_weapon, forced)
+                    assert (got["name"], got["affixes"]) == (want["name"], want["affixes"]), (forced, seed, slot, color)
+
+
 def test_no_color_rolls_like_gray():
     assert equipment.roll_item("head", 10, None, random.Random(1)) == equipment.roll_item("head", 10, "gray", random.Random(1))
     assert equipment.roll_item("head", 10, None, random.Random(1))["affixes"] == {}
