@@ -3,7 +3,7 @@ import argparse
 import asyncio
 import logging
 
-from . import health, helps, login, socials, zones
+from . import health, helps, login, restart, socials, zones
 from .config import AREA_DIR, ENCODING, HELP_FILE, LOGIN_SCREEN, SOCIAL_FILE, START_ROOM
 from .log import setup
 from .server import handle
@@ -42,6 +42,7 @@ async def main():
         log.error(f"登入畫面載入失敗：{e}")
         raise SystemExit(1)
     zones.start()
+    restart.listen()                                # deploy/update.sh 重開前送 SIGUSR1：跟線上的玩家說幾秒後重開
     server = await asyncio.start_server(handle, args.host, args.port)
     log.info(f"伺服器開在 {args.host}:{args.port}，編碼 {ENCODING}。按 Ctrl+C 結束。")
     async with server:

@@ -93,7 +93,8 @@ push 到 master 以後，正式機自己更新、重開伺服器：
 
 1. GitHub Action（`.github/workflows/test.yml`）跑全部測試和區域檔檢查，都過了就把 `release` 分支推到這個 commit。
 2. 正式機每分鐘跑一次 `deploy/update.sh`（`windmud-update.timer`），去 GitHub 看 `release` 分支：
-   - 有新版：`git merge --ff-only`、`uv sync`、`sudo systemctl restart windmud`，等 30 秒內 port 8080 開起來。
+   - 有新版：先在遊戲裡跟線上的玩家說「伺服器 30 秒後重新啟動」，等 30 秒，再 `git merge --ff-only`、`uv sync`、`sudo systemctl restart windmud`，等 30 秒內 port 8080 開起來。
+     通知是送 `SIGUSR1` 給伺服器的 python（`mud/restart.py`）；伺服器沒在跑就不通知、不等。
    - 開不起來：退回原本的版本再重開，那個版本記下來不再試；修好再 push 新的 commit 就會再更新。
 
 正式機不用開任何 port，GitHub 上也不用放金鑰（主機的 SSH 有鎖 IP，GitHub 連不進去，所以由主機自己去拿）。

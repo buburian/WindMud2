@@ -11,6 +11,7 @@ UV="${UV:-$HOME/.local/bin/uv}"
 SERVICE="${SERVICE:-windmud}"
 PORT="${PORT:-8080}"
 WAIT="${WAIT:-30}"                          # 重開以後最多等幾秒 port 開起來
+NOTICE="${NOTICE:-30}"                      # 先在遊戲裡通知，幾秒後才更新、重開（跟 mud/restart.py 的 NOTICE_SECONDS 一樣）
 
 up() {
     # 服務是 active，而且 port 連得上，才算開起來（Type=simple 一啟動就是 active，開機檢查沒過也是）
@@ -21,6 +22,27 @@ up() {
         fi
     done
     return 1
+}
+
+notice() {
+    # 重開前先在遊戲裡通知（使用者 2026-11-20 要的）：送 SIGUSR1 給 python，伺服器跟線上的玩家說幾秒後重開，等那麼久再更新。
+    # 送給 python、不送給 uv：服務的主程式是 uv（ExecStart 的 uv run），uv 不一定會轉送 SIGUSR1，沒接的程式收到會直接結束。
+    # 坑：還沒有這個功能的舊版收到 SIGUSR1 也會直接結束（沒存檔）：先看現在的程式有沒有 mud/restart.py 的記號才送。
+    # 伺服器沒在跑、找不到 python 就不通知、不等。
+    local main pid
+    grep -qs "WINDMUD_RESTART_NOTICE" mud/restart.py || return 0
+    main=$(systemctl show -p MainPID --value "$SERVICE" 2>/dev/null || true)
+    if [ -z "$main" ] || [ "$main" = 0 ]; then
+        return 0
+    fi
+    pid=$(pgrep -P "$main" -f "python" | head -n 1 || true)
+    if [ -z "$pid" ]; then
+        return 0
+    fi
+    if kill -USR1 "$pid"; then
+        echo "通知線上的玩家：$NOTICE 秒後重開"
+        sleep "$NOTICE"
+    fi
 }
 
 main() {
@@ -37,6 +59,7 @@ main() {
         return 0                            # 這個版本上次開不起來：等下一個新版
     fi
     echo "更新 ${old:0:7} → ${new:0:7}：$(git log -1 --format=%s "$new")"
+    notice                                  # 先通知、等一下，再換檔案（換了檔案，跑著的伺服器之後才 import 的模組會讀到新版）
     git merge --ff-only --quiet "$new"      # 主機上改過 git 裡的檔就會失敗、什麼都不動（set -e 在這裡結束）
     if "$UV" sync --locked --quiet && sudo systemctl restart "$SERVICE" && up; then
         rm -f "$failed"

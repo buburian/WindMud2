@@ -35,6 +35,8 @@ uv run python -m mud --port 4055 --host 0.0.0.0   # 給別台電腦連
 ./serve.sh                                        # 0.0.0.0:8080，掛掉 5 秒後自動重開（PORT=、HOST= 可以換）；開機不到 10 秒就結束不重開
 sudo systemctl restart windmud                    # Linux：deploy/windmud.service（裝法見 README）用 systemctl 管；stop 送 SIGINT 會存玩家，KillMode 要 mixed（坑寫在檔案裡）
 journalctl -u windmud-update -f                   # 正式機的自動部署：GitHub Action 測試過就推 release 分支，主機每分鐘 deploy/update.sh 拉下來、重開（README「自動部署」）
+                                                  # 重開前 update.sh 送 SIGUSR1 給 python，遊戲裡通知「30 秒後重新啟動」、等 30 秒才換檔案（mud/restart.py，使用者 2026-11-20 要的）。
+                                                  # 坑：舊版沒接 SIGUSR1 收到會直接結束、沒存檔，所以 update.sh 先 grep restart.py 的 SIGNAL_MARK；送給 python 不送給 uv（uv 不一定轉送）
 uv run pytest                                     # 全部測試
 uv run pytest tests/test_telnet.py::test_encode   # 單一測試
 uv run python -m mud.areacheck                    # 檢查 areas/ 全部的區域檔（有問題時結束代碼 1）
@@ -49,7 +51,7 @@ uv run python -m mud.patchnote send --dry-run     # 試跑 patch/草稿.md（拿
   `tests/test_log.py` 測紀錄檔的編號、換檔和刪舊檔；`tests/test_area.py` 測區域載入，也比對手冊的數字表跟程式的定義；`tests/test_areacheck.py` 測區域檔檢查的每條規則；
   要自己做區域檔的測試，用 `tests/area_helpers.py` 做出完整的檔案再改欄位（直接 `from area_helpers import …`）；
   `tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit；另一個測試讓 tick 和幾場戰鬥一直跑，確認玩家打字照樣馬上回應。
-  `tests/test_login.py` 也開真的伺服器，測建立角色、密碼、名字規則、存檔、斷線存檔、重複登入接手。`tests/test_imm.py` 測 imm 指令、advance、train、goto（號碼、名字、副本去不了、停手）、givemoney、vnums；`tests/test_health.py` 測 health；`tests/test_reserved.py` 測系統區域檔（真的 system.json、1～99 和沒有房間的規則、少了號碼不開機、屍體和金幣照區域檔）；`tests/test_patchnote.py` 測 Discord 的 patch 通知（切訊息、試跑、紀錄、webhook 被 .gitignore 排除；發送換成假的）；`tests/test_position.py` 測姿勢、rest／sleep／stand、睡覺時能用的指令、say、who、save。`tests/test_resets.py` 測生物的重置（M、limit、rare、tier_roll、時機、look）。`tests/test_doors.py` 測門（兩邊都要寫的檢查、走路、open／close／lock／unlock、對面看得到、look、重置 D、副本各自的門）。
+  `tests/test_login.py` 也開真的伺服器，測建立角色、密碼、名字規則、存檔、斷線存檔、重複登入接手。`tests/test_imm.py` 測 imm 指令、advance、train、goto（號碼、名字、副本去不了、停手）、givemoney、vnums；`tests/test_health.py` 測 health；`tests/test_restart.py` 測重開前的通知（SIGUSR1、update.sh 的秒數和記號）；`tests/test_reserved.py` 測系統區域檔（真的 system.json、1～99 和沒有房間的規則、少了號碼不開機、屍體和金幣照區域檔）；`tests/test_patchnote.py` 測 Discord 的 patch 通知（切訊息、試跑、紀錄、webhook 被 .gitignore 排除；發送換成假的）；`tests/test_position.py` 測姿勢、rest／sleep／stand、睡覺時能用的指令、say、who、save。`tests/test_resets.py` 測生物的重置（M、limit、rare、tier_roll、時機、look）。`tests/test_doors.py` 測門（兩邊都要寫的檢查、走路、open／close／lock／unlock、對面看得到、look、重置 D、副本各自的門）。
   `tests/test_objects.py` 測物品（固定、隨機裝備、掉落表、屍體、slay、look 和 look in、屍體消失、區域物件釋放後不見、基本價格 `base_price()`、cost 存檔）。
   `tests/test_behavior.py` 測生物平常的行為（走動的出口和機率、scavenger、主動攻擊和半身人的不起眼、生物回血、wimpy），亂數換成 `behavior.rng`；
   `tests/test_specials.py` 測 special（打架用的時間、傷害 × 倍率、招式名稱、劇毒，janitor、fido，名字的表跟手冊比對），`damage.strike` 換成固定值、`fight.hit` 不打。
