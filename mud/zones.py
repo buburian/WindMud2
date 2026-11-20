@@ -11,6 +11,7 @@ tick loop：世界和全部的動態區域共用一個（世界 tick），副本
 區域檔在開機時就讀好、檢查好放在記憶體，建立動態區域和副本時不讀檔。
 """
 import asyncio
+import datetime
 import json
 import logging
 from collections import deque
@@ -60,8 +61,10 @@ class Zone:
         世界的變換之後加在這裡，用「每幾個 tick 做一次」（self.ticks % N == 0）。"""
         self.ticks += 1
         scripts.tick(self)                  # 腳本的 on_timer（坑：跟 objects.update 一樣要在下面兩個 return 前面）
-        if self.ticks % AREA_TICKS == 0:
-            resets.update(self)             # 照 C 版：沒有玩家、有玩家各自幾分鐘重置一次（區域檔的 header 可以改）
+        if self.ticks % AREA_TICKS == 0 and self.kind != AreaType.INSTANCE:
+            # 照 C 版：沒有玩家、有玩家各自幾分鐘重置一次（區域檔的 header 可以改）。
+            # 副本不重生（使用者 2026-11-20 定的）：建立時放一次，沒人 RELEASE_TICKS 收掉，下次進去才是新的
+            resets.update(self)
         if self.ticks % OBJ_TICKS == 0:
             # 坑：要放在下面兩個 return 前面，不然世界的屍體、有人站著的副本裡的屍體永遠不會爛
             objects.update(self)            # 地上有 timer 的物品（屍體）減 1，到了就消失
@@ -95,6 +98,7 @@ instances = {}              # (副本的檔名, 擁有者) → 那一份副本�
 templates = {}              # 動態區域、副本的檔名 → (AreaType, 讀好的區域檔)
 routes = {}                 # 檔名 → 從起始房間怎麼走到那個區域（"3s4wn"，"" 是就在這裡，None 是走不到）：area 指令用，load() 算；副本不在裡面
 dynamic_rooms = {}          # 動態區域的房間遊戲號碼 → 檔名：走到這些號碼時要找到（或建立）那個動態區域
+instance_rooms = {}         # 副本的房間遊戲號碼 → 檔名：傳送門的目的地在副本裡時，enter 進到自己那一份（commands/portal.py）
 world_task = None           # 世界 tick
 
 
@@ -104,7 +108,7 @@ def load(directory):
     有任何問題就丟 ValueError（訊息是第一個問題），原本的區域物件不動。
     沒問題才停掉舊的區域物件（和它們的 loop），換成新的。世界 tick 要另外呼叫 start()。
     """
-    global world, templates, dynamic_rooms, routes
+    global world, templates, dynamic_rooms, instance_rooms, routes
     paths = sorted(Path(directory).glob("*.json"))
     if not any(area.area_kind(p) == AreaType.SYSTEM for p in paths):
         # 屍體、金幣、召喚物的文字在系統區域檔（reserved.py）：資料夾裡沒有（測試自己做的區域資料夾）就用遊戲的那一份
@@ -115,7 +119,7 @@ def load(directory):
         more = f"（共 {len(found)} 個問題，用 uv run python -m mud.areacheck 看全部）" if len(found) > 1 else ""
         raise ValueError(found[0] + more)
     new_world = Zone(AreaType.WORLD, "世界")
-    new_templates, new_dynamic_rooms, new_mobiles, new_objects = {}, {}, {}, {}
+    new_templates, new_dynamic_rooms, new_instance_rooms, new_mobiles, new_objects = {}, {}, {}, {}, {}
     entries = [(path, json.loads(path.read_text(encoding="utf-8"))) for path in paths]
     scripts.load(entries)                   # 建房間之前先讀好腳本（建房間、放生物時要接上）
     for path, data in entries:
@@ -130,14 +134,13 @@ def load(directory):
             new_world.add_area(path.name, data)
             continue
         new_templates[path.name] = (kind, data)
-        if kind == AreaType.DYNAMIC:
-            for r in data["rooms"]:
-                new_dynamic_rooms[r["vnum"]] = path.name
+        for r in data["rooms"]:
+            (new_dynamic_rooms if kind == AreaType.DYNAMIC else new_instance_rooms)[r["vnum"]] = path.name
     missing = reserved.check(new_objects, new_mobiles)
     if missing:                             # 程式要的屍體、金幣、召喚物少了：跟區域檔有錯一樣停止開機
         raise ValueError(missing[0] + (f"（共 {len(missing)} 個問題）" if len(missing) > 1 else ""))
     stop()
-    world, templates, dynamic_rooms = new_world, new_templates, new_dynamic_rooms
+    world, templates, dynamic_rooms, instance_rooms = new_world, new_templates, new_dynamic_rooms, new_instance_rooms
     routes = find_routes(entries, START_ROOM)
     resets.mobiles, objects.protos = new_mobiles, new_objects
     resets.reset_zone(world)                # 世界一開機就放好生物
@@ -146,19 +149,42 @@ def load(directory):
              f"動態區域 {counts[AreaType.DYNAMIC]} 個、副本區域 {counts[AreaType.INSTANCE]} 個，要用時才建立")
 
 
+NEW_DAYS = 14               # header.opened 開放日期起幾天內算新區域（開放那天算第 1 天，第 15 天起不算；使用者 2026-11-20 要的）
+
+
+def today():
+    """伺服器今天的日期（新區域照它算；測試換掉）。"""
+    return datetime.date.today()
+
+
+def new_areas():
+    """開放 NEW_DAYS 天內的區域（header.opened）：[(檔名, header)]，新開的在前（同一天照檔名）。
+    area 的「新」、系統公告的新區域都用它；每次看都照當天的日期算，14 天後自己不算，不用重開。"""
+    found = [(a.name, a.data) for a in (world.areas if world else [])] + [(name, data) for name, (_kind, data) in templates.items()]
+    now, new = today(), []
+    for name, data in found:
+        header = data["area"]["header"]
+        opened = area.opened_date(header["opened"])
+        if opened is not None and 0 <= (now - opened).days < NEW_DAYS:
+            new.append((-opened.toordinal(), name, header))
+    return [(name, header) for _key, name, header in sorted(new, key=lambda x: x[:2])]
+
+
 def find_routes(entries, start):
     """每個區域檔從 start（神殿大廳）怎麼走過去（使用者 2026-11-20 要的：文字遊戲沒有地圖，area 告訴玩家怎麼去）。
 
     從 start 一間一間往外找（照出口，門照樣走；方向照 DIRECTIONS 的順序，結果才固定），每個區域檔取走得最近的那一間。
-    只算世界、動態區域：副本的入口（enter 的地方）還沒做，入口跟副本的 recall 點是不同的（使用者說的），所以副本不算。
+    副本走不進去（只能 enter）：入口是放了「通到這個副本」的傳送門（重置 O）的那間房，跟副本的 recall 點不同（使用者說的）。
     回傳 {檔名: 路徑}：路徑寫成 "3s4wn"（同一個方向連走好幾步寫次數），"" 是起點就在這個區域裡，None 是走不到。
     區域檔開機時讀好就不會變，所以 load() 算一次就好。
     """
-    owner, exits = {}, {}
+    owner, exits, portals, placed = {}, {}, {}, []
     for path, data in entries:
         for r in data["rooms"]:
             owner[r["vnum"]] = path.name
             exits[r["vnum"]] = [(d, r["exits"][d]["to_room"]) for d in area.DIRECTIONS if d in r["exits"]]
+        portals.update({o["vnum"]: o["values"][0] for o in data["objects"] if o["item_type"] == area.PORTAL_ITEM_TYPE})
+        placed += [(r["room_vnum"], r["obj_vnum"]) for r in data["resets"] if r["cmd"] == "O"]
     came = {start: None} if start in exits else {}
     todo = deque(came)
     while todo:
@@ -170,9 +196,13 @@ def find_routes(entries, start):
     order = {room: i for i, room in enumerate(came)}    # 找到的順序：越前面越近
     out = {}
     for path, data in entries:
-        if AreaType(data["area"]["header"]["type"]) in (AreaType.INSTANCE, AreaType.SYSTEM):
+        kind = AreaType(data["area"]["header"]["type"])
+        if kind == AreaType.SYSTEM:
             continue
-        reached = [r["vnum"] for r in data["rooms"] if r["vnum"] in order]
+        if kind == AreaType.INSTANCE:
+            reached = [room for room, obj in placed if room in order and owner.get(portals.get(obj)) == path.name]
+        else:
+            reached = [r["vnum"] for r in data["rooms"] if r["vnum"] in order]
         out[path.name] = walk(came, min(reached, key=order.get)) if reached else None
     return out
 

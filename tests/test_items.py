@@ -271,6 +271,23 @@ def test_inventory(world):
     assert say(p, "inv") == reply(p, "你目前所攜帶的東西有：", "     藥水/potion", "（1/35 件，負重 9/140）")
 
 
+def test_inventory_combines_the_same_things(world):
+    # 一樣的合成一行（使用者 2026-11-20 要的，照 C 版 show_list_to_char）；只是畫面：2.potion 照樣是第 2 件
+    p = person()
+    give(p, 1, 1, 7, 1)                                                  # 背包：藥水、皮甲、藥水、藥水（新的在前）
+    rows = say(p, "i").split("\r\n")
+    assert rows[1:3] == ["( 3) 藥水/potion", "     " + re.sub(r"\x1b\[[0-9;]*m", "", objects.short(p.carrying[1]))]
+    second = [o for o in p.carrying if o.vnum == 101][1]
+    say(p, "drop 2.potion")
+    assert second not in p.carrying and say(p, "i").split("\r\n")[1] == "( 2) 藥水/potion"
+
+
+def test_look_in_combines_the_same_things(world):
+    box = make(3)
+    box.contains = [make(1), make(4), make(1)]
+    assert re.sub(r"\x1b\[[0-9;]*m", "", objects.inside(box)).split("\n")[1:3] == ["( 2) 藥水/potion", "     " + re.sub(r"\x1b\[[0-9;]*m", "", objects.short(box.contains[1]))]
+
+
 def test_orcs_carry_more(world):
     p = person(race=stats.Race.ORC)         # 力量 14：170 × 1.25
     assert stats.carry_limit(p) == 212.5

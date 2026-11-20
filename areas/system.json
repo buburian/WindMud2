@@ -15,7 +15,8 @@
       ],
       "type": "system",
       "reset_empty": null,
-      "reset_players": null
+      "reset_players": null,
+      "opened": null
     },
     "recall": null,
     "no_teleport": null,

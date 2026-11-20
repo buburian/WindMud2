@@ -5,7 +5,7 @@ NOTHING = "現在沒有系統公告。"
 
 
 def read_announce(ch):
-    ch.send((announce.text or NOTHING) + "\n")
+    ch.send((announce.current() or NOTHING) + "\n")
 
 
 TOPICS = {"announce": ("系統公告", read_announce)}      # 名字（可以只打開頭）→ (說明, 讀的函式)；之後的 mail 加在這裡

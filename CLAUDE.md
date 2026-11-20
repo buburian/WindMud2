@@ -63,7 +63,7 @@ uv run python -m mud.patchnote forum 文章.md --title 標題 --dry-run   # 討�
   `tests/test_log.py` 測紀錄檔的編號、換檔和刪舊檔；`tests/test_area.py` 測區域載入，也比對手冊的數字表跟程式的定義；`tests/test_areacheck.py` 測區域檔檢查的每條規則；
   要自己做區域檔的測試，用 `tests/area_helpers.py` 做出完整的檔案再改欄位（直接 `from area_helpers import …`）；
   `tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit；另一個測試讓 tick 和幾場戰鬥一直跑，確認玩家打字照樣馬上回應。
-  `tests/test_login.py` 也開真的伺服器，測建立角色、密碼、名字規則、存檔、斷線存檔、重複登入接手。`tests/test_imm.py` 測 imm 指令、advance、train、goto（號碼、名字、副本去不了、停手）、givemoney、vnums；`tests/test_health.py` 測 health；`tests/test_restart.py` 測重開前的通知（SIGUSR1、update.sh 的秒數和記號）；`tests/test_reserved.py` 測系統區域檔（真的 system.json、1～99 和沒有房間的規則、少了號碼不開機、屍體和金幣照區域檔）；`tests/test_patchnote.py` 測 Discord 的 patch 通知（切訊息、試跑、紀錄、webhook 被 .gitignore 排除；發送換成假的）；`tests/test_position.py` 測姿勢、rest／sleep／stand、睡覺時能用的指令、say、who、save。`tests/test_resets.py` 測生物的重置（M、limit、rare、tier_roll、時機、look）。`tests/test_doors.py` 測門（兩邊都要寫的檢查、走路、open／close／lock／unlock、對面看得到、look、重置 D、副本各自的門）。
+  `tests/test_login.py` 也開真的伺服器，測建立角色、密碼、名字規則、存檔、斷線存檔、重複登入接手。`tests/test_imm.py` 測 imm 指令、advance、train、goto（號碼、名字、副本去不了、停手）、givemoney、vnums；`tests/test_health.py` 測 health；`tests/test_restart.py` 測重開前的通知（SIGUSR1、update.sh 的秒數和記號）；`tests/test_reserved.py` 測系統區域檔（真的 system.json、1～99 和沒有房間的規則、少了號碼不開機、屍體和金幣照區域檔）；`tests/test_patchnote.py` 測 Discord 的 patch 通知（切訊息、試跑、紀錄、webhook 被 .gitignore 排除；發送換成假的）；`tests/test_position.py` 測姿勢、rest／sleep／stand、睡覺時能用的指令、say、who、save。`tests/test_resets.py` 測生物的重置（M、limit、rare、tier_roll、時機、look）。`tests/test_doors.py` 測門（兩邊都要寫的檢查、走路、open／close／lock／unlock、對面看得到、look、重置 D、副本各自的門）。`tests/test_enter.py` 用真的 areas/ 測 enter 和傳送門（自己那一份、出來、副本裡 recall、拒絕、樹妖的掉落、副本不重生、照樣收掉、area 的入口）。
   `tests/test_objects.py` 測物品（固定、隨機裝備、掉落表、屍體、slay、look 和 look in、屍體消失、區域物件釋放後不見、基本價格 `base_price()`、cost 存檔）。
   `tests/test_behavior.py` 測生物平常的行為（走動的出口和機率、scavenger、主動攻擊和半身人的不起眼、生物回血、wimpy），亂數換成 `behavior.rng`；
   `tests/test_specials.py` 測 special（打架用的時間、傷害 × 倍率、招式名稱、劇毒，janitor、fido，名字的表跟手冊比對），`damage.strike` 換成固定值、`fight.hit` 不打。
@@ -199,7 +199,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `login()` 一開始送 `CLEAR`（清畫面）＋ 畫面，名字打錯重問不再送。檔案照寫（只拿掉最後一個換行），所以最後的空行會留著。
     沒呼叫 `load_screen()`（測試）就是空的，直接問名字。
   - **系統公告**（`mud/announce.py`，使用者 2026-11-20 要的，規則在玩家角色手冊「系統公告」）：`screens/announce.txt`（`config.ANNOUNCE_FILE`），`__main__` 開機時 `announce.load()`，
-    `check()` 不過就停止開機（最多 `HEIGHT` 10 行、每行 `WIDTH` 75 格、Big5）；沒有檔案、只有空白是沒有公告（`announce.text` 是空的）。
+    `check()` 不過就停止開機（最多 `HEIGHT` 10 行、每行 `WIDTH` 75 格、Big5）；沒有檔案、只有空白，又沒有新區域，是沒有公告（`announce.current()` 是空的）。
+    公告是每次看才做的 `announce.current()`（`login.enter()`、`read` 都用）：`announce.txt` 的 `lines` ＋ 開放 14 天內的新區域（`new_area_lines()`，使用者 2026-11-20 要的，一個一行「新區域：樹洞（15～20 級，副本），入口 …」，入口跟 area 一樣、`-----` 不寫，太寬「入口」換行）＋ 版本；`announce.txt` 空的但有新區域照樣有框。
     `box()` 做亮黃外框（半形 `+ - |`，照最寬的一行）；有公告才在框裡最後加「版本 7d3539e」（`health.mark_start()` 開機時讀 git 存在 `health.boot_commit`，`__main__` 傳給 `load()`，不算在 HEIGHT；讀不到就不加，使用者 2026-11-20 要的；imm 的 health 版本那行第一格也是它）。舊角色登入（`login.enter()`）接在「歡迎回來」和房間之間、前後空一行；接手、建角不送。
     指令 `read`（`commands/read.py`，`rea`，什麼姿勢都能用）：`TOPICS` 是能讀的東西（現在只有 announce，之後的 mail 加在這裡）。`tests/test_announcement.py`。
   - **登入和建立角色**（`login.py`，一問一答照順序寫）：名字 3～12 個英文字母（照 C 版，保留字不行），存成第一個字大寫。
@@ -264,10 +265,14 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   `rstat [號碼或名字]`（`rs`，使用者 2026-11-20 要的，照 C 版 do_rstat）：房間的全部資料（`room_lines()`：區域檔、區域物件、地形、旗標、很暗、描述、可以細看、人物、地上、每個出口和門的狀態、腳本和變數）；找地方跟 goto 共用 `find_location()`，但 `create=False` 用 `zones.find_room()`，不會建立還沒建立的動態區域。
   `vnums`（`vn`，使用者 2026-11-20 要的：伺服器載入的區域檔（世界的 `zones.world.areas`、動態和副本的 `zones.templates`）各自的 `header.vnums`，照號碼排，再列中間還沒用的，最後「N 以上」）。
   **玩家的指令排在 imm 指令前面**：同字首的玩家指令會搶走 imm 指令的縮寫（之前加了 affects，imm 打 `a` 就變成 affects）。
+  **新區域**（使用者 2026-11-20 要的，規則在玩家角色手冊「區域列表」「系統公告」）：區域檔 `header.opened`（`"YYYY-MM-DD"` 或 null，`area.opened_date()` 檢查）起 `zones.NEW_DAYS` 14 天內（開放那天算第 1 天）是新的（`zones.new_areas()`，照 `zones.today()` 每次算，不用重開）：
+  area 的名稱後面加亮黃的「新」（`NEW_MARK`，寬度照沒顏色的字算），系統公告列出。樹洞寫 2026-11-20，其他寫 null。
+  坑：照「今天」算的東西會讓測試跟著跑測試那天變：`tests/conftest.py` 把 `zones.today` 一律換成 2100 年（都不新），要測的自己換（`tests/test_new_areas.py`）。
   **`area`**（`a`，`system.do_area()`，使用者 2026-11-20 要的，照 C 版 areas）：世界（`zones.world.areas`）、動態和副本（`zones.templates`）全部的區域檔，
   寫 header 的 title、levels、type（`AREA_KINDS`）、入口、author，照等級排；imm 的 advance 因此要打 `ad`。
   入口（從神殿大廳怎麼走）是 `zones.routes`（`load()` 呼叫 `find_routes()` 算一次：從 `START_ROOM` 照出口往外找，門照樣走，每個區域檔最近的一間，`walk()` 壓成 `3s4wn`）；
-  走不到的、副本寫 `-----`（使用者要的；副本的入口跟 recall 點不同，enter 還沒做，見 `todo/進副本.md`）。
+  副本的入口是放著「通到這個副本的傳送門」（重置 O、`area.PORTAL_ITEM_TYPE`）的那間房（`find_routes()`；跟副本的 recall 點不同）；走不到的、沒有傳送門通進去的副本（教學學院）寫 `-----`（使用者要的）。
+  **`enter [名字]`**（`en`，最低姿勢 STANDING，`commands/portal.py`，使用者 2026-11-20 定的，規則在玩家角色手冊「副本和傳送門」）：走進地上的傳送門（物品種類 21，`values` 第 1 個是目的地，`objects.portal_target()`）。目的地在現在這一份裡就是那間；在副本（`zones.instance_rooms`）是自己那一份（`zones.instance(檔名, 名字)`，生物不進副本）；其他照走路 `zones.room_at()`。到了跟 recall 一樣 `system.arrival()`、on_enter(actor, nil)。傳送門地上那一行前面有亮藍的「(傳送門)」（`objects.PORTAL_TAG`）。`tests/test_enter.py`。
   **`kill <名字>`**（`commands/combat.py`，`k`，最低姿勢 FIGHTING 照 C 版）：開打同房間的生物，牠自動還手；**不可以打玩家**（使用者要的，自己也不行）。
   **安全區**（`RoomFlag.SAFE`，使用者要的）：`commands/combat.protected()` 送 C 版「$N正在受到神力所保護的房間內。」，kill 和 use 的傷害技能都在扣消耗之前呼叫它；主動攻擊在 `behavior.aggress()` 自己看。開打只有這三個地方，所以安全區裡不會有戰鬥。
   **`recall`**（`rec`，也可以打 `/`，最低姿勢 FIGHTING，所以休息、睡覺不能用；規則在玩家角色手冊「回城」，使用者 2026-11-17 定的）：
@@ -406,7 +411,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     起始房間 `config.START_ROOM` 是秋風城的神殿大廳 3001（`areas/midgaard.json`，見下面「秋風城」）。之後會照使用者的指示繼續改格式。`area`、每個房間、每隻生物、每個物品和每筆重置的欄位**一個都不能少**，
     巢狀欄位也要有範例值（`extra_descriptions` 放一筆；`script`：房間 102 用 `areas/test/鐘聲.lua`、生物 101 用 `商人.lua`、物品 102 是物品的舊格式；生物 101「測試商人」的每個欄位都有值，生物 102「測試坐騎」示範 null／空的寫法；生物 103「野兔」是練功用的 1 級一般怪，重置放 3 隻在房間 102（使用者要的）；
     物品 101～104 是藥水、長劍、箱子、麵包（重置用到 101、103、104），物品 102「測試長劍」每個欄位都有值；物品 105～109 是給 `oload` 試裝備用的（盾牌、匕首（副手）、大劍（雙手）、戒指、皮甲，都沒寫 affects，給顏色就抽隨機屬性；不在重置裡，使用者同意加的；105 盾牌的 `main_affix` 是 `"hp"`，試必出的主詞綴）；
-    物品 110、111 是拾取後綁定、裝備後綁定的戒指（給 `oload` 試綁定，不在重置裡，使用者同意加的）；
+    物品 110、111 是拾取後綁定、裝備後綁定的戒指（給 `oload` 試綁定，不在重置裡，使用者同意加的）；物品 112 是測試傳送門（目的地 102，給 `oload` 試，不在重置裡，使用者 2026-11-20 確認的）；
     `resets` 每種指令各一筆；房間 101 往北、房間 102 往南的出口是同一扇木門（門兩邊都要寫），給 `D` 的範例用）：使用者靠它看系統還缺哪些功能。
     房間的文字可以用顏色代碼。
     **每個欄位的意思和新系統的實作進度寫在 `docs/區域製作手冊.md`**：改區域檔格式、或做了新的區域功能時，
@@ -482,7 +487,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - 世界區域（`world`）：開機時把所有 world 檔建進**一個**區域物件 `zones.world`，永遠不釋放。
   - 動態區域（`dynamic`）：有人走進去才建立（`room_at()`），大家共用一份（`zones.dynamic`，檔名 → Zone）。
   - 副本區域（`instance`）：`zones.instance(檔名, 擁有者)` 建立，一個擁有者一份（擁有者用名字；之後是隊長的名字）。
-    只能在入口的傳送門用 enter 進去、用副本裡的傳送門 enter 出來（使用者 2026-11-20 定的：入口是世界裡放傳送門的那間，跟副本的 recall 點不同），所以 `check_files()` 不准出口跨進或跨出副本。recall 回到副本寫的 `area.recall`（見上面的 recall 指令）；enter、傳送門（之後做成物品）、組隊**還沒做**。
+    只能在入口的傳送門用 enter 進去、用副本裡的傳送門 enter 出來（使用者 2026-11-20 定的：入口是世界裡放傳送門的那間，跟副本的 recall 點不同），所以 `check_files()` 不准出口跨進或跨出副本（傳送門的目的地可以，`check_portals()` 只看房間存在）。recall 回到副本寫的 `area.recall`（見上面的 recall 指令）；組隊**還沒做**（`todo/組隊.md`）。
+    **副本不自己重生**（使用者 2026-11-20 定的）：`Zone.tick()` 的 `resets.update()` 副本不做，只有建立時 `reset_zone()` 一次；教學學院也是（畢業不用穿護甲，石門開了就一直開）。
   - 動態區域和副本連續 `RELEASE_TICKS`（1200 tick，20 分鐘）沒有玩家就 `release()`：停掉裡面的戰鬥、移走留下的角色、從名單拿掉。
     在 tick 裡數（`zone.empty_ticks`），有玩家就歸 0，所以實際上是 20 分鐘再加 0～1 秒。下一個人進去時重新建立，裡面全部重來。
   - 區域檔開機時就讀好、檢查好（`templates`），建立動態區域和副本時不讀檔。
@@ -519,6 +525,9 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   菁英、首領的藍色 100% 給代表的那一件（武器優先）。原本沒穿東西的怪掉新加的四件（使用者要的）：霧骨戒指（必出 crit）、牛頭人圓盾（必出 res_phys）、冰蟲皮披風、柳條腰帶。
   坑：八把鬥士房門的鑰匙是重置 P 放進「競技場鑰匙環」2382 的，所以鑰匙環一定要 G 給競技場管理者帶著（掉落表的東西重置時還不在，P 找不到容器）。
   文字照世界觀改寫（分四段寫的），武器種類照名字改過（弩弓改成獵人長矛：遊戲沒有弓）。
+- **樹洞**（`hollow.json`，副本，15～20 級，號碼 `[400, 499]`，recall 400，使用者 2026-11-20 設計的）：城西森林 10113（`forest.json` 的物品 10107 樹洞，重置 O）`enter` 進去，
+  400 樹洞裡（樹洞口：傳送門回 10113）→ 401 → 2x2（402～405），首領樹妖 400 在 404（15 級、`spec_poison`、sentinel、不主動攻擊），
+  掉 6 件隨機裝備（401～406：盤根巨槌、棘刺匕首、苔蘚披風、木紋戒指、樹皮護腿、藤蔓護腕），每件各自骰紫 100%／橘 20%（使用者 2026-11-20 從藍 100／紫 50／橘 10 改的）。
 - **邪龍教派**（`cult.json`，世界區域，15～25 級，號碼 `[9800, 9899]`，重生 2／4 分鐘，使用者 2026-11-20 放進來的）：舊的 cult1.are（搞笑的「公司」風格）轉的，
   秋風城貧民區東端 3024 往北進施粥棚 9850（教派的前門）。文字照世界觀「邪龍教派的地底」改寫：前門是施粥棚、講道廳、帳房區、抄經室，地底是聖殿、祭壇、牢房（被抓來的女孩）、深坑（死靈祭司），最深處是教派偷偷養大的幼龍威爾麟。
   首領是死靈祭司、威爾麟（兩個都拿掉了舊版的聖光）；菁英是拷問者、黑鱗騎士、黑鱗女祭司；長袍祭司 tier_roll 菁英 20%；接待員、守夜人、女孩是垃圾怪；主動攻擊全拿掉。
@@ -788,7 +797,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - get（地上、`get x 屍體`；`get all` 跳過撿不起來的，拿不動說一次就停，照 C 版）、drop、
     give（照 C 版：給同房間的人、`give N coins 名字` 給金幣、1 級不能給金幣、店主不收、對方是玩家要 `over_limit()` 放得下，給完 `keep()` 幫給的人存檔）、
     wear（`wear x` 換下原本的；`wear all` 只穿空的部位，副手武器排最後）、
-    remove（`remove all` 照 SLOTS 的順序，副手在主手前）、inventory（最後一行件數和負重，使用者選的）、equipment（每個部位都列，沒穿的寫「（空）」，副手被雙手武器佔住寫「（雙手武器佔住）」，使用者 2026-11-19 要的）。最低姿勢照 C 版：前四個 RESTING（打架中可以），後兩個 DEAD。
+    remove（`remove all` 照 SLOTS 的順序，副手在主手前）、inventory（最後一行件數和負重，使用者選的；一樣的合成一行「( 6) 」，`objects.combined()`，`look in` 的 `inside()`、look 的地上（只有一件的不空格）也用，使用者 2026-11-20 要的，只是畫面、n.xx 照舊）、equipment（每個部位都列，沒穿的寫「（空）」，副手被雙手武器佔住寫「（雙手武器佔住）」，使用者 2026-11-19 要的）。最低姿勢照 C 版：前四個 RESTING（打架中可以），後兩個 DEAD。
   - donate（`do_donate`，`don`，RESTING，使用者 2026-11-20 要的，照 C 版 do_donate）：背包裡的裝備（`is_gear()`：有部位、有顏色）送進 `config.DONATION_PIT` 3010（`donation_pit()` 找世界區域地上的，秋風城神殿祭壇 3054）；
     穿著的要先脫、綁定的不行（`can_let_go()`）、放不下不行（`cannot_donate()`）；祭壇醒著的玩家聽到 `DONATE_SOUND`（一次 donate 一次），捐完 `keep()` 存檔。`tests/test_donate.py`。
   - **淬火石**（設計文件 §3.11，使用者 2026-11-20 核准，規則在玩家角色手冊「淬火石」）：`Player.temper_stones`（存檔，不是物品），score 金幣後面。

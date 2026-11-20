@@ -467,8 +467,8 @@ def do_remove(ch, arg):
 
 
 def do_inventory(ch, arg):
-    """inventory（i、inv）：背包裡的東西，每件一行前面空 5 格（照 C 版），最後是件數和負重（使用者選的）。"""
-    lines = ["你目前所攜帶的東西有："] + ([f"     {objects.short(o)}{bound_tag(o)}" for o in ch.carrying] or ["     空無一物。"])
+    """inventory（i、inv）：背包裡的東西，一樣的合成一行「( 6) 」（objects.combined()，照 C 版），最後是件數和負重（使用者選的）。"""
+    lines = ["你目前所攜帶的東西有："] + (objects.combined(f"{objects.short(o)}{bound_tag(o)}" for o in ch.carrying) or ["     空無一物。"])
     if inventory.is_player(ch):
         lines.append(f"（{inventory.carry_count(ch)}/{stats.CARRY_COUNT} 件，"
                      f"負重 {stats.shown(inventory.carry_weight(ch))}/{stats.shown(stats.carry_limit(ch))}）")

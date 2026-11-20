@@ -71,6 +71,13 @@ RULES = [
     pytest.param(lambda d: d["area"]["header"].update(vnums=[199, 100]), "area.header.vnums 要寫 [最小, 最大]", id="vnums 反了"),
     pytest.param(lambda d: d["area"]["header"].update(vnums=100), "area.header.vnums 要寫 [最小, 最大]", id="vnums 只有一個"),
     pytest.param(lambda d: d["area"]["header"].pop("reset_players"), "area.header 少了欄位 reset_players", id="少了 reset_players"),
+    # 開放日期（使用者 2026-11-20 要的）：null 或 "YYYY-MM-DD"，要有這一天
+    pytest.param(lambda d: d["area"]["header"].update(opened="2026-02-30"),
+                 'area.header.opened 要是 null 或開放日期 "YYYY-MM-DD"（例如 "2026-11-20"，要有這一天），不能是 \'2026-02-30\'', id="opened 沒有這一天"),
+    pytest.param(lambda d: d["area"]["header"].update(opened="2026/11/20"), "area.header.opened 要是 null 或開放日期", id="opened 寫斜線"),
+    pytest.param(lambda d: d["area"]["header"].update(opened="2026-1-5"), "area.header.opened 要是 null 或開放日期", id="opened 少了 0"),
+    pytest.param(lambda d: d["area"]["header"].update(opened=20261120), "area.header.opened 要是 null 或開放日期", id="opened 是數字"),
+    pytest.param(lambda d: d["area"]["header"].pop("opened"), "area.header 少了欄位 opened", id="少了 opened"),
     pytest.param(lambda d: d["area"]["header"].update(reset_empty=0),
                  "area.header.reset_empty 要是 null 或至少 1 的整數（分鐘），不能是 0", id="reset_empty 是 0"),
     pytest.param(lambda d: d["area"]["header"].update(reset_players="15"),
@@ -198,6 +205,13 @@ RULES = [
     pytest.param(lambda d: obj(d).update(wear_flags="1|x"), "wear_flags 看不懂", id="物品 wear_flags"),
     pytest.param(lambda d: obj(d).update(values=[0, 1, 4]), "values 要寫 4 個", id="物品 values 3 個"),
     pytest.param(lambda d: obj(d).update(values=[0, 1, 4, {}]), "values 要寫 4 個", id="物品 values 放 {}"),
+    # 傳送門（物品種類 21，使用者 2026-11-20 定的）：撿不起來、目的地是存在的房間
+    pytest.param(lambda d: obj(d).update(item_type=21, wear_flags="1", values=[102, 0, 0, 0], affects=[]),
+                 "物品 101 是傳送門：wear_flags '1' 不能有 1（撿得起來），傳送門要留在房間裡", id="傳送門撿得起來"),
+    pytest.param(lambda d: obj(d).update(item_type=21, wear_flags=0, values=[5, 0, 0, 0], affects=[]),
+                 "物品 101 是傳送門：values 第 1 個要寫目的地房間的遊戲號碼（100 以上），不能是 5", id="傳送門目的地寫錯"),
+    pytest.param(lambda d: obj(d).update(item_type=21, wear_flags=0, values=[150, 0, 0, 0], affects=[]),
+                 "物品 101 是傳送門，目的地（values 第 1 個）指到不存在的房間 150", id="傳送門目的地不存在"),
     pytest.param(lambda d: obj(d).update(item_type=15, values=[100, 1, 5, 0]),
                  "物品 101 的鑰匙（values 第 3 個）要是 0 以下（不用鑰匙）或鑰匙的遊戲號碼（100 以上，1～99 是系統區域檔用的），不能是 5",
                  id="容器的鑰匙保留的號碼"),
@@ -368,6 +382,14 @@ def test_cross_file_mobile_duplicate(tmp_path):
     found = area.check_files([a, b], [a, b])
     assert found[a] == []
     assert found[b] == ["b.json：area.header.vnums 的範圍 150～250 跟 a.json 的 100～199 重疊", "b.json：生物 160 跟 a.json 重複"]
+
+
+def test_portal_into_another_file(tmp_path):
+    # 傳送門的目的地可以在別的檔（例如副本）：出口不能跨進副本，傳送門可以
+    portal = dict(make_object(101), item_type=21, wear_flags=0, values=[201, 0, 0, 0], affects=[])
+    a = write_area(tmp_path, "a.json", [make_room(101)], vnums=(100, 199), objects=[portal])
+    b = write_area(tmp_path, "b.json", [make_room(201)], vnums=(200, 299), kind="instance")
+    assert area.check_files([a, b], [a, b]) == {a: [], b: []}
 
 
 def test_cross_file_object_duplicate(tmp_path):

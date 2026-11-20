@@ -55,7 +55,7 @@ def make_area(filename, rooms, vnums=(100, 199), mobiles=(), resets=(), objects=
         "file": filename,
         "area": {
             "header": {"levels": [1, 5], "author": "Test", "title": "測試", "vnums": list(vnums), "type": kind,
-                       "reset_empty": None, "reset_players": None},
+                       "reset_empty": None, "reset_players": None, "opened": None},
             "recall": None, "no_teleport": None, "clan_recall": None, "gem": None,
         },
         "rooms": rooms,

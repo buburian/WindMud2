@@ -377,6 +377,19 @@ def test_look_shows_the_corpse_after_players(folder):
     assert re.sub(r"\x1b\[[0-9;]*m", "", system.look(shabu)).endswith("\n\n野狗的屍體橫躺在地上。/corpse\n")   # 只有屍體也空一行
 
 
+def test_look_combines_the_same_things_on_the_floor(folder):
+    # 地上一樣的合成一行「( 2) 」（使用者 2026-11-20 要的）；只有一件的照舊不空格；只是畫面，get 2.corpse 照樣是第 2 具
+    dog = world_with_dog(folder)
+    shabu = player("Shabu", dog.room, is_imm=True)
+    room = dog.room
+    death.die(dog)
+    objects.make_corpse(Npc("野狗", 0, room))                              # 第二具一樣的屍體（放在地上最前面）
+    plain = re.sub(r"\x1b\[[0-9;]*m", "", system.look(shabu))
+    assert plain.endswith("\n\n( 2) 野狗的屍體橫躺在地上。/corpse\n")
+    second = room.contents[1]
+    assert objects.find(room.contents, "2.corpse") is second
+
+
 def test_look_in_corpse(folder):
     dog = world_with_dog(folder, [drop(102), drop(101, color="orange")], [potion(102), sword(101)])
     shabu = player("Shabu", dog.room)

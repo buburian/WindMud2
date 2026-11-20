@@ -1,0 +1,492 @@
+{
+  "schema_version": 1,
+  "file": "hollow.json",
+  "area": {
+    "header": {
+      "levels": [
+        15,
+        20
+      ],
+      "author": "WindMud2",
+      "title": "樹洞",
+      "vnums": [
+        400,
+        499
+      ],
+      "type": "instance",
+      "reset_empty": null,
+      "reset_players": null,
+      "opened": "2026-11-20"
+    },
+    "recall": 400,
+    "no_teleport": null,
+    "clan_recall": null,
+    "gem": null
+  },
+  "rooms": [
+    {
+      "vnum": 400,
+      "name": "樹洞裡",
+      "description": "你彎著腰鑽進樹洞，腳下的泥土又濕又軟，一踩就陷下去一點。\n頭頂盤著粗大的樹根，根上長滿會發光的蕈菇，照得四周一片青綠。\n頭頂的洞口透進一圈天光，攀著樹根就能爬回林子裡。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北，樹根之間空出一條低矮的地道，越往裡越暗。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 401
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 401,
+      "name": "盤根的地道",
+      "description": "地道是樹根撐開的，兩邊的根比人的腰還粗，纏得像一張網。\n泥土裡混著碎骨頭（bones），有兔子的，也有比兔子大得多的。\n越往北，蕈菇的綠光越亮，空氣也越悶。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北，地道一下子寬了，像是一間挖空的土室。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 402
+        },
+        "south": {
+          "description": "往南回到樹洞口，看得到一點天光。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 400
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "骨頭 bones",
+          "description": "骨頭都被啃得乾乾淨淨，上面留著一圈一圈細小的齒痕。\n有一根是鹿的腿骨，從中間被咬斷了。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 402,
+      "name": "樹根下的土室",
+      "description": "頭頂的樹根垂下來，像一片倒掛的樹林，有的一直垂到地上。\n土牆被刮出一道道深痕，像是有東西一路刨過去。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北，垂下來的樹根越來越密，得撥開才走得過去。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 403
+        },
+        "east": {
+          "description": "往東，一大叢蕈菇發著綠光，亮得刺眼。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 405
+        },
+        "south": {
+          "description": "往南回到盤根的地道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 401
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 403,
+      "name": "垂根之間",
+      "description": "樹根從頭頂一路垂到腳邊，碰一下就輕輕晃動，像在呼吸。\n根上掛著幾隻乾掉的鳥，羽毛還沒掉光。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "south": {
+          "description": "往南回到土室。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 402
+        },
+        "east": {
+          "description": "往東，樹根纏成一團一團的，最深的地方有東西在動。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 404
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 404,
+      "name": "樹妖的巢",
+      "description": "這裡是整棵樹的根最密的地方，根一圈一圈盤成一張大床。\n地上鋪著碎骨頭和爛葉子，踩下去沙沙作響。\n上頭倒下的那棵大樹，就是從這裡被吸乾的。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "west": {
+          "description": "往西回到垂下來的樹根之間。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 403
+        },
+        "south": {
+          "description": "往南，蕈菇的綠光一閃一閃的。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 405
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 405,
+      "name": "發光的蕈叢",
+      "description": "一大片蕈菇（mushrooms）從土裡冒出來，最高的比人還高，傘蓋發著綠光。\n蕈菇底下的土是黑的，聞起來有一股甜甜的腐味。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北，樹根盤成一團，裡面傳來樹皮磨擦的聲音。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 404
+        },
+        "west": {
+          "description": "往西回到土室。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 402
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "蕈菇 mushrooms",
+          "description": "傘蓋底下的皺摺一明一暗地發光，湊近了聽，好像有很細的嗡嗡聲。\n掰下一小塊，斷口馬上滲出黏黏的綠汁。\n"
+        }
+      ],
+      "script": null
+    }
+  ],
+  "mobiles": [
+    {
+      "vnum": 400,
+      "keywords": "treant",
+      "short": "樹妖",
+      "long": "樹妖/treant/盤在樹根堆裡，枝條像手臂一樣慢慢張開。\n",
+      "description": "看起來像一截會動的老樹幹，樹皮裂成一片一片，縫裡滲出黃綠色的汁。\n它沒有眼睛，臉的地方只有一個樹洞，洞口長滿尖刺一樣的木牙。\n它一靠近，就有一股甜膩的腐味。\n",
+      "level": 15,
+      "tier": "boss",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 2,
+      "affected_by": 0,
+      "alignment": -500,
+      "race": "plant",
+      "sex": 0,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 401,
+          "color": "purple",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 401,
+          "color": "orange",
+          "chance": 2000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 402,
+          "color": "purple",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 402,
+          "color": "orange",
+          "chance": 2000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 403,
+          "color": "purple",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 403,
+          "color": "orange",
+          "chance": 2000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 404,
+          "color": "purple",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 404,
+          "color": "orange",
+          "chance": 2000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 405,
+          "color": "purple",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 405,
+          "color": "orange",
+          "chance": 2000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 406,
+          "color": "purple",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 406,
+          "color": "orange",
+          "chance": 2000,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": "spec_poison",
+      "special_ratio": null,
+      "poison_ratio": null
+    }
+  ],
+  "objects": [
+    {
+      "vnum": 400,
+      "keywords": "hollow",
+      "short": "樹洞口",
+      "long": "頭頂的樹洞口透進一圈天光，攀著樹根就能爬回林子裡。",
+      "item_type": 21,
+      "extra_flags": 0,
+      "wear_flags": 0,
+      "values": [
+        10113,
+        0,
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "樹洞口 hollow",
+          "description": "洞口在頭頂，樹根一層一層疊上去，像一道歪歪扭扭的梯子。\n外面的風灌進來，帶著青草的味道。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 401,
+      "keywords": "hammer root",
+      "short": "盤根巨槌",
+      "long": "一把用整段樹根做成的巨槌靠在地上，槌頭還纏著乾掉的藤。",
+      "item_type": 5,
+      "extra_flags": 512,
+      "wear_flags": 8193,
+      "values": [
+        10,
+        0,
+        0,
+        8
+      ],
+      "weight": 22,
+      "cost": 0,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "巨槌 hammer",
+          "description": "槌頭是一大團盤在一起的樹根，硬得跟石頭一樣，柄是一截直直的根。\n握起來沉甸甸的，揮出去會帶起一陣風。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 402,
+      "keywords": "dagger thorn",
+      "short": "棘刺匕首",
+      "long": "一根磨利的長棘刺掉在地上，尖端還沾著黃綠色的汁。",
+      "item_type": 5,
+      "extra_flags": 0,
+      "wear_flags": 8193,
+      "values": [
+        1,
+        0,
+        0,
+        2
+      ],
+      "weight": 4,
+      "cost": 0,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "匕首 dagger",
+          "description": "這是從樹妖身上掰下來的一根刺，比手掌還長，尖得能刺穿皮甲。\n刺的根部纏了幾圈皮繩，剛好可以握。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 403,
+      "keywords": "cloak moss",
+      "short": "苔蘚披風",
+      "long": "一件長滿青苔的披風皺成一團，摸起來又軟又濕。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": 1025,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 6,
+      "cost": 0,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "披風 cloak",
+          "description": "披風是一大片苔蘚連著底下的樹皮剝下來的，背面還留著根鬚。\n披在身上涼涼的，卻一點也不漏水。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 404,
+      "keywords": "ring wood",
+      "short": "木紋戒指",
+      "long": "一枚木頭磨成的戒指滾在地上，木紋一圈一圈的。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": 3,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "戒指 ring",
+          "description": "戒指是從一截硬木上磨出來的，木紋繞著戒圈轉了好幾圈。\n戴久了，木頭會慢慢變成你手指的形狀。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 405,
+      "keywords": "leggings bark",
+      "short": "樹皮護腿",
+      "long": "一對樹皮綁成的護腿丟在地上，邊上還冒出幾片嫩葉。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": 33,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 8,
+      "cost": 0,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "護腿 leggings",
+          "description": "厚厚的樹皮用藤蔓一層一層綁起來，硬得擋得住刀。\n奇怪的是，樹皮的邊上還在長新葉子。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 406,
+      "keywords": "bracer vine",
+      "short": "藤蔓護腕",
+      "long": "一對藤蔓編成的護腕散在地上，藤上還有小小的刺。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": 4097,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 2,
+      "cost": 0,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "護腕 bracer",
+          "description": "幾根粗藤編成一圈，套在手腕上會自己慢慢收緊。\n藤上的小刺都朝外，抓住你手腕的人會先被扎到。\n"
+        }
+      ],
+      "script": null
+    }
+  ],
+  "resets": [
+    {
+      "cmd": "O",
+      "if_flag": 0,
+      "obj_vnum": 400,
+      "color": null,
+      "level": 1,
+      "limit": 0,
+      "room_vnum": 400,
+      "comment": "樹洞口（傳送門，回城西森林 10113）"
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 400,
+      "limit": 1,
+      "room_vnum": 404,
+      "comment": "樹妖"
+    }
+  ]
+}

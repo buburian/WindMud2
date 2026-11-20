@@ -173,7 +173,9 @@ def look(ch):
     if not text.endswith("\n"):
         text += "\n"
     # 看不到的人（隱形、藏匿）不列：跟 find_in_room() 用同一個 light.visible()，「畫面上第 n 隻」才對得上
-    lines = [f"{tagged(c)}\n" for c in in_room(ch) if light.visible(ch, c)] + [f"{objects.on_floor(o)}\n" for o in room.contents]
+    # 地上一樣的東西合成一行「( 3) 」（使用者 2026-11-20 要的，objects.combined()；只有一件的照舊不空格）
+    floor = [f"{line}\n" for line in objects.combined((objects.on_floor(o) for o in room.contents), single="")]
+    lines = [f"{tagged(c)}\n" for c in in_room(ch) if light.visible(ch, c)] + floor
     if lines:
         text += "\n" + "".join(lines)
     return text
@@ -712,28 +714,41 @@ def do_save(ch, arg):
 AREA_KINDS = {AreaType.WORLD: "世界", AreaType.DYNAMIC: "動態", AreaType.INSTANCE: "副本"}   # area 指令寫的區域種類
 AREA_HEAD = ("區域", "等級", "種類", "入口", "作者")
 AREA_TITLE = "遊戲裡的區域（入口：從神殿大廳出發怎麼走，3s 是往南走 3 步）："
-AREA_HERE, AREA_NO_ENTRANCE = "就在這裡", "-----"   # 走不到、副本的入口（enter）還沒做：使用者 2026-11-20 要的，不寫字
+AREA_HERE, AREA_NO_ENTRANCE = "就在這裡", "-----"   # 走不到、沒有傳送門通進去的副本（教學學院）：使用者 2026-11-20 要的，不寫字
+NEW_MARK = " 新"                             # 開放 14 天內的區域（header.opened，zones.new_areas()）：名稱後面加亮黃的「新」（跟換區域的提示同色）
+
+
+def entrance(name):
+    """area 的入口欄（系統公告的新區域也用）：zones.routes 算好的走法，"" 是「就在這裡」，走不到、沒有傳送門通進去的副本是 -----。"""
+    route = zones.routes.get(name)
+    return AREA_NO_ENTRANCE if route is None else route or AREA_HERE
 
 
 def do_area(ch, arg):
     """area：遊戲裡有哪些區域（使用者 2026-11-20 要的，照 C 版 areas）：名稱、適合的等級、種類（世界、動態、副本）、
-    入口（從神殿大廳怎麼走，zones.routes，開機時算好；文字遊戲沒有地圖，使用者要的；沒有入口的寫 -----）、作者，照等級排。
+    入口（entrance()：從神殿大廳怎麼走，zones.routes，開機時算好；文字遊戲沒有地圖，使用者要的；沒有入口的寫 -----）、作者，照等級排。
+    開放 14 天內的（header.opened，zones.new_areas()）名稱後面加亮黃的「新」（使用者 2026-11-20 要的）。
 
-    資料是區域檔的 header（title、levels、type、author）：世界的在 zones.world.areas，動態、副本的在 zones.templates。
+    資料是區域檔的 header（title、levels、type、author、opened）：世界的在 zones.world.areas，動態、副本的在 zones.templates。
     """
     found = [(a.name, a.data) for a in (zones.world.areas if zones.world else [])]
     found += [(name, data) for name, (_kind, data) in zones.templates.items()]
+    new = {name for name, _header in zones.new_areas()}
     rows = []
     for name, data in found:
         h = data["area"]["header"]
         low, high = h["levels"]
-        route = zones.routes.get(name)
-        if AreaType(h["type"]) == AreaType.INSTANCE or route is None:
-            way = AREA_NO_ENTRANCE
-        else:
-            way = route or AREA_HERE
-        rows.append(((low, high, h["title"]), (h["title"], f"{low}～{high} 級", AREA_KINDS[AreaType(h["type"])], way, h["author"])))
-    table = [AREA_HEAD] + [cells for _key, cells in sorted(rows)]
-    widths = [max(width(r[i]) for r in table) for i in range(len(AREA_HEAD))]
-    lines = ["  " + "  ".join(pad(c, w) for c, w in zip(r, widths)).rstrip() for r in table]
+        rows.append(((low, high, h["title"]), name in new,
+                     (h["title"], f"{low}～{high} 級", AREA_KINDS[AreaType(h["type"])], entrance(name), h["author"])))
+    rows.sort(key=lambda row: row[0])
+    table = [(False, AREA_HEAD)] + [(is_new, (cells[0] + NEW_MARK * is_new, *cells[1:])) for _key, is_new, cells in rows]
+    widths = [max(width(cells[i]) for _new, cells in table) for i in range(len(AREA_HEAD))]
+    marked = colorize(BANNER_COLOR + NEW_MARK + "{x")       # 寬度照沒有顏色的字算，「新」最後才上色（顏色代碼不佔格）
+    lines = []
+    for is_new, cells in table:
+        padded = [pad(c, w) for c, w in zip(cells, widths)]
+        if is_new:
+            title = cells[0][:-len(NEW_MARK)]
+            padded[0] = title + marked + padded[0][len(cells[0]):]
+        lines.append(("  " + "  ".join(padded)).rstrip())
     ch.send(AREA_TITLE + "\n" + "\n".join(lines) + "\n")

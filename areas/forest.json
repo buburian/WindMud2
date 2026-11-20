@@ -15,7 +15,8 @@
       ],
       "type": "world",
       "reset_empty": 3,
-      "reset_players": 5
+      "reset_players": 5,
+      "opened": null
     },
     "recall": null,
     "no_teleport": null,
@@ -4225,6 +4226,32 @@
       "main_affix": null,
       "extra_descriptions": [],
       "script": null
+    },
+    {
+      "vnum": 10107,
+      "keywords": "hollow",
+      "short": "樹洞",
+      "long": "倒下的大樹根部裂開一個大樹洞，裡面透出幽幽的綠光。",
+      "item_type": 21,
+      "extra_flags": 0,
+      "wear_flags": 0,
+      "values": [
+        400,
+        0,
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "樹洞 hollow",
+          "description": "樹根翻起來的地方裂開一個洞，大得可以彎腰走進去。\n洞裡的泥土是濕的，一股青苔和爛木頭的味道往外冒。\n深處有一點一點的綠光，像是什麼東西在呼吸。\n"
+        }
+      ],
+      "script": null
     }
   ],
   "resets": [
@@ -5463,6 +5490,16 @@
       "room_vnum": 10151,
       "exit_count": 4,
       "comment": ""
+    },
+    {
+      "cmd": "O",
+      "if_flag": 0,
+      "obj_vnum": 10107,
+      "color": null,
+      "level": 1,
+      "limit": 0,
+      "room_vnum": 10113,
+      "comment": "樹洞（傳送門，通到副本 hollow.json）"
     }
   ]
 }

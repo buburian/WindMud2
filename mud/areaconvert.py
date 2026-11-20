@@ -122,7 +122,8 @@ def convert(old, name, vnums=None):
         "file": name,
         "area": {
             "header": {"levels": levels, "author": header["author"] if header else "", "title": header["title"] if header else name,
-                       "vnums": list(vnums), "type": area.AreaType.WORLD.value, "reset_empty": None, "reset_players": None},
+                       "vnums": list(vnums), "type": area.AreaType.WORLD.value, "reset_empty": None, "reset_players": None,
+                       "opened": None},
             "recall": recall,
             "no_teleport": old["area"].get("no_teleport") if old.get("area") else None,
             "clan_recall": old["area"].get("clan_recall") if old.get("area") else None,

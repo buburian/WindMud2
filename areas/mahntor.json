@@ -15,7 +15,8 @@
       ],
       "type": "world",
       "reset_empty": 2,
-      "reset_players": 4
+      "reset_players": 4,
+      "opened": null
     },
     "recall": null,
     "no_teleport": null,

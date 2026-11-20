@@ -19,6 +19,7 @@ export function openSettings({ data, roomChip, onDone }) {
     vmin: textInput({ id: "area-vnum-min", value: numberText(vnums[0]) }),
     vmax: textInput({ id: "area-vnum-max", value: numberText(vnums[1]) }),
     type: selectInput({ id: "area-type", value: header.type, options: AREA_TYPES }),
+    opened: textInput({ id: "area-opened", value: textOf(header.opened), placeholder: "YYYY-MM-DD" }),
     rempty: textInput({ id: "area-reset-empty", value: numberText(header.reset_empty), placeholder: String(RESET_EMPTY) }),
     rplayers: textInput({ id: "area-reset-players", value: numberText(header.reset_players), placeholder: String(RESET_PLAYERS) }),
     recall: textInput({ id: "area-recall", value: numberText(area.recall) }),
@@ -44,6 +45,7 @@ export function openSettings({ data, roomChip, onDone }) {
     if (changed("min") || changed("max")) set(header, "levels", [parseNumber(inputs.min.value), parseNumber(inputs.max.value)]);
     if (changed("vmin") || changed("vmax")) set(header, "vnums", [parseNumber(inputs.vmin.value), parseNumber(inputs.vmax.value)]);
     if (changed("type")) set(header, "type", inputs.type.value);
+    if (changed("opened")) set(header, "opened", inputs.opened.value.trim() || null);   // 空著是 null（不標「新」）
     if (changed("rempty")) set(header, "reset_empty", parseNumber(inputs.rempty.value));
     if (changed("rplayers")) set(header, "reset_players", parseNumber(inputs.rplayers.value));
     if (changed("recall")) set(area, "recall", parseNumber(inputs.recall.value));
@@ -73,7 +75,9 @@ export function openSettings({ data, roomChip, onDone }) {
           field({ id: "area-vnum-max", label: "最大號碼", input: inputs.vmax, style: "flex: 0 0 96px" }),
           h("span", { class: "code" }, "vnums"))),
       h("div", { class: "row" },
-        field({ id: "area-type", label: "區域種類", code: "type", input: inputs.type, extra: selectArrow(), style: "flex: 0 0 220px" })),
+        field({ id: "area-type", label: "區域種類", code: "type", input: inputs.type, extra: selectArrow(), style: "flex: 0 0 220px" }),
+        field({ id: "area-opened", label: "開放日期", code: "opened", input: inputs.opened, style: "flex: 0 0 180px",
+          tip: "寫了日期（例如 2026-11-20），14 天內 area 會標「新」、登入公告會列出；空著是不標" })),
       h("fieldset", null, h("legend", null, "幾分鐘重生一次"),
         h("div", { class: "row" },
           field({ id: "area-reset-empty", label: "沒有玩家時", code: "reset_empty", input: inputs.rempty, style: "flex: 0 0 180px",

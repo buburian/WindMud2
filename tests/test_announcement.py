@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from mud import announce, commands
+from mud import announce, commands, zones
 from mud.config import ANNOUNCE_FILE, ENCODING
 from player_helpers import PASSWORD, make_player_file
 from test_login import NORTH, folder, run, text  # noqa: F401（folder 是 fixture）
@@ -15,7 +15,8 @@ ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
 @pytest.fixture(autouse=True)
 def clean(monkeypatch):
-    monkeypatch.setattr(announce, "text", "")
+    monkeypatch.setattr(announce, "lines", [])
+    monkeypatch.setattr(announce, "version", None)
 
 
 def write(tmp_path, text):
@@ -35,27 +36,27 @@ def test_the_real_file_loads():
 @pytest.mark.parametrize("text", ["", "\n\n", "   \n"])
 def test_empty_means_no_announcement(tmp_path, text):
     announce.load(write(tmp_path, text))
-    assert announce.text == ""
+    assert announce.current() == ""
 
 
 def test_missing_file_means_no_announcement(tmp_path):
     announce.load(tmp_path / "nothing.txt")
-    assert announce.text == ""
+    assert announce.current() == ""
 
 
 def test_the_box(tmp_path):
     announce.load(write(tmp_path, "邪龍教派開放了。\n打 area 看怎麼走。\n\n"))   # 最後的空行不算
-    assert box(announce.text) == ["+--------------------+",          # 照最寬的那一行（18 格）
+    assert box(announce.current()) == ["+--------------------+",          # 照最寬的那一行（18 格）
                                        "| 【系統公告】       |",
                                        "| 邪龍教派開放了。   |",
                                        "| 打 area 看怎麼走。 |",
                                        "+--------------------+"]
-    assert announce.text.startswith("\x1b[33;1m+")             # 外框亮黃
+    assert announce.current().startswith("\x1b[33;1m+")             # 外框亮黃
 
 
 def test_colour_codes_do_not_count(tmp_path):
     announce.load(write(tmp_path, "{R注意{x：明天維修"))
-    rows = box(announce.text)
+    rows = box(announce.current())
     assert rows[2] == "| 注意：明天維修 |" and len({len(r.encode(ENCODING)) for r in rows}) == 1
 
 
@@ -68,12 +69,12 @@ def test_rules(tmp_path, text, problem):
     announce.load(write(tmp_path, "原本的"))
     with pytest.raises(ValueError, match=re.escape(problem)):
         announce.load(write(tmp_path, text))
-    assert "原本的" in announce.text                            # 有問題：原本的不動
+    assert "原本的" in announce.current()                            # 有問題：原本的不動
 
 
 def test_widest_line_that_fits(tmp_path):
     announce.load(write(tmp_path, "字" * 37 + "a"))        # 75 格剛好放得下，整個框 79 格
-    assert {len(r.encode(ENCODING)) for r in box(announce.text)} == {79}
+    assert {len(r.encode(ENCODING)) for r in box(announce.current())} == {79}
 
 
 def test_shown_between_welcome_and_the_room(folder, tmp_path):
@@ -114,7 +115,7 @@ def read(line):
 
 def test_read_announce(tmp_path):
     announce.load(write(tmp_path, "邪龍教派開放了。"))
-    assert read("read announce") == "\r\n".join(box(announce.text))
+    assert read("read announce") == "\r\n".join(box(announce.current()))
     assert read("rea ann") == read("read announce")                  # 指令、名字都可以縮寫
 
 
@@ -135,7 +136,7 @@ def test_read_keeps_the_old_abbreviations():
 
 def test_version_is_the_last_line(tmp_path):
     announce.load(write(tmp_path, "邪龍教派開放了。"), "7d3539e")
-    assert box(announce.text) == ["+------------------+",
+    assert box(announce.current()) == ["+------------------+",
                                   "| 【系統公告】     |",
                                   "| 邪龍教派開放了。 |",
                                   "| 版本 7d3539e     |",
@@ -144,12 +145,12 @@ def test_version_is_the_last_line(tmp_path):
 
 def test_no_announcement_no_version(tmp_path):
     announce.load(write(tmp_path, ""), "7d3539e")
-    assert announce.text == ""
+    assert announce.current() == ""
 
 
 def test_version_does_not_count_in_the_height(tmp_path):
     announce.load(write(tmp_path, "\n".join(["一行"] * announce.HEIGHT)), "7d3539e")   # 10 行剛好，加版本也行
-    assert box(announce.text)[-2] == "| 版本 7d3539e |"
+    assert box(announce.current())[-2] == "| 版本 7d3539e |"
 
 
 def test_commit_is_the_git_head(tmp_path):

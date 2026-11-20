@@ -15,7 +15,8 @@
       ],
       "type": "world",
       "reset_empty": 3,
-      "reset_players": 15
+      "reset_players": 15,
+      "opened": "2026-01-01"
     },
     "recall": 101,
     "no_teleport": null,
@@ -415,6 +416,27 @@
       "wear_flags": "1|2",
       "values": [
         0,
+        0,
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 112,
+      "keywords": "portal",
+      "short": "測試傳送門",
+      "long": "一道測試傳送門在半空中微微發亮。",
+      "item_type": 21,
+      "extra_flags": 0,
+      "wear_flags": 0,
+      "values": [
+        102,
         0,
         0,
         0

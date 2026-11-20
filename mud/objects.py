@@ -11,8 +11,8 @@ import random
 from . import area, equipment, maps, names, reserved, stats
 from .act import notify
 from .area import (CHANCE_MAX, CHARGED_ITEM_TYPES, CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE, DRINK_CON_ITEM_TYPE, FOOD_ITEM_TYPE,
-                   FOUNTAIN_ITEM_TYPE, LIGHT_ITEM_TYPE, MONEY_ITEM_TYPE, SKILL_ITEM_TYPES, WEAPON_ITEM_TYPE, Apply, Attack, ContainerFlag,
-                   ExtraFlag, ItemColor, WeaponKind, WearFlag, parse_flags, skill_slots, wear_slots)
+                   FOUNTAIN_ITEM_TYPE, LIGHT_ITEM_TYPE, MONEY_ITEM_TYPE, PORTAL_ITEM_TYPE, SKILL_ITEM_TYPES, WEAPON_ITEM_TYPE, Apply, Attack,
+                   ContainerFlag, ExtraFlag, ItemColor, WeaponKind, WearFlag, parse_flags, skill_slots, wear_slots)
 from .characters import Position
 from .color import colorize
 from .players import online_players
@@ -25,6 +25,7 @@ DECAY = "腐爛變成了灰塵。"                    # timer 到了的訊息（
 COLOR_CODES = {ItemColor.GRAY: "{D", ItemColor.WHITE: "{W", ItemColor.BLUE: "{B", ItemColor.PURPLE: "{M", ItemColor.ORANGE: "{y"}
 OTHER_CODE = "{G"
 ENGLISH, FLOOR, RESET = colorize("{C"), colorize("{W"), colorize("{x")    # 地上那一行亮白（使用者選的，跟生物一樣）
+PORTAL_TAG = colorize("{B(傳送門)")         # 傳送門的光圈（使用者 2026-11-20 要的）：跟角色的光圈一樣接在前面；亮紫已經是粉光
 BIND_NAMES = {ExtraFlag.BIND_PICKUP: "拾取後綁定", ExtraFlag.BIND_EQUIP: "裝備後綁定"}   # 綁定的兩種（設計文件 §3.10）
 # 有顏色的裝備的基本價格 ＝ 點數 × GEAR_PRICE_SCALE × exp(等級 ÷ GEAR_PRICE_LEVELS)（使用者 2026-11-18 定的：
 # 白色 1 級大約 10～20，99 級最貴的（雙手武器）不超過 5 萬）
@@ -291,12 +292,19 @@ def bound(obj):
 
 
 def inside(container):
-    """容器、屍體裡有什麼（look in 和打死生物後看屍體共用，照 C 版 act_info.c）：每件一行、前面空 5 格。
-
-    C 版會把一樣的合成「( 2) 」，先不做。
-    """
-    items = "".join(f"     {short(o)}\n" for o in container.contains) or "     空無一物。\n"
+    """容器、屍體裡有什麼（look in 和打死生物後看屍體共用，照 C 版 act_info.c）：一樣的合成一行（combined()）。"""
+    items = "".join(line + "\n" for line in combined(short(o) for o in container.contains)) or "     空無一物。\n"
     return f"{container.name}裝著：\n{items}"
+
+
+def combined(texts, single="     "):
+    """清單裡一樣的合成一行（照 C 版 show_list_to_char，使用者 2026-11-20 要的）：「( 6) 野兔肉/hare meat」，只有一件前面接 single
+    （背包、look in 是空 5 格；look 的地上是不空，維持原本的樣子）。照第一件出現的順序。
+    只是畫面合起來：找東西照樣一件一件數（2.meat 是第 2 件，names.py）。"""
+    counts = {}
+    for text in texts:
+        counts[text] = counts.get(text, 0) + 1
+    return [(f"({n:2d}) " if n > 1 else single) + text for text, n in counts.items()]
 
 
 def english_tail(obj):
@@ -307,7 +315,8 @@ def english_tail(obj):
 
 def on_floor(obj):
     """房間裡看到 obj 的那一行（沒有換行）：描述亮白（跟生物一樣），後面接「/英文名字」亮青（使用者定的：「一把測試長劍插在地上。/sword」）。"""
-    return FLOOR + obj.long.rstrip("\n") + english_tail(obj) + RESET
+    tag = PORTAL_TAG if obj.item_type == PORTAL_ITEM_TYPE else ""
+    return tag + FLOOR + obj.long.rstrip("\n") + english_tail(obj) + RESET
 
 
 def extra_descriptions(obj):
@@ -318,6 +327,12 @@ def extra_descriptions(obj):
         return [(obj.keywords + [maps.KEYWORD], drawn)]
     proto = protos.get(obj.vnum)
     return area.extra_descriptions(proto["extra_descriptions"]) if proto else []
+
+
+def portal_target(obj):
+    """傳送門通到的房間號碼（區域檔 values 第 1 個，開機檢查過是存在的房間）；不是傳送門、區域檔沒有是 None。"""
+    proto = protos.get(obj.vnum)
+    return proto["values"][0] if proto and obj.item_type == PORTAL_ITEM_TYPE else None
 
 
 def find(objs, name):

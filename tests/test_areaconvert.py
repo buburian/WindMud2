@@ -76,7 +76,8 @@ def test_header_and_range(tmp_path):
     data, _ = areaconvert.convert(old_area(two_rooms()), "new.json")
     assert data["file"] == "new.json"
     assert data["area"]["header"] == {"levels": [1, 100], "author": "*Diku", "title": "舊城", "vnums": [3001, 3002],
-                                      "type": "world", "reset_empty": None, "reset_players": None}   # 舊的寫 All：1～100；範圍是最小、最大的號碼；重生用預設
+                                      "type": "world", "reset_empty": None, "reset_players": None,
+                                      "opened": None}   # 舊的寫 All：1～100；範圍是最小、最大的號碼；重生用預設；轉過來的不標「新」
     data, _ = areaconvert.convert(old_area(two_rooms(), levels=(5, 25)), "new.json", [3000, 3399])
     assert data["area"]["header"]["levels"] == [5, 25] and data["area"]["header"]["vnums"] == [3000, 3399]
     assert problems_of(tmp_path, data) == []

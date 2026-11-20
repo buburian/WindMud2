@@ -11,9 +11,11 @@
 系統區域檔（header.type 是 system，使用者 2026-11-20 定的，學 C 版 limbo.are）放程式要用的物品、生物（屍體、金幣、召喚物，reserved.py），
 沒有房間、重置；只有程式用號碼做出來，別的區域檔不能指到它。
 """
+import datetime
 import enum
 import json
 import math
+import re
 from pathlib import Path
 
 from . import equipment
@@ -257,6 +259,7 @@ SKILL_ITEM_TYPES = (SCROLL_ITEM_TYPE, WAND_ITEM_TYPE, STAFF_ITEM_TYPE, POTION_IT
 CHARGED_ITEM_TYPES = (WAND_ITEM_TYPE, STAFF_ITEM_TYPE)    # 有次數的（values 第 3 個是剩幾次，到 0 就碎掉）
 CONTAINER_ITEM_TYPE = 15                    # 物品種類 15 容器：get 東西 容器 可以從裡面拿
 BOAT_ITEM_TYPE = 22                         # 物品種類 22 船隻：背包裡有船才進得去要船的水（terrain.py）
+PORTAL_ITEM_TYPE = 21                       # 物品種類 21 傳送門（新系統加的，使用者 2026-11-20）：enter 到 values 第 1 個的房間（commands/portal.py）
 
 
 class ContainerFlag(enum.IntFlag):
@@ -270,7 +273,7 @@ class ContainerFlag(enum.IntFlag):
 # 物品種類的中文（手冊的 item_type 表，有測試比對）：exam、ostat 顯示用。區域檢查還沒限制只能寫表裡的數字
 ITEM_TYPE_NAMES = {
     1: "照明用具", 2: "卷軸", 3: "魔杖", 4: "魔棒", 5: "武器", 6: "弓", 8: "寶藏", 9: "護具", 10: "藥水", 12: "家具",
-    13: "垃圾", 15: "容器", 17: "液體容器", 18: "鑰匙", 19: "食物", 20: "金錢", 22: "船隻", 23: "怪物屍體", 24: "玩家屍體",
+    13: "垃圾", 15: "容器", 17: "液體容器", 18: "鑰匙", 19: "食物", 20: "金錢", 21: "傳送門", 22: "船隻", 23: "怪物屍體", 24: "玩家屍體",
     25: "噴泉", 26: "藥錠",
 }
 CORPSE_NPC_ITEM_TYPE = 23                   # 物品種類 23 怪物屍體：生物死掉時遊戲做出來的（objects.make_corpse），裡面放掉落的物品
@@ -368,7 +371,7 @@ def reset_minutes(header):
 # 每一層要剛好有這些欄位
 TOP_KEYS = ("schema_version", "file", "area", "rooms", "mobiles", "objects", "resets")
 AREA_KEYS = ("header", "recall", "no_teleport", "clan_recall", "gem")
-HEADER_KEYS = ("levels", "author", "title", "vnums", "type", "reset_empty", "reset_players")
+HEADER_KEYS = ("levels", "author", "title", "vnums", "type", "reset_empty", "reset_players", "opened")
 ROOM_KEYS = ("vnum", "name", "description", "room_flags", "sector", "exits", "extra_descriptions", "script")
 EXIT_KEYS = ("description", "keywords", "locks", "key", "to_room")
 EXTRA_KEYS = ("keywords", "description")
@@ -581,7 +584,18 @@ def check_files(paths, reference=(), script_root=None):
         if isinstance(data, dict):
             check_fixed_items(path.name, data, objects, mob_levels, problems[path])
             check_doors(path.name, data, rooms, problems[path])
+            check_portals(path.name, data, owner, problems[path])
     return problems
+
+
+def check_portals(name, data, owner, problems):
+    """傳送門的目的地（values 第 1 個）要是存在的房間，可以在別的檔（例如副本）。owner 是房間號碼 → 檔名。寫錯格式的別的規則會報。"""
+    for o in data.get("objects") if isinstance(data.get("objects"), list) else []:
+        if not (isinstance(o, dict) and o.get("item_type") == PORTAL_ITEM_TYPE and isinstance(o.get("values"), list)
+                and o["values"] and is_vnum(o["values"][0])):
+            continue
+        if o["values"][0] not in owner:
+            problems.append(f"{name}：物品 {o.get('vnum')} 是傳送門，目的地（values 第 1 個）指到不存在的房間 {o['values'][0]}")
 
 
 def world_exits(paths):
@@ -960,6 +974,16 @@ def check_reset_minutes(name, header, problems):
                             f"沒有玩家時重生不能比有玩家時慢（null 是預設的 {RESET_EMPTY}、{RESET_PLAYERS} 分鐘）")
 
 
+def opened_date(value):
+    """header.opened（開放日期，使用者 2026-11-20 要的）：寫對的 "YYYY-MM-DD" 回傳 datetime.date，null、寫錯、沒有這一天是 None。"""
+    if not (isinstance(value, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", value)):
+        return None
+    try:
+        return datetime.date.fromisoformat(value)
+    except ValueError:
+        return None
+
+
 def check_area(name, area, problems):
     """檢查 area 區塊。回傳 (號碼範圍 (最小, 最大), recall, type)，不對的就是 None。"""
     vnums = recall = kind = None
@@ -989,6 +1013,9 @@ def check_area(name, area, problems):
                 problems.append(f"{name}：area.header.vnums 要寫 [最小, 最大] 兩個整數，最小不能小於 {MIN_VNUM}"
                                 f"（1～99 是系統區域檔用的）、不能大於最大，不能是 {header['vnums']!r}")
         check_reset_minutes(name, header, problems)
+        if "opened" in header and header["opened"] is not None and opened_date(header["opened"]) is None:
+            problems.append(f"{name}：area.header.opened 要是 null 或開放日期 \"YYYY-MM-DD\"（例如 \"2026-11-20\"，要有這一天），"
+                            f"不能是 {header['opened']!r}")
     if "recall" in area and area["recall"] is not None and check_ref(f"{name}：area.recall ", area["recall"], problems):
         recall = area["recall"]
     if "no_teleport" in area and not (area["no_teleport"] is None or (is_int(area["no_teleport"]) and area["no_teleport"] in (0, 1))):
@@ -1149,6 +1176,10 @@ def check_object(where, o, problems):
         check_skill_item(where, o["item_type"], o["values"], problems)
     elif o.get("item_type") in (FOOD_ITEM_TYPE, DRINK_CON_ITEM_TYPE, FOUNTAIN_ITEM_TYPE) and "values" in o:
         check_meal_item(where, o["item_type"], o["values"], problems)
+    elif o.get("item_type") == PORTAL_ITEM_TYPE and "values" in o and not is_vnum(o["values"][0]):
+        problems.append(f"{where}是傳送門：values 第 1 個要寫目的地房間的遊戲號碼（{MIN_VNUM} 以上），不能是 {o['values'][0]!r}")
+    if o.get("item_type") == PORTAL_ITEM_TYPE and wear & WearFlag.TAKE:
+        problems.append(f"{where}是傳送門：wear_flags {o['wear_flags']!r} 不能有 1（撿得起來），傳送門要留在房間裡")
     if "affects" in o:
         if not isinstance(o["affects"], list):
             problems.append(f"{where}的 affects 要寫成 […]，不能是 {o['affects']!r}")
