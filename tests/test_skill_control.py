@@ -28,7 +28,7 @@ def test_stun_strike_rolls_to_hit_then_stuns(world):
     p = hero(learn=["stun_strike"])
     dog = the_dog()
     got = in_fight([], lambda: say(p, "use stun dog"))
-    assert got == reply(p, "你對野狗施展了【擊暈】。", "野狗被打暈了！")
+    assert got == reply(p, "你對野狗施展了【擊暈】。", "野狗被打暈了！", "野狗十分的健康，完整。")     # 最後是對手的受傷狀態
     a = control_of(dog, "stun_strike")
     assert (a.control, a.tag, a.duration * TICK_SECONDS) == ("stun", "暈", 4)
 
@@ -37,7 +37,7 @@ def test_control_can_miss(world, monkeypatch):
     monkeypatch.setattr(combat, "rng", Always(0.99))
     p = hero(learn=["stun_strike"])
     dog = the_dog()
-    assert in_fight([], lambda: say(p, "use stun dog")) == reply(p, "你對野狗施展【擊暈】，但是失手了。")
+    assert in_fight([], lambda: say(p, "use stun dog")) == reply(p, "你對野狗施展【擊暈】，但是失手了。", "野狗十分的健康，完整。")
     assert dog.affects == []
 
 
@@ -59,7 +59,7 @@ def test_already_stunned_or_resisting_is_unaffected(world):
     dog = the_dog()
     stun(dog, "freeze", 3)
     got = in_fight([], lambda: say(p, "use stun dog"))
-    assert got == reply(p, "你對野狗施展了【擊暈】。", "野狗沒有受到影響。")
+    assert got == reply(p, "你對野狗施展了【擊暈】。", "野狗沒有受到影響。", "野狗十分的健康，完整。")
     assert [a.source for a in dog.affects] == ["test_freeze"]       # 不重算時間，也不多一個
     for _ in range(3):
         affects.tick()

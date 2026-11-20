@@ -1193,6 +1193,7 @@
       "cost": 500,
       "affects": [],
       "main_affix": "int",
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "眼鏡 glasses",
@@ -1219,6 +1220,7 @@
       "cost": 50,
       "affects": [],
       "main_affix": "dex",
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "草帽 帽子 hat",
@@ -1245,6 +1247,7 @@
       "cost": 2000,
       "affects": [],
       "main_affix": "str",
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "斧頭 axe",
@@ -1271,6 +1274,7 @@
       "cost": 500,
       "affects": [],
       "main_affix": "int",
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "項鍊 necklace",
@@ -1297,6 +1301,7 @@
       "cost": 60,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "藥劑 potion",
@@ -1323,6 +1328,7 @@
       "cost": 150,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "魔杖 wand",
@@ -1349,6 +1355,7 @@
       "cost": 50,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key",
@@ -1375,6 +1382,7 @@
       "cost": 3000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -1396,6 +1404,7 @@
       "cost": 50,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key",

@@ -326,6 +326,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -347,6 +348,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -368,6 +370,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     }

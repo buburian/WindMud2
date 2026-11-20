@@ -411,7 +411,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     起始房間 `config.START_ROOM` 是秋風城的神殿大廳 3001（`areas/midgaard.json`，見下面「秋風城」）。之後會照使用者的指示繼續改格式。`area`、每個房間、每隻生物、每個物品和每筆重置的欄位**一個都不能少**，
     巢狀欄位也要有範例值（`extra_descriptions` 放一筆；`script`：房間 102 用 `areas/test/鐘聲.lua`、生物 101 用 `商人.lua`、物品 102 是物品的舊格式；生物 101「測試商人」的每個欄位都有值，生物 102「測試坐騎」示範 null／空的寫法；生物 103「野兔」是練功用的 1 級一般怪，重置放 3 隻在房間 102（使用者要的）；
     物品 101～104 是藥水、長劍、箱子、麵包（重置用到 101、103、104），物品 102「測試長劍」每個欄位都有值；物品 105～109 是給 `oload` 試裝備用的（盾牌、匕首（副手）、大劍（雙手）、戒指、皮甲，都沒寫 affects，給顏色就抽隨機屬性；不在重置裡，使用者同意加的；105 盾牌的 `main_affix` 是 `"hp"`，試必出的主詞綴）；
-    物品 110、111 是拾取後綁定、裝備後綁定的戒指（給 `oload` 試綁定，不在重置裡，使用者同意加的）；物品 112 是測試傳送門（目的地 102，給 `oload` 試，不在重置裡，使用者 2026-11-20 確認的）；
+    物品 110、111 是拾取後綁定、裝備後綁定的戒指（給 `oload` 試綁定，不在重置裡，使用者同意加的）；物品 112 是測試傳送門（目的地 102，給 `oload` 試，不在重置裡，使用者 2026-11-20 確認的）；物品 115 是測試油燈（旅具 `rest_res`，給 `oload` 試，不在重置裡，使用者 2026-11-20 確認的）；
     `resets` 每種指令各一筆；房間 101 往北、房間 102 往南的出口是同一扇木門（門兩邊都要寫），給 `D` 的範例用）：使用者靠它看系統還缺哪些功能。
     房間的文字可以用顏色代碼。
     **每個欄位的意思和新系統的實作進度寫在 `docs/區域製作手冊.md`**：改區域檔格式、或做了新的區域功能時，
@@ -515,7 +515,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   坑：起始房間 `START_ROOM` 是 3001，自己做區域檔的測試裡沒有它：會用到 `zones.start_room()` 的（玩家死掉、建角、讀檔找不到房間、走進動態區域）要 `monkeypatch.setattr(zones, "START_ROOM", 101)`。
 - **秋風城外四區**（世界區域，新手區，使用者 2026-11-19 放進來的）：城西森林草原 `forest.json`（1～8 級，西城門外 3052 往西）、城東森林 `foresteast.json`（6～12 級，東城門外 3053 往東）、
   城北平原 `north_plains.json`（10～15 級，北城牆下的刻字 3217 往北）、河流區 `river.json`（12～16 級，碼頭 3049 往南，全區要船）。舊區域轉的，文字照世界觀改寫；生物、物品、重置照使用者核准的設計重做：
-  沒有主動攻擊（使用者定的：主動攻擊只規劃在副本）、菁英和首領以外都會走動；掉落一般怪白 30%／藍 30%／紫 10%／橘 5%（使用者 2026-11-19 從 10／10／4／1 改的），菁英藍 100%／紫 55%／橘 5%，首領藍 100%／紫 70%／橘 10%（各自骰，藍色保底），兔、豬、魚另外 30% 掉肉。2026-11-20 使用者要的：首領以外的生物數量加倍（M 筆數和 limit 一起 ×2，城北平原的旅行者、白髮老人沒動），重生是 `reset_empty` 3、`reset_players` 5 分鐘（秋風城照舊 null）。
+  沒有主動攻擊（使用者定的：主動攻擊只規劃在副本）、菁英和首領以外都會走動；掉落一般怪白 30%／藍 30%／紫 10%／橘 3%（使用者 2026-11-19 從 10／10／4／1 改的，橘色 2026-11-20 從 5% 降到 3%），菁英藍 100%／紫 55%／橘 3%，首領藍 100%／紫 70%／橘 10%（各自骰，藍色保底），兔、豬、魚另外 30% 掉肉。2026-11-20 使用者要的：首領以外的生物數量加倍（M 筆數和 limit 一起 ×2，城北平原的旅行者、白髮老人沒動），重生是 `reset_empty` 3、`reset_players` 5 分鐘（秋風城照舊 null）。
   通到還沒轉的區域的出口轉換時拿掉了，所以有幾間進不去或出不來（只能 recall），等那些區域轉過來再接。
 - **牛頭人要塞**（`mahntor.json`，世界區域，20～30 級，號碼 `[2300, 2399]`，重生 2／4 分鐘，使用者 2026-11-20 放進來的）：舊的 mahntor1.are 轉的，
   城西森林草原「石崖下的林緣」10128 往南進黑森林 2300。地圖：黑森林 → 山坡、山洞 → 海岸 → 祭壇「血海入口」2324 的藍光入口 → 漂浮在藍光中 2326 → 冰河聖殿 2353 → 雪原 → 峭壁 → 要塞（石堡、競技場的八個鬥士、牛頭人王曼托爾）；
@@ -550,7 +550,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - tick loop：世界和全部動態區域**共用一個**（世界 tick，`zones.start()` 開始），每次先做世界、再做每個動態區域；
     **副本每份自己一個**（建立時開始，釋放時結束）。間隔 `TICK_SECONDS` 固定 1 秒（使用者 2026-11-04 從 30 秒改成 1 秒，不加亂數）。
     **定時做的事都用「每幾個 tick 做一次」定義**（使用者定的）：數字在 `config.py`（`ROUND_TICKS` 2、`HOUR_TICKS` 30、`REGEN_TICKS` 30、`AREA_TICKS` 60、`OBJ_TICKS` 30、`AFFECT_PULSE_TICKS` 3、`RELEASE_TICKS` 1200、
-    `MOBILE_TICKS` 5、`SPECIAL_TICKS` 6、`CHOKE_TICKS` 3、`MEAL_TICKS` 10），表在玩家角色手冊「定時做的事」，改數字要一起改表。每個區域物件一次 tick 要做的事寫在 `Zone.tick()`，用 `self.ticks % N == 0`：
+    `MOBILE_TICKS` 5、`SPECIAL_TICKS` 6、`CHOKE_TICKS` 3、`MEAL_TICKS` 10、`TRAVEL_TICKS` 10），表在玩家角色手冊「定時做的事」，改數字要一起改表。每個區域物件一次 tick 要做的事寫在 `Zone.tick()`，用 `self.ticks % N == 0`：
     世界每 `HOUR_TICKS` 走一次天氣、每 `REGEN_TICKS`（30）在線玩家和全部生物回復一次（`stats.regen()`，照姿勢：站 10%、休息 20%、睡 30%，休息睡覺再乘 `skills.rest_regen()`（調息、冥想），
     戰鬥中不回）、每個 tick 數技能的冷卻（`skills.tick()`）、走身上的效果（`affects.tick()`）、生物的行為（`behavior.tick()`）；動態區域、副本數要不要釋放。
     **掛在角色身上的定時事情（回復、技能冷卻、身上的效果、生物的行為）放世界 tick、全部角色一起做**：副本的 loop 跟世界節拍不同步，放各區域的 tick 會走來走去多做或少做。
@@ -590,6 +590,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
       亂數用 `combat.rng`（測試換掉）。一開始就記住 `ch.fight`：打死時 `die()` 會把它清掉。
     - **一回合的訊息合成一段**：`combat` 用 `act.compose()` 放進 `Fight.messages`（`Fight.tell()`），`round()` 結束（`finally`）時 `flush()`，
       每個人只 `notify()` 一次（一下一個 notify 會冒出好幾個 prompt）。`flush(me=ch)`：ch 那段當作指令的回覆送（`send`，prompt 由 `command()` 補），技能用。
+      **每段最後加 `fight.status(讀的人)`**：他正在打的對手的受傷狀態（`system.condition()`，跟 look 那行一樣，使用者 2026-11-21 要的）；對手死了、不在同一間房、沒在打的人沒有。
     - **技能**（`skills.py`，規則在玩家角色手冊「技能」，設計文件 §2.6）：`Skill` 的資料照 balance.py 的 `SKILLS`，**新增傷害技能只要在 `SKILLS` 加一筆**
       （還有 `help/help.json` 的說明）。**技能自己設計誰會**（使用者定的）：`starter` 是建立角色就會的公會，空的要用程式加（`learn()`：之後的學習、技能書，現在是 imm 的 `sset`）；
       `imm_only` 是只有 imm 會（imm 自動會，`learn()` 不加；balance.py 沒有，測試只比其他的）。
@@ -805,6 +806,11 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `mud/sets.py`：`zones.load()` 讀（資料夾沒有就是沒有套裝，測試自己的資料夾不受影響）、`set_of()`、`strength()`（floor(50% × Σ `piece_points()` ÷ 單價)，`piece_points()` 跟 `roll_item` 的點數一樣）、`active()`（穿齊、等級 ≤ 套裝 ＋ 10）。
     `objects.create()` 套裝的物品：等級照套裝表、綠色（`{g` 暗綠）、拾取後綁定、名字前面「〔套裝名〕」（`make()` 是原本的做法）。綠色跟橘色一樣（`equipment.COLOR_BONUS`、`MAIN_AFFIX_COLORS`）。
     `stats.set_bonus()` 在 `recompute()` 裝備後面加；淬火石 `commands/temper.SET_ITEM` 拒絕；`items.set_lines()` 是 examine 的兩行；`system.set_lines()` 是 score 的「套裝效果」（穿了至少一件就列，沒穿齊、已失效的整行灰色）；ostat 也寫。紅布獵手：城北平原 99806、99807（禿鷹、兇猛的獅子 green 10%），命中 +6。`tests/test_sets.py`。
+  - **旅具**（使用者 2026-11-20 定的，設計文件 §3.12，規則在玩家角色手冊「旅具」、區域製作手冊「travel_effect」）：物品的 `travel_effect`（`area.TravelEffect` 的代號或 null；`check_travel_effect()`：只有部位是光源、持握的（`wear_slots` → `best_slot`，跟穿上去一樣）、會用掉的東西（`CONSUMED_ITEM_TYPES`：會放技能的物品、食物）不行），
+    放出來的顏色不是灰色、null 才有作用（`travel.effect_of()`）。`Obj.travel_effect` 存檔（舊存檔是 None）。量在 `travel.amount()`：物品等級的裸裝 HP（`HP_STANDARD × G(L)`）或公會資源（`stats.resource_standard`）× 比例 × 顏色加成，`stats.shown()`、最少 1。
+    接的地方：世界每 `TRAVEL_TICKS` 的 `travel.tick()`（回資源）、`stats.regen()`（`rest_bonus()`：休息睡覺、吃喝回得快）、`stats.carry_limit()`、`affects.step()`（`cure_step()`，連帶 `seconds_left`）、`death.player_dies()`（`revive_hp()`）、
+    `light.burn()`（有作用的不燒）、`objects.base_price()`／`full_price()`（照同等級同顏色的戒指）、examine 的詩、score 的 `system.travel_lines()`、ostat。打架中沒作用（carry 除外），光源、持握一樣的加起來；不是 affect。
+    坑：`travel` import `stats`，所以 `stats` 在函式裡才 import `travel`。`tests/test_travel.py`。第一件：城西森林的黑毛母狼掉獵戶的舊油燈（10108，白 90%）。
   - **淬火石**（設計文件 §3.11，使用者 2026-11-20 核准，規則在玩家角色手冊「淬火石」）：`Player.temper_stones`（存檔，不是物品），score 金幣後面。
     算法 `equipment.temper()`（照 balance.py 的 `temper_item`，`test_equipment.py` 用同一個種子比對；Obj.affects 存的順序就是主、次、第三條、補零頭，零頭照它補；
     單價 0 的龍焰抗性原樣留著）。`temper.py`：掉落 `drop()`（`combat.slain()` 經驗後面，亂數 `temper.rng`，不動 combat.rng）、`result()`／`apply()`（綁住 `BIND_PICKUP`）。

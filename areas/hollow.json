@@ -304,6 +304,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "樹洞口 hollow",
@@ -330,6 +331,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "巨槌 hammer",
@@ -356,6 +358,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "匕首 dagger",
@@ -382,6 +385,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "披風 cloak",
@@ -408,6 +412,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "戒指 ring",
@@ -434,6 +439,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "護腿 leggings",
@@ -460,6 +466,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "護腕 bracer",

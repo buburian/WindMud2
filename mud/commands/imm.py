@@ -7,7 +7,7 @@ import logging
 import time
 from collections import Counter
 
-from .. import affects, death, equipment, health, inventory, light, lua, names, objects, paths, sets, skills, stats, zones
+from .. import affects, death, equipment, health, inventory, light, lua, names, objects, paths, sets, skills, stats, travel, zones
 from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act, notify
 from ..area import (AFFECT_FLAG_NAMES, ATTACK_NAMES, DIRECTIONS, ITEM_TYPE_NAMES, MIN_VNUM, WEAPON_KIND_NAMES, AffectFlag, Apply,
                     AreaType, ItemColor, RoomFlag, vnum_range)
@@ -170,6 +170,8 @@ def obj_text(obj):
         lines.append(f"點數 {points:.1f} / 上限 {equipment.cap(obj.level, obj.slot) * bonus:.1f}（{obj.color or '沒有顏色'} ×{bonus:g}）")
     lines.append(f"地上那一行 {obj.long}")
     lines.append(f"timer {obj.timer if obj.timer is not None else '無'}  裡面 {len(obj.contains)} 件")
+    if obj.travel_effect is not None:       # 旅具（travel.py）：顏色是灰色、null 的沒有作用
+        lines.append(f"旅具 {obj.travel_effect}" + ("" if travel.effect_of(obj) else f"（顏色 {obj.color or '無'}：沒有作用）"))
     s = sets.set_of(obj.vnum)
     if s is not None:                       # 套裝（sets.py）：哪一套、幾級、特效
         lines.append(f"套裝 {s.name}（{s.level} 級，{'、'.join(map(str, s.items))}）  特效 {s.bonus} +{sets.strength(s)}")
@@ -183,7 +185,7 @@ def proto_text(vnum, proto):
              f"item_type {proto['item_type']} {ITEM_TYPE_NAMES.get(proto['item_type'], '？')}  wear_flags {proto['wear_flags']}"
              f"  extra_flags {proto['extra_flags']}  weight {proto['weight']}",
              f"values {json.dumps(proto['values'], ensure_ascii=False)}",
-             f"affects {affects}",
+             f"affects {affects}  main_affix {proto['main_affix']}  travel_effect {proto['travel_effect']}",
              f"long {proto['long']}"]
     return "\n".join(lines) + "\n"
 

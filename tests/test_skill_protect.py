@@ -36,7 +36,7 @@ def test_taunt_turns_the_mobile_on_you(world):
     p, ming = knight(learn=["taunt"]), knight("Ming")
     dog = mobile("野狗")
     got, foe = in_fight([(ming, dog)], lambda: (say(p, "use taunt dog"), dog.fighting))
-    assert got == reply(p, "你對野狗施展了【挑釁】。", "野狗被激怒了！")
+    assert got == reply(p, "你對野狗施展了【挑釁】。", "野狗被激怒了！", "野狗十分的健康，完整。")
     assert foe is p
     provoked = next(a for a in dog.affects if a.source == "taunt")
     assert (provoked.tag, provoked.duration * TICK_SECONDS) == ("被挑釁", 6)

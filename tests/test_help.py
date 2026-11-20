@@ -243,7 +243,8 @@ def test_imm_category_is_only_for_imm():
 
 def test_help_command():
     want = ("kill <名字>（縮寫 k）\r\n打同房間的生物，牠會自動還手。\r\n名字只要打開頭，例如 kill do。同名的用 2.dog 指定畫面上第 2 隻。\r\n"
-            "不可以打玩家，自己也不行。安全區裡不能開打。\r\n休息、睡覺時不能用，要先 stand。\r\n\r\n> ")
+            "不可以打玩家，自己也不行。安全區裡不能開打。\r\n打的時候，每段訊息最後一行是對手傷得多重（跟 look 看到的一樣）。\r\n"
+            "休息、睡覺時不能用，要先 stand。\r\n\r\n> ")
     for line in ("help kill", "help k", "help ki", "help K", "help Kill"):
         assert say(line) == want, line
 

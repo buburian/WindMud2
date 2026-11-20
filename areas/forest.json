@@ -3708,7 +3708,7 @@
         {
           "obj_vnum": 10101,
           "color": "orange",
-          "chance": 500,
+          "chance": 300,
           "tiers": null
         }
       ],
@@ -3758,7 +3758,13 @@
         {
           "obj_vnum": 10101,
           "color": "orange",
-          "chance": 500,
+          "chance": 300,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 10108,
+          "color": "white",
+          "chance": 9000,
           "tiers": null
         }
       ],
@@ -3840,7 +3846,7 @@
         {
           "obj_vnum": 10103,
           "color": "orange",
-          "chance": 500,
+          "chance": 300,
           "tiers": null
         }
       ],
@@ -3890,7 +3896,7 @@
         {
           "obj_vnum": 10102,
           "color": "orange",
-          "chance": 500,
+          "chance": 300,
           "tiers": null
         }
       ],
@@ -3947,7 +3953,7 @@
         {
           "obj_vnum": 10104,
           "color": "orange",
-          "chance": 500,
+          "chance": 300,
           "tiers": [
             "normal"
           ]
@@ -3971,7 +3977,7 @@
         {
           "obj_vnum": 10104,
           "color": "orange",
-          "chance": 500,
+          "chance": 300,
           "tiers": [
             "elite"
           ]
@@ -4023,7 +4029,7 @@
         {
           "obj_vnum": 10105,
           "color": "orange",
-          "chance": 500,
+          "chance": 300,
           "tiers": null
         }
       ],
@@ -4098,6 +4104,7 @@
       "cost": 5,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -4119,6 +4126,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -4140,6 +4148,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -4161,6 +4170,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -4182,6 +4192,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -4203,6 +4214,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -4224,6 +4236,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -4245,10 +4258,38 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "樹洞 hollow",
           "description": "樹根翻起來的地方裂開一個洞，大得可以彎腰走進去。\n洞裡的泥土是濕的，一股青苔和爛木頭的味道往外冒。\n深處有一點一點的綠光，像是什麼東西在呼吸。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 10108,
+      "keywords": "lamp oil",
+      "short": "獵戶的舊油燈",
+      "long": "一盞燈罩燻黑的舊油燈倒在地上。",
+      "item_type": 1,
+      "extra_flags": 0,
+      "wear_flags": 1,
+      "values": [
+        0,
+        0,
+        -1,
+        0
+      ],
+      "weight": 3,
+      "cost": 0,
+      "affects": [],
+      "main_affix": null,
+      "travel_effect": "rest_res",
+      "extra_descriptions": [
+        {
+          "keywords": "油燈 lamp",
+          "description": "銅框已經生鏽，燈罩被煙燻得發黑，燈芯卻還亮著一點小火，\n怎麼吹都不熄。提把上纏著一段破布，像是哪個獵戶走得急掉下的。\n"
         }
       ],
       "script": null

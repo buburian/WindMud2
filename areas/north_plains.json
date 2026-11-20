@@ -1527,7 +1527,7 @@
         {
           "obj_vnum": 99803,
           "color": "orange",
-          "chance": 500,
+          "chance": 300,
           "tiers": [
             "normal"
           ]
@@ -1551,7 +1551,7 @@
         {
           "obj_vnum": 99803,
           "color": "orange",
-          "chance": 500,
+          "chance": 300,
           "tiers": [
             "elite"
           ]
@@ -1641,7 +1641,7 @@
         {
           "obj_vnum": 99802,
           "color": "orange",
-          "chance": 500,
+          "chance": 300,
           "tiers": [
             "normal"
           ]
@@ -1665,7 +1665,7 @@
         {
           "obj_vnum": 99802,
           "color": "orange",
-          "chance": 500,
+          "chance": 300,
           "tiers": [
             "elite"
           ]
@@ -1717,7 +1717,7 @@
         {
           "obj_vnum": 99804,
           "color": "orange",
-          "chance": 500,
+          "chance": 300,
           "tiers": null
         },
         {
@@ -1798,6 +1798,7 @@
       "cost": 5,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -1819,6 +1820,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -1840,6 +1842,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -1861,6 +1864,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -1882,6 +1886,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -1903,6 +1908,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": "crit",
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "戒指 ring",
@@ -1929,6 +1935,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": "critdmg",
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "戒指 ring",

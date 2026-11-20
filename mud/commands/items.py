@@ -6,9 +6,10 @@
 import logging
 import re
 
-from .. import inventory, light, objects, save, scripts, sets, stats
+from .. import inventory, light, objects, save, scripts, sets, stats, travel
 from ..act import TO_NOTVICT, TO_ROOM, TO_VICT
 from ..characters import Position, characters, find_in_room
+from ..color import colorize
 from ..players import Player
 from ..config import DONATION_PIT
 from ..npcs import Npc
@@ -514,7 +515,7 @@ def do_examine(ch, arg):
 
 
 def identify(obj, ch=None):
-    """exam 的每一行：名稱和種類、重量和等級（有顏色才寫稀有度），裝備才有部位，武器、護具、加成有才列；
+    """exam 的每一行：名稱和種類、重量和等級（有顏色才寫稀有度），裝備才有部位，武器、護具、加成有才列，旅具寫一句詩；
     套裝的最後兩行寫哪一套、ch 身上穿了幾件、特效和幾級以後沒有（set_lines()，使用者 2026-11-20 要的）。"""
     kind = ITEM_TYPE_NAMES.get(obj.item_type, str(obj.item_type))
     lines = [f"物品名稱：【{objects.short(obj)}】，型式：【{kind}】",
@@ -532,6 +533,8 @@ def identify(obj, ch=None):
         lines.append("加成：" + "、".join(f"{STAT_NAMES[a.name.lower()]} {n:+}" for a, n in obj.affects))
     if obj.bind is not None:
         lines.append(f"綁定：【{objects.BIND_NAMES[obj.bind]}】")      # 只寫哪一種（使用者 2026-11-20 要的）；綁住了沒看背包的（綁定）
+    if travel.poem(obj) is not None:        # 旅具：只寫一句詩、顏色照稀有度，不寫數字（使用者 2026-11-20 定的；數字在 score）
+        lines.append("旅具：" + colorize(objects.COLOR_CODES[obj.color] + travel.poem(obj) + "{x"))
     return lines + set_lines(obj, ch)
 
 

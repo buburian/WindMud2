@@ -2206,6 +2206,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key",
@@ -2232,6 +2233,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key",
@@ -2258,6 +2260,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key",
@@ -2284,6 +2287,7 @@
       "cost": 4000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "長劍 sword",
@@ -2310,6 +2314,7 @@
       "cost": 4000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "頭盔 helm",
@@ -2336,6 +2341,7 @@
       "cost": 1000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "護袍 robes",
@@ -2362,6 +2368,7 @@
       "cost": 300,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鐵筆 pen",
@@ -2388,6 +2395,7 @@
       "cost": 300,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "匕首 dagger",
@@ -2414,6 +2422,7 @@
       "cost": 300,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "木杖 staff",
@@ -2440,6 +2449,7 @@
       "cost": 5000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "長袍 robes",
@@ -2466,6 +2476,7 @@
       "cost": 5000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "長袍 robes",
@@ -2492,6 +2503,7 @@
       "cost": 10,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "白袍 robe",
@@ -2518,6 +2530,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key",
@@ -2544,6 +2557,7 @@
       "cost": 1000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "長褲 pants",
@@ -2570,6 +2584,7 @@
       "cost": 10,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -2591,6 +2606,7 @@
       "cost": 5,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -2612,6 +2628,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": "res_phys",
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "圍裙 apron",
@@ -2638,6 +2655,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "綁腿 leggings",
@@ -2664,6 +2682,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": "con",
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "骨戒 ring",
@@ -2695,6 +2714,7 @@
         }
       ],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "頸飾 necklace",
@@ -2721,6 +2741,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "小冊 pamphlet",

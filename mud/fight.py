@@ -146,10 +146,23 @@ class Fight:
         """
         messages, self.messages = self.messages, {}
         for reader, lines in messages.items():
+            lines += status(reader)
             if reader is me:
                 reader.send("\n".join(lines) + "\n")
             else:
                 notify(reader, "\n".join(lines))
+
+
+def status(reader):
+    """reader 這段戰鬥訊息的最後一行：他正在打的對手的受傷狀態，跟 look 那行一樣（「野狗有一些小傷口。」，使用者 2026-11-21 要的）。
+
+    對手死了、跑了（停手了）、沒有屬性（測試直接建的）就沒有這行。名字照 act 的規則（看不到是「某人」）。
+    """
+    from .commands import system            # 坑：commands 會 import 回來，在函式裡才 import
+    victim = reader.fighting
+    if victim is None or victim not in characters or victim.room is not reader.room or not getattr(victim, "panel", None):
+        return []
+    return [text for _, text in act.compose("$N" + system.condition(victim), reader, victim, to=act.TO_CHAR)]
 
 
 def attacks(ch):

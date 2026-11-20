@@ -294,6 +294,17 @@ export const MAIN_AFFIXES = [
   ["res_spell", "法術抗性（抗魔）"],
 ];
 
+// 物品的 travel_effect（旅具效果，使用者 2026-11-20 定的）：area.TravelEffect，跟手冊的表一樣（代號、效果）；null 是沒有
+export const TRAVEL_EFFECTS = [
+  ["regen", "回 MP／MV"],
+  ["rest_hp", "多回 HP"],
+  ["rest_res", "多回 MP／MV"],
+  ["meal", "吃喝更有效"],
+  ["carry", "背得多"],
+  ["cure", "早點解毒"],
+  ["revive", "死後不虛弱"],
+];
+
 // 武器 values 第 1 個：武器種類（area.WeaponKind，手冊的武器種類表）
 export const WEAPON_KINDS = [
   [1, "匕首（單手）"],

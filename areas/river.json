@@ -1145,7 +1145,7 @@
         {
           "obj_vnum": 14601,
           "color": "orange",
-          "chance": 500,
+          "chance": 300,
           "tiers": null
         }
       ],
@@ -1194,7 +1194,7 @@
         {
           "obj_vnum": 14602,
           "color": "orange",
-          "chance": 500,
+          "chance": 300,
           "tiers": null
         }
       ],
@@ -1252,7 +1252,7 @@
         {
           "obj_vnum": 14603,
           "color": "orange",
-          "chance": 500,
+          "chance": 300,
           "tiers": [
             "normal"
           ]
@@ -1276,7 +1276,7 @@
         {
           "obj_vnum": 14603,
           "color": "orange",
-          "chance": 500,
+          "chance": 300,
           "tiers": [
             "elite"
           ]
@@ -1353,6 +1353,7 @@
       "cost": 5,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -1374,6 +1375,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -1395,6 +1397,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -1416,6 +1419,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -1437,6 +1441,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     }

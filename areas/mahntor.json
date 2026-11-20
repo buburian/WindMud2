@@ -5831,6 +5831,7 @@
       "cost": 10000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "手套 gloves",
@@ -5857,6 +5858,7 @@
       "cost": 25000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鍊甲 chainmail",
@@ -5883,6 +5885,7 @@
       "cost": 25000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -5904,6 +5907,7 @@
       "cost": 25000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -5925,6 +5929,7 @@
       "cost": 50000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "短棍 rod",
@@ -5951,6 +5956,7 @@
       "cost": 25000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "斗篷 cloak",
@@ -5977,6 +5983,7 @@
       "cost": 10000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -5998,6 +6005,7 @@
       "cost": 15000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "手套 gauntlets",
@@ -6024,6 +6032,7 @@
       "cost": 50000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "盾牌 shield",
@@ -6050,6 +6059,7 @@
       "cost": 75000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "匕首 dagger",
@@ -6076,6 +6086,7 @@
       "cost": 25000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "頭盔 helm",
@@ -6102,6 +6113,7 @@
       "cost": 35000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -6123,6 +6135,7 @@
       "cost": 15000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -6144,6 +6157,7 @@
       "cost": 10000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "塔盾 shield",
@@ -6170,6 +6184,7 @@
       "cost": 50000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "釘頭鎚 mace",
@@ -6196,6 +6211,7 @@
       "cost": 25000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "眼鏡 spectacles",
@@ -6222,6 +6238,7 @@
       "cost": 25000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "戒指 ring",
@@ -6248,6 +6265,7 @@
       "cost": 50000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "罩袍 robe",
@@ -6274,6 +6292,7 @@
       "cost": 35000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "手杖 staff",
@@ -6300,6 +6319,7 @@
       "cost": 15000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "腰帶 girdle",
@@ -6326,6 +6346,7 @@
       "cost": 15000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -6347,6 +6368,7 @@
       "cost": 50000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -6368,6 +6390,7 @@
       "cost": 25000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "釘頭鎚 mace",
@@ -6394,6 +6417,7 @@
       "cost": 10000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "聖徽 symbol",
@@ -6420,6 +6444,7 @@
       "cost": 10000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -6441,6 +6466,7 @@
       "cost": 30000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -6462,6 +6488,7 @@
       "cost": 45000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "皮靴 boots",
@@ -6488,6 +6515,7 @@
       "cost": 25000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "斗篷 cloak",
@@ -6514,6 +6542,7 @@
       "cost": 45000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "手杖 staff",
@@ -6540,6 +6569,7 @@
       "cost": 25000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -6561,6 +6591,7 @@
       "cost": 50000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "腰帶 belt",
@@ -6587,6 +6618,7 @@
       "cost": 45000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "石頭 stone",
@@ -6613,6 +6645,7 @@
       "cost": 35000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "長矛 spear",
@@ -6639,6 +6672,7 @@
       "cost": 1000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "背包 pack",
@@ -6665,6 +6699,7 @@
       "cost": 25000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -6686,6 +6721,7 @@
       "cost": 3500,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -6707,6 +6743,7 @@
       "cost": 15000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "長褲 pants",
@@ -6733,6 +6770,7 @@
       "cost": 50000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "匕首 dagger",
@@ -6759,6 +6797,7 @@
       "cost": 100000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "護袍 robe",
@@ -6785,6 +6824,7 @@
       "cost": 100000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鍊甲 chainmail",
@@ -6811,6 +6851,7 @@
       "cost": 22500,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -6832,6 +6873,7 @@
       "cost": 5000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -6853,6 +6895,7 @@
       "cost": 20000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -6874,6 +6917,7 @@
       "cost": 100000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "巨斧 axe",
@@ -6900,6 +6944,7 @@
       "cost": 50000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鎧甲 plate",
@@ -6926,6 +6971,7 @@
       "cost": 15000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "頭盔 helm",
@@ -6952,6 +6998,7 @@
       "cost": 10000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "長劍 blade",
@@ -6978,6 +7025,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key keep",
@@ -7004,6 +7052,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key red",
@@ -7030,6 +7079,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key black",
@@ -7056,6 +7106,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key white",
@@ -7082,6 +7133,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key brown",
@@ -7108,6 +7160,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key yellow",
@@ -7134,6 +7187,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key maroon",
@@ -7160,6 +7214,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key green",
@@ -7186,6 +7241,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key grey gray",
@@ -7212,6 +7268,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙 key runed",
@@ -7238,6 +7295,7 @@
       "cost": 10000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7259,6 +7317,7 @@
       "cost": 5000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7280,6 +7339,7 @@
       "cost": 10000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "長劍 sword",
@@ -7306,6 +7366,7 @@
       "cost": 5000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7327,6 +7388,7 @@
       "cost": 5000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7348,6 +7410,7 @@
       "cost": 7500,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7369,6 +7432,7 @@
       "cost": 8000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7390,6 +7454,7 @@
       "cost": 3000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7411,6 +7476,7 @@
       "cost": 20000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7432,6 +7498,7 @@
       "cost": 10000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7453,6 +7520,7 @@
       "cost": 10000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7474,6 +7542,7 @@
       "cost": 10000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7495,6 +7564,7 @@
       "cost": 20000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7516,6 +7586,7 @@
       "cost": 20000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7537,6 +7608,7 @@
       "cost": 20000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7558,6 +7630,7 @@
       "cost": 20000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7579,6 +7652,7 @@
       "cost": 45000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7600,6 +7674,7 @@
       "cost": 40000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7621,6 +7696,7 @@
       "cost": 40000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7642,6 +7718,7 @@
       "cost": 40000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7663,6 +7740,7 @@
       "cost": 65000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "流星鎚 morningstar",
@@ -7689,6 +7767,7 @@
       "cost": 15000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "指套 knuckles",
@@ -7715,6 +7794,7 @@
       "cost": 500,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鑰匙環 keyring",
@@ -7741,6 +7821,7 @@
       "cost": 100000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "戰鎚 maul",
@@ -7767,6 +7848,7 @@
       "cost": 3500,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7788,6 +7870,7 @@
       "cost": 1000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7809,6 +7892,7 @@
       "cost": 2500,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7830,6 +7914,7 @@
       "cost": 3500,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7851,6 +7936,7 @@
       "cost": 15000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7872,6 +7958,7 @@
       "cost": 75000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "鐵手套 手套 gauntlets",
@@ -7898,6 +7985,7 @@
       "cost": 15000,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7919,6 +8007,7 @@
       "cost": 2500,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7940,6 +8029,7 @@
       "cost": 1500,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -7961,6 +8051,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "巨鑰 key giant",
@@ -7987,6 +8078,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": "crit",
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "戒指 ring",
@@ -8013,6 +8105,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": "res_phys",
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "圓盾 shield",
@@ -8039,6 +8132,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "披風 cloak",
@@ -8065,6 +8159,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "腰帶 belt",

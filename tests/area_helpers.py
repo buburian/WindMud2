@@ -29,7 +29,7 @@ def make_object(vnum):
     return {
         "vnum": vnum, "keywords": f"obj{vnum}", "short": f"物品{vnum}", "long": "",
         "item_type": 5, "extra_flags": 0, "wear_flags": "1|8192", "values": [2, 1, 4, 3], "weight": 1, "cost": 0,
-        "affects": [{"location": 1, "modifier": 1}], "main_affix": None,
+        "affects": [{"location": 1, "modifier": 1}], "main_affix": None, "travel_effect": None,
         "extra_descriptions": [{"keywords": "劍 sword", "description": ""}],
         "script": {"trigger": {"value": 64, "names": ["say"]}, "function": "os_test"},
     }

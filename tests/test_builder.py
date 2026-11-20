@@ -332,3 +332,13 @@ def test_main_affixes_match_equipment_and_manual():
     block = re.search(r"export const MAIN_AFFIXES = \[(.*?)\n\];", text, re.S)[1]
     assert re.findall(r'\["[a-z_]+", "([^"]*)"\]', block) == [f"{equipment.STAT_NAMES[k]}（{w}）" for k, w in equipment.AFFIX_WORD.items()]
     assert "affects: [], main_affix: null," in (STATIC / "model.js").read_text(encoding="utf-8")    # 新物品照舊隨機
+
+
+def test_travel_effects_match_area_and_manual():
+    # 物品的旅具效果（travel_effect）：編輯器的選單、手冊的表、area.TravelEffect 三邊一樣（代號、效果的名字）
+    rows = manual_rows("### travel_effect（旅具效果）")
+    assert tables_js("TRAVEL_EFFECTS") == [row[0] for row in rows] == [c.value for c in area.TravelEffect]
+    text = (STATIC / "tables.js").read_text(encoding="utf-8")
+    block = re.search(r"export const TRAVEL_EFFECTS = \[(.*?)\n\];", text, re.S)[1]
+    assert re.findall(r'\["[a-z_]+", "([^"]*)"\]', block) == [row[1] for row in rows]
+    assert "main_affix: null, travel_effect: null," in (STATIC / "model.js").read_text(encoding="utf-8")   # 新物品沒有

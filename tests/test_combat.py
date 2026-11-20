@@ -11,10 +11,11 @@ import pytest
 import mud.commands as commands
 from area_helpers import make_area, make_mobile, make_room, write_json
 from mud import combat, damage, fight, objects, save, stats, zones
-from mud.area import CORPSE_NPC_ITEM_TYPE
+from mud.area import CORPSE_NPC_ITEM_TYPE, AffectFlag
 from mud.characters import Position, characters
 from mud.color import colorize
 from mud.commands import combat as combat_commands
+from mud.commands.system import CONDITIONS, DYING, condition
 from mud.config import ENCODING
 from mud.npcs import Npc
 from mud.players import Player
@@ -181,6 +182,44 @@ def test_hit_messages(world):
     assert plain.count(prompt_of(shabu)) == 1                # 一回合好幾下，只有一個 prompt
     assert f"Shabu使用直拳攻擊野狗，對它造成{words}{punct}({n})" in text_of(ming)   # 同房間的人那句不上色
     assert dog.hp == pytest.approx(dog.panel["hp"] - mine * hits_in_first_round(shabu))
+
+
+# ---- 對手的受傷狀態 ----
+
+def test_round_ends_with_the_foes_condition(world):
+    # 每段戰鬥訊息的最後一行是對手的受傷狀態，跟 look 那行一樣（使用者 2026-11-21 要的）；旁邊沒在打的人沒有
+    shabu, ming = fighter("Shabu"), fighter("Ming")
+    dog = the_dog()
+    one_round((shabu, dog))
+    hurt = "野狗" + condition(dog)
+    assert dog.hp < dog.panel["hp"] and hurt != "野狗" + CONDITIONS[0][1]     # 真的打傷了，不是一開始那句
+    lines = text_of(shabu).split("\r\n")
+    assert lines[-3:] == [hurt, "", prompt_of(shabu)] and lines.count(hurt) == 1
+    assert hurt not in text_of(ming)
+
+
+def test_no_condition_after_the_foe_dies(world):
+    shabu = fighter("Shabu")
+    dog = the_dog()
+    dog.hp = 0.1                                            # 第一下就死
+    one_round((shabu, dog))
+    out = text_of(shabu)
+    assert "野狗已經斷氣" in out and not any(text in out for text in [t for _, t in CONDITIONS] + [DYING])
+
+
+def test_condition_line_names_like_act(world):
+    # 看不到對手是「某人」（跟戰鬥訊息一樣照 act）；對手不在同一間房就沒有這行
+    shabu = fighter("Shabu")
+    dog = the_dog()
+
+    async def main():
+        fight.start_fight(shabu, dog)
+        dog.affected_by |= AffectFlag.INVISIBLE
+        unseen = fight.status(shabu)
+        dog.room = zones.world.rooms[101]
+        return unseen, fight.status(shabu)
+
+    assert asyncio.run(main()) == (["某人" + CONDITIONS[0][1]], [])
 
 
 def hits_in_first_round(ch):

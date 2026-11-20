@@ -182,6 +182,18 @@ class ItemColor(enum.StrEnum):
     GREEN = "green"                         # 綠：只給套裝用（sets.py），跟橘一樣 ×1.4、必出主詞綴也多 30%（使用者 2026-11-20 定的）
 
 
+class TravelEffect(enum.StrEnum):
+    """旅具效果（物品的 travel_effect，設計文件 §3.12，使用者 2026-11-20 定的）：光源、持握帶一種跟打架無關的續航效果。
+    值是區域檔裡寫的代號，要跟手冊「travel_effect」的表一樣（有測試比對）。L 是物品等級，量再乘顏色加成。"""
+    REGEN = "regen"                         # 回資源：沒在打架時每 10 秒回自己公會的資源(L) × 2%
+    REST_HP = "rest_hp"                     # 多回 HP：休息、睡覺時每 30 秒跟著回復多回裸裝 HP(L) × 10%
+    REST_RES = "rest_res"                   # 多回資源：休息、睡覺時每 30 秒跟著回復多回自己公會的資源(L) × 10%
+    MEAL = "meal"                           # 吃喝更有效：吃喝加倍有效時每 30 秒多回（吃的 HP、喝的資源，× 15%）
+    CARRY = "carry"                         # 背得多：負重上限加多少（照物品等級）
+    CURE = "cure"                           # 早點解毒：沒在打架時，持續扣血的效果時間過得快一倍
+    REVIVE = "revive"                       # 死後不虛弱：死掉回到起始房間時 HP 回到裸裝 HP(L) × 50%
+
+
 CHANCE_MAX = 10000                          # 機率以萬分之一為單位（tier_roll、drops 的 chance）：10000 是 100%
 
 
@@ -404,7 +416,7 @@ SPECIALS = (
 DROP_KEYS = ("obj_vnum", "color", "chance", "tiers")    # 掉落表的一行
 SHOP_KEYS = ("buy_types", "profit_buy", "profit_sell", "open_hour", "close_hour")
 OBJECT_KEYS = ("vnum", "keywords", "short", "long", "item_type", "extra_flags", "wear_flags",
-               "values", "weight", "cost", "affects", "main_affix", "extra_descriptions", "script")
+               "values", "weight", "cost", "affects", "main_affix", "travel_effect", "extra_descriptions", "script")
 AFFECT_KEYS = ("location", "modifier")
 # 重置：每種指令的欄位（照順序執行，G 跟著前面最近的 M）。舊版的 E（穿裝備、給坐騎）拿掉了：生物不穿裝備
 RESET_KEYS = {
@@ -1303,6 +1315,8 @@ def check_object(where, o, problems):
                     check_ints(w, a, AFFECT_KEYS, problems)
     if o.get("main_affix") is not None:
         check_main_affix(where, o, problems)
+    if o.get("travel_effect") is not None:
+        check_travel_effect(where, o, problems)
     if "extra_descriptions" in o:
         check_extra_descriptions(where, o["extra_descriptions"], problems)
     if o.get("script") is not None:
@@ -1327,6 +1341,32 @@ def check_main_affix(where, o, problems):
         problems.append(f"{where}沒有穿戴部位、不是裝備，main_affix 要寫 null（不能是 {value!r}）")
     elif equipment.cap(1, slot) == 0:
         problems.append(f"{where}穿在{equipment.SLOT_NAMES[slot]}，這個部位沒有點數、抽不到屬性，main_affix 要寫 null（不能是 {value!r}）")
+
+
+TRAVEL_SLOTS = ("light", "hold")            # 旅具只能是這兩個部位（沒有點數的部位，設計文件 §3.12）
+# 會用掉、用完就不見的東西不能當旅具（設計文件 §3.12，使用者 2026-11-20 定魔杖魔棒、mud_design 同天擴大到全部）：
+# 會放技能的物品（卷軸、魔杖、魔棒、藥水、藥錠）和食物
+CONSUMED_ITEM_TYPES = (*SKILL_ITEM_TYPES, FOOD_ITEM_TYPE)
+
+
+def check_travel_effect(where, o, problems):
+    """旅具效果（travel_effect，使用者 2026-11-20 定的）：寫 TravelEffect 的代號，null 是沒有（不用檢查）。
+    只有穿在光源、持握的物品能寫（部位照 wear_slots → best_slot，跟穿上去的部位一樣）；會用掉的東西不能寫（用完就不見了）。"""
+    value = o["travel_effect"]
+    if value not in codes(TravelEffect):
+        problems.append(f"{where}的 travel_effect 要寫 {'、'.join(codes(TravelEffect))} 其中一個或 null，不能是 {value!r}")
+        return
+    if o.get("item_type") in CONSUMED_ITEM_TYPES:
+        problems.append(f"{where}是{ITEM_TYPE_NAMES[o['item_type']]}，會用掉、用完就不見了，不能當旅具：travel_effect 要寫 null（不能是 {value!r}）")
+        return
+    try:
+        slots, two_handed = wear_slots(o)
+    except ValueError:
+        return                              # wear_flags 寫錯：上面已經報了
+    slot = equipment.best_slot(slots, two_handed)
+    if slot not in TRAVEL_SLOTS:
+        place = "沒有穿戴部位" if slot is None else f"穿在{equipment.SLOT_NAMES.get(slot, '主手＋副手（雙手）')}"
+        problems.append(f"{where}{place}：只有照明用具（光源）和穿在持握（16384）的物品能當旅具，travel_effect 要寫 null（不能是 {value!r}）")
 
 
 

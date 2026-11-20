@@ -8,7 +8,7 @@ import logging
 import math
 import random
 
-from . import area, equipment, maps, names, reserved, sets, stats
+from . import area, equipment, maps, names, reserved, sets, stats, travel
 from .act import notify
 from .area import (CHANCE_MAX, CHARGED_ITEM_TYPES, CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE, DRINK_CON_ITEM_TYPE, FOOD_ITEM_TYPE,
                    FOUNTAIN_ITEM_TYPE, LIGHT_ITEM_TYPE, MONEY_ITEM_TYPE, PORTAL_ITEM_TYPE, SKILL_ITEM_TYPES, WEAPON_ITEM_TYPE, Apply, Attack,
@@ -54,6 +54,7 @@ class Obj:
         self.for_sale = False               # 店裡賣的（重置 G 給店主的，shops.py）：賣不完，買的時候照區域檔重做一件。不存檔
         self.unrolled = False               # 店裡的隨機裝備：還沒抽屬性（買的時候才抽，使用者 2026-11-18 定的），只有名字。不存檔
         self.main_affix = None              # 區域檔寫的必出主詞綴（隨機裝備才有，equipment.roll_item 的 forced）：店裡還沒抽的算價錢用。不存檔
+        self.travel_effect = None           # 區域檔寫的旅具效果（area.TravelEffect 的代號，travel.py）：顏色不是灰色、null 才有作用。存檔
         self.weight = 0                     # 重量（區域檔的 weight）
         self.cost = 0                       # 價格（區域檔的 cost）：裝備以外的物品的基本價格（base_price）
         self.take = False                  # 撿不撿得起來（wear_flags 有 1 take）；屍體撿不起來
@@ -120,6 +121,7 @@ def make(vnum, level, color, rng=random, for_sale=False):
     obj.take = bool(parse_flags(proto["wear_flags"]) & WearFlag.TAKE)
     obj.bind = next((b for b in BIND_NAMES if parse_flags(proto["extra_flags"]) & b), None)
     slot = obj.slot = equipment.best_slot(*wear_slots(proto))
+    obj.travel_effect = proto["travel_effect"]      # 旅具（使用者 2026-11-20 定的）：放在下面幾個提早的 return 前面
     if proto["item_type"] == CONTAINER_ITEM_TYPE:
         # 鑰匙跟出口的 key 一樣寫完整的遊戲號碼（0 以下是沒有鑰匙）
         _, flags, key, seal = (int(v) if str(v).lstrip("-").isdecimal() else 0 for v in proto["values"])
@@ -202,6 +204,8 @@ def base_price(obj, level=None):
     if obj.color == ItemColor.GRAY:
         return 1
     level = obj.level if level is None else level
+    if travel.effect_of(obj) is not None:   # 旅具沒有點數：當作同等級、同顏色的戒指算（設計文件 §3.7）
+        return max(1, gear_price(equipment.cap(level, travel.PRICE_SLOT) * equipment.COLOR_BONUS[obj.color], level))
     points = sum(n * equipment.price(a.name.lower(), level) for a, n in obj.affects if a != Apply.NONE)
     return max(1, gear_price(points, level))
 
@@ -209,7 +213,8 @@ def base_price(obj, level=None):
 def full_price(obj, level):
     """店裡還沒抽屬性的隨機裝備（obj.unrolled）的基本價格：level 級、這個顏色的點數用滿（部位上限 × 顏色加成）；
     寫了必出主詞綴的橘色再加主詞綴多拿的（equipment.extra_points）。抽出來的點數不會超過它，所以買到的那件賣回去不會比買的貴。"""
-    budget = equipment.cap(level, obj.slot) * equipment.COLOR_BONUS[obj.color]
+    slot = travel.PRICE_SLOT if travel.effect_of(obj) is not None else obj.slot     # 旅具照戒指算（設計文件 §3.7）
+    budget = equipment.cap(level, slot) * equipment.COLOR_BONUS[obj.color]
     extra = equipment.extra_points(budget, obj.color) if obj.main_affix else 0.0
     return max(1, gear_price(budget + extra, level))
 
@@ -360,7 +365,7 @@ def weight(obj):
 
 
 FIELDS = ("vnum", "name", "long", "item_type", "level", "color", "base", "weight", "take", "slot")
-LATER_FIELDS = {"key": None, "seal": 0, "cost": 0, "bound": False}    # 後來才加的欄位：舊存檔沒有，用這個值
+LATER_FIELDS = {"key": None, "seal": 0, "cost": 0, "bound": False, "travel_effect": None}   # 後來才加的欄位：舊存檔沒有，用這個值
 
 
 def to_data(obj):
@@ -372,7 +377,7 @@ def to_data(obj):
                 container=None if obj.container is None else int(obj.container), key=obj.key, seal=obj.seal, holds=obj.holds,
                 cost=obj.cost,
                 hours=obj.hours, skills=list(obj.skills), charges=obj.charges, contains=[to_data(o) for o in obj.contains],
-                bind=None if obj.bind is None else int(obj.bind), bound=obj.bound,
+                bind=None if obj.bind is None else int(obj.bind), bound=obj.bound, travel_effect=obj.travel_effect,
                 **{k: getattr(obj, k) for k in MEAL_FIELDS})
     return data
 

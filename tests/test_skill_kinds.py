@@ -219,7 +219,7 @@ def test_poison_blade_can_miss(world, monkeypatch):
     ming = hero("Ming")
     plain(ming)
     got, seen, foe = in_fight([], lambda: (say(p, "use poison dog"), plain(ming), p.fighting))
-    assert got == reply(p, "你對野狗施展【毒刃】，但是失手了。")
+    assert got == reply(p, "你對野狗施展【毒刃】，但是失手了。", "野狗十分的健康，完整。")
     assert seen == f"\r\nShabu對野狗施展【毒刃】，但是失手了。\r\n\r\n{prompt_of(ming)}"
     assert dog.affects == [] and foe is dog                          # 沒放上去，還是開打了
 

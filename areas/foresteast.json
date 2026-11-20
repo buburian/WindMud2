@@ -1893,7 +1893,7 @@
         {
           "obj_vnum": 14706,
           "color": "orange",
-          "chance": 500,
+          "chance": 300,
           "tiers": null
         }
       ],
@@ -1942,7 +1942,7 @@
         {
           "obj_vnum": 14705,
           "color": "orange",
-          "chance": 500,
+          "chance": 300,
           "tiers": null
         },
         {
@@ -2006,7 +2006,7 @@
         {
           "obj_vnum": 14707,
           "color": "orange",
-          "chance": 500,
+          "chance": 300,
           "tiers": [
             "normal"
           ]
@@ -2030,7 +2030,7 @@
         {
           "obj_vnum": 14707,
           "color": "orange",
-          "chance": 500,
+          "chance": 300,
           "tiers": [
             "elite"
           ]
@@ -2076,7 +2076,7 @@
         {
           "obj_vnum": 14708,
           "color": "orange",
-          "chance": 500,
+          "chance": 300,
           "tiers": null
         }
       ],
@@ -2107,6 +2107,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "屍體 corpse",
@@ -2133,6 +2134,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "紙條 note",
@@ -2159,6 +2161,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [
         {
           "keywords": "路標 sign",
@@ -2185,6 +2188,7 @@
       "cost": 5,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -2206,6 +2210,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -2227,6 +2232,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -2248,6 +2254,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -2269,6 +2276,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     },
@@ -2290,6 +2298,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
+      "travel_effect": null,
       "extra_descriptions": [],
       "script": null
     }

@@ -354,7 +354,7 @@ export function newMobile(vnum) {
 export function newObject(vnum) {
   return {
     vnum, keywords: "新物品", short: "新物品", long: "", item_type: 8, extra_flags: 0, wear_flags: 1,
-    values: [0, 0, 0, 0], weight: 1, cost: 0, affects: [], main_affix: null, extra_descriptions: [], script: null,
+    values: [0, 0, 0, 0], weight: 1, cost: 0, affects: [], main_affix: null, travel_effect: null, extra_descriptions: [], script: null,
   };
 }
 

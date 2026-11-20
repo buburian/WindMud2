@@ -6,7 +6,7 @@
 """
 import random
 
-from . import affects, fight, meals, objects, scripts, summons, zones   # 坑：fight → combat → death → fight 繞一圈，所以用 fight.stop_fighting，不 from import
+from . import affects, fight, meals, objects, scripts, summons, travel, zones   # 坑：fight → combat → death → fight 繞一圈，所以用 fight.stop_fighting，不 from import
 from .characters import Position, characters
 
 
@@ -45,11 +45,12 @@ def die(npc, rng=random, killer=None):
 
 
 def player_dies(player):
-    """玩家死掉：打他的人和他停手，「死掉後不在」的效果拿掉，回「家」（zones.home：起始房間，學生是學院的第一間），HP 剩 1、站著（使用者選的）。"""
+    """玩家死掉：打他的人和他停手，「死掉後不在」的效果拿掉，回「家」（zones.home：起始房間，學生是學院的第一間），HP 剩 1、站著（使用者選的）。
+    穿著死後不虛弱的旅具：HP 回到它的量（不超過上限，設計文件 §3.12）。"""
     stop_all(player)
     affects.on_death(player)
     summons.release(player)                 # 主人死掉：召喚物消失
     player.room = zones.home(player)
-    player.hp = 1.0
+    player.hp = float(travel.revive_hp(player) or 1)
     player.position = Position.STANDING
     meals.cancel(player)

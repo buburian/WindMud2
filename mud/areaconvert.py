@@ -234,7 +234,8 @@ def convert_object(o, report):
         report.dropped.append(f"{where}的 C 版腳本 {o['script']['function']}")
     return {"vnum": o["vnum"], "keywords": o["keywords"], "short": o["short"], "long": o["long"], "item_type": item_type,
             "extra_flags": extra, "wear_flags": wear, "values": values, "weight": o["weight"], "cost": o["cost"],
-            "affects": [], "main_affix": None, "extra_descriptions": [dict(ed) for ed in o["extra_descriptions"]], "script": None}
+            "affects": [], "main_affix": None, "travel_effect": None,
+            "extra_descriptions": [dict(ed) for ed in o["extra_descriptions"]], "script": None}
 
 
 def spells_to_skills(where, item_type, values, report):

@@ -30,6 +30,7 @@ MOBILE_TICKS = 5             # 每 5 tick 站著的生物做平常的事：平�
 SPECIAL_TICKS = 6            # 打架用的 special：開打後先等 6 tick，之後每 6 tick 放一次（設計文件 §4.11，specials.py）
 CHOKE_TICKS = 3              # 在水底沒有水中呼吸的玩家每 3 tick 窒息一次（terrain.choke）
 MEAL_TICKS = 10              # 吃喝之後連續坐（或睡）滿 10 tick 才有效果（設計文件 §3.9，meals.py）
+TRAVEL_TICKS = 10            # 旅具的「回資源」每 10 tick 回一次（設計文件 §3.12，travel.tick）
 PLAYER_DIR = "players"       # 玩家存檔的資料夾（一個角色一個 JSON 檔），跟 areas/ 同一層，不進 git
 BUILDER_DIR = "builder_area"   # 區域編輯器存區域檔的資料夾，跟 areas/ 同一層
 BUILDER_PORT = 1234            # 區域編輯器的網頁 port

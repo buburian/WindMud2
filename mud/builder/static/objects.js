@@ -81,6 +81,9 @@ function basicTab(ctx, obj) {
     // 必出的主詞綴：只有隨機裝備（affects 是 []）能寫，橘色另外多 30%（手冊 main_affix）
     codeField({ id: "obj-main-affix", label: "必出的主詞綴", code: "main_affix", obj, key: "main_affix",
       options: [[null, "照舊隨機"], ...T.MAIN_AFFIXES], done }),
+    // 旅具效果：只有照明用具和持握能寫，會用掉的東西不行（手冊 travel_effect）
+    codeField({ id: "obj-travel-effect", label: "旅具效果", code: "travel_effect", obj, key: "travel_effect",
+      options: [[null, "沒有"], ...T.TRAVEL_EFFECTS], done }),
     section("數值", "values", valuesGrid(ctx, obj)),
     h("div", { class: "stack sep" },
       flagsField({ legend: "特性", code: "extra_flags", obj, key: "extra_flags", table: T.EXTRA_FLAGS, columns: 3, done }),

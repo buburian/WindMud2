@@ -343,7 +343,7 @@ def test_faerie_fire(world):
     out, fighting = asyncio.run(main())
     dog = npc(101)
     assert fighting is dog and affects.has_flag(dog, AffectFlag.FAERIE_FIRE)
-    assert out == "你不再隱形了。\r\n粉紅色的光圈將野狗團團圍住了。"     # 放減益也算出手：現形
+    assert out == "你不再隱形了。\r\n粉紅色的光圈將野狗團團圍住了。\r\n野狗十分的健康，完整。"     # 放減益也算出手：現形
     seen = plain(hua)
     assert "Ming漸漸地現出了自己的身影。" in seen and "粉紅色的光圈將野狗團團圍住了。" in seen
     assert say(ming, "use faerie hua") == "你不可以攻擊玩家。"

@@ -18,7 +18,7 @@
 import math
 from dataclasses import dataclass, field, fields
 
-from . import act, combat, combos, npcs, protect, stats
+from . import act, combat, combos, npcs, protect, stats, travel
 from .act import TO_CHAR, TO_ROOM, compose, notify
 from .area import AFFECT_FLAG_NAMES, AffectFlag
 from .characters import characters
@@ -154,8 +154,11 @@ def drains_hp(a):
 
 
 def step(ch, a):
-    """這個效果每 tick 減幾：矮人身上持續扣 HP 的減 TOUGH_STEP，其他減 1。"""
-    return TOUGH_STEP if getattr(ch, "race", None) == stats.Race.DWARF and drains_hp(a) else 1
+    """這個效果每 tick 減幾：矮人身上持續扣 HP 的減 TOUGH_STEP，其他減 1；
+    持續扣 HP 的再加旅具的早點解毒（沒在打架時一件多減 1，設計文件 §3.12）。"""
+    if not drains_hp(a):
+        return 1
+    return (TOUGH_STEP if getattr(ch, "race", None) == stats.Race.DWARF else 1) + travel.cure_step(ch)
 
 
 WORN_OFF = "你身上的【{}】消失了。"          # 效果消失時共用的那句（使用者要的）

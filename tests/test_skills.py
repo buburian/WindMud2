@@ -19,7 +19,7 @@ from mud import affects, combat, damage, death, fight, paths, save, skills, stat
 from mud.area import CORPSE_NPC_ITEM_TYPE, MobTier, WeaponKind
 from mud.characters import Position, characters
 from mud.commands import skills as skill_commands
-from mud.commands.system import pad
+from mud.commands.system import condition, pad
 from mud.color import colorize
 from mud.config import AFFECT_PULSE_TICKS, ENCODING, TICK_SECONDS
 from mud.npcs import Npc
@@ -399,7 +399,8 @@ def test_smash_messages_and_one_prompt(world):
     words, _code = combat.severity(dmg, dog.panel["hp"])
     n = stats.shown(dmg)
     tail = f"{'.' if n <= 10 else '!'}({n})"
-    assert mine == f"你使用重擊攻擊野狗，爆擊！對它造成{words}{tail}\r\n\r\n{prompt_of(shabu)}"     # 只有一個 prompt
+    hurt = "野狗" + condition(dog)                          # 最後是對手的受傷狀態（看的人沒在打，沒有）
+    assert mine == f"你使用重擊攻擊野狗，爆擊！對它造成{words}{tail}\r\n{hurt}\r\n\r\n{prompt_of(shabu)}"     # 只有一個 prompt
     assert seen == f"\r\nShabu使用重擊攻擊野狗，爆擊！對它造成{words}{tail}\r\n\r\n{prompt_of(ming)}"
     assert dog.hp == pytest.approx(dog.panel["hp"] - dmg)
 

@@ -2,7 +2,7 @@
 import logging
 import re
 
-from .. import affects, inventory, light, meals, objects, paths, save, scripts, sets, socials, stats, summons, terrain, weather, zones
+from .. import affects, inventory, light, meals, objects, paths, save, scripts, sets, socials, stats, summons, terrain, travel, weather, zones
 from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act, compose, notify
 from ..area import DIRECTIONS, PASSPROOF_LOCKS, REVERSE, AffectFlag, AreaType, MobTier, RoomFlag
 from ..characters import SEX_FEMALE, SEX_MALE, Position, arrive, characters, find_in_room, in_room
@@ -493,7 +493,7 @@ def do_score(ch, arg):
         lines.append(" " + ("{C" + pad(title, 4) + "{x" if title else "    ") + "  "
                      + "".join(cell(c, 24) for c in cells[:-1]) + cells[-1])
     lines.append(heavy)
-    lines += set_lines(ch) + affect_lines(ch)
+    lines += set_lines(ch) + travel_lines(ch) + affect_lines(ch)
     ch.send(colorize("\n".join(lines)) + "\n")
 
 
@@ -523,6 +523,16 @@ def set_lines(ch):
             expired = worn == len(s.items)
             rows.append(" {D【" + rpad(s.name, 12) + "】 " + text + (f"（{SET_EXPIRED}）" if expired else "") + "{x")
     return [SET_HEAD, *rows] if rows else []
+
+
+TRAVEL_HEAD = " {C旅具效果：{x"
+
+
+def travel_lines(ch):
+    """score 套裝效果後面：穿著的旅具，一件一行，寫算好的數字（使用者 2026-11-20 定的：examine 只有詩，數字在這裡）：
+    「【照明用具】多回 MV：休息、睡覺時每 30 秒 +5」。沒穿旅具就沒有這一段。"""
+    rows = [" " + travel.score_line(ch, label, obj, effect) for label, obj, effect in travel.worn(ch)]
+    return [TRAVEL_HEAD, *rows] if rows else []
 
 
 def affect_lines(ch):

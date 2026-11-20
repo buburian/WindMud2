@@ -9,7 +9,7 @@
 
 坑：act 會用到這裡，這裡要用 weather（weather 又 import act），所以 act、characters 在函式裡才 import 這個模組。
 """
-from . import stealth, weather
+from . import stealth, travel, weather
 from .act import TO_ROOM, gathering, notify, act
 from .area import LIGHT_ITEM_TYPE, RoomFlag, Sector
 from .characters import characters, in_room
@@ -82,13 +82,15 @@ def darkness(ch):
 
 def burn():
     """世界每 HOUR_TICKS（遊戲裡 1 小時）呼叫一次（照 C 版 char_update）：在線玩家（imm 除外）光源位置上的照明用具少 1 小時，
-    到 0 燒完：自己和同房間的人看到「【火把】燃燒殆盡了。」，東西不見。負數永遠不熄；地上的不燒。
+    到 0 燒完：自己和同房間的人看到「【火把】燃燒殆盡了。」，東西不見。負數永遠不熄；地上的不燒；
+    有效果的旅具不燒（使用者 2026-11-20 定的：辛苦打到的旅具不會不見，travel.py）。
     """
     from . import inventory, objects
     with gathering():                       # 旁邊的人一個 prompt
         for p in online_players():
             obj = p.equipment.get(LIGHT_SLOT)
-            if p.imm or obj is None or obj.item_type != LIGHT_ITEM_TYPE or not obj.hours or obj.hours < 0:
+            if (p.imm or obj is None or obj.item_type != LIGHT_ITEM_TYPE or not obj.hours or obj.hours < 0
+                    or travel.effect_of(obj) is not None):
                 continue
             obj.hours -= 1
             if obj.hours:

@@ -319,9 +319,10 @@ CARRY_COUNT = 35                            # 背包最多幾件（固定，不�
 
 
 def carry_limit(player):
-    """負重上限：STR 表（30 以上都是 1500），獸人 ×1.25。身上穿的也算重量。"""
+    """負重上限：STR 表（30 以上都是 1500），獸人 ×1.25，再加旅具的背得多（設計文件 §3.12）。身上穿的也算重量。"""
+    from . import travel                    # 坑：travel 會 import 這個模組，在函式裡才 import
     limit = CARRY_BY_STR[min(max(player.primaries["str"], min(CARRY_BY_STR)), max(CARRY_BY_STR))]
-    return limit * ORC_CARRY if player.race == Race.ORC else limit
+    return (limit * ORC_CARRY if player.race == Race.ORC else limit) + travel.carry(player)
 
 
 def wield_limit(player):
@@ -358,10 +359,14 @@ def regen(ch):
     rate = REGEN_RATE.get(ch.position, 0)
     # 吃喝坐滿 10 秒：那一項回得快一倍（meals.py，設計文件 §3.9）；只有休息、睡覺時算（站起來時 meals.cancel 會清掉，這裡再保險一次）
     bonus = getattr(ch, "meal_bonus", {}) if ch.position in (Position.RESTING, Position.SLEEPING) else {}
+    extra = {}
     if ch.position in (Position.RESTING, Position.SLEEPING):
         rate *= skills.rest_regen(ch)       # 調息、冥想（Lv15 公會被動）：×1.5，跟吃喝的加倍疊在一起
+        from . import travel                # 坑：travel 會 import 這個模組，在函式裡才 import
+        extra = travel.rest_bonus(ch)       # 旅具：休息、睡覺、吃喝回得快時跟著多回固定的量（設計文件 §3.12）
     for key in ("hp", "mp", "mv"):
-        setattr(ch, key, min(ch.panel[key], getattr(ch, key) + ch.panel[key] * rate * bonus.get(key, 1)))
+        gain = ch.panel[key] * rate * bonus.get(key, 1) + extra.get(key, 0)
+        setattr(ch, key, min(ch.panel[key], getattr(ch, key) + gain))
 
 
 def recompute(player):
