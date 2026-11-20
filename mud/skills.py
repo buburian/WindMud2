@@ -193,6 +193,11 @@ SKILLS = {s.id: s for s in (
     Skill("plague", "瘟疫", Guild.STAFF, "debuff", "group", 1, 0.45, 6, 0.19, dot=dict(name="瘟疫", jumps=10, hurt="侵蝕")),
     Skill("death_knight", "死亡騎士", Guild.STAFF, "summon", "self", 0, 0.0, 6, 0.19,
           summon=dict(tier="elite", below=10, duration=120)),
+    # Lv5 各公會多一個（2026-11-20 使用者定的）：跟重擊、火球一模一樣，只有名字不同；升到 5 級自動學會（paths.GUILD_SKILLS），不用選路。
+    # 放在最後面：技能名稱的縮寫照這個順序找，原本的縮寫（use p 是猛力斬、use fla 是火焰衝擊）才不會變
+    Skill("pummel", "猛擊", Guild.SWORD, "damage", "single", 1, 0.95, 6, 0.10, sure=True),
+    Skill("flame_arrow", "火焰箭", Guild.STAFF, "damage", "single", 1, 0.63, 6, 0.10, tag="燃燒",
+          dot=dict(name="燃燒", ratio=0.3, jumps=3, hurt="燒傷"), sure=True),
 )}
 KIND_NAMES = {"damage": "傷害", "heal": "治療", "buff": "增強", "debuff": "減弱", "control": "控制", "protect": "保護",
               "summon": "召喚", "passive": "被動"}   # 種類的中文（設計文件 §2.6 的 9 類）

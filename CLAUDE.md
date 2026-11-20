@@ -531,8 +531,10 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
       **NPC 直接呼叫 `skills.use(npc, SKILLS["gift"], 玩家)` 就能放**（不用學、不用在打架）。`skills` 指令的增益技能：那一行寫持續多久，做什麼放下一行（`system.wrap()`，不超過 79 格）。
       冷卻用 tick 數：世界每個 tick `skills.tick()` 減 1，所以實際等 5～6 秒。
       `weapon_ok()`：有限用武器的技能，主手要拿那種武器（空手不行）；技能那一下用主手的武器。`offhand_ok()`：`Skill.offhand` 是 `"shield"`（副手放護具）、`"dual"`（雙持）。
-      **選路**（`paths.py`，規則在玩家角色手冊「選路」，使用者 2026-11-19 定的）：`PATHS`（8 條小路 ＋ 4 條大路，每級的技能、導師的房間、分館在哪），`Player.paths`（[大路, 小路]，存檔）；
-      `choose()` 回傳結果代號，`refused()` 不看錢的檢查，`price()`／`change_cost()`（50 隻同級一般怪的金幣），`learn_upto()` 補齊，`level_up_lines()`（`combat.reward`、imm 的 advance：自動學和 10、40 級的提醒），
+      **選路**（`paths.py`，規則在玩家角色手冊「選職業」，使用者 2026-11-19 定的；**玩家看到的叫「職業」（大路）、「進階職業」（小路），不叫路**，使用者 2026-11-20 要的，程式裡照舊叫 path）：`PATHS`（8 條小路 ＋ 4 條大路，每級的技能、導師的房間、分館在哪），`Player.paths`（[大路, 小路]，存檔）；
+      `choose()` 回傳結果代號，`refused()` 不看錢的檢查，`price()`／`change_cost()`（50 隻同級一般怪的金幣），`learn_upto()` 補齊，`level_up_lines()`（`combat.reward`、imm 的 advance：自動學；10 級以上沒選職業、40 級以上沒選進階職業，每升一級都提醒，降級不說），
+      `GUILD_SKILLS`（Lv5 的猛擊 `pummel`、火焰箭 `flame_arrow`，2026-11-20：跟重擊、火球一樣，不用選路、升級自動學；放在 `SKILLS` 最後面，原本的縮寫才不變），
+      `catch_up()`（`login.enter()` 登入時補學等級夠的公會技能，加 Lv5 技能前就 5 級以上的玩家，使用者要的），
       `title()` 稱號（score、who），`hint_lines()`、`chosen_skills()` 給 `skills` 列出整條路和還沒選的路。選路是跟秋風城四間分館的導師（3194～3197，`areas/midgaard/老教頭.lua`…）說路名，
       腳本用 `actor:path()`、`subpath()`、`path_price()`、`choose_path()`（`script_api.choose_path` 送學會、忘掉的訊息、存檔）。`tests/test_paths.py`、`tests/test_mentors.py`（真的秋風城）。
       **路線技能**（mud_design 2026-11-19 的草案，規則在玩家角色手冊「路線技能」，數字照 `sim/skill_tree.py`，加在 `SKILLS` 最後面）：68 個和 21 個連動都做了（傷害、補血、增強、減弱、控制、保護、召喚、被動、打一群）（計畫分 6 步，`test_skill_tree.NOT_YET` 是還沒做的）。

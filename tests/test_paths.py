@@ -1,4 +1,4 @@
-"""選路和學技能（paths.py，設計文件 §2.6「怎麼學」，規則在玩家角色手冊「選路」）：
+"""選路和學技能（paths.py，設計文件 §2.6「怎麼學」，規則在玩家角色手冊「選職業」）：
 資料跟 mud_design 的 skill_tree.py 一樣、每個結果代號、晚選一次補齊、換路（價錢、扣錢、忘掉舊的、清小路）、
 升級自動學和提醒、稱號（score、who）、存檔、advance、skills 列出整條路和還沒選的路。
 導師（真的秋風城）在 test_mentors.py。借用 test_skills.py 的區域。
@@ -17,8 +17,10 @@ SWORD, STAFF = stats.Guild.SWORD, stats.Guild.STAFF
 
 
 def knight(level=10, guild=SWORD, name="Shabu", gold=0):
+    """一路升上來的玩家：5 級以上已經會公會的技能（猛擊、火焰箭，升級時學的）。"""
     p = fighter(name, level=level, guild=guild)
     p.gold = gold
+    paths.learn_upto(p)
     return p
 
 
@@ -45,8 +47,21 @@ def test_paths_match_the_skill_tree():
 
 def test_every_route_skill_is_on_one_path():
     on_paths = [sid for p in paths.PATHS.values() for _lv, sid in p.skills]
-    route = [s.id for s in skills.SKILLS.values() if s.guild is not None and not s.starter]
+    by_guild = [sid for steps in paths.GUILD_SKILLS.values() for _lv, sid in steps]
+    route = [s.id for s in skills.SKILLS.values() if s.guild is not None and not s.starter and s.id not in by_guild]
     assert sorted(on_paths) == sorted(route) and len(on_paths) == 68
+
+
+def test_guild_skills_match_the_skill_tree():
+    # 公會的技能（不用選路）：skill_tree 裡 path 是公會名、不是 Lv1 的（Lv5 的猛擊、火焰箭）
+    tree = load_skill_tree()
+    if tree is None:
+        pytest.skip("找不到 mud_design/sim/skill_tree.py")
+    want = {}
+    for r in tree.TREE:
+        if r["path"] in ("劍之公會", "杖之公會") and r["lv"] > 1:
+            want.setdefault(SWORD if r["path"] == "劍之公會" else STAFF, []).append((r["lv"], r["key"]))
+    assert {g: list(steps) for g, steps in paths.GUILD_SKILLS.items()} == want
 
 
 def test_change_cost():
@@ -136,13 +151,45 @@ def test_titles(world):
 def test_level_ups_learn_and_remind(world):
     p = knight(level=9)
     stats.set_level(p, 10)
-    assert paths.level_up_lines(p, 9) == [(paths.REMIND.format("路", "公會分館"), "")]
+    assert paths.level_up_lines(p, 9) == [(paths.REMIND.format("職業", "公會分館"), "")]
     paths.choose(p, "戰士")
     stats.set_level(p, 21)
     assert paths.level_up_lines(p, 10) == [(paths.LEARNED, "戰吼")]
     stats.set_level(p, 40)
-    assert paths.level_up_lines(p, 21) == [(paths.LEARNED, "鋼鐵之軀"),
-                                           (paths.REMIND.format("小路", "戰士公會（大街東口往南）"), "")]
+    small = (paths.REMIND.format("進階職業", "戰士公會（大街東口往南）"), "")
+    assert paths.level_up_lines(p, 21) == [(paths.LEARNED, "鋼鐵之軀"), small]
+    stats.set_level(p, 41)
+    assert paths.level_up_lines(p, 40) == [small]                    # 還沒選小路：每升一級都提醒（使用者 2026-11-20 要的）
+    paths.choose(p, "巨武")
+    stats.set_level(p, 42)
+    assert paths.level_up_lines(p, 41) == []                         # 選好了就不說
+
+
+def test_no_path_is_reminded_every_level_up_but_not_when_going_down(world):
+    p = knight(level=12)
+    big = [(paths.REMIND.format("職業", "公會分館"), "")]
+    stats.set_level(p, 13)
+    assert paths.level_up_lines(p, 12) == big
+    stats.set_level(p, 11)
+    assert paths.level_up_lines(p, 13) == []                         # 降級不說
+
+
+@pytest.mark.parametrize("guild, name", [(SWORD, "猛擊"), (STAFF, "火焰箭")])
+def test_level_5_learns_the_guild_skill_without_a_path(world, guild, name):
+    p = knight(level=4, guild=guild)
+    assert [s.name for s in skills.known(p)] == [skills.SKILLS[skills.starter(guild)[0]].name]
+    stats.set_level(p, 5)
+    assert paths.level_up_lines(p, 4) == [(paths.LEARNED, name)]
+    assert name in names(p) and paths.level_up_lines(p, 5) == []     # 學過了不再學
+    stats.set_level(p, 3)
+    paths.level_up_lines(p, 5)
+    assert name in names(p)                                          # 降級不忘（跟路線技能一樣）
+
+
+def test_skills_lists_the_guild_skill_before_level_5(world):
+    p = knight(level=1)
+    text = say(p, "skills")
+    assert "猛擊 pummel  傷害" in text and "尚未學會（5 級）" in text
 
 
 class Out:
@@ -209,7 +256,7 @@ def listing(p):
 
 def test_skills_before_choosing_shows_where_to_go(world):
     text = listing(knight(level=5))
-    assert text.endswith("\r\n\r\n10 級可以選路（到秋風城的公會分館找導師，跟他說路名）：\r\n"
+    assert text.endswith("\r\n\r\n10 級可以選職業（到秋風城的公會分館找導師，說出職業的名字）：\r\n"
                          "  戰士：戰士公會（大街東口往南）\r\n  刺客：盜賊公會（暗巷往南）\r\n")
     assert "猛力斬" not in text and "背刺" not in text               # 還沒選的路看不到技能
     staff = listing(knight(level=5, guild=STAFF, name="Ming"))
@@ -222,7 +269,7 @@ def test_skills_shows_the_whole_chosen_path(world):
     text = listing(p)
     assert "猛力斬 power_slash  傷害" in text and "戰吼 war_cry  持續 60 秒" in text
     assert "鋼鐵之軀 iron_body  被動\r\n    尚未學會（30 級）、HP +5%" in text
-    assert "40 級可以選小路（到秋風城的公會分館找導師，跟他說路名）：\r\n  巨武：戰士公會（大街東口往南）\r\n  盾衛：" in text
+    assert "40 級可以選進階職業（到秋風城的公會分館找導師，說出職業的名字）：\r\n  巨武：戰士公會（大街東口往南）\r\n  盾衛：" in text
     assert "橫掃" not in text and "挑釁" not in text                  # 小路還沒選：看不到
     assert say(p, "use iron").startswith("你不會這個技能。")          # 還沒學會的不能用
     p = knight(level=40, name="Ming")

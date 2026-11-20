@@ -86,6 +86,32 @@ def test_war_cry_boosts_smash(world):
     assert lost(dog) == pytest.approx(hit(p, dog, "phys", skills.SKILLS["smash"].ratio * damage.crit_mult(p) * 1.3))   # 重擊必定爆擊
 
 
+def test_war_cry_boosts_pummel_too(world):
+    # Lv5 的猛擊跟重擊一樣算戰吼助威（2026-11-20）
+    p = hero(learn=["war_cry", "pummel"])
+    dog = sturdy("野狗")
+    say(p, "use war")
+    run(lambda: say(p, "use pummel dog"))
+    assert lost(dog) == pytest.approx(hit(p, dog, "phys", skills.SKILLS["pummel"].ratio * damage.crit_mult(p) * 1.3))
+
+
+def test_flame_arrow_burns_stack_with_fireball_and_count_for_blast(world):
+    # 火焰箭的燃燒跟火球的是同一種效果：兩個各自算、疊在一起，爆炎引爆兩個都燒完
+    p = hero(guild=STAFF, learn=["flame_arrow", "blast"])
+    dog = sturdy("野狗")
+
+    def body():
+        say(p, "use fireball dog")
+        say(p, "use flame_arrow dog")
+        burns = sorted(a.source for a in dog.affects if a.tag == "燃燒")
+        text = say(p, "use blast")
+        return burns, text, dog.affects
+
+    burns, text, left = run(body)
+    assert burns == ["fireball", "flame_arrow"]
+    assert text.count("野狗身上的【燃燒】一口氣燒完了！") == 2 and not any(a.tag == "燃燒" for a in left)
+
+
 def test_berserk_adds_a_hit_to_whirlwind(world):
     p = hero(learn=["berserk", "whirlwind"])
     arm(p, main=WeaponKind.GREATSWORD)

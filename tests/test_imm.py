@@ -9,6 +9,7 @@ import pytest
 import mud.commands as commands
 from mud import fight, save, stats, zones
 from mud.characters import characters
+from mud.color import colorize
 from mud.commands import imm, system
 from mud.config import ENCODING
 from mud.players import Player
@@ -86,14 +87,16 @@ def test_advance_other_player_up():
     assert shabu.writer.text().startswith("Ming 升到 100 級了。\r\n")
     assert (ming.level, ming.points) == (100, 99) and balanced(ming)
     assert ming.panel["hp"] > 1000 and ming.hp == ming.panel["hp"]       # 從頭算，補滿
-    assert ming.writer.data == ("\r\n你升到 100 級了！多了 99 點主屬性點數，用 train 分配。\r\n"
-                                "你可以選路了：到秋風城的公會分館找導師（打 skills 看）。\r\n\r\n" + ming.prompt()).encode(ENCODING)    # 過了 10 級還沒選路：提醒（paths.py）
+    # 過了 5 級：自動學會猛擊；過了 10 級還沒選職業：提醒（paths.py）
+    assert ming.writer.data == ("\r\n你升到 100 級了！多了 99 點主屬性點數，用 train 分配。\r\n" + colorize("{Y你學會了【猛擊】！{x") + "\r\n"
+                                "你可以選職業了：到秋風城的公會分館找導師（打 skills 看）。\r\n\r\n" + ming.prompt()).encode(ENCODING)
 
 
 def test_advance_self_sends_once():
     shabu = player("Shabu", is_imm=True)
     commands.command(shabu, "adv SHABU 10")
-    assert shabu.writer.text().startswith("你升到 10 級了！多了 9 點主屬性點數，用 train 分配。\r\n你可以選路了：到秋風城的公會分館找導師（打 skills 看）。\r\n\r\n<HP ")
+    assert shabu.writer.text().startswith("你升到 10 級了！多了 9 點主屬性點數，用 train 分配。\r\n你學會了【猛擊】！\r\n"
+                                          "你可以選職業了：到秋風城的公會分館找導師（打 skills 看）。\r\n\r\n<HP ")
     assert shabu.level == 10
 
 

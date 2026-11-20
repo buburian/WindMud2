@@ -15,7 +15,7 @@ import mud.commands as commands
 from area_helpers import make_area, make_mobile, make_room, write_json
 from balance_loader import load_balance
 from player_helpers import make_player_file
-from mud import affects, combat, damage, death, fight, save, skills, stats, zones
+from mud import affects, combat, damage, death, fight, paths, save, skills, stats, zones
 from mud.area import CORPSE_NPC_ITEM_TYPE, MobTier, WeaponKind
 from mud.characters import Position, characters
 from mud.commands import skills as skill_commands
@@ -106,8 +106,9 @@ def own_skill(p):
 
 
 def test_skills_match_mud_design(balance):
-    # 建立角色就會的傷害技能照 balance.py；路線的技能照 skill_tree.py（test_skill_tree.py），imm 的技能、增益技能（餽贈）是我們自己加的
-    assert {s["id"] for s in balance.SKILLS.values()} == {s.id for s in skills.SKILLS.values() if s.starter}
+    # 建立角色就會的、Lv5 公會的傷害技能照 balance.py；路線的技能照 skill_tree.py（test_skill_tree.py），imm 的技能、增益技能（餽贈）是我們自己加的
+    by_guild = {sid for steps in paths.GUILD_SKILLS.values() for _lv, sid in steps}
+    assert {s["id"] for s in balance.SKILLS.values()} == {s.id for s in skills.SKILLS.values() if s.starter} | by_guild
     for name, want in balance.SKILLS.items():
         s = skills.SKILLS[want["id"]]
         assert s.name == name
@@ -501,14 +502,16 @@ def test_killing_with_a_skill(world, monkeypatch):
     assert corpse.item_type == CORPSE_NPC_ITEM_TYPE
 
 
-SWORD_HINT = ("\r\n\r\n10 級可以選路（到秋風城的公會分館找導師，跟他說路名）：\r\n"
-              "  戰士：戰士公會（大街東口往南）\r\n  刺客：盜賊公會（暗巷往南）")     # 還沒選路：最下面寫可以選的路（paths.py）
+SWORD_HINT = ("\r\n\r\n10 級可以選職業（到秋風城的公會分館找導師，說出職業的名字）：\r\n"
+              "  戰士：戰士公會（大街東口往南）\r\n  刺客：盜賊公會（暗巷往南）")     # 還沒選職業：最下面寫可以選的職業（paths.py）
 
 
 def test_skills_listing(world):
     shabu, ming = fighter("Shabu"), fighter("Ming", guild=stats.Guild.STAFF)
     low, high = skills.display_range(shabu, SMASH)
-    assert say(shabu, "skills") == f"你會的技能：\r\n  重擊 smash  傷害 {low}~{high}  消耗 4 MV  冷卻 6 秒{SWORD_HINT}\r\n\r\n{prompt_of(shabu)}"
+    # 5 級才學的猛擊也列出來，寫幾級學會（paths.GUILD_SKILLS）；猛擊跟重擊一樣，傷害範圍一樣
+    assert say(shabu, "skills") == (f"你會的技能：\r\n  重擊 smash  傷害 {low}~{high}  消耗 4 MV  冷卻 6 秒\r\n"
+                                    f"  猛擊 pummel  傷害 {low}~{high}  消耗 4 MV  冷卻 6 秒\r\n    尚未學會（5 級）{SWORD_HINT}\r\n\r\n{prompt_of(shabu)}")
     low, high = skills.display_range(ming, FIREBALL)
     assert say(ming, "sk").startswith(f"你會的技能：\r\n  火球 fireball  傷害 {low}~{high}  消耗 4 MP  冷卻 6 秒\r\n")
     shabu.cooldowns["smash"] = 3
@@ -577,7 +580,8 @@ def test_skills_listing_for_imm(world):
     t_low, t_high = skills.display_range(shabu, THUNDER)
     assert say(shabu, "skills") == ("你會的技能（imm 用技能不扣消耗、不用等冷卻）：\r\n"
                                     f"  重擊 smash  傷害 {low}~{high}  消耗 4 MV  冷卻 6 秒\r\n"
-                                    f"  天雷 thunder  傷害 {t_low}~{t_high}  消耗 0  冷卻 0 秒{SWORD_HINT}\r\n\r\n{prompt_of(shabu)}")
+                                    f"  天雷 thunder  傷害 {t_low}~{t_high}  消耗 0  冷卻 0 秒\r\n"
+                                    f"  猛擊 pummel  傷害 {low}~{high}  消耗 4 MV  冷卻 6 秒\r\n    尚未學會（5 級）{SWORD_HINT}\r\n\r\n{prompt_of(shabu)}")
 
 
 # ---- 誰會：一開始就會、要用程式加（使用者定的） ----

@@ -83,11 +83,11 @@ def test_each_mentor_stands_in_his_hall(errors):
 def test_walk_in_and_choose(errors, big, guild):
     p = player(guild=guild, big=big)
     name = HALLS[big][2]
-    assert f"{name}說：『Ming，想走{big}這條路的話，說「{big}」就行。』" in walk_in(p, big)
+    assert f"{name}說：『Ming，想當{big}的話，說「{big}」就行。』" in walk_in(p, big)
     out = do(p, f"say {big}")
     first = paths.PATHS[big].skills[0][1]
     assert f"你學會了【{skills.SKILLS[first].name}】！" in out
-    assert f"{name}說：『好，從今天起你就走這條路了。學會的本事，用 skills 看。』" in out
+    assert f"{name}說：『好，從今天起你就是這個職業了。學會的本事，用 skills 看。』" in out
     assert p.paths == [big] and save.load_data("Ming")["paths"] == [big]     # 選好就存檔
     assert errors == []
 
@@ -102,7 +102,7 @@ def test_no_greeting_for_others(errors):
 
 
 @pytest.mark.parametrize("level, guild, want", [
-    (9, SWORD, "你還太嫩了。大路要 10 級，小路要 40 級才能選。"),
+    (9, SWORD, "你還太嫩了。職業要 10 級，進階職業要 40 級才能選。"),
     (10, STAFF, "你不是劍之公會的人，這裡教不了你。"),
 ])
 def test_refusals(errors, level, guild, want):
@@ -117,8 +117,8 @@ def test_changing_paths_asks_twice_and_costs_gold(errors):
     paths.choose(p, "刺客")
     walk_in(p, "戰士")
     cost = paths.change_cost(20)
-    assert f"換路要 {cost} 金幣，舊路的本事會全部忘掉。確定的話，再說一次「戰士」。" in do(p, "say 戰士")
-    assert "老教頭說：『換路的錢不夠，存夠了再來。』" in do(p, "say 戰士")
+    assert f"換職業要 {cost} 金幣，原本那個職業的本事會全部忘掉。確定的話，再說一次「戰士」。" in do(p, "say 戰士")
+    assert "老教頭說：『換職業的錢不夠，存夠了再來。』" in do(p, "say 戰士")
     p.gold = cost + 5
     do(p, "say 戰士")
     out = do(p, "say 戰士")
@@ -131,12 +131,12 @@ def test_small_paths_at_40(errors):
     p = player(level=40)
     paths.choose(p, "戰士")
     out = walk_in(p, "戰士")
-    assert "老教頭說：『你可以往下走「巨武」（雙手武器，一次打一群）或「盾衛」（拿盾，耐打、保護別人），想好了就說。』" in out
+    assert "老教頭說：『你可以選進階職業「巨武」（雙手武器，一次打一群）或「盾衛」（拿盾，耐打、保護別人），想好了就說。』" in out
     assert "你學會了【挑釁】！" in do(p, "say 盾衛") and p.paths == ["戰士", "盾衛"]
     q = player(level=40, name="Hua")
     paths.choose(q, "刺客")
     walk_in(q, "戰士")
-    assert "老教頭說：『這兩條小路接在戰士下面，你得先走戰士這條路。』" in do(q, "say 巨武")
+    assert "老教頭說：『這兩個進階職業接在戰士下面，你得先當戰士。』" in do(q, "say 巨武")
     assert errors == []
 
 

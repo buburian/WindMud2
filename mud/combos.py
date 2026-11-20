@@ -12,6 +12,7 @@ from .config import AFFECT_PULSE_TICKS, ROUND_TICKS
 
 RATIOS = {                                  # 比率的連動：技能 id → [(條件, 倍數)]，條件是 (ch, 目標) → 成立沒
     "smash": [(lambda ch, v: affects.has_tag(ch, "戰吼"), 1.3)],            # 戰吼助威
+    "pummel": [(lambda ch, v: affects.has_tag(ch, "戰吼"), 1.3)],           # 戰吼助威（Lv5 的猛擊也算）
     "power_slash": [(lambda ch, v: affects.has_tag(ch, "戰吼"), 1.3)],      # 戰吼助威
     "sky_rend": [(lambda ch, v: affects.has_tag(v, "站不穩"), 1.5)],        # 震地破綻
     "backstab": [(lambda ch, v: affects.has_tag(v, "中毒"), 1.3),            # 毒上加刺

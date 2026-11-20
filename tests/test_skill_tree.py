@@ -48,7 +48,7 @@ def test_names_kinds_targets_cost_cooldown(tree):
         assert (s.kind, s.target) == (KINDS[r["kind"]], TARGETS[r["target"]]), r["key"]
         assert (s.cost, s.cooldown) == (r["cost"] or 0.0, r["cd"] or 0), r["key"]      # 被動沒有消耗、冷卻
         assert (tuple(s.weapon_kinds), s.offhand) == (WEAPONS[r["weapon"]], OFFHANDS[r["offhand"]]), r["key"]
-        assert s.starter == ((s.guild,) if r.get("fixed") else ()), r["key"]          # Lv1 的建立角色就會，其他要用程式加
+        assert s.starter == ((s.guild,) if r.get("fixed") and r["lv"] == 1 else ()), r["key"]   # Lv1 的建立角色就會，其他要用程式加（Lv5 的升級學）
         assert skills.tag(s) == tree.TAG.get(r["key"], r["name"]), r["key"]           # 效果種類（連動用）
 
 

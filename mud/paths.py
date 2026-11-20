@@ -1,8 +1,10 @@
-"""選路和學技能（設計文件 §2.6「怎麼學」，使用者 2026-11-19 定的，規則在玩家角色手冊「選路」）。
+"""選路和學技能（設計文件 §2.6「怎麼學」，使用者 2026-11-19 定的，規則在玩家角色手冊「選職業」）。
+玩家看到的叫「職業」（大路）、「進階職業」（小路），不叫路（使用者 2026-11-20 要的）；程式裡照舊叫 path。
 
 - Lv10 在自己公會的分館找導師選大路（戰士、刺客、元素、神官），選了馬上學會這條路到現在等級的技能（晚選的一次補齊）。
 - Lv40 回同一間分館選這條大路下面的一條小路。
 - 選好路以後，升級自動學會那一級的技能（combat.reward、imm 的 advance 呼叫 level_up_lines()、learn_upto()）。
+- 公會的技能（GUILD_SKILLS：Lv5 的猛擊、火焰箭，2026-11-20）不用選路，升到那一級一樣自動學會。降級不會忘（跟路線技能一樣）。
 - 換路要花金幣（change_cost()：打 50 隻同級一般怪的錢，使用者選的）；舊路的技能全部忘掉，新路的照現在的等級補齊。
 - 稱號是走的路（title()）：Lv10～39 是大路名，Lv40 起是小路名（還沒選小路就是大路名）。
 選路是跟導師說話（areas/midgaard/ 的四個導師腳本），腳本用 script_api 的 path()、subpath()、path_price()、choose_path()。
@@ -58,6 +60,9 @@ PATHS = {p.name: p for p in (
 )}
 
 
+GUILD_SKILLS = {S: ((5, "pummel"),), M: ((5, "flame_arrow"),)}   # 不用選路、升到那一級自動學會的（((等級, 技能 id), ...)）
+
+
 def big(p):
     """p 選的大路名，沒選是 None。"""
     return p.paths[0] if getattr(p, "paths", None) else None
@@ -76,13 +81,22 @@ def title(p):
 
 
 def chosen_skills(p):
-    """p 選的路上全部的技能：[(等級, Skill)]，大路在前、小路在後（skills 列出來用）。"""
-    return [(lv, skills.SKILLS[sid]) for name in getattr(p, "paths", []) for lv, sid in PATHS[name].skills]
+    """p 隨等級會學到的全部技能：[(等級, Skill)]，公會的（GUILD_SKILLS）在前，再來大路、小路（skills 列出來用）。"""
+    mine = GUILD_SKILLS.get(getattr(p, "guild", None), ())
+    mine += tuple(step for name in getattr(p, "paths", []) for step in PATHS[name].skills)
+    return [(lv, skills.SKILLS[sid]) for lv, sid in mine]
 
 
 def learn_upto(p):
-    """學會選的路上等級夠的技能（晚選的一次補齊、升級自動學）。回傳新學會的 [Skill]。"""
+    """學會公會的、選的路上等級夠的技能（晚選的一次補齊、升級自動學）。回傳新學會的 [Skill]。"""
     return [s for lv, s in chosen_skills(p) if lv <= p.level and skills.learn(p, s)]
+
+
+def catch_up(p):
+    """登入時（login.enter）：等級夠、還不會的公會技能補學（使用者 2026-11-20 要的：加 Lv5 技能之前就已經 5 級以上的玩家）。
+    只補公會的；路線技能升級、選路時就學了。回傳學會的 [Skill]。"""
+    return [skills.SKILLS[sid] for lv, sid in GUILD_SKILLS.get(getattr(p, "guild", None), ())
+            if lv <= p.level and skills.learn(p, skills.SKILLS[sid])]
 
 
 def forget_path(p, name):
@@ -147,16 +161,21 @@ def choose(p, name):
 
 LEARNED = "{Y你學會了【$t】！{x"
 FORGOT = "你忘掉了【$t】。"
-REMIND = "你可以選{}了：到秋風城的{}找導師（打 skills 看）。"
+REMIND = "你可以選{}了：到秋風城的{}找導師（打 skills 看）。"   # 玩家看到的叫「職業」「進階職業」，不叫路（使用者 2026-11-20 要的）
+BIG_WORD, SMALL_WORD = "職業", "進階職業"
 
 
 def level_up_lines(p, old_level):
-    """升級之後（combat.reward、advance）：自動學會的技能，和剛到 10 級、40 級還沒選路的提醒。回傳 [(格式, $t)]。"""
+    """升級之後（combat.reward、advance）：自動學會的技能（公會的、選的路上的），和還沒選路的提醒。回傳 [(格式, $t)]。
+    提醒：10 級以上還沒選大路、40 級以上還沒選小路，**每升一級都說一次**（使用者 2026-11-20 要的；原本只有剛到 10、40 級那次）。降級不說。
+    """
     lines = [(LEARNED, s.name) for s in learn_upto(p)]
-    if old_level < BIG_LEVEL <= p.level and big(p) is None:
-        lines.append((REMIND.format("路", "公會分館"), ""))
-    elif old_level < SMALL_LEVEL <= p.level and big(p) and small(p) is None:
-        lines.append((REMIND.format("小路", PATHS[big(p)].where), ""))
+    if p.level <= old_level:
+        return lines
+    if p.level >= BIG_LEVEL and big(p) is None:
+        lines.append((REMIND.format(BIG_WORD, "公會分館"), ""))
+    elif p.level >= SMALL_LEVEL and big(p) and small(p) is None:
+        lines.append((REMIND.format(SMALL_WORD, PATHS[big(p)].where), ""))
     return lines
 
 
@@ -166,9 +185,9 @@ def hint_lines(p):
     if guild is None:
         return []
     if big(p) is None:
-        options, head = [q for q in PATHS.values() if q.parent is None and q.guild == guild], f"{BIG_LEVEL} 級可以選路"
+        options, head = [q for q in PATHS.values() if q.parent is None and q.guild == guild], f"{BIG_LEVEL} 級可以選{BIG_WORD}"
     elif small(p) is None:
-        options, head = [q for q in PATHS.values() if q.parent == big(p)], f"{SMALL_LEVEL} 級可以選小路"
+        options, head = [q for q in PATHS.values() if q.parent == big(p)], f"{SMALL_LEVEL} 級可以選{SMALL_WORD}"
     else:
         return []
-    return [head + "（到秋風城的公會分館找導師，跟他說路名）："] + [f"  {q.name}：{q.where}" for q in options]
+    return [head + "（到秋風城的公會分館找導師，說出職業的名字）："] + [f"  {q.name}：{q.where}" for q in options]

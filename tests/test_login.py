@@ -185,6 +185,30 @@ def test_old_character_logs_in_where_it_left(folder):
     run(main)
 
 
+@pytest.mark.parametrize("level, learned", [(7, True), (4, False)])
+def test_login_catches_up_the_level_5_skill(folder, level, learned):
+    # 加猛擊之前就已經 5 級以上的玩家：登入時補學，歡迎後面說一句（使用者 2026-11-20 要的）；4 級的等升到 5 級再學
+    make_player_file("Ming")
+    path = folder / "ming.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data.update(level=level, points=level - 1)
+    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+    async def main(connect):
+        c = await connect()
+        await c.until("請輸入你的英文名字：")
+        c.say("Ming")
+        await c.until("請輸入密碼：")
+        c.say(PASSWORD)
+        got = re.sub(rb"\x1b\[[0-9;]*m", b"", await c.until("> "))
+        assert ("歡迎回來，Ming。\r\n你學會了【猛擊】！\r\n".encode(ENCODING) in got) == learned
+        assert "歡迎回來，Ming。".encode(ENCODING) in got
+        [ming] = online_players()
+        assert ("pummel" in ming.skills) == learned
+
+    run(main)
+
+
 def test_wrong_password_disconnects(folder):
     make_player_file("Ming")
 
