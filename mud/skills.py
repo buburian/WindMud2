@@ -56,12 +56,14 @@ class Skill:
     passive: dict = field(default=None, hash=False)  # 被動：倍率（stats.multiply 的代號 → 倍數，"shield_ac" 是盾的 AC）
     guard: dict = field(default=None, hash=False)   # 替人擋（protect.py）：share（幾成改由你承受）、duration（幾個 tick）
     summon: dict = field(default=None, hash=False)  # 召喚（summons.py）：tier（種類）、below（比主人低幾級）、duration（幾個 tick）
+    sure: bool = False          # 必中、必定爆擊（設計文件 §2.6，2026-11-20 使用者定的）：不擲命中、一定爆擊，比率降到平均傷害不變
 
 
 SKILLS = {s.id: s for s in (
-    Skill("smash", "重擊", Guild.SWORD, "damage", "single", 1, 1.8, 6, 0.10, starter=(Guild.SWORD,)),   # 1.8：使用者定的（火球加了燃燒，兩個公會一樣強）
-    Skill("fireball", "火球", Guild.STAFF, "damage", "single", 1, 1.2, 6, 0.10, starter=(Guild.STAFF,), tag="燃燒",
-          dot=dict(name="燃燒", ratio=0.3, jumps=3, hurt="燒傷")),   # 燃燒：使用者定的，每 3 秒一次、共 3 次，每次第一發的 30%
+    # 重擊、火球必中、必定爆擊（2026-11-20 使用者定，玩家反映重擊常 miss）：比率從 1.8／1.2 降到打同級一般怪的平均傷害不變（balance.py）
+    Skill("smash", "重擊", Guild.SWORD, "damage", "single", 1, 0.95, 6, 0.10, starter=(Guild.SWORD,), sure=True),
+    Skill("fireball", "火球", Guild.STAFF, "damage", "single", 1, 0.63, 6, 0.10, starter=(Guild.STAFF,), tag="燃燒",
+          dot=dict(name="燃燒", ratio=0.3, jumps=3, hurt="燒傷"), sure=True),   # 燃燒：使用者定的，每 3 秒一次、共 3 次，每次第一發的 30%
     Skill("thunder", "天雷", None, "damage", "single", 1, 10.0, 0, 0.0, imm_only=True),   # imm 測試用的（數字是我們訂的，不是設計文件的）
     # 增益：之後教學區的 NPC 放在玩家身上的（使用者定的，數字是使用者給的）：每 3 秒補 HP 上限的 10%、主屬性各 +3，3600 秒，死掉後還在
     Skill("gift", "餽贈", None, "buff", "ally", 0, 0.0, 0, 0.0, affect=dict(
@@ -226,17 +228,18 @@ def cost(skill, level):
 
 
 def display_range(ch, skill):
-    """skills 顯示的傷害 (最低, 最高)：還沒被抗性擋、不含爆擊。
+    """skills 顯示的傷害 (最低, 最高)：還沒被抗性擋、不含爆擊（必定爆擊的 sure 一定爆擊，所以乘上自己的爆擊倍率，balance.py 的 skill_display_range）。
 
     拿主手武器：設計文件的（傷害點數 ＋ 主手武器下限／上限）× ratio。
     空手（使用者選的）：傷害點數 × ratio × (1 ∓ 浮動)，跟 damage.strike() 實際的 ±20% 一樣。
     """
     points = ch.panel.get(f"dmg_{damage_kind(skill, ch)}", 0.0)
+    ratio = skill.ratio * (damage.crit_mult(ch) if skill.sure else 1.0)
     weapon = damage.weapon_in(ch, 0)
     if weapon is not None:
-        return (stats.shown((points + weapon.base["dmg_min"]) * skill.ratio),
-                stats.shown((points + weapon.base["dmg_max"]) * skill.ratio))
-    points *= skill.ratio
+        return (stats.shown((points + weapon.base["dmg_min"]) * ratio),
+                stats.shown((points + weapon.base["dmg_max"]) * ratio))
+    points *= ratio
     return stats.shown(points * (1.0 - damage.DMG_VAR)), stats.shown(points * (1.0 + damage.DMG_VAR))
 
 
@@ -395,7 +398,7 @@ def use(ch, skill, victim, pay_cost=True):
 
 
 def strike(battle, ch, skill, victim, part=1.0):
-    """傷害技能打 victim hits 次：每一次 ＝ 平砍的一下（各自擲命中、浮動、爆擊）× ratio × part × 連動，類型見 damage_kind()，
+    """傷害技能打 victim hits 次：每一次 ＝ 平砍的一下（各自擲命中、浮動、爆擊；sure 的不擲命中、一定爆擊）× ratio × part × 連動，類型見 damage_kind()，
     打中最低 1 點；目標死了就不打剩下的。打中過、沒死：留下持續傷害（燃燒）、打中後的效果。回傳打中過沒。
     連動（combos.py）在打之前看一次：比率、多打幾下、控制多幾回合、牠在不在燒、閃電箭要不要跳。
     """
@@ -405,7 +408,7 @@ def strike(battle, ch, skill, victim, part=1.0):
     chain = skill.id == "lightning_bolt" and affects.has_tag(victim, "元素侵蝕")    # 連動「侵蝕連鎖」
     first, dead = None, False               # 第一發打中的傷害（持續傷害用）
     for _ in range(skill.hits + combos.extra_hits(ch, skill)):
-        dmg, crit = damage.strike(ch, victim, combat.rng, damage_kind(skill, ch))
+        dmg, crit = damage.strike(ch, victim, combat.rng, damage_kind(skill, ch), sure=skill.sure)
         dmg *= times
         if dmg > 0:
             dmg = max(MIN_SKILL_DAMAGE, dmg)         # 打中最低 1 點（使用者定的）

@@ -67,7 +67,7 @@ uv run python -m mud.areaconvert 舊.json builder_area/新.json   # 舊區域（
   `tests/test_config.py` 測 config（列出、開關 autoloot 和 showbuff、lines 的範圍、存檔）；`tests/test_pager.py` 測分頁（假指令 many 送很多行：每個按鍵、打別的指令、別人的訊息、quit、出錯）。
   `tests/test_academy.py` 用真的 `areas/` 測教學學院：一人一份、一路走到畢業（技能教官照公會教 use、掉落、穿上、`say 畢業`）、學生重新登入和死掉回學院、沒有學院的區域檔時。
   `tests/test_consider.py` 測 consider（拒絕的訊息、縮寫、7 句的分段和邊界、戰力換算跟設計文件 §4.3 對得上、受傷／聖光／護盾、打不中、只是看不改東西）。
-  `tests/test_healer.py` 用真的 `areas/` 測秋風城的行醫者：1～10 級走進祭壇拿到餽贈、已經有的不再放（時間不補滿）、11 級以上和生物沒有、腳本沒出錯。
+  `tests/test_healer.py` 用真的 `areas/` 測秋風城的行醫者：1～30 級走進祭壇拿到餽贈、已經有的不再放（時間不補滿）、31 級以上和生物沒有、腳本沒出錯。
   `tests/test_executioner.py` 用真的 `areas/` 測執法者（沒光源密語怎麼走、不到 5 級又沒錢送 3 支火把、有光源不說、生物沒有）和雜貨店的火把（等級、時間、價格、不收）。
   `tests/test_flee.py` 測 flee（DEX 的機率、戰鬥中不能走、成功、失敗要等、關著的門、沒有出口）。
   `tests/test_light.py` 測黑暗和光源（很暗的四個條件、光源在身上／地上／背包、精靈和 imm、look 的每一種、找不到人、撿不到、「某人」、走進來、對面的門、燒完、燈籠放光源位置、存檔的 hours、暗處不自動拾取）；
@@ -154,7 +154,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     改完從頭算、HP／MP／MV 補滿），`stats.train()` 加點（每項最高 `PRIMARY_CAP` 55）。
     **經驗值**（玩家角色手冊「經驗值」，設計文件 §4.7）：`exp` 是這一級累積的（小數）；`stats.kill_exp()`、`exp_to_level()` 照 balance.py
     （常數 `TIER_DIFFICULTY`、`TIER_EXP_MULT`… 有測試比對）；`gain_exp()` 滿了就 `set_level(等級 ＋ 1)`、扣掉需求，可以連升，滿等不加。
-    **前期經驗加成**（`exp_early()`，2026-11-05 使用者定）：打怪的 `kill_exp()` 乘（1 ＋ 加成），1 級 ＋50%、到 99 級 0（`EXP_EARLY_BONUS`、`EXP_EARLY_CURVE`）；
+    **前期經驗加成**（`exp_early()`，2026-11-05 使用者定，2026-11-20 改成 1 級 ＋100%、直線）：打怪的 `kill_exp()` 乘（1 ＋ 加成），1 級 ＋100%、每級減一樣多、到 99 級 0（`EXP_EARLY_BONUS` 1.0、`EXP_EARLY_CURVE` 0）；
     升級需求 `exp_to_level()` 用 `kill_exp(..., early=False)`，不乘加成。跟種類的經驗加成（`TIER_EXP_MULT`）是兩回事。
     打怪拿的最後再乘 `EXP_GAIN_MULT` 1.1（使用者 2026-11-20 要的，也在 `early=True` 那條路，升級需求不乘）。
     `advance` 改等級時 `exp` 歸 0。`score` 的等級那行寫「經驗 35 / 139」。
@@ -454,7 +454,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   - 房間的描述就是教學（`{Y【教學】{x` 那幾行），改教學內容改區域檔就好。
 - **秋風城**（`areas/midgaard.json`，世界區域，號碼範圍 `[3000, 3399]`，使用者 2026-11-17 放進來的）：舊版 midgaard 用 `mud.areaconvert` 轉的，文字改寫成龍焚之夜一百年後、百廢待舉的樣子（世界觀在 mud_design 的 `design/世界觀.md`，改文字前先看）。`builder_area/midgaard.json` 是編輯器那份，兩份現在一樣。
   生物的平常動作（舊版 C 的 actions：有玩家走進來就招呼、每 30 秒做一件事，跟任務無關）用 Lua 寫在 `areas/midgaard/`（`builder_area/midgaard/` 一樣一份），
-  29 個檔、32 隻生物，文字照龍焚之夜一百年後重寫（四間公會分館的導師 3194～3197 是選路用的，見下面「選路」；行醫者 3012 另外對走進神殿祭壇 3054、1～10 級、身上還沒有餽贈（`actor:has_affect("gift")`）的玩家放餽贈 `me:use("gift", actor)`，使用者 2026-11-19 要的；他沒有治療功能，文字不寫會包紮；神殿大廳 3001 的執法者 3011 對走進來、沒有光源的玩家密語雜貨店怎麼走，不到 5 級又不到 20 金幣的先送 3 支火把，使用者 2026-11-19 要的；火把 3030 是 1 級、120 小時、cost 13（雜貨店 20 金幣），雜貨店不收照明用具）；叫、唱歌、喵、微笑用表情動作（`me:command("bark")`）。打架中不做（`me:is_fighting()`，照 C 版）。
+  29 個檔、32 隻生物，文字照龍焚之夜一百年後重寫（四間公會分館的導師 3194～3197 是選路用的，見下面「選路」；行醫者 3012 另外對走進神殿祭壇 3054、1～30 級（2026-11-20 從 1～10 級改的）、身上還沒有餽贈（`actor:has_affect("gift")`）的玩家放餽贈 `me:use("gift", actor)`，使用者 2026-11-19 要的；他沒有治療功能，文字不寫會包紮；神殿大廳 3001 的執法者 3011 對走進來、沒有光源的玩家密語雜貨店怎麼走，不到 5 級又不到 20 金幣的先送 3 支火把，使用者 2026-11-19 要的；火把 3030 是 1 級、120 小時、cost 13（雜貨店 20 金幣），雜貨店不收照明用具）；叫、唱歌、喵、微笑用表情動作（`me:command("bark")`）。打架中不做（`me:is_fighting()`，照 C 版）。
   坑：起始房間 `START_ROOM` 是 3001，自己做區域檔的測試裡沒有它：會用到 `zones.start_room()` 的（玩家死掉、建角、讀檔找不到房間、走進動態區域）要 `monkeypatch.setattr(zones, "START_ROOM", 101)`。
 - **秋風城外四區**（世界區域，新手區，使用者 2026-11-19 放進來的）：城西森林草原 `forest.json`（1～8 級，西城門外 3052 往西）、城東森林 `foresteast.json`（6～12 級，東城門外 3053 往東）、
   城北平原 `north_plains.json`（10～15 級，北城牆下的刻字 3217 往北）、河流區 `river.json`（12～16 級，碼頭 3049 往南，全區要船）。舊區域轉的，文字照世界觀改寫；生物、物品、重置照使用者核准的設計重做：
@@ -520,7 +520,9 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
       **增益技能**（`kind` `"buff"`、`target` `"ally"`）走 `buff()`：把 `make_affect(skill)`（`skill.affect` 是 `Affect` 的欄位，每次 deepcopy 一份；
       **`source`、`name` 沒寫就用技能的 id、名稱**，使用者定的，不一樣才寫）放到目標身上、送訊息，不開打。
       use 指令對增益技能：沒打名字是自己，打了名字用 `find_in_room()`，只能放玩家（`ready()` 是冷卻、MV／MP、武器的檢查，兩種技能共用）。
-      **餽贈**（`gift`，使用者定的；教學學院的教官、秋風城的行醫者（1～10 級）用腳本送給玩家）：每 3 秒補 HP 上限的 10%、主屬性各 +3，3600 秒，死掉後還在；要用程式加、不扣消耗、沒有冷卻。
+      **餽贈**（`gift`，使用者定的；教學學院的教官、秋風城的行醫者（1～30 級）用腳本送給玩家）：每 3 秒補 HP 上限的 10%、主屬性各 +3，3600 秒，死掉後還在；要用程式加、不扣消耗、沒有冷卻。
+      **重擊、火球必中、必定爆擊**（`Skill.sure`，2026-11-20 使用者定，balance.py 的 sure）：`damage.strike(..., sure=True)` 不擲命中、一定爆擊（少叫兩次亂數，跟 `_strike_once` 一樣），
+      比率降到 0.95、0.63（平均傷害不變）；`display_range()` 再乘爆擊倍率（`skill_display_range`）。路線技能、special 照舊。
       **打中最低 `MIN_SKILL_DAMAGE` 1 點**（使用者定的，技能不是平砍；失手還是 0）。**持續傷害** `Skill.dot`（火球的燃燒：name、ratio 0.3、jumps 3、hurt 燒傷）：
       第一發打中、目標沒死就 `dot_affect(source, dot, first)`（每 3 tick 跳、共 jumps 次、每跳 ＝ 第一發 × ratio 最低 1，來源是技能 id；生物的 spec_poison 也用它），
       走 `affects.pulse()` 的持續扣 HP（護盾、扣死、矮人照舊），`Affect.hurt` 有寫就每跳說「你被【燃燒】燒傷了.(6)」（`combat.damage_tail()` 跟戰鬥訊息共用）。

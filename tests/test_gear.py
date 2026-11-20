@@ -224,7 +224,7 @@ def test_switching_weapons_mid_fight(world, monkeypatch):
 def test_skill_range_with_a_weapon(world):
     p = wielding(2)
     sword = p.equipment["wield"]
-    dmg, ratio = p.panel["dmg_phys"], skills.SKILLS["smash"].ratio
+    dmg, ratio = p.panel["dmg_phys"], skills.SKILLS["smash"].ratio * damage.crit_mult(p)     # 重擊必定爆擊：乘爆擊倍率
     want = (stats.shown((dmg + sword.base["dmg_min"]) * ratio), stats.shown((dmg + sword.base["dmg_max"]) * ratio))
     assert skills.display_range(p, skills.SKILLS["smash"]) == want
 

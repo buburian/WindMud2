@@ -83,7 +83,7 @@ def test_war_cry_boosts_smash(world):
     dog = sturdy("野狗")
     say(p, "use war")
     run(lambda: say(p, "use smash dog"))
-    assert lost(dog) == pytest.approx(hit(p, dog, "phys", 1.8 * 1.3))
+    assert lost(dog) == pytest.approx(hit(p, dog, "phys", skills.SKILLS["smash"].ratio * damage.crit_mult(p) * 1.3))   # 重擊必定爆擊
 
 
 def test_berserk_adds_a_hit_to_whirlwind(world):

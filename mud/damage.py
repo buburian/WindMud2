@@ -83,7 +83,7 @@ def attack_mix(ch):
     return mix if mix else {str(ch.guild): 1.0}
 
 
-def strike(a, d, rng, kind=None, hand=0, source=None):
+def strike(a, d, rng, kind=None, hand=0, source=None, sure=False):
     """a 打 d 一下：回傳 (傷害, 有沒有爆擊)，沒打中是 (0.0, False)。
 
     亂數的順序跟 balance.py 的 _strike_once 一樣（同一個種子結果一樣，有測試）：
@@ -91,6 +91,7 @@ def strike(a, d, rng, kind=None, hand=0, source=None):
     kind：技能用，這一下一定是這個類型（技能的公會），不骰類型；平砍不給。
     hand：哪隻手（0 主手、1 副手）。那隻手拿武器：武器值 ＝ 下限 ＋ (上限 − 下限) × 亂數，放在 ±20% 那一格（亂數次數不變）。
     source：傷害點數用哪一種（生物的 special，見 per_hit）；亂數的用法不變。
+    sure：必中、必定爆擊（重擊、火球，設計文件 §2.6，2026-11-20）：不擲命中、一定爆擊，這兩次亂數不叫（跟 balance.py 一樣）。
     """
     mix = {kind: 1.0} if kind else attack_mix(a)
     kinds = list(mix)
@@ -104,7 +105,7 @@ def strike(a, d, rng, kind=None, hand=0, source=None):
                 break
     else:
         kind = kinds[0]
-    if rng.random() >= hit_chance(a, d):
+    if not sure and rng.random() >= hit_chance(a, d):
         return 0.0, False
     weapon = weapon_in(a, hand)
     if weapon is not None:
@@ -112,7 +113,7 @@ def strike(a, d, rng, kind=None, hand=0, source=None):
         dmg = per_hit(a, d, kind, low + (high - low) * rng.random())
     else:
         dmg = per_hit(a, d, kind, source=source) * (1.0 + DMG_VAR * (2.0 * rng.random() - 1.0))
-    crit = rng.random() < crit_chance(a)
+    crit = sure or rng.random() < crit_chance(a)
     if crit:
         dmg *= crit_mult(a)
     return dmg, crit

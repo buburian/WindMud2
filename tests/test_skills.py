@@ -114,6 +114,7 @@ def test_skills_match_mud_design(balance):
         assert str(s.guild) == want["guild"]
         assert (s.kind, s.target, s.hits, s.ratio, s.cost) == (want["kind"], want["target"], want["hits"], want["ratio"], want["cost"])
         assert s.cooldown == want["cooldown"]
+        assert s.sure == want.get("sure", False)                        # 必中、必定爆擊（重擊、火球）
         assert tuple(s.weapon_kinds) == tuple(want["weapon_kinds"])
         want_dot = want.get("dot")                                      # 打中後的持續傷害（火球的燃燒）
         assert (None if s.dot is None else {k: s.dot[k] for k in ("name", "ratio", "jumps")}) == want_dot
@@ -147,7 +148,7 @@ def test_display_range_matches_mud_design(balance, model):
 
 @pytest.mark.parametrize("seed", range(3))
 def test_skill_hit_matches_mud_design(balance, model, seed):
-    # 技能的一下 ＝ 主手這一下平砍 × ratio（simulate_group 的 skill_hand），同一個種子每一下都一樣
+    # 技能的一下 ＝ 主手這一下平砍 × ratio（simulate_group 的 skill_hand），同一個種子每一下都一樣；sure（必中、必定爆擊）也一樣傳進去
     for a in players()[::5]:
         for d in (mob(a.level), mob(a.level, "elite", "dragon/phys", "phys", "tank")):
             s = own_skill(a)
@@ -157,8 +158,8 @@ def test_skill_hit_matches_mud_design(balance, model, seed):
             hand["per_hit_t"] = {t: v * s.ratio for t, v in hand["per_hit_t"].items()}
             ours, theirs = random.Random(seed), random.Random(seed)
             for _ in range(200):
-                dmg, _crit = damage.strike(a, d, ours, skills.damage_kind(s, a))
-                want = model._strike_once(p, hand, theirs.random, model.cfg.dmg_var, False)
+                dmg, _crit = damage.strike(a, d, ours, skills.damage_kind(s, a), sure=s.sure)
+                want = model._strike_once(p, hand, theirs.random, model.cfg.dmg_var, False, s.sure)
                 # 1e-9：100 級的平砍本身就跟 balance.py 差 1e-12 左右（G(L) 這些小數的誤差，等級越高越大）
                 assert dmg * s.ratio == pytest.approx(want, rel=1e-9)
 
@@ -317,7 +318,8 @@ def test_use_starts_a_fight(world):
     got, mine, its, same = in_fight([], body)
     assert got.startswith("你使用重擊攻擊野狗，")
     assert (mine, its, same) == (dog, shabu, True)
-    assert dog.hp == pytest.approx(dog.panel["hp"] - damage.per_hit(shabu, dog, "phys") * SMASH.ratio)
+    # 重擊必中、必定爆擊（2026-11-20）：乘自己的爆擊倍率
+    assert dog.hp == pytest.approx(dog.panel["hp"] - damage.per_hit(shabu, dog, "phys") * SMASH.ratio * damage.crit_mult(shabu))
 
 
 @pytest.mark.parametrize("mv, cooldown, want", [(0.0, None, "你的 MV 不夠。"), (40.0, 3, "你還要等 3 秒才能再用重擊。")])
@@ -390,12 +392,12 @@ def test_smash_messages_and_one_prompt(world):
         return say(shabu, "use smash"), text_of(ming)
 
     mine, seen = in_fight([(shabu, dog)], body)
-    dmg = damage.per_hit(shabu, dog, "phys") * SMASH.ratio
+    dmg = damage.per_hit(shabu, dog, "phys") * SMASH.ratio * damage.crit_mult(shabu)    # 必定爆擊
     words, _code = combat.severity(dmg, dog.panel["hp"])
     n = stats.shown(dmg)
     tail = f"{'.' if n <= 10 else '!'}({n})"
-    assert mine == f"你使用重擊攻擊野狗，對它造成{words}{tail}\r\n\r\n{prompt_of(shabu)}"     # 只有一個 prompt
-    assert seen == f"\r\nShabu使用重擊攻擊野狗，對它造成{words}{tail}\r\n\r\n{prompt_of(ming)}"
+    assert mine == f"你使用重擊攻擊野狗，爆擊！對它造成{words}{tail}\r\n\r\n{prompt_of(shabu)}"     # 只有一個 prompt
+    assert seen == f"\r\nShabu使用重擊攻擊野狗，爆擊！對它造成{words}{tail}\r\n\r\n{prompt_of(ming)}"
     assert dog.hp == pytest.approx(dog.panel["hp"] - dmg)
 
 
@@ -405,7 +407,7 @@ def test_fireball_is_a_spell_and_costs_mp(world):
     mp, mv = ming.mp, ming.mv
     got = in_fight([(ming, dog)], lambda: say(ming, "use fireball"))
     assert got.startswith("你使用火球攻擊野狗，")
-    assert dog.hp == pytest.approx(dog.panel["hp"] - damage.per_hit(ming, dog, "spell") * FIREBALL.ratio)
+    assert dog.hp == pytest.approx(dog.panel["hp"] - damage.per_hit(ming, dog, "spell") * FIREBALL.ratio * damage.crit_mult(ming))
     assert (ming.mp, ming.mv) == (pytest.approx(mp - skills.cost(FIREBALL, 1)), mv)
 
 
@@ -476,7 +478,7 @@ def test_several_hits(world, monkeypatch):
     dog = mobile("野狗")
     got = in_fight([(shabu, dog)], lambda: say(shabu, "use smash"))
     assert got.count("你使用重擊攻擊野狗，") == 3
-    assert dog.hp == pytest.approx(dog.panel["hp"] - 3 * damage.per_hit(shabu, dog, "phys") * triple.ratio)
+    assert dog.hp == pytest.approx(dog.panel["hp"] - 3 * damage.per_hit(shabu, dog, "phys") * triple.ratio * damage.crit_mult(shabu))
 
 
 def test_killing_with_a_skill(world, monkeypatch):
@@ -517,9 +519,9 @@ def test_skills_listing(world):
 
 
 def test_display_range_has_the_damage_variance():
-    # 武器做好前：傷害點數 × ratio × (1 ∓ 20%)，跟 strike() 實際打出的範圍一樣
+    # 武器做好前：傷害點數 × ratio × (1 ∓ 20%)，跟 strike() 實際打出的範圍一樣；重擊必定爆擊，再乘爆擊倍率
     p = player(1, stats.Race.HUMAN, stats.Guild.SWORD)
-    points = p.panel["dmg_phys"] * SMASH.ratio
+    points = p.panel["dmg_phys"] * SMASH.ratio * damage.crit_mult(p)
     assert skills.display_range(p, SMASH) == (stats.shown(points * 0.8), stats.shown(points * 1.2))
 
 
@@ -856,11 +858,11 @@ def test_skill_misses_still_do_0_and_leave_no_burn(world, monkeypatch):
 
 
 def test_fireball_burns_3_times(world, monkeypatch):
-    strikes(monkeypatch, 10.0)                                          # 第一發 10 × 1.2 ＝ 12，每跳 12 × 0.3 ＝ 3.6
+    strikes(monkeypatch, 12 / FIREBALL.ratio)                           # 第一發 × 火球的比率 ＝ 12，每跳 12 × 0.3 ＝ 3.6
     shabu, dog = mage(), mobile("野狗")
     in_fight([], lambda: say(shabu, "use fireball dog"))
     burn = dog.affects[0]
-    assert (burn.source, burn.name, burn.duration, burn.periodic) == ("fireball", "燃燒", 9, {"hp": -12 * 0.3})
+    assert (burn.source, burn.name, burn.duration) == ("fireball", "燃燒", 9) and burn.periodic == {"hp": pytest.approx(-12 * 0.3)}
     after_hit = dog.hp
     raw(shabu)
     affects.tick(), affects.tick()
@@ -873,7 +875,7 @@ def test_fireball_burns_3_times(world, monkeypatch):
 
 
 def test_each_burn_does_at_least_1(world, monkeypatch):
-    strikes(monkeypatch, 1.0)                                           # 第一發 1.2，每跳 0.36 → 1
+    strikes(monkeypatch, 1.0)                                           # 第一發 0.63 → 最低 1，每跳 0.3 → 1
     shabu, dog = mage(), mobile("野狗")
     in_fight([], lambda: say(shabu, "use fireball dog"))
     assert dog.affects[0].periodic == {"hp": -1}

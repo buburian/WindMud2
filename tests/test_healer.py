@@ -1,4 +1,4 @@
-"""秋風城的行醫者（真的 areas/midgaard.json 和 midgaard/行醫者.lua）：1～10 級的玩家走進神殿祭壇，牠放餽贈給他。
+"""秋風城的行醫者（真的 areas/midgaard.json 和 midgaard/行醫者.lua）：1～30 級的玩家走進神殿祭壇，牠放餽贈給他（2026-11-20 從 1～10 級改的）。
 
 招呼是腳本的 random(1, 2)、測試沒載入表情動作，所以只看餽贈那一句和身上的效果，不比整段畫面。
 腳本出錯會被接住、只記 log，所以每個測試都看 scripts.report 有沒有被叫到（不然「沒有餽贈」可能只是腳本出錯）。
@@ -64,7 +64,7 @@ def walk_in(ch):
     return ""
 
 
-@pytest.mark.parametrize("level", [1, 10])
+@pytest.mark.parametrize("level", [1, 10, 11, 30])
 def test_low_level_player_gets_gift(errors, level):
     p = player(level)
     out = walk_in(p)
@@ -87,8 +87,8 @@ def test_already_has_gift_is_not_cast_again(errors):
     assert errors == []
 
 
-@pytest.mark.parametrize("level", [11, 50])
-def test_level_11_and_up_gets_nothing(errors, level):
+@pytest.mark.parametrize("level", [31, 50])
+def test_level_31_and_up_gets_nothing(errors, level):
     p = player(level)
     out = walk_in(p)
     assert "餽贈" not in out
