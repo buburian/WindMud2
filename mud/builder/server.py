@@ -76,7 +76,7 @@ class Builder:
         return self.folder / name
 
     def others(self, name):
-        return sorted(p for p in self.folder.glob("*.json") if p.name != name)
+        return [p for p in area.area_files(self.folder) if p.name != name]
 
     def problems(self, name, data):
         """用 check_files 檢查還沒存的內容：寫進暫存資料夾的同名檔，對照這個資料夾裡其他檔名的檔。
@@ -91,7 +91,7 @@ class Builder:
 
     def listing(self):
         result = []
-        for path in sorted(self.folder.glob("*.json")):
+        for path in area.area_files(self.folder):
             item = {"file": path.name}
             try:
                 if not NAME.fullmatch(path.name):

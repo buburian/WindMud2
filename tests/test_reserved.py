@@ -46,7 +46,7 @@ def dog(room):
 # ---- 真的系統區域檔 ----
 
 def test_the_real_system_area_is_fine():
-    paths = sorted(Path(AREA_DIR).glob("*.json"))
+    paths = area.area_files(AREA_DIR)
     assert Path(SYSTEM_AREA) in paths and area.check_files([Path(SYSTEM_AREA)], paths)[Path(SYSTEM_AREA)] == []
     data = json.loads(Path(SYSTEM_AREA).read_text(encoding="utf-8"))
     assert data["area"]["header"]["type"] == area.AreaType.SYSTEM

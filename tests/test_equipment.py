@@ -37,7 +37,9 @@ def test_numbers_match_mud_design(balance, level):
         # 龍焰抗性不算裝備點數（設計文件 §5.5）：balance.py 的單價是 1，我們是 0
         want = 0.0 if stat == "res_dragon" else m.prices[stat]
         assert value == pytest.approx(want), stat
-    assert {COLOR_KEYS[k]: v["points"] for k, v in balance.RARITY.items()} == equipment.COLOR_BONUS
+    # 綠色只給套裝，balance.py 沒有：跟橘色一樣（使用者 2026-11-20 定的）
+    assert {COLOR_KEYS[k]: v["points"] for k, v in balance.RARITY.items()} == {k: v for k, v in equipment.COLOR_BONUS.items() if k != "green"}
+    assert equipment.COLOR_BONUS["green"] == equipment.COLOR_BONUS["orange"]
 
 
 def test_primary_standards_match_mud_design(balance):

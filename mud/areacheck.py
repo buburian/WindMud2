@@ -7,6 +7,7 @@
 import sys
 from pathlib import Path
 
+from . import area
 from .area import check_files
 from .config import AREA_DIR
 
@@ -15,12 +16,12 @@ def main(args=None):
     args = sys.argv[1:] if args is None else args
     if args:
         paths = [Path(a) for a in args]
-        reference = sorted({p for path in paths for p in path.parent.glob("*.json")})
+        reference = sorted({p for path in paths for p in area.area_files(path.parent)})
     else:
-        paths = reference = sorted(Path(AREA_DIR).glob("*.json"))
+        paths = reference = area.area_files(AREA_DIR)
     problems = check_files(paths, reference)
     total = 0
-    for path in paths:
+    for path in [*paths, *(p for p in problems if p not in paths)]:      # 最後是套裝表（sets.json）
         found = problems[path]
         total += len(found)
         if found:

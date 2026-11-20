@@ -179,6 +179,7 @@ class ItemColor(enum.StrEnum):
     BLUE = "blue"                           # 藍：×1.2
     PURPLE = "purple"                       # 紫：×1.3
     ORANGE = "orange"                       # 橘：×1.4
+    GREEN = "green"                         # 綠：只給套裝用（sets.py），跟橘一樣 ×1.4、必出主詞綴也多 30%（使用者 2026-11-20 定的）
 
 
 CHANCE_MAX = 10000                          # 機率以萬分之一為單位（tier_roll、drops 的 chance）：10000 是 100%
@@ -517,6 +518,7 @@ def check_files(paths, reference=(), script_root=None):
     reference 是其他拿來對照的檔案：只查一個檔時，靠它知道別的區域有哪些房間，
     才能檢查通到別的區域的出口、跨檔案的號碼重複。它們自己的問題不會報出來。
     腳本的 .lua 放在「script_root（沒給就是區域檔所在的資料夾）／區域檔名」裡：編輯器檢查暫存檔時給它真的資料夾。
+    套裝表 sets.json 找 reference（沒有就 paths）第一個檔的資料夾：有的話它的問題也在回傳裡（key 是 sets.json 的路徑）。
     """
     checked = {p.resolve() for p in paths}
     problems, found, lua_cache = {}, {}, {}
@@ -579,13 +581,114 @@ def check_files(paths, reference=(), script_root=None):
     objects, mob_levels = world_items([*paths, *reference])
     # 門兩邊都要寫：對面的房間可能在別的檔，一樣用全部讀到的檔去找
     rooms = world_exits([*paths, *reference])
+    # 套裝表（sets.json，跟區域檔放一起）：表本身、套裝物品放出來的地方（綠色、生物的等級）
+    members = {}
+    set_path = next((Path(p).parent / SET_FILE for p in [*reference, *paths][:1]), None)
+    if set_path is not None and set_path.exists():
+        problems[set_path] = []
+        members = check_sets(set_path, objects, problems[set_path])
     for path, info in found.items():
         data = read_json(path, [])
         if isinstance(data, dict):
-            check_fixed_items(path.name, data, objects, mob_levels, problems[path])
+            check_fixed_items(path.name, data, objects, mob_levels, problems[path], members)
             check_doors(path.name, data, rooms, problems[path])
             check_portals(path.name, data, owner, problems[path])
+            check_set_places(path.name, data, members, mob_levels, problems[path])
     return problems
+
+
+SET_KEYS = {"name", "level", "items", "bonus"}      # 套裝表每一套的欄位（區域製作手冊「套裝表」）
+
+
+def check_sets(path, objects, problems):
+    """套裝表（sets.json，使用者 2026-11-20 定的）：回傳寫得對的套裝物品 {物品號碼: (套裝名, 套裝等級)}，給放物品的地方檢查用。
+    objects 是全部區域檔的物品（world_items）。"""
+    data = read_json(path, problems)
+    if data is None:
+        return {}
+    if not (isinstance(data, dict) and set(data) == {"sets"} and isinstance(data["sets"], list)):
+        problems.append(f"{path.name}：最上層要寫 {{\"sets\": […]}}")
+        return {}
+    members, names = {}, set()
+    for i, s in enumerate(data["sets"], 1):
+        where = f"{path.name}：第 {i} 套"
+        if not check_keys(s, SET_KEYS, f"{where} ", problems):
+            continue
+        name, level, items, bonus = s["name"], s["level"], s["items"], s["bonus"]
+        if not (isinstance(name, str) and name.strip()):
+            problems.append(f"{where}的 name 不能是空的")
+            continue
+        where = f"{path.name}：套裝「{name}」"
+        try:
+            name.encode(ENCODING)
+        except UnicodeEncodeError as e:
+            problems.append(f"{where}的 name 有轉不成 Big5 的字 {name[e.start]!r}")
+        if name in names:
+            problems.append(f"{where}重複了")
+        names.add(name)
+        if not (is_int(level) and level >= 1):
+            problems.append(f"{where}的 level 要是 1 以上的整數，不能是 {level!r}")
+            continue
+        if bonus not in equipment.AFFIX_WORD:
+            problems.append(f"{where}的 bonus 要寫屬性的代號（{'、'.join(equipment.AFFIX_WORD)}），不能是 {bonus!r}")
+        if not (isinstance(items, list) and len(items) >= 2 and all(is_vnum(v) for v in items) and len(set(items)) == len(items)):
+            problems.append(f"{where}的 items 要寫至少 2 件、不重複的物品號碼（{MIN_VNUM} 以上），不能是 {items!r}")
+            continue
+        for v in items:
+            obj = objects.get(v)
+            if obj is None:
+                problems.append(f"{where}的物品 {v} 不存在")
+            elif not is_gear(obj):
+                problems.append(f"{where}的物品 {v}「{obj.get('short')}」不是裝備（要有有點數的穿戴部位）")
+            elif v in members:
+                problems.append(f"{where}的物品 {v} 已經在套裝「{members[v][0]}」裡了：一件物品只能在一套裡")
+            else:
+                if flag_set(obj.get("extra_flags"), ExtraFlag.BIND_EQUIP):
+                    problems.append(f"{where}的物品 {v}「{obj.get('short')}」勾了 2048 裝備後綁定：套裝一律拾取後綁定，兩種只能有一種")
+                members[v] = (name, level)
+    return members
+
+
+def is_gear(obj):
+    """區域檔的物品是不是有點數的裝備：有穿戴部位，而且那個部位有點數（持握、光源沒有）。寫錯的算不是。"""
+    try:
+        slot = equipment.best_slot(*wear_slots(obj))
+    except ValueError:
+        return False
+    return slot is not None and equipment.cap(1, slot) > 0
+
+
+def flag_set(value, flag):
+    try:
+        return bool(parse_flags(value) & flag)
+    except ValueError:
+        return False
+
+
+def check_set_places(name, data, members, mob_levels, problems):
+    """套裝物品放出來的地方（掉落表、G、O、P）：套裝物品的 color 要寫 green，green 只能寫在套裝物品上；
+    掉落表有套裝物品的生物，等級要 ≥ 套裝等級（不然高等的玩家打低等的怪刷套裝）。members 是 check_sets() 的結果。"""
+    def place(where, vnum, color):
+        if vnum in members and color != ItemColor.GREEN:
+            problems.append(f"{where}的物品 {vnum} 是套裝「{members[vnum][0]}」的，color 要寫 green，不能是 {color!r}")
+        elif vnum not in members and color == ItemColor.GREEN:
+            problems.append(f"{where}的 color 寫了 green，但物品 {vnum} 不在套裝表裡：green 只給套裝用")
+
+    for m in data.get("mobiles") if isinstance(data.get("mobiles"), list) else []:
+        if not (isinstance(m, dict) and isinstance(m.get("drops"), list)):
+            continue
+        for i, d in enumerate(m["drops"]):
+            if not isinstance(d, dict):
+                continue
+            where = f"{name}：生物 {m.get('vnum')} 的 drops 第 {i + 1} 行"
+            place(where, d.get("obj_vnum"), d.get("color"))
+            s = members.get(d.get("obj_vnum"))
+            if s is not None and is_int(m.get("level")) and m["level"] < s[1]:
+                problems.append(f"{where}掉套裝「{s[0]}」的物品 {d['obj_vnum']}：生物是 {m['level']} 級，"
+                                f"要至少套裝的 {s[1]} 級（不然高等的玩家可以打低等的怪刷套裝）")
+    for i, r in enumerate(data.get("resets") if isinstance(data.get("resets"), list) else []):
+        if isinstance(r, dict) and r.get("cmd") in ("G", "O", "P"):
+            place(f"{name}：resets 第 {i + 1} 筆（{r['cmd']}）", r.get("obj_vnum"), r.get("color"))
 
 
 def check_portals(name, data, owner, problems):
@@ -655,7 +758,7 @@ def world_items(paths):
     return objects, mob_levels
 
 
-def check_fixed_items(name, data, objects, mob_levels, problems):
+def check_fixed_items(name, data, objects, mob_levels, problems, members=None):
     """固定裝備（物品寫了 affects）放出來的地方：加成的點數不能超過「等級和部位的上限 × 顏色加成」（設計文件 §3.3）。
 
     放出來的地方和等級：掉落表 drops 用這隻生物的等級；重置 G 寫 null 用前面最近那筆 M 的生物等級，寫 -1（買的人的等級）
@@ -663,6 +766,8 @@ def check_fixed_items(name, data, objects, mob_levels, problems):
     顏色 null、gray 的加成是 ×0：只有不算點數的加成（例如龍焰抗性）才放得進去。
     """
     def place(where, obj_vnum, level, color):
+        if obj_vnum in (members or {}):         # 套裝的物品：等級照套裝表（sets.py）
+            level = members[obj_vnum][1]
         if is_vnum(obj_vnum) and is_int(level):
             check_fixed_item(where, obj_vnum, objects, level, color, problems)
 
@@ -753,6 +858,14 @@ class Found:
         self.recall = None                  # 格式沒問題的 recall
         self.mobiles = []                   # 號碼沒問題的生物
         self.objects = []                   # 號碼沒問題的物品
+
+
+SET_FILE = "sets.json"                      # 套裝表（使用者 2026-11-20 定的，sets.py）：放在區域資料夾裡，但不是區域檔
+
+
+def area_files(folder):
+    """資料夾裡的區域檔（照檔名排）：*.json，跳過套裝表 sets.json。伺服器、areacheck、編輯器都用它。"""
+    return sorted(p for p in Path(folder).glob("*.json") if p.name != SET_FILE)
 
 
 def read_json(path, problems):

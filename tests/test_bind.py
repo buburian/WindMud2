@@ -264,10 +264,10 @@ def test_examine(world):
     give_to(ming, 113)
     give_to(ming, 110)
     give_to(ming, 111)
-    assert say(ming, "examine silver").split("\r\n")[-1] == "綁定：【裝備後綁定】，還沒綁住。"
+    assert say(ming, "examine silver").split("\r\n")[-1] == "綁定：【裝備後綁定】"           # 只寫哪一種（使用者 2026-11-20 要的）
     say(ming, "wear silver")
-    assert say(ming, "examine silver").split("\r\n")[-1] == "綁定：【裝備後綁定】，已經綁住了。"
-    assert say(ming, "examine gold").split("\r\n")[-1] == "綁定：【拾取後綁定】，已經綁住了。"
+    assert say(ming, "examine silver").split("\r\n")[-1] == "綁定：【裝備後綁定】"
+    assert say(ming, "examine gold").split("\r\n")[-1] == "綁定：【拾取後綁定】"
     assert "綁定" not in say(ming, "examine copper")
 
 

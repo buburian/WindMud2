@@ -474,7 +474,7 @@ def test_oload(world):
 @pytest.mark.parametrize("line, want", [
     ("oload", "用法：oload <號碼> [等級] [顏色]"), ("oload abc", "用法：oload <號碼> [等級] [顏色]"),
     ("oload 999", "沒有這個號碼的物品。"), ("oload 102 0", "等級要寫 1～100。"), ("oload 102 101", "等級要寫 1～100。"),
-    ("oload 102 5 red", "顏色要寫 gray、white、blue、purple、orange。"),
+    ("oload 102 5 red", "顏色要寫 gray、white、blue、purple、orange、green。"),
 ])
 def test_oload_mistakes(world, line, want):
     p = person("Admin", imm_=True)

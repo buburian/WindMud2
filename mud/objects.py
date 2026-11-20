@@ -8,7 +8,7 @@ import logging
 import math
 import random
 
-from . import area, equipment, maps, names, reserved, stats
+from . import area, equipment, maps, names, reserved, sets, stats
 from .act import notify
 from .area import (CHANCE_MAX, CHARGED_ITEM_TYPES, CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE, DRINK_CON_ITEM_TYPE, FOOD_ITEM_TYPE,
                    FOUNTAIN_ITEM_TYPE, LIGHT_ITEM_TYPE, MONEY_ITEM_TYPE, PORTAL_ITEM_TYPE, SKILL_ITEM_TYPES, WEAPON_ITEM_TYPE, Apply, Attack,
@@ -22,7 +22,8 @@ log = logging.getLogger(__name__)
 CORPSE_TIMER = (10, 14)                     # 屍體過幾次 OBJ_TICKS 消失（照 C 版：10～14 個 tick，約 5～7 分鐘）
 DECAY = "腐爛變成了灰塵。"                    # timer 到了的訊息（照 C 版的屍體；現在只有屍體有 timer）
 # 名字的顏色（使用者選的）：裝備照顏色（終端機沒有橘色，用暗黃），其他物品照 C 版亮綠；後面的英文名字亮青（照 C 版）
-COLOR_CODES = {ItemColor.GRAY: "{D", ItemColor.WHITE: "{W", ItemColor.BLUE: "{B", ItemColor.PURPLE: "{M", ItemColor.ORANGE: "{y"}
+COLOR_CODES = {ItemColor.GRAY: "{D", ItemColor.WHITE: "{W", ItemColor.BLUE: "{B", ItemColor.PURPLE: "{M", ItemColor.ORANGE: "{y",
+               ItemColor.GREEN: "{g"}       # 套裝的綠色用暗綠：亮綠已經用在打中別人、加的數字（使用者 2026-11-20）
 OTHER_CODE = "{G"
 ENGLISH, FLOOR, RESET = colorize("{C"), colorize("{W"), colorize("{x")    # 地上那一行亮白（使用者選的，跟生物一樣）
 PORTAL_TAG = colorize("{B(傳送門)")         # 傳送門的光圈（使用者 2026-11-20 要的）：跟角色的光圈一樣接在前面；亮紫已經是粉光
@@ -90,6 +91,19 @@ class Obj:
 
 
 def create(vnum, level, color, rng=random, for_sale=False):
+    """照區域檔的物品 vnum 做一件（見 make()）。套裝的物品（sets.py，使用者 2026-11-20 定的）：等級照套裝表、一律綠色
+    （不管放出它的地方寫什麼）、拾取後綁定，名字前面加「〔套裝名〕」（所有顯示名字的地方都一樣，存檔也帶著）。"""
+    s = sets.set_of(vnum)
+    if s is not None:
+        level, color = s.level, sets.COLOR
+    obj = make(vnum, level, color, rng, for_sale)
+    if obj is not None and s is not None:
+        obj.name = sets.NAME_TAG.format(s.name) + obj.name
+        obj.bind = ExtraFlag.BIND_PICKUP
+    return obj
+
+
+def make(vnum, level, color, rng=random, for_sale=False):
     """照區域檔的物品 vnum 做一件，裝備等級 level、顏色 color（放出它的地方決定）。號碼找不到記 log、回傳 None。
 
     有穿戴部位的是裝備：寫了 affects 用寫好的（固定裝備），[] 照等級和顏色隨機抽，名稱接在名字前面（「疾風之蠻力長劍」）。

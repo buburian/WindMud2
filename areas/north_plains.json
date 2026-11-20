@@ -1555,6 +1555,12 @@
           "tiers": [
             "elite"
           ]
+        },
+        {
+          "obj_vnum": 99807,
+          "color": "green",
+          "chance": 1000,
+          "tiers": null
         }
       ],
       "script": null,
@@ -1712,6 +1718,12 @@
           "obj_vnum": 99804,
           "color": "orange",
           "chance": 500,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 99806,
+          "color": "green",
+          "chance": 1000,
           "tiers": null
         }
       ],
@@ -1871,6 +1883,58 @@
       "affects": [],
       "main_affix": null,
       "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 99806,
+      "keywords": "ring eye vulture",
+      "short": "鷹眼戒指",
+      "long": "一枚嵌著黃褐色小石子的骨戒掉在地上。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": "1|2",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [],
+      "main_affix": "crit",
+      "extra_descriptions": [
+        {
+          "keywords": "戒指 ring",
+          "description": "一圈磨亮的獸骨，嵌著一顆黃褐色的小石子，看起來就像禿鷹的眼睛。\n內側纏著一小段褪色的紅布，是平原上獵人的記號。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 99807,
+      "keywords": "ring fang lion",
+      "short": "獅牙戒指",
+      "long": "一枚用獸牙磨成的戒指掉在地上。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": "1|2",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [],
+      "main_affix": "critdmg",
+      "extra_descriptions": [
+        {
+          "keywords": "戒指 ring",
+          "description": "一截獅子的犬齒磨成的戒指，牙尖還留著。\n內側纏著一小段褪色的紅布，是平原上獵人的記號。\n"
+        }
+      ],
       "script": null
     }
   ],

@@ -17,7 +17,7 @@ import logging
 from collections import deque
 from pathlib import Path
 
-from . import affects, area, behavior, fight, light, meals, objects, reserved, resets, scripts, skills, stats, terrain, weather
+from . import affects, area, behavior, fight, light, meals, objects, reserved, resets, scripts, sets, skills, stats, terrain, weather
 from .area import AreaType
 from .characters import characters
 from .clock import cancel, every
@@ -109,12 +109,12 @@ def load(directory):
     沒問題才停掉舊的區域物件（和它們的 loop），換成新的。世界 tick 要另外呼叫 start()。
     """
     global world, templates, dynamic_rooms, instance_rooms, routes
-    paths = sorted(Path(directory).glob("*.json"))
+    paths = area.area_files(directory)          # 套裝表 sets.json 不是區域檔
     if not any(area.area_kind(p) == AreaType.SYSTEM for p in paths):
         # 屍體、金幣、召喚物的文字在系統區域檔（reserved.py）：資料夾裡沒有（測試自己做的區域資料夾）就用遊戲的那一份
         paths.append(Path(SYSTEM_AREA))
     problems = area.check_files(paths, paths)
-    found = [p for path in paths for p in problems[path]]
+    found = [p for found in problems.values() for p in found]      # 區域檔和套裝表（sets.json）的
     if found:
         more = f"（共 {len(found)} 個問題，用 uv run python -m mud.areacheck 看全部）" if len(found) > 1 else ""
         raise ValueError(found[0] + more)
@@ -143,6 +143,7 @@ def load(directory):
     world, templates, dynamic_rooms, instance_rooms = new_world, new_templates, new_dynamic_rooms, new_instance_rooms
     routes = find_routes(entries, START_ROOM)
     resets.mobiles, objects.protos = new_mobiles, new_objects
+    sets.load(directory)                    # 套裝表（檢查過了）：重置放物品之前要先有
     resets.reset_zone(world)                # 世界一開機就放好生物
     counts = {k: sum(1 for t in templates.values() if t[0] == k) for k in (AreaType.DYNAMIC, AreaType.INSTANCE)}
     log.info(f"載入 {len(paths)} 個區域檔：世界 {len(world.rooms)} 間房；"

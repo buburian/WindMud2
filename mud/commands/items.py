@@ -6,7 +6,7 @@
 import logging
 import re
 
-from .. import inventory, light, objects, save, scripts, stats
+from .. import inventory, light, objects, save, scripts, sets, stats
 from ..act import TO_NOTVICT, TO_ROOM, TO_VICT
 from ..characters import Position, characters, find_in_room
 from ..players import Player
@@ -510,11 +510,12 @@ def do_examine(ch, arg):
     if obj is None:
         ch.send("你身上沒有這樣東西。\n")
         return
-    ch.send("\n".join(identify(obj)) + "\n")
+    ch.send("\n".join(identify(obj, ch)) + "\n")
 
 
-def identify(obj):
-    """exam 的每一行：名稱和種類、重量和等級（有顏色才寫稀有度），裝備才有部位，武器、護具、加成有才列。"""
+def identify(obj, ch=None):
+    """exam 的每一行：名稱和種類、重量和等級（有顏色才寫稀有度），裝備才有部位，武器、護具、加成有才列；
+    套裝的最後兩行寫哪一套、ch 身上穿了幾件、特效和幾級以後沒有（set_lines()，使用者 2026-11-20 要的）。"""
     kind = ITEM_TYPE_NAMES.get(obj.item_type, str(obj.item_type))
     lines = [f"物品名稱：【{objects.short(obj)}】，型式：【{kind}】",
              f"重量：【{obj.weight}】，使用等級：【{obj.level}】" + (f"，稀有度：【{COLOR_NAMES[obj.color]}】" if obj.color else "")]
@@ -530,5 +531,16 @@ def identify(obj):
     if obj.affects:
         lines.append("加成：" + "、".join(f"{STAT_NAMES[a.name.lower()]} {n:+}" for a, n in obj.affects))
     if obj.bind is not None:
-        lines.append(f"綁定：【{objects.BIND_NAMES[obj.bind]}】，{'已經綁住了' if objects.bound(obj) else '還沒綁住'}。")
-    return lines
+        lines.append(f"綁定：【{objects.BIND_NAMES[obj.bind]}】")      # 只寫哪一種（使用者 2026-11-20 要的）；綁住了沒看背包的（綁定）
+    return lines + set_lines(obj, ch)
+
+
+def set_lines(obj, ch):
+    """套裝的物品 examine 多兩行：哪一套、身上穿了幾件（有哪幾件）；特效和幾級後失效（使用者 2026-11-20 要的寫法）。不是套裝是空的。"""
+    s = sets.set_of(obj.vnum)
+    if s is None:
+        return []
+    pieces = "、".join(objects.protos[v]["short"] for v in s.items)
+    worn = sets.worn(ch, s) if ch is not None else 0
+    return [f"套裝：【{s.name}】，身上穿了 {worn}/{len(s.items)} 件（{pieces}）",
+            f"套裝特效：{STAT_NAMES[s.bonus]} +{sets.strength(s)}（{s.level + sets.EXPIRE_LEVELS + 1} 級後失效）"]

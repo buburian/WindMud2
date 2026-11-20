@@ -20,7 +20,7 @@ def problems_of(tmp_path, data):
 
 
 def test_real_areas_have_no_problems():
-    paths = sorted((ROOT / "areas").glob("*.json"))
+    paths = area.area_files(ROOT / "areas")
     assert paths
     assert all(found == [] for found in area.check_files(paths, paths).values())
 

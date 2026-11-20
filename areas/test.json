@@ -447,6 +447,48 @@
       "main_affix": null,
       "extra_descriptions": [],
       "script": null
+    },
+    {
+      "vnum": 113,
+      "keywords": "helm",
+      "short": "測試套裝頭盔",
+      "long": "一頂測試套裝頭盔擺在地上。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": "1|16",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 2,
+      "cost": 0,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 114,
+      "keywords": "boots",
+      "short": "測試套裝靴子",
+      "long": "一雙測試套裝靴子擺在地上。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": "1|64",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 2,
+      "cost": 0,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [],
+      "script": null
     }
   ],
   "resets": [

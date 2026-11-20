@@ -800,6 +800,11 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     remove（`remove all` 照 SLOTS 的順序，副手在主手前）、inventory（最後一行件數和負重，使用者選的；一樣的合成一行「( 6) 」，`objects.combined()`，`look in` 的 `inside()`、look 的地上（只有一件的不空格）也用，使用者 2026-11-20 要的，只是畫面、n.xx 照舊）、equipment（每個部位都列，沒穿的寫「（空）」，副手被雙手武器佔住寫「（雙手武器佔住）」，使用者 2026-11-19 要的）。最低姿勢照 C 版：前四個 RESTING（打架中可以），後兩個 DEAD。
   - donate（`do_donate`，`don`，RESTING，使用者 2026-11-20 要的，照 C 版 do_donate）：背包裡的裝備（`is_gear()`：有部位、有顏色）送進 `config.DONATION_PIT` 3010（`donation_pit()` 找世界區域地上的，秋風城神殿祭壇 3054）；
     穿著的要先脫、綁定的不行（`can_let_go()`）、放不下不行（`cannot_donate()`）；祭壇醒著的玩家聽到 `DONATE_SOUND`（一次 donate 一次），捐完 `keep()` 存檔。`tests/test_donate.py`。
+  - **套裝**（使用者 2026-11-20 定的，設計文件 §3.4 第 7 條，規則在區域製作手冊「套裝表」、玩家角色手冊「套裝」）：套裝表是區域資料夾裡的 `sets.json`（`area.SET_FILE`；`area.area_files()` 讀區域檔時跳過它，伺服器、areacheck、編輯器、測試都用它），
+    每一套 name、level、items、bonus（屬性代號）。檢查在 `area.check_sets()`（`check_files()` 找第一個檔的資料夾的 sets.json，問題的 key 是它的路徑）和 `check_set_places()`（套裝物品一定 green、green 只給套裝、掉落的生物等級 ≥ 套裝等級）；勾 2048 報錯。
+    `mud/sets.py`：`zones.load()` 讀（資料夾沒有就是沒有套裝，測試自己的資料夾不受影響）、`set_of()`、`strength()`（floor(50% × Σ `piece_points()` ÷ 單價)，`piece_points()` 跟 `roll_item` 的點數一樣）、`active()`（穿齊、等級 ≤ 套裝 ＋ 10）。
+    `objects.create()` 套裝的物品：等級照套裝表、綠色（`{g` 暗綠）、拾取後綁定、名字前面「〔套裝名〕」（`make()` 是原本的做法）。綠色跟橘色一樣（`equipment.COLOR_BONUS`、`MAIN_AFFIX_COLORS`）。
+    `stats.set_bonus()` 在 `recompute()` 裝備後面加；淬火石 `commands/temper.SET_ITEM` 拒絕；`items.set_lines()` 是 examine 的兩行；`system.set_lines()` 是 score 的「套裝效果」（穿了至少一件就列，沒穿齊、已失效的整行灰色）；ostat 也寫。紅布獵手：城北平原 99806、99807（禿鷹、兇猛的獅子 green 10%），命中 +6。`tests/test_sets.py`。
   - **淬火石**（設計文件 §3.11，使用者 2026-11-20 核准，規則在玩家角色手冊「淬火石」）：`Player.temper_stones`（存檔，不是物品），score 金幣後面。
     算法 `equipment.temper()`（照 balance.py 的 `temper_item`，`test_equipment.py` 用同一個種子比對；Obj.affects 存的順序就是主、次、第三條、補零頭，零頭照它補；
     單價 0 的龍焰抗性原樣留著）。`temper.py`：掉落 `drop()`（`combat.slain()` 經驗後面，亂數 `temper.rng`，不動 combat.rng）、`result()`／`apply()`（綁住 `BIND_PICKUP`）。

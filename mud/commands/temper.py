@@ -3,7 +3,7 @@
 第一次打先預覽（會變成幾級橘色、屬性），再打一次同樣的指令才用掉一顆（用掉不能回復，跟換職業一樣說兩次）。
 中間等級變了、換了別件、裝備變了或脫掉，就重新預覽。打架中不能用。訊息是我們定的（mud_design 說的「你定」）。
 """
-from .. import equipment, inventory, objects, temper
+from .. import equipment, inventory, objects, sets, temper
 from ..act import TO_CHAR, act
 from . import items
 
@@ -12,6 +12,7 @@ NONE_LEFT = "你沒有淬火石。"
 WHICH = "要淬火哪一件裝備？"
 NOT_WORN = "你身上沒有穿這樣東西。"
 CANNOT = "【$t】不能淬火。"
+SET_ITEM = "【$t】是套裝，不能淬火。"      # 套裝不能淬火（設計文件 §3.11，使用者 2026-11-20 定的）
 TOO_HIGH = "【$t】的等級比你高，不能淬火。"
 ALREADY = "【$t】已經是你這個等級的橘色了。"
 PREVIEW = "【$t】會變成 $T。確定的話再打一次。"
@@ -34,6 +35,9 @@ def use(ch, words):
         ch.send(NOT_WORN + "\n")
         return
     name = objects.short(obj)
+    if sets.set_of(obj.vnum) is not None:
+        act(SET_ITEM, ch, t=name, to=TO_CHAR)
+        return
     if obj.level > ch.level:
         act(TOO_HIGH, ch, t=name, to=TO_CHAR)
         return

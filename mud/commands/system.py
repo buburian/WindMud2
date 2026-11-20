@@ -2,7 +2,7 @@
 import logging
 import re
 
-from .. import affects, light, meals, objects, paths, save, scripts, socials, stats, summons, terrain, weather, zones
+from .. import affects, light, meals, objects, paths, save, scripts, sets, socials, stats, summons, terrain, weather, zones
 from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act, compose, notify
 from ..area import DIRECTIONS, PASSPROOF_LOCKS, REVERSE, AffectFlag, AreaType, MobTier, RoomFlag
 from ..characters import SEX_FEMALE, SEX_MALE, Position, arrive, characters, find_in_room, in_room
@@ -486,7 +486,7 @@ def do_score(ch, arg):
         lines.append(" " + ("{C" + pad(title, 4) + "{x" if title else "    ") + "  "
                      + "".join(cell(c, 24) for c in cells[:-1]) + cells[-1])
     lines.append(heavy)
-    lines += affect_lines(ch)
+    lines += set_lines(ch) + affect_lines(ch)
     ch.send(colorize("\n".join(lines)) + "\n")
 
 
@@ -495,6 +495,27 @@ def exp_text(ch):
     if ch.level >= stats.MAX_LEVEL:
         return ""
     return "經驗 {W" + str(stats.shown(ch.exp)) + "{x / " + str(stats.shown(stats.exp_to_level(ch.level)))
+
+
+SET_HEAD = " {C套裝效果：{x"
+SET_EXPIRED = "已失效"
+
+
+def set_lines(ch):
+    """score 最下面、效果那段前面：身上穿了至少一件的套裝，一套一行（使用者 2026-11-20 要的）：
+    【名字】 穿了幾件、特效。穿齊而且有效是一般的顏色；沒穿齊、或等級超過了（寫「已失效」）整行灰色。都沒穿就沒有這一段。"""
+    rows = []
+    for s in sets.table:
+        worn = sets.worn(ch, s)
+        if not worn:
+            continue
+        text = f"{worn}/{len(s.items)} 件  {stats.STAT_NAMES[s.bonus]} +{sets.strength(s)}"
+        if s in sets.active(ch):
+            rows.append(" 【{W" + rpad(s.name, 12) + "{x】 " + text)
+        else:
+            expired = worn == len(s.items)
+            rows.append(" {D【" + rpad(s.name, 12) + "】 " + text + (f"（{SET_EXPIRED}）" if expired else "") + "{x")
+    return [SET_HEAD, *rows] if rows else []
 
 
 def affect_lines(ch):

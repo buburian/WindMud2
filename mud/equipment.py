@@ -39,8 +39,10 @@ MAIN_AFFIX_BONUS = 0.3                      # 區域檔指定了主詞綴（main
 AFFIX_THIRD_CHANCE = 0.5                    # 剩下的有一半機率給第三條，不然給主或次詞綴
 
 # 顏色（稀有度）的點數加成，代號同 area.ItemColor
-COLOR_BONUS = {"gray": 0.0, "white": 1.0, "blue": 1.2, "purple": 1.3, "orange": 1.4}
-COLOR_NAMES = {"gray": "灰色", "white": "白色", "blue": "藍色", "purple": "紫色", "orange": "橘色"}
+# 綠色只給套裝（sets.py，使用者 2026-11-20 定的）：跟橘色一樣（balance.py 沒有綠，測試拿橘色比）
+COLOR_BONUS = {"gray": 0.0, "white": 1.0, "blue": 1.2, "purple": 1.3, "orange": 1.4, "green": 1.4}
+COLOR_NAMES = {"gray": "灰色", "white": "白色", "blue": "藍色", "purple": "紫色", "orange": "橘色", "green": "綠色"}
+MAIN_AFFIX_COLORS = ("orange", "green")     # 必出主詞綴另外多拿 MAIN_AFFIX_BONUS 的顏色（套裝跟橘色一樣）
 
 # 主屬性 +1 要幾點（設計文件 §3.2、§8.1）：每個公會（phys 劍之公會、spell 杖之公會）算「K × G(L) ÷ 這個公會 L 級的標準值」，取大的。
 # 標準值 ＝ 創角的標準值 ＋ max(0, L − 1) × 每級給的點數 × 這個主屬性分到的比例。
@@ -146,8 +148,8 @@ def base_values(slot, level, rng, offhand_weapon=False):
 
 
 def extra_points(budget, color):
-    """區域檔指定了主詞綴的裝備，主詞綴另外多拿的點數：只有橘色，這件總點數（budget）× MAIN_AFFIX_BONUS。"""
-    return budget * MAIN_AFFIX_BONUS if color == "orange" else 0.0
+    """區域檔指定了主詞綴的裝備，主詞綴另外多拿的點數：橘色（和套裝的綠色），這件總點數（budget）× MAIN_AFFIX_BONUS。"""
+    return budget * MAIN_AFFIX_BONUS if color in MAIN_AFFIX_COLORS else 0.0
 
 
 def roll_item(slot, level, color, rng, offhand_weapon=False, forced=None):

@@ -278,6 +278,18 @@ def gear_bonus(guild, obj):
     return out
 
 
+def set_bonus(player):
+    """穿齊的套裝特效（sets.py，使用者 2026-11-20 定的）：跟裝備的屬性一樣算，主屬性照 primary_bundle 換（用套裝的等級）。"""
+    from . import sets                      # 坑：sets → area、equipment，stats 在它們前面載入，在函式裡才 import
+    out = {}
+    for s in sets.active(player):
+        n = sets.strength(s)
+        bundle = primary_bundle(player.guild, s.bonus, s.level) if s.bonus in PRIMARY_KEYS else {s.bonus: 1.0}
+        for key, units in bundle.items():
+            out[key] = out.get(key, 0.0) + n * units
+    return out
+
+
 def gear_primaries(player):
     """裝備加的主屬性（flee 的 DEX 用；戰鬥、負重、MP、MV 都不用它）。"""
     out = {p: 0 for p in PRIMARY_KEYS}
@@ -363,6 +375,8 @@ def recompute(player):
     for obj in player.equipment.values():
         for key, n in gear_bonus(player.guild, obj).items():
             panel[key] += n
+    for key, n in set_bonus(player).items():
+        panel[key] += n
     add_affects(panel, player)
     passives(panel, player)
     player.panel = panel

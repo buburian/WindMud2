@@ -321,7 +321,7 @@ def main(argv=None):
     print(f"寫好 {new}：房間 {len(data['rooms'])}、生物 {len(data['mobiles'])}、物品 {len(data['objects'])}、重置 {len(data['resets'])}")
     print("\n".join(report.lines()))
     skip = {new.resolve(), Path(args.old).resolve()}     # 舊檔放在同一個資料夾時不能拿來對照（號碼會「重複」）
-    others = sorted(p for p in new.parent.glob("*.json") if p.resolve() not in skip)
+    others = [p for p in area.area_files(new.parent) if p.resolve() not in skip]
     problems = area.check_files([new], [new, *others])[new]
     print(f"檢查（對照同一個資料夾的其他區域檔）：{len(problems)} 個問題")
     print("\n".join(f"  - {x}" for x in problems))
