@@ -378,15 +378,15 @@ def test_skills_listing_stays_within_79(world, guild):
     lines = plain(p).split("\r\n")
     assert all(len(line.encode("cp950")) <= 79 for line in lines)
     text = "\n".join(lines)
-    assert "鋼鐵之軀 iron_body  被動\n    HP +5%" in text
-    assert "雙刃斬 twin_slash  傷害" in text and "    要雙持" in text
+    assert re.search(r"鋼鐵之軀 iron_body +被動\n +HP \+5%\n", text)
+    assert re.search(r"雙刃斬 twin_slash +傷害 .*\n +打 3 次、要雙持\n", text)
     assert "絕命刺 deathblow" in text and "要拿匕首、只能在還沒開打時用" in text
-    assert "重武精通 heavy_mastery  被動\n    平砍傷害 +5%、要拿雙手武器" in text
+    assert re.search(r"重武精通 heavy_mastery +被動\n +平砍傷害 \+5%、要拿雙手武器\n", text)
     assert "冰錐 ice_shard" in text and "打中後：攻速 -10%、變慢，6 秒" in text
     assert "吸血 50%" in text
-    assert re.search(r"治療術 heal  補血 \d+~\d+  消耗 \d+ MP  冷卻 6 秒", text)
-    assert re.search(r"回春術 renew  持續 30 秒 .*\n    每 3 秒補 \d+~\d+ HP，10 次", text)
-    assert re.search(r"毒刃 poison_blade  持續 30 秒 .*\n    中毒：每 3 秒 傷害 \d+~\d+，10 次", text)
+    assert re.search(r"治療術 heal +補血 \d+(~\d+)? +\d+ MP +6 秒", text)
+    assert re.search(r"回春術 renew +持續 30 秒 .*\n +每 3 秒補 \d+(~\d+)? HP，10 次", text)
+    assert re.search(r"毒刃 poison_blade +持續 30 秒 .*\n +中毒：每 3 秒傷害 \d+(~\d+)?，10 次", text)
 
 
 def test_route_skills_cost():

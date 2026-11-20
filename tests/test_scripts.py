@@ -1002,8 +1002,8 @@ def test_text_must_be_big5(tmp_path, later, caplog):
 
 
 @pytest.mark.parametrize("call, want", [
-    ("actor:take_item(1)", "號碼要寫完整的遊戲號碼（100 以上，1～99 是保留的），不能是 1"),
-    ("actor:transfer(2)", "房號要寫完整的遊戲號碼（100 以上，1～99 是保留的），不能是 2"),
+    ("actor:take_item(1)", "號碼要寫完整的遊戲號碼（100 以上，1～99 是系統區域檔用的），不能是 1"),
+    ("actor:transfer(2)", "房號要寫完整的遊戲號碼（100 以上，1～99 是系統區域檔用的），不能是 2"),
 ])
 def test_reserved_numbers_are_errors(tmp_path, later, caplog, call, want):
     # 號碼一律寫完整的遊戲號碼：寫 1～99（舊寫法的檔案號碼）算腳本出錯、停在那一行，

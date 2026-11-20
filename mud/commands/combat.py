@@ -105,12 +105,7 @@ def do_flee(ch, arg):
     if ch.fighting is None:
         ch.send("你在害怕什麼呢？你沒有在跟任何一個人戰鬥啊。\n")
         return
-    if affects.controlled(ch, affects.HELD):     # 暈、凍住：不能逃（設計文件 §2.6）
-        ch.send(system.HELD + "\n")
-        return
-    waits = getattr(ch, "cooldowns", None)  # 生物沒有冷卻：不用等
-    if waits and waits.get("flee"):
-        ch.send(f"你還要等 {waits['flee'] * TICK_SECONDS:g} 秒才能再逃跑。\n")
+    if not can_try_escape(ch):
         return
     exits = [d for d in ch.room.exits if not (d in ch.room.doors and ch.room.doors[d].closed)
              and terrain.can_go(ch, ch.room, d)]            # 走不過去的地形（要飛、要船…）不挑
@@ -118,11 +113,50 @@ def do_flee(ch, arg):
         ch.send("這裡沒有可以逃跑的出口！\n")
         return
     if rng.random() >= stats.flee_chance(ch):
-        ch.send("你逃跑失敗了。\n")
-        if waits is not None:
-            waits["flee"] = FLEE_WAIT_TICKS
+        failed(ch, "你逃跑失敗了。")
         return
     escape(ch, rng.choice(exits))
+
+
+def can_try_escape(ch):
+    """flee、打架中 recall 試之前的檢查：暈、凍住不能（設計文件 §2.6）；失敗後還在等也不能。不行就送那句、回傳 False。
+
+    等待是 flee 和打架中 recall 共用的（cooldowns["flee"]，設計文件 §5）：不能兩個輪流試。生物沒有冷卻，不用等。
+    """
+    if affects.controlled(ch, affects.HELD):
+        ch.send(system.HELD + "\n")
+        return False
+    waits = getattr(ch, "cooldowns", None)
+    if waits and waits.get("flee"):
+        ch.send(f"你還要等 {waits['flee'] * TICK_SECONDS:g} 秒才能再逃跑。\n")
+        return False
+    return True
+
+
+def failed(ch, text):
+    """flee、打架中 recall 失敗：說那句，還在打，要等 FLEE_WAIT_TICKS 才能再試（兩個共用）。"""
+    ch.send(text + "\n")
+    waits = getattr(ch, "cooldowns", None)
+    if waits is not None:
+        waits["flee"] = FLEE_WAIT_TICKS
+
+
+RECALL_FAILED = "你失敗了!!"                  # 打架中 recall（照 C 版 do_recall 的句子，不扣經驗：跟 flee 一樣）
+RECALL_ESCAPED = "你在戰鬥狀態下返回!!"
+
+
+def recall_escape(ch):
+    """打架中 recall 骰一次（system.do_recall 用；no_recall、學生、找不到返回點都檢查過了）。
+
+    機率是 flee 的一半（stats.fight_recall_chance，設計文件 §5）。成功：自己和打自己的都停手（跟 flee 一樣）、回傳 True；
+    失敗：還在打、要等（跟 flee 共用），回傳 False。
+    """
+    if rng.random() >= stats.fight_recall_chance(ch):
+        failed(ch, RECALL_FAILED)
+        return False
+    death.stop_all(ch)
+    ch.send(RECALL_ESCAPED + "\n")
+    return True
 
 
 def escape(ch, direction):

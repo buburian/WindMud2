@@ -327,6 +327,14 @@ def flee_chance(ch):
     return min(FLEE_MAX, FLEE_MIN + (FLEE_MAX - FLEE_MIN) * dex / PRIMARY_CAP)
 
 
+FIGHT_RECALL_RATIO = 0.5                    # 打架中 recall 成功的機率是 flee 的幾倍（設計文件 §5，使用者 2026-11-20 同意：不能比先 flee 再 recall 容易）
+
+
+def fight_recall_chance(ch):
+    """打架中 recall 成功的機率：flee 的一半，最多 40%。"""
+    return flee_chance(ch) * FIGHT_RECALL_RATIO
+
+
 # 每次回復上限的幾成（玩家角色手冊「回復」）：跟屬性無關，屬性已經透過上限影響回復量。
 # 戰鬥中不回（戰鬥公式的 1:1 沒有算回血）；昏迷、快死了這些手冊沒寫，也不回
 REGEN_RATE = {Position.STANDING: 0.10, Position.RESTING: 0.20, Position.SLEEPING: 0.30}
@@ -334,9 +342,12 @@ REGEN_RATE = {Position.STANDING: 0.10, Position.RESTING: 0.20, Position.SLEEPING
 
 def regen(ch):
     """回復一次（世界 tick 每 REGEN_TICKS 呼叫，玩家和生物一樣，設計文件 §4.11）：HP、MP、MV 各回上限的固定比例，不超過上限。"""
+    from . import skills                    # 坑：skills 會 import 這個模組，在函式裡才 import
     rate = REGEN_RATE.get(ch.position, 0)
     # 吃喝坐滿 10 秒：那一項回得快一倍（meals.py，設計文件 §3.9）；只有休息、睡覺時算（站起來時 meals.cancel 會清掉，這裡再保險一次）
     bonus = getattr(ch, "meal_bonus", {}) if ch.position in (Position.RESTING, Position.SLEEPING) else {}
+    if ch.position in (Position.RESTING, Position.SLEEPING):
+        rate *= skills.rest_regen(ch)       # 調息、冥想（Lv15 公會被動）：×1.5，跟吃喝的加倍疊在一起
     for key in ("hp", "mp", "mv"):
         setattr(ch, key, min(ch.panel[key], getattr(ch, key) + ch.panel[key] * rate * bonus.get(key, 1)))
 

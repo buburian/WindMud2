@@ -49,7 +49,7 @@ uv run python -m mud.patchnote send --dry-run     # 試跑 patch/草稿.md（拿
   `tests/test_log.py` 測紀錄檔的編號、換檔和刪舊檔；`tests/test_area.py` 測區域載入，也比對手冊的數字表跟程式的定義；`tests/test_areacheck.py` 測區域檔檢查的每條規則；
   要自己做區域檔的測試，用 `tests/area_helpers.py` 做出完整的檔案再改欄位（直接 `from area_helpers import …`）；
   `tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit；另一個測試讓 tick 和幾場戰鬥一直跑，確認玩家打字照樣馬上回應。
-  `tests/test_login.py` 也開真的伺服器，測建立角色、密碼、名字規則、存檔、斷線存檔、重複登入接手。`tests/test_imm.py` 測 imm 指令、advance、train、goto（號碼、名字、副本去不了、停手）、givemoney、vnums；`tests/test_health.py` 測 health；`tests/test_patchnote.py` 測 Discord 的 patch 通知（切訊息、試跑、紀錄、webhook 被 .gitignore 排除；發送換成假的）；`tests/test_position.py` 測姿勢、rest／sleep／stand、睡覺時能用的指令、say、who、save。`tests/test_resets.py` 測生物的重置（M、limit、rare、tier_roll、時機、look）。`tests/test_doors.py` 測門（兩邊都要寫的檢查、走路、open／close／lock／unlock、對面看得到、look、重置 D、副本各自的門）。
+  `tests/test_login.py` 也開真的伺服器，測建立角色、密碼、名字規則、存檔、斷線存檔、重複登入接手。`tests/test_imm.py` 測 imm 指令、advance、train、goto（號碼、名字、副本去不了、停手）、givemoney、vnums；`tests/test_health.py` 測 health；`tests/test_reserved.py` 測系統區域檔（真的 system.json、1～99 和沒有房間的規則、少了號碼不開機、屍體和金幣照區域檔）；`tests/test_patchnote.py` 測 Discord 的 patch 通知（切訊息、試跑、紀錄、webhook 被 .gitignore 排除；發送換成假的）；`tests/test_position.py` 測姿勢、rest／sleep／stand、睡覺時能用的指令、say、who、save。`tests/test_resets.py` 測生物的重置（M、limit、rare、tier_roll、時機、look）。`tests/test_doors.py` 測門（兩邊都要寫的檢查、走路、open／close／lock／unlock、對面看得到、look、重置 D、副本各自的門）。
   `tests/test_objects.py` 測物品（固定、隨機裝備、掉落表、屍體、slay、look 和 look in、屍體消失、區域物件釋放後不見、基本價格 `base_price()`、cost 存檔）。
   `tests/test_behavior.py` 測生物平常的行為（走動的出口和機率、scavenger、主動攻擊和半身人的不起眼、生物回血、wimpy），亂數換成 `behavior.rng`；
   `tests/test_specials.py` 測 special（打架用的時間、傷害 × 倍率、招式名稱、劇毒，janitor、fido，名字的表跟手冊比對），`damage.strike` 換成固定值、`fight.hit` 不打。
@@ -251,9 +251,11 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   走不到的、副本寫 `-----`（使用者要的；副本的入口跟 recall 點不同，enter 還沒做，見 `todo/進副本.md`）。
   **`kill <名字>`**（`commands/combat.py`，`k`，最低姿勢 FIGHTING 照 C 版）：開打同房間的生物，牠自動還手；**不可以打玩家**（使用者要的，自己也不行）。
   **安全區**（`RoomFlag.SAFE`，使用者要的）：`commands/combat.protected()` 送 C 版「$N正在受到神力所保護的房間內。」，kill 和 use 的傷害技能都在扣消耗之前呼叫它；主動攻擊在 `behavior.aggress()` 自己看。開打只有這三個地方，所以安全區裡不會有戰鬥。
-  **`recall`**（`rec`，也可以打 `/`，最低姿勢 STANDING，所以打架中、休息、睡覺不能用；規則在玩家角色手冊「回城」，使用者 2026-11-17 定的）：
+  **`recall`**（`rec`，也可以打 `/`，最低姿勢 FIGHTING，所以休息、睡覺不能用；規則在玩家角色手冊「回城」，使用者 2026-11-17 定的）：
   `system.do_recall()`，回到 `zones.recall_room()`：所在區域檔寫了 `recall` 就用它（通常是副本：副本裡的 recall 點，不是入口），沒寫就用 `Player.recall`（自己的返回點，存檔，None 是 `START_ROOM`；改返回點的方法之後做）。
   no_recall 房間、學生（`zones.is_student()`）不能用；不扣 MV；訊息照 C 版；到了跟腳本的 transfer 一樣觸發 on_enter(actor, nil)。
+  **打架中可以 recall、會失敗**（設計文件 §5，使用者 2026-11-20 同意）：`commands/combat.can_try_escape()`（暈凍、還在等）在祈求之前、`recall_escape()`（骰 `stats.fight_recall_chance()` ＝ flee 的一半，亂數 `combat.rng`）在 no_recall 這些檢查之後；
+  失敗的等待跟 flee 共用 `cooldowns["flee"]`（`combat.failed()`），成功 `death.stop_all()`；訊息照 C 版，不扣經驗。
   **表情動作（socials，使用者 2026-11-17 要的，規則在玩家角色手冊「表情動作」）**：資料在 `socials/socials.json`（`config.SOCIAL_FILE`，格式寫在 `socials.py` 開頭），
   `__main__` 開機時 `socials.load()`，有問題就停止開機（跟 help 一樣；檢查只有一份 `socials.check()`，打全名會先找到指令的動作算錯）。
   動作不是指令：`run()` 找不到指令才呼叫 `commands/social.social()`，所以指令的縮寫優先。生物的反應亂數是 `social.rng`（測試換掉）。
@@ -277,7 +279,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   賣價取跟買價比較小的（防刷錢）。使用者選的：賣掉的直接消失、買的時候不看等級。我們統一的：`buy_types` 沒有就不收（C 版用 1 枚收是 bug）、value 跟 sell 一樣檢查、容器要先清空。
   店主說的話是 `told()`（「$n告訴你：」TO_VICT）；沒開時店主用 `system.do_say()` 說。買賣完用 `items.keep()` 存檔。
   **`flee`**（`f`，最低姿勢 FIGHTING，規則在玩家角色手冊「戰鬥」）：機率 `stats.flee_chance()` ＝ min(80%, 10% ＋ 70% × DEX ÷ 55)，DEX 是自己的 ＋ 裝備加的（使用者定的）。
-  檢查：沒在打架 → 還在等（`cooldowns["flee"]`，失敗設 `FLEE_WAIT_TICKS` 2，`skills.tick()` 減）→ 開著的出口（關著的門不算）→ 骰 `rng.random()`。
+  檢查：沒在打架 → 還在等（`cooldowns["flee"]`，失敗設 `FLEE_WAIT_TICKS` 2，`skills.tick()` 減；打架中的 recall 共用）→ 開著的出口（關著的門不算）→ 骰 `rng.random()`。
   成功：`rng.choice(出口)` → `escape()`：`death.stop_all()`（自己和打自己的都停手）→ `system.move(ch, 方向, leave=…)`（`leave` 是原本房間看到的那句）。不扣經驗。
   wimpy 的生物逃跑也用 `escape()`（出口用 `behavior.exits()`）。
   **`consider <名字>`**（`co`、`con`，使用者要的：排在 config 前面，config 要打 `conf`；最低姿勢 RESTING 照 C 版；使用者 2026-11-19 要的，規則在玩家角色手冊「戰鬥」）：`commands/combat.do_consider()`，找人跟 kill 一樣，不開打。
@@ -293,7 +295,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   還要在同一間房；沒在打架又沒打名字是「你想要攻擊誰？」）→ 玩家 → 冷卻 → MV／MP → 武器，**都過了才開打**（`engage()`），再 `skills.use()`。
   `engage()`（使用者定的）：自己沒在打架就 `start_fight(自己, 目標)`（可以用技能開打）；自己在打架、目標沒在打人就 `start_fight(目標, 自己)`：
   目標加進來打你，**你平砍還是打原本的對手**（照 C 版）；目標已經在打別人就不改誰打誰。
-  `skills`（`sk`，什麼姿勢都能用）列出會的技能、傷害範圍、消耗、冷卻。
+  `skills`（`sk`，什麼姿勢都能用）列出會的技能，排成表（使用者 2026-11-20 選的）：技能、效果、消耗、冷卻四欄對齊（`known_lines()`），說明放下一行對齊效果欄；
+  選了的路上還沒學會的另外列「還沒學會」（`later_lines()`，照等級）；說明有一句放不下 79 格就整段往左（`fitting()`）；範圍一樣只寫一個（`span()`）。
   **`help`**（`commands/help.py`，`h`，什麼姿勢都能用，使用者選的樣子）：只打 help 只列分類、一個一行（使用者 2026-11-20 要的：首頁不列指令），最後再列 topics（屬性，help 屬性 直接看內容）；
   `help 分類`（整個字一樣）列這一類的指令和一句話；`help 指令` 看說明，**指令跟打指令一樣可以縮寫**（`command_name()`，先轉小寫，`help K` 也是 kill）；
   都不是：「對不起，找不到相對應的說明。」（照 C 版）。imm 的分類（管理員）只有 imm 看得到，不是 imm 也找不到 imm 指令的說明。
@@ -314,7 +317,9 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   `command()` 會在指令跑完後補送 `ch.prompt()`（斷線時不送）。**這個指令有送出訊息就先空一行再補 prompt**，只按 Enter 就直接補（使用者要的）：
   `Player.send()` 會把 `ch.sent` 設成 True，`command()` 開始時歸零。登入的歡迎畫面、`notify()` 也一樣空一行。
   `COMMANDS` 最前面是六個方向（`n e s w u d` 都是走路），接著 `look`。方向指令用 `walk(方向)` 做出來，共用 `move()`。
-  `look()` 回傳房間畫面的字串，登入時 `login.py` 也用它。房間描述後**空一行**，再照順序列房間裡的東西（使用者定的）：
+  `look()` 回傳房間畫面的字串，登入時 `login.py` 也用它。走到新房間（`move()`、recall、goto）送的是 `arrival(ch, 原本的房間)`：
+  換了區域檔（`room.area.name` 不一樣）先空一行、亮黃外框的區域名稱（`area_banner()`：header 的 title、levels，半形 `+ - |`）、空一行，再接 look；
+  腳本的 transfer 用 `area_banner()`。只給醒著的玩家，很暗照樣出現（使用者 2026-11-20 要的，規則在玩家角色手冊「換區域的提示」，`tests/test_area_banner.py`）。房間描述後**空一行**，再照順序列房間裡的東西（使用者定的）：
   先生物（NPC），再玩家（`characters.in_room()`，找人的 `n.名字` 也照這個順序），最後是地上的物品（`room.contents` 的 `long`，新的在前）；生物、玩家、地上的物品都是**亮白**。
   每個角色照姿勢寫「X站在這裡。」「X躺在這裡睡覺。」…（`LOOK_POSITIONS`）；房間沒有別人就不空行。
   **名字前面的標記**（`tags()`、`tagged()`，使用者要的，照 C 版 show_char_to_char）：生物的種類「(菁英)」亮綠、「(首領)」亮紅（`TIER_TAGS`，一般、雜魚沒有）。
@@ -350,8 +355,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   `Room` 上存了 `name`、`description`、出口（`exits`、`exit_descriptions`）、`doors`（見下面「門」）、`extra_descriptions`、`room_flags`、`sector`，
   還有 `contents`（地上的物品，見下面「物品」）。
   **手冊的三張數字表在 `area.py` 寫成有名字的定義**（使用者要求程式裡不能只有數字）：`RoomFlag`（room_flags）、
-  `Sector`（sector）、`Locks`（出口的 locks）。另外 `AreaType`（`header.type`：`world`、`dynamic`、`instance`）是字串的定義，
-  手冊「三種區域」的表、編輯器 `model.js` 的 `AREA_TYPES` 都要跟它一樣（有測試比對）。名字用手冊的 C 版名稱（locks 的表沒有名稱，照 C 版的門旗標取），
+  `Sector`（sector）、`Locks`（出口的 locks）。另外 `AreaType`（`header.type`：`world`、`dynamic`、`instance`、`system`）是字串的定義，
+  手冊「區域的種類」的表、編輯器 `model.js` 的 `AREA_TYPES` 都要跟它一樣（有測試比對）。名字用手冊的 C 版名稱（locks 的表沒有名稱，照 C 版的門旗標取），
   中文意思寫在每一行的註解。檢查區域檔只認這些定義；`Room` 存的是 `RoomFlag`、`Sector`，印出來看得到名字
   （例如 `<RoomFlag.DARK|NO_MOB: 5>`）。**改手冊的表時要一起改這些定義**：`tests/test_area.py` 會比對數字和名字，
   註解的中文意思測試看不到，要自己對。**程式裡用名字（例如 `RoomFlag.SAFE`），不要直接寫數字。**
@@ -364,7 +369,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     每個檔在 `area.header.vnums` 寫自己的範圍 `[最小, 最大]`（`area.vnum_range()`）：自己的房間、生物、物品要在範圍裡（`check_number()`），
     一個檔可以超過 99 個；兩個檔的範圍不能重疊（`check_files()`，對照的檔也算）。三種號碼分開算（房間 101 和生物 101 可以同時存在）。
   - 指到別的東西的號碼（出口 `to_room`、門和容器的 `key`、`recall`、掉落表、重置、腳本）：範圍外就是外連到別的區域檔。
-    遊戲號碼 1～99 是保留的（`area.MIN_VNUM` 100）：寫 1～99 就報錯（`check_ref()`；`key` 的 -1、0 是不用鑰匙，`is_key()`），腳本寫 1～99 算腳本出錯。
+    遊戲號碼 1～99 是系統區域檔用的（`area.MIN_VNUM` 100、`SYSTEM_VNUMS`）：一般的區域檔寫 1～99 就報錯（`check_ref()`；`key` 的 -1、0 是不用鑰匙，`is_key()`），腳本寫 1～99 算腳本出錯。
     出口、recall 指到的房間要存在；`key`、重置、掉落表指到的東西存不存在還沒檢查。
     **區域檔格式是我們自己的**：舊區域的流程是 `.are` → area2json → `mud/areaconvert.py` 轉成我們的格式（寫進 `builder_area/`）→ 區域編輯器處理 → 才給伺服器用。
     轉換的規則寫在 `areaconvert.py` 開頭（使用者 2026-11-17 定的：舊區域只重用敘述，寫不下的拿掉並列進報告；重置 E 變成 100% 掉落的白色裝備）。
@@ -443,7 +448,13 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     **G、O、P、R**（照手冊和 C 版 db.c）：`reset_area()` 記住上一筆 M 這一次放出來的生物（`last_mob`），G 只給它（沒放出來就不做），`rare` 跟 M 同一個骰法（`appears()`），等級 null 是生物等級，放進 `npc.carrying`；
     O 在區域檔的房間沒有玩家（`players_in()`）、地上還沒有同號碼的才放；P 找這個區域物件裡第一件 `container_vnum`（`objects_in()`：地上和生物背包），裡面還沒有才放（照 WindSrc，有玩家也放）；
     R 把前 `exit_count` 個方向的出口、出口描述、門一起隨機對調（`swap_exits()`，C 版的 `d1 = 亂數(d0, n−1)`）。G、O、P 的 `limit`、`if_flag` 不用（手冊寫 C 版沒用到）。
-- **區域物件**（`zones.py`，使用者定的三種，`header.type` 決定）：
+- **系統區域檔**（`areas/system.json`，`header.type` 是 `system`，號碼 1～99，使用者 2026-11-20 定的，學 C 版 limbo.are；規則在區域製作手冊「系統區域檔」）：
+  程式自己做的東西的文字放在這裡、程式只記號碼（`mud/reserved.py`：物品 2 一枚金幣、3 一些金幣、10 怪物屍體，照 C 版號碼；生物 1 骷髏、2 死亡騎士）。
+  `check_number()`、`vnum_range()` 看種類（系統是 1～99、其他 100 以上），`check_structure()` 擋系統區域檔的房間、重置。
+  `zones.load()`：只把它的生物、物品收進 `resets.mobiles`、`objects.protos`（不建房間，`area`、`vnums`、`find_routes()` 都不算它），之後 `reserved.check()` 少了號碼、物品種類不對就停止開機；
+  區域資料夾裡沒有系統區域檔（測試自己做的區域資料夾）就用 `config.SYSTEM_AREA`，所以測試照樣做得出屍體、金幣。
+  屍體的名字、地上那句寫 `reserved.NAME_CODE`（`$n`），`make_corpse()` 換成怪的名字。之後的玩家屍體、傳送門也放這裡。`builder_area/` 放一份一樣的。`tests/test_reserved.py`。
+- **區域物件**（`zones.py`，使用者定的三種，`header.type` 決定；系統區域檔不是區域物件）：
   - 世界區域（`world`）：開機時把所有 world 檔建進**一個**區域物件 `zones.world`，永遠不釋放。
   - 動態區域（`dynamic`）：有人走進去才建立（`room_at()`），大家共用一份（`zones.dynamic`，檔名 → Zone）。
   - 副本區域（`instance`）：`zones.instance(檔名, 擁有者)` 建立，一個擁有者一份（擁有者用名字；之後是隊長的名字）。
@@ -502,7 +513,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     **副本每份自己一個**（建立時開始，釋放時結束）。間隔 `TICK_SECONDS` 固定 1 秒（使用者 2026-11-04 從 30 秒改成 1 秒，不加亂數）。
     **定時做的事都用「每幾個 tick 做一次」定義**（使用者定的）：數字在 `config.py`（`ROUND_TICKS` 2、`HOUR_TICKS` 30、`REGEN_TICKS` 30、`AREA_TICKS` 60、`OBJ_TICKS` 30、`AFFECT_PULSE_TICKS` 3、`RELEASE_TICKS` 1200、
     `MOBILE_TICKS` 5、`SPECIAL_TICKS` 6、`CHOKE_TICKS` 3、`MEAL_TICKS` 10），表在玩家角色手冊「定時做的事」，改數字要一起改表。每個區域物件一次 tick 要做的事寫在 `Zone.tick()`，用 `self.ticks % N == 0`：
-    世界每 `HOUR_TICKS` 走一次天氣、每 `REGEN_TICKS`（30）在線玩家和全部生物回復一次（`stats.regen()`，照姿勢：站 10%、休息 20%、睡 30%，
+    世界每 `HOUR_TICKS` 走一次天氣、每 `REGEN_TICKS`（30）在線玩家和全部生物回復一次（`stats.regen()`，照姿勢：站 10%、休息 20%、睡 30%，休息睡覺再乘 `skills.rest_regen()`（調息、冥想），
     戰鬥中不回）、每個 tick 數技能的冷卻（`skills.tick()`）、走身上的效果（`affects.tick()`）、生物的行為（`behavior.tick()`）；動態區域、副本數要不要釋放。
     **掛在角色身上的定時事情（回復、技能冷卻、身上的效果、生物的行為）放世界 tick、全部角色一起做**：副本的 loop 跟世界節拍不同步，放各區域的 tick 會走來走去多做或少做。
   - **天氣**（`weather.py`，tick 的第一個功能）：**全遊戲一個**（`weather.current`），只由世界 tick 走時間（每 `HOUR_TICKS` 呼叫一次 `weather.tick()`），
@@ -570,7 +581,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
       `weapon_ok()`：有限用武器的技能，主手要拿那種武器（空手不行）；技能那一下用主手的武器。`offhand_ok()`：`Skill.offhand` 是 `"shield"`（副手放護具）、`"dual"`（雙持）。
       **選路**（`paths.py`，規則在玩家角色手冊「選職業」，使用者 2026-11-19 定的；**玩家看到的叫「職業」（大路）、「進階職業」（小路），不叫路**，使用者 2026-11-20 要的，程式裡照舊叫 path）：`PATHS`（8 條小路 ＋ 4 條大路，每級的技能、導師的房間、分館在哪），`Player.paths`（[大路, 小路]，存檔）；
       `choose()` 回傳結果代號，`refused()` 不看錢的檢查，`price()`／`change_cost()`（50 隻同級一般怪的金幣），`learn_upto()` 補齊，`level_up_lines()`（`combat.reward`、imm 的 advance：自動學；10 級以上沒選職業、40 級以上沒選進階職業，每升一級都提醒，降級不說），
-      `GUILD_SKILLS`（Lv5 的猛擊 `pummel`、火焰箭 `flame_arrow`，2026-11-20：強度跟重擊、火球一樣但連打兩下（比率減半、燃燒 60% 照第一下），不用選路、升級自動學；
+      `GUILD_SKILLS`（Lv15、Lv25 的公會被動調息／冥想、收刀／回神（2026-11-20，不是打架用的：`Skill.rest_regen` 休息睡覺回復 ×1.5、`Skill.fight_end` 整場戰鬥結束回 10%（`death.die()` 看跟牠打的人：牠死了、他沒在打別的、也沒人打他，`skills.fight_ended()`）；`passive` 是空的，不在 balance.py，`tests/test_guild_passives.py`）；
+      Lv5 的猛擊 `pummel`、火焰箭 `flame_arrow`，2026-11-20：強度跟重擊、火球一樣但連打兩下（比率減半、燃燒 60% 照第一下），不用選路、升級自動學；
       放在 `SKILLS` 最後面，原本的縮寫才不變；`skills` 列出時打好幾下的技能寫「打 2 次」），
       `catch_up()`（`login.enter()` 登入時補學等級夠的公會技能，加 Lv5 技能前就 5 級以上的玩家，使用者要的），
       `title()` 稱號（score、who），`hint_lines()`、`chosen_skills()` 給 `skills` 列出整條路和還沒選的路。選路是跟秋風城四間分館的導師（3194～3197，`areas/midgaard/老教頭.lua`…）說路名，
@@ -585,7 +597,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
       `guards` 只在記憶體（不存檔），`combat.land()`、`affects.pulse()` 聖光算完先 `protect.split()`，自己的訊息送完再 `cover()`（先扣保護的人的護盾、可以扣死）；
       `active()` 順便拿掉離開房間、離線、死掉、時間到的；`skills.tick()` 呼叫 `protect.tick()`。`tests/test_skill_protect.py` 測這些。
       **新增會扣 HP 的地方也要先 `protect.split()`**（跟 absorb 一樣）。
-      **召喚**（`kind` `"summon"`，`Skill.summon`：tier、below、duration）在 `summons.py`：程式做的 `Npc`（`npc.master`、`summon_source`、`summon_ticks`，`TYPES` 是長相），
+      **召喚**（`kind` `"summon"`，`Skill.summon`：tier、below、duration）在 `summons.py`：程式做的 `Npc`（`npc.master`、`summon_source`、`summon_ticks`；名字、英文、look 那行、描述照系統區域檔的生物 `summons.proto()`，`TYPES` 只有號碼和叫出來、消失的句子），
       `skills.tick()` 呼叫 `summons.tick()`（時間、主人離線、跟過去、打主人的對手）；`system.move()` 走完 `follow()`；`death.die()` 召喚物不留屍體；
       `death.player_dies()` `release()`；`combat.slain()` 召喚物打死的算主人的；`commands.combat.attackable()`（kill、use、物品）擋玩家和召喚物；`skills.enemies()` 不算牠。`tests/test_skill_summon.py` 測這些。
       **連動**（21 個，規則在玩家角色手冊「連動」）都在 `combos.py`：比率 `RATIOS`、`ratio()`，其他每個連動一個函式，`skills.strike()` 打之前看一次（比率、多打、控制多幾回合、在不在燒、要不要跳），
@@ -729,12 +741,12 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     60% 買不起 1 點就全部點數給它（`alone`，沒有次詞綴、第三條），全部也買不起才照舊抽；橘色另外多 `extra_points()`（總點數 × `MAIN_AFFIX_BONUS` 0.3）。
     balance.py 的 `roll_item` 也有（`main_affix` 參數），`test_equipment.py` 用同一個種子比對（持握、光源沒有點數，不能寫）。`objects.create()` 從區域檔傳進去、記在 `Obj.main_affix`（`full_price()` 橘色乘 1.3）；
     `area.check_main_affix()`：代號要是 `equipment.AFFIX_WORD`、只有隨機裝備、有點數的部位。編輯器的選單 `tables.js` 的 `MAIN_AFFIXES`。`tests/test_main_affix.py`。
-  - `make_corpse(npc, rng)`：「野狗的屍體」（`area.CORPSE_NPC_ITEM_TYPE`）、地上「野狗的屍體橫躺在地上。」（後面由 `on_floor()` 接 /corpse，使用者定的）、名字只有 `corpse`（使用者定的：生物、物品的名字一律英文）、`timer` 10～14（照 C 版）；
+  - `make_corpse(npc, rng)`：照系統區域檔的物品 10（`reserved.CORPSE`）做，`$n` 換成怪的名字：「野狗的屍體」（`area.CORPSE_NPC_ITEM_TYPE`）、地上「野狗的屍體橫躺在地上。」（後面由 `on_floor()` 接 /corpse，使用者定的）、名字只有 `corpse`（使用者定的：生物、物品的名字一律英文）、`timer` 10～14（照 C 版，在程式裡）；
     `roll_drops()` 每一行各自骰（`tiers` 對不上不骰，萬分之一），物品等級是生物等級、顏色是那一行的。
   - **金幣**（玩家角色手冊「金幣」，使用者 2026-11-18 定的）：`make_corpse()` 最後（亂數也是最後骰，原本的順序不變）放 `money(stats.drop_gold(等級, 種類) ＋ npc.gold)`，0 就不放；
     沒有 `tier` 的生物（測試直接建的）不掉。`drop_gold()` ＝ `shown(GOLD_BASE × exp(L ÷ GOLD_LEVELS) × gold_ratio(種類) × (1 ± GOLD_SPREAD))`，
     `gold_ratio()` 照經驗的比例（`TIER_DIFFICULTY × TIER_EXP_MULT ÷ 一般怪的`），只用一次 `rng.random()`。店主、slay 也有。
-    金錢物品（`area.MONEY_ITEM_TYPE` 20，`Obj.coins`；區域檔的從 values 第 1 個讀，名字照 C 版 `MONEY_ONE`／`MONEY_SOME`，cost 0）：
+    金錢物品（`area.MONEY_ITEM_TYPE` 20，`Obj.coins`；區域檔的從 values 第 1 個讀，屍體裡的照系統區域檔的物品 2「一枚金幣」、3「一些金幣」（`reserved.MONEY_ONE`／`MONEY_SOME`，照 C 版），cost 0）：
     `items.pick_up()`（get、get all、自動拾取共用）把它變成 `ch.gold`、不進背包，所以不檢查件數、負重（`is_money()`）；`take_all()` 拿不動之後只再拿金幣。
   - 名字（使用者選的，`short()`）：「測試藥水/potion」。名字裝備照顏色（灰 `{D`、白 `{W`、藍 `{B`、紫 `{M`、橘用暗黃 `{y`），其他亮綠 `{G`；
     `/` 後面是 keywords 裡的英文字，亮青 `{C`（照 C 版），沒有英文字就只有名字。地上那一行（`on_floor()`）：描述亮白，後面接「/英文名字」亮青（`english_tail()`，使用者定的：「一把測試長劍插在地上。/sword」）。區域作者寫的名字不轉顏色代碼（跟生物一樣）。

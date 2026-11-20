@@ -51,8 +51,8 @@ COMMANDS = [
     ("consider", combat.do_consider, P.RESTING),    # co、con（使用者 2026-11-19 要的：排在 config 前面）；照 C 版的最低姿勢
     ("config", system.do_config, P.DEAD),       # conf（co、con 是 consider）；什麼姿勢都能用（照 C 版）
     ("!", system.do_again, P.DEAD),             # 重複上一個指令：command() 先換掉（again()），還沒打過指令才會跑到這裡
-    ("recall", system.do_recall, P.STANDING),   # rec（re 還是 reply）；回到返回點，打架中、休息、睡覺不能用（使用者要的）
-    ("/", system.do_recall, P.STANDING),        # recall 的另一個名字（照 C 版）
+    ("recall", system.do_recall, P.FIGHTING),   # rec（re 還是 reply）；回到返回點，休息、睡覺不能用；打架中會失敗（設計文件 §5）
+    ("/", system.do_recall, P.FIGHTING),        # recall 的另一個名字（照 C 版）
     ("socials", social.do_socials, P.DEAD),     # so；列出全部的表情動作（動作本身不是指令，見 run()）
     # 會放技能的物品（設計文件 §3.8）：最低姿勢照 C 版，打架中可以用
     ("quaff", item_skills.do_quaff, P.RESTING),     # qua（q、qu 還是 quit）

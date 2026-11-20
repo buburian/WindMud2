@@ -7,7 +7,9 @@
 號碼規則（照 C 版，使用者 2026-11-17 定的）：檔案裡的號碼一律寫完整的遊戲號碼（房間 101 就寫 101）。
 每個檔在 area.header.vnums 寫自己的號碼範圍 [最小, 最大]：自己的房間、生物、物品要在範圍裡（三種號碼分開算），
 指到範圍外的號碼（to_room、key、recall、重置、掉落表）就是外連到別的區域檔。兩個檔的範圍不能重疊。
-遊戲號碼 1～99 是保留的（MIN_VNUM）：範圍最小要 100，指到別的東西寫 1～99 是錯的。一個檔可以放超過 99 個。
+遊戲號碼 1～99 是系統區域檔用的（MIN_VNUM、SYSTEM_VNUMS）：其他區域檔的範圍最小要 100，指到別的東西寫 1～99 是錯的。一個檔可以放超過 99 個。
+系統區域檔（header.type 是 system，使用者 2026-11-20 定的，學 C 版 limbo.are）放程式要用的物品、生物（屍體、金幣、召喚物，reserved.py），
+沒有房間、重置；只有程式用號碼做出來，別的區域檔不能指到它。
 """
 import enum
 import json
@@ -92,10 +94,11 @@ class DoorState(enum.IntEnum):
 
 
 class AreaType(enum.StrEnum):
-    """區域的種類（area.header.type）。值就是區域檔裡寫的字串，要跟手冊「三種區域」的表一樣。"""
+    """區域的種類（area.header.type）。值就是區域檔裡寫的字串，要跟手冊「區域的種類」的表一樣。"""
     WORLD = "world"                         # 世界區域：開機就建好，沒人也不釋放
     DYNAMIC = "dynamic"                     # 動態區域：有人走進去才建立，大家共用一份；沒有玩家一段時間就釋放
     INSTANCE = "instance"                   # 副本區域：入口的傳送門 enter 進去、副本裡的傳送門 enter 出來，一個隊伍一份；沒有玩家一段時間就釋放
+    SYSTEM = "system"                       # 系統區域：程式要用的物品、生物（屍體、金幣、召喚物），號碼 1～99，沒有房間、重置
 
 
 # 生物的種類、攻擊類型、攻防傾向、原型（mud_design 設計文件 §4.1～§4.3）。值是區域檔裡寫的代號，要跟手冊的表一樣。
@@ -411,7 +414,8 @@ RESET_KEYS = {
 }
 RESET_NUMBERS = ("mob_vnum", "obj_vnum", "room_vnum", "container_vnum")   # 寫完整遊戲號碼的欄位
 BUYER_LEVEL = -1                            # G 的 level 寫 -1：店主賣的東西，等級是買的人的等級（使用者 2026-11-18 定的）；O、P 不能寫
-MIN_VNUM = 100                              # 遊戲號碼最小是 100：1～99 是保留的
+MIN_VNUM = 100                              # 遊戲號碼最小是 100：1～99 是系統區域檔用的
+SYSTEM_VNUMS = (1, MIN_VNUM - 1)            # 系統區域檔的號碼範圍（使用者 2026-11-20 定的）
 
 
 class Room:
@@ -482,15 +486,20 @@ def is_int(value):
 
 
 def is_vnum(value):
-    """寫得對的遊戲號碼：MIN_VNUM 以上的整數（1～99 是保留的）。"""
+    """寫得對的遊戲號碼：MIN_VNUM 以上的整數（1～99 是系統區域檔用的）。"""
     return is_int(value) and value >= MIN_VNUM
+
+
+def is_system_vnum(value):
+    """系統區域檔自己的號碼：1～99（SYSTEM_VNUMS）。"""
+    return is_int(value) and SYSTEM_VNUMS[0] <= value <= SYSTEM_VNUMS[1]
 
 
 def check_ref(where, value, problems):
     """指到別的東西的號碼（to_room、recall、重置、掉落表…）：要寫完整的遊戲號碼。回傳寫得對不對。"""
     if is_vnum(value):
         return True
-    problems.append(f"{where}要寫完整的遊戲號碼（{MIN_VNUM} 以上，1～99 是保留的），不能是 {value!r}")
+    problems.append(f"{where}要寫完整的遊戲號碼（{MIN_VNUM} 以上，1～99 是系統區域檔用的），不能是 {value!r}")
     return False
 
 
@@ -756,14 +765,18 @@ def area_range(path):
     """盡量讀出一個檔案的 header.vnums（給對照用，格式不對就是 None）。"""
     data = read_json(path, [])
     try:
-        return vnum_range(data["area"]["header"]["vnums"])
-    except (KeyError, TypeError):
+        header = data["area"]["header"]
+        return vnum_range(header["vnums"], header.get("type"))
+    except (KeyError, TypeError, AttributeError):
         return None
 
 
-def vnum_range(value):
-    """header.vnums 寫得對就回傳 (最小, 最大)，不對是 None：兩個整數，MIN_VNUM ≤ 最小 ≤ 最大。"""
-    if isinstance(value, list) and len(value) == 2 and all(is_int(x) for x in value) and MIN_VNUM <= value[0] <= value[1]:
+def vnum_range(value, kind=None):
+    """header.vnums 寫得對就回傳 (最小, 最大)，不對是 None：兩個整數，最小 ≤ 最大；
+    系統區域檔（kind 是 system）要在 1～99 裡（SYSTEM_VNUMS），其他的最小要 MIN_VNUM 以上。"""
+    low, high = SYSTEM_VNUMS if kind == AreaType.SYSTEM else (MIN_VNUM, math.inf)
+    if (isinstance(value, list) and len(value) == 2 and all(is_int(x) for x in value)
+            and low <= value[0] <= value[1] <= high):
         return value[0], value[1]
     return None
 
@@ -864,20 +877,26 @@ def check_structure(name, data, problems):
         problems.append(f"{name}：file 要寫實際的檔名 {name!r}，不能是 {data['file']!r}")
     vnums, recall, kind = check_area(name, data["area"], problems) if "area" in data else (None, None, None)
     found.range, found.kind, found.recall = vnums, kind, recall
-    rooms = check_rooms(name, data, vnums, problems)
-    found.mobiles = check_mobiles(name, data, vnums, problems)
-    found.objects = check_objects(name, data, vnums, problems)
+    rooms = check_rooms(name, data, vnums, problems, kind)
+    found.mobiles = check_mobiles(name, data, vnums, problems, kind)
+    found.objects = check_objects(name, data, vnums, problems, kind)
     check_resets(name, data, problems)
+    if kind == AreaType.SYSTEM:             # 系統區域檔只放程式要用的物品、生物：沒有地方可以走，也不會重置
+        for k, label in (("rooms", "房間"), ("resets", "重置")):
+            if isinstance(data.get(k), list) and data[k]:
+                problems.append(f"{name}：系統區域檔不能有{label}（{k} 要寫 []），現在有 {len(data[k])} 筆")
     if rooms is not None:                   # rooms 整個不對時，房間的跨檔案檢查略過
         found.rooms, found.exits = rooms
     return found
 
 
-def check_number(name, label, vnum, where, seen, vnums, problems):
-    """房間、生物、物品自己的號碼：完整的遊戲號碼、在這個檔的範圍 vnums 裡（範圍寫錯就不看）、檔案裡不重複。
+def check_number(name, label, vnum, where, seen, vnums, problems, kind=None):
+    """房間、生物、物品自己的號碼：完整的遊戲號碼（系統區域檔是 1～99）、在這個檔的範圍 vnums 裡（範圍寫錯就不看）、檔案裡不重複。
     沒問題就記進 seen，回傳 True。"""
-    if not is_vnum(vnum):
-        problems.append(f"{name}：{label}號碼要寫完整的遊戲號碼（{MIN_VNUM} 以上，1～99 是保留的），不能是 {vnum!r}")
+    if kind == AreaType.SYSTEM and not is_system_vnum(vnum):
+        problems.append(f"{name}：系統區域檔的{label}號碼要寫 {SYSTEM_VNUMS[0]}～{SYSTEM_VNUMS[1]} 的整數，不能是 {vnum!r}")
+    elif kind != AreaType.SYSTEM and not is_vnum(vnum):
+        problems.append(f"{name}：{label}號碼要寫完整的遊戲號碼（{MIN_VNUM} 以上，1～99 是系統區域檔用的），不能是 {vnum!r}")
     elif vnums is not None and not vnums[0] <= vnum <= vnums[1]:
         problems.append(f"{where}的號碼 {vnum} 不在這個檔的範圍 {vnums[0]}～{vnums[1]}（area.header.vnums）")
     elif vnum in seen:
@@ -888,7 +907,7 @@ def check_number(name, label, vnum, where, seen, vnums, problems):
     return False
 
 
-def check_rooms(name, data, vnums, problems):
+def check_rooms(name, data, vnums, problems, kind=None):
     """檢查 rooms。回傳 (號碼沒問題的房間, 格式沒問題的出口 [(房間, 方向, to_room)])；rooms 整個不對是 None。"""
     if "rooms" not in data:
         return None
@@ -902,12 +921,12 @@ def check_rooms(name, data, vnums, problems):
         if not check_keys(r, ROOM_KEYS, where, problems):
             continue
         room_exits = check_room(where, r, problems)
-        if "vnum" in r and check_number(name, "房間", vnum, where, seen, vnums, problems):
+        if "vnum" in r and check_number(name, "房間", vnum, where, seen, vnums, problems, kind):
             exits += [(vnum, d, to) for d, to in room_exits]
     return seen, exits
 
 
-def check_mobiles(name, data, vnums, problems):
+def check_mobiles(name, data, vnums, problems, kind=None):
     """檢查 mobiles。回傳號碼沒問題的生物。"""
     if "mobiles" not in data:
         return []
@@ -922,7 +941,7 @@ def check_mobiles(name, data, vnums, problems):
             continue
         check_mobile(where, m, problems)
         if "vnum" in m:
-            check_number(name, "生物", vnum, where, seen, vnums, problems)
+            check_number(name, "生物", vnum, where, seen, vnums, problems, kind)
     return seen
 
 
@@ -955,18 +974,21 @@ def check_area(name, area, problems):
         for k in ("author", "title"):
             if k in header and not isinstance(header[k], str):
                 problems.append(f"{name}：area.header.{k} 要是字串，不能是 {header[k]!r}")
-        if "vnums" in header:
-            vnums = vnum_range(header["vnums"])
-            if vnums is None:
-                problems.append(f"{name}：area.header.vnums 要寫 [最小, 最大] 兩個整數，最小不能小於 {MIN_VNUM}"
-                                f"（1～99 是保留的）、不能大於最大，不能是 {header['vnums']!r}")
-        check_reset_minutes(name, header, problems)
-        if "type" in header:
+        if "type" in header:                # 先看種類：系統區域檔的號碼範圍不一樣
             if header["type"] in codes(AreaType):
                 kind = AreaType(header["type"])
             else:
                 problems.append(f"{name}：area.header.type 要寫 {'、'.join(t.value for t in AreaType)} 其中一個，"
                                 f"不能是 {header['type']!r}")
+        if "vnums" in header:
+            vnums = vnum_range(header["vnums"], kind)
+            if vnums is None and kind == AreaType.SYSTEM:
+                problems.append(f"{name}：系統區域檔的 area.header.vnums 要寫 [最小, 最大] 兩個整數，"
+                                f"在 {SYSTEM_VNUMS[0]}～{SYSTEM_VNUMS[1]} 裡面、最小不能大於最大，不能是 {header['vnums']!r}")
+            elif vnums is None:
+                problems.append(f"{name}：area.header.vnums 要寫 [最小, 最大] 兩個整數，最小不能小於 {MIN_VNUM}"
+                                f"（1～99 是系統區域檔用的）、不能大於最大，不能是 {header['vnums']!r}")
+        check_reset_minutes(name, header, problems)
     if "recall" in area and area["recall"] is not None and check_ref(f"{name}：area.recall ", area["recall"], problems):
         recall = area["recall"]
     if "no_teleport" in area and not (area["no_teleport"] is None or (is_int(area["no_teleport"]) and area["no_teleport"] in (0, 1))):
@@ -1036,7 +1058,7 @@ def check_exit(where, e, problems):
     if "locks" in e and not (is_int(e["locks"]) and e["locks"] in Locks):
         problems.append(f"{where}的 locks 要是 0～{max(Locks)} 的整數，不能是 {e['locks']!r}")
     if "key" in e and not (is_key(e["key"]) and e["key"] >= -1):
-        problems.append(f"{where}的 key 要是 -1、0（不用鑰匙）或鑰匙的遊戲號碼（{MIN_VNUM} 以上，1～99 是保留的），"
+        problems.append(f"{where}的 key 要是 -1、0（不用鑰匙）或鑰匙的遊戲號碼（{MIN_VNUM} 以上，1～99 是系統區域檔用的），"
                         f"不能是 {e['key']!r}")
     if "to_room" not in e:
         return False
@@ -1067,7 +1089,7 @@ def check_object_script(where, s, problems):
         problems.append(f"{where}的 function 不能是空的")
 
 
-def check_objects(name, data, vnums, problems):
+def check_objects(name, data, vnums, problems, kind=None):
     """檢查 objects。回傳號碼沒問題的物品。"""
     if "objects" not in data:
         return []
@@ -1082,7 +1104,7 @@ def check_objects(name, data, vnums, problems):
             continue
         check_object(where, o, problems)
         if "vnum" in o:
-            check_number(name, "物品", vnum, where, seen, vnums, problems)
+            check_number(name, "物品", vnum, where, seen, vnums, problems, kind)
     return seen
 
 
@@ -1122,7 +1144,7 @@ def check_object(where, o, problems):
         check_weapon(where, o, problems)
     elif o.get("item_type") == CONTAINER_ITEM_TYPE and "values" in o and is_int(o["values"][2]) and not is_key(o["values"][2]):
         problems.append(f"{where}的鑰匙（values 第 3 個）要是 0 以下（不用鑰匙）或鑰匙的遊戲號碼"
-                        f"（{MIN_VNUM} 以上，1～99 是保留的），不能是 {o['values'][2]!r}")
+                        f"（{MIN_VNUM} 以上，1～99 是系統區域檔用的），不能是 {o['values'][2]!r}")
     elif o.get("item_type") in SKILL_ITEM_TYPES and "values" in o:
         check_skill_item(where, o["item_type"], o["values"], problems)
     elif o.get("item_type") in (FOOD_ITEM_TYPE, DRINK_CON_ITEM_TYPE, FOUNTAIN_ITEM_TYPE) and "values" in o:

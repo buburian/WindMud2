@@ -3,6 +3,8 @@
 
 借用 test_skills.py 的區域：房間 102 有 5 級的野狗和野貓（純物理），101 在南邊。
 """
+import re
+
 import pytest
 
 from mud import affects, combat, damage, skills, stats, zones
@@ -147,9 +149,9 @@ def test_listing_says_who_it_hits(world):
     p = mage(learn=["blast", "frost_ring", "mass_heal"])
     skill_commands.do_skills(p, "")
     text = text_of(p)
-    assert "爆炎 blast  傷害" in text and "    打房間裡全部的怪（每多一隻總量 +50%，再平分）" in text
-    assert "    凍住、打房間裡全部的怪\r\n" in text
-    assert "    自己和同房間的玩家（每多一隻總量 +50%，再平分）" in text
+    assert re.search(r"爆炎 blast +傷害 .*\r\n +打房間裡全部的怪（每多一隻總量 \+50%，再平分）", text)
+    assert re.search(r"\r\n +凍住、打房間裡全部的怪\r\n", text)
+    assert re.search(r"\r\n +自己和同房間的玩家（每多一隻總量 \+50%，再平分）", text)
 
 
 def test_group_effects_tagged(world):

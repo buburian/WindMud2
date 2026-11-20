@@ -1,7 +1,7 @@
 // 區域檔的資料操作（不碰畫面）。規則照 docs/區域製作手冊.md；檢查一律交給後端的 check_files()。
 //
 // 號碼一律寫完整的遊戲號碼（照 C 版）：header.vnums 是這個檔的號碼範圍 [最小, 最大]，
-// 自己的房間、生物、物品在範圍裡，範圍外的號碼是外連到別的區域檔。1～99 是保留的（MIN_VNUM）。
+// 自己的房間、生物、物品在範圍裡，範圍外的號碼是外連到別的區域檔。1～99 是系統區域檔用的（MIN_VNUM）。
 
 export const DIRECTIONS = ["north", "east", "south", "west", "up", "down"];
 export const FLAT = ["north", "east", "south", "west"];            // 畫在同一層地圖上的方向
@@ -68,6 +68,7 @@ export const AREA_TYPES = [
   ["world", "世界區域"],
   ["dynamic", "動態區域"],
   ["instance", "副本區域"],
+  ["system", "系統區域"],
 ];
 
 // 重生多快（header.reset_empty、reset_players，分鐘）：空著是 null，用這兩個預設值（跟 area.py 的 RESET_EMPTY、RESET_PLAYERS 一樣）
@@ -128,11 +129,13 @@ function ensureList(data, key) {
 }
 
 export const MIN_VNUM = 100;                   // 遊戲號碼最小是 100（同 area.MIN_VNUM）
+export const SYSTEM_VNUMS = [1, MIN_VNUM - 1];  // 系統區域檔的號碼範圍（同 area.SYSTEM_VNUMS）
 
-// header.vnums 寫得對就回傳 [最小, 最大]，不對是 null（同 area.vnum_range）
+// header.vnums 寫得對就回傳 [最小, 最大]，不對是 null（同 area.vnum_range：系統區域檔在 1～99 裡，其他的最小 100）
 export function vnumRange(data) {
   const v = data.area.header.vnums;
-  return Array.isArray(v) && v.length === 2 && v.every(isInt) && MIN_VNUM <= v[0] && v[0] <= v[1] ? v : null;
+  const [low, high] = data.area.header.type === "system" ? SYSTEM_VNUMS : [MIN_VNUM, Infinity];
+  return Array.isArray(v) && v.length === 2 && v.every(isInt) && low <= v[0] && v[0] <= v[1] && v[1] <= high ? v : null;
 }
 
 // 一個號碼（to_room、recall、重置…）：是整數才拿來找東西，不是就是 null
@@ -314,7 +317,7 @@ export function renumberThing(data, kind, item, vnum) {
   if (vnum === item.vnum) return null;
   const range = vnumRange(data);
   if (range && !(isInt(vnum) && range[0] <= vnum && vnum <= range[1])) return `號碼要在這個檔的範圍 ${range[0]}～${range[1]} 裡`;
-  if (!range && !(isInt(vnum) && vnum >= MIN_VNUM)) return `號碼要是 ${MIN_VNUM} 以上的整數（1～99 是保留的）`;
+  if (!range && !(isInt(vnum) && vnum >= MIN_VNUM)) return `號碼要是 ${MIN_VNUM} 以上的整數（1～99 是系統區域檔用的）`;
   if (listOf(data, kind).some((x) => x !== item && x.vnum === vnum)) return `${KIND_NAMES[kind]} ${vnum} 已經有了`;
   const old = numberOf(item);
   if (old !== null) {

@@ -8,7 +8,7 @@ import logging
 import math
 import random
 
-from . import area, equipment, names, stats
+from . import area, equipment, names, reserved, stats
 from .act import notify
 from .area import (CHANCE_MAX, CHARGED_ITEM_TYPES, CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE, DRINK_CON_ITEM_TYPE, FOOD_ITEM_TYPE,
                    FOUNTAIN_ITEM_TYPE, LIGHT_ITEM_TYPE, MONEY_ITEM_TYPE, SKILL_ITEM_TYPES, WEAPON_ITEM_TYPE, Apply, Attack, ContainerFlag,
@@ -19,7 +19,6 @@ from .players import online_players
 
 log = logging.getLogger(__name__)
 
-CORPSE_KEYWORDS = ("corpse",)               # 屍體的名字（照 C 版；使用者定的：生物、物品的名字一律英文）
 CORPSE_TIMER = (10, 14)                     # 屍體過幾次 OBJ_TICKS 消失（照 C 版：10～14 個 tick，約 5～7 分鐘）
 DECAY = "腐爛變成了灰塵。"                    # timer 到了的訊息（照 C 版的屍體；現在只有屍體有 timer）
 # 名字的顏色（使用者選的）：裝備照顏色（終端機沒有橘色，用暗黃），其他物品照 C 版亮綠；後面的英文名字亮青（照 C 版）
@@ -31,18 +30,15 @@ BIND_NAMES = {ExtraFlag.BIND_PICKUP: "拾取後綁定", ExtraFlag.BIND_EQUIP: "�
 # 白色 1 級大約 10～20，99 級最貴的（雙手武器）不超過 5 萬）
 GEAR_PRICE_SCALE = 1.5
 GEAR_PRICE_LEVELS = 36
-# 怪物屍體裡的金幣（照 C 版 limbo.are 的 2、3 號物品）：1 枚、2 枚以上 → (名字, 地上那一行, keywords)
-MONEY_ONE = ("一枚金幣", "一枚金幣被留在地上。", ["coin", "gold"])
-MONEY_SOME = ("一些金幣", "一堆金幣被遺留在地上。", ["coins", "gold"])
 
 protos = {}                                 # 遊戲號碼 → 區域檔的物品（zones.load 填，跨檔案也找得到）
 
 
 class Obj:
-    """遊戲裡的一件物品。區域檔的物品用 create() 做，屍體用 make_corpse() 做。只放現在用得到的資料。"""
+    """遊戲裡的一件物品。區域檔的物品用 create() 做（屍體、金幣也是，照系統區域檔，reserved.py）。只放現在用得到的資料。"""
 
     def __init__(self, name, long, item_type, keywords):
-        self.vnum = None                    # 遊戲號碼（區域檔的物品才有；屍體沒有）
+        self.vnum = None                    # 遊戲號碼（區域檔的物品；屍體、金幣是系統區域檔的號碼）
         self.keywords = keywords            # 玩家用來指定它的名字（小寫）
         self.name = name                    # 名字（區域檔的 short；隨機裝備前面接上詞綴的名稱）
         self.long = long                    # 放在地上時看到的那一行
@@ -209,9 +205,11 @@ def make_corpse(npc, rng=random):
     裡面是掉落表骰到的物品，加上牠背包裡的（照 C 版）；店主背包裡的不放進去、直接消失（照 C 版：防止殺店主複製東西，使用者選的）。
     最後是金幣（stats.drop_gold() ＋ 別人給牠的，店主也有，照 C 版），0 枚就沒有。
     """
-    # 地上那一行：「野狗的屍體橫躺在地上。」，英文名字 /corpse 由 on_floor() 接在後面（使用者定的，跟其他物品一樣）
-    corpse = Obj(f"{npc.name}的屍體", f"{npc.name}的屍體橫躺在地上。", CORPSE_NPC_ITEM_TYPE, list(CORPSE_KEYWORDS))
-    corpse.level = npc.level
+    # 名字、地上那一行、英文名字照系統區域檔的屍體（reserved.CORPSE，使用者 2026-11-20 定的），$n 換成怪的名字：
+    # 「野狗的屍體」「野狗的屍體橫躺在地上。」，英文名字 /corpse 由 on_floor() 接在後面。不是裝備，不用亂數
+    corpse = create(reserved.CORPSE, npc.level, None)
+    corpse.name = corpse.name.replace(reserved.NAME_CODE, npc.name)
+    corpse.long = corpse.long.replace(reserved.NAME_CODE, npc.name)
     corpse.timer = rng.randint(*CORPSE_TIMER)
     corpse.contains = roll_drops(npc, rng) + ([] if getattr(npc, "shopkeeper", False) else list(npc.carrying))
     npc.carrying = []
@@ -225,11 +223,9 @@ def make_corpse(npc, rng=random):
 
 
 def money(amount):
-    """一堆 amount 枚金幣（照 C 版 create_money：1 枚是「一枚金幣」，其他「一些金幣」）。價格是 0（照 C 版）。"""
-    name, long, keywords = MONEY_ONE if amount == 1 else MONEY_SOME
-    obj = Obj(name, long, MONEY_ITEM_TYPE, list(keywords))
+    """一堆 amount 枚金幣（照 C 版 create_money：1 枚是系統區域檔的「一枚金幣」，其他「一些金幣」，reserved.py）。"""
+    obj = create(reserved.MONEY_ONE if amount == 1 else reserved.MONEY_SOME, 0, None)
     obj.coins = amount
-    obj.take = True
     return obj
 
 

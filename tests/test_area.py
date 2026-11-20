@@ -109,8 +109,8 @@ def test_mob_races_match_manual():
 
 
 def test_area_types_match_manual():
-    # 手冊「三種區域」表的第一欄就是區域檔裡寫的 type
-    assert [row[0] for row in manual_table("## 三種區域")] == [t.value for t in area.AreaType]
+    # 手冊「區域的種類」表的第一欄就是區域檔裡寫的 type
+    assert [row[0] for row in manual_table("## 區域的種類")] == [t.value for t in area.AreaType]
 
 
 def test_locks_match_manual():
@@ -165,7 +165,7 @@ def test_room_number_must_be_in_the_range(tmp_path):
 @pytest.mark.parametrize("vnum", [0, 50, 99])
 def test_game_numbers_1_to_99_are_reserved(tmp_path, vnum):
     write(tmp_path, "a.json", [room(vnum)])
-    with pytest.raises(ValueError, match=f"房間號碼要寫完整的遊戲號碼（100 以上，1～99 是保留的），不能是 {vnum}"):
+    with pytest.raises(ValueError, match=f"房間號碼要寫完整的遊戲號碼（100 以上，1～99 是系統區域檔用的），不能是 {vnum}"):
         zones.load(tmp_path)
 
 
@@ -211,7 +211,7 @@ def test_load_reports_first_problem_and_how_many(tmp_path):
 @pytest.mark.parametrize("to_room", [0, 9])
 def test_exit_to_reserved_number_is_an_error(tmp_path, to_room):
     write(tmp_path, "a.json", [room(101, north=to_room)])
-    with pytest.raises(ValueError, match=f"往 north 的出口的 to_room 要寫完整的遊戲號碼（100 以上，1～99 是保留的），不能是 {to_room}"):
+    with pytest.raises(ValueError, match=f"往 north 的出口的 to_room 要寫完整的遊戲號碼（100 以上，1～99 是系統區域檔用的），不能是 {to_room}"):
         zones.load(tmp_path)
 
 

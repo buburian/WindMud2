@@ -400,10 +400,10 @@ def do_goto(ch, arg):
         return
     death.stop_all(ch)
     act(GOTO_LEAVE, ch, to=TO_ROOM)
-    ch.room = to
+    before, ch.room = ch.room, to
     arrive(ch)
     act(GOTO_ARRIVE, ch, to=TO_ROOM)
-    ch.send(system.look(ch))
+    ch.send(system.arrival(ch, before))
     log.info(f"{ch.name} goto 房間 {to.vnum}")
 
 
@@ -432,7 +432,7 @@ def do_givemoney(ch, arg):
 
 
 VNUMS_USED = "區域檔用掉的號碼（照號碼排；房間、生物、物品都在檔案自己的範圍裡）："
-VNUMS_FREE = "還沒用的號碼（新的區域檔可以用，1～{} 是保留的）：".format(MIN_VNUM - 1)
+VNUMS_FREE = "還沒用的號碼（新的區域檔可以用，1～{} 是系統區域檔用的）：".format(MIN_VNUM - 1)
 VNUMS_FROM = "{} 以上"
 
 

@@ -6,6 +6,7 @@ PAGE_LINES_MIN = 19   # 每頁最少幾行（照 C 版）
 PAGE_LINES_MAX = 60   # 每頁最多幾行（照 C 版：打更大的設成這個）
 PROMPT = "> "          # 沒有屬性的角色用的 prompt（測試直接建的角色）；玩家的 prompt 顯示 HP、MP、MV（Player.prompt()）
 AREA_DIR = "areas"   # 區域檔的資料夾，跟 logs/ 同一層
+SYSTEM_AREA = "areas/system.json"   # 系統區域檔（屍體、金幣、召喚物，reserved.py）：區域資料夾裡沒有系統區域檔時 zones.load() 用這一份
 HELP_FILE = "help/help.json"   # help 指令的說明檔（helps.py），跟 areas/ 同一層
 SOCIAL_FILE = "socials/socials.json"   # 表情動作和說話結尾的表情（socials.py），跟 areas/ 同一層
 LOGIN_SCREEN = "screens/login.txt"     # 連線時看到的登入畫面（login.load_screen），可以用顏色代碼，跟 areas/ 同一層

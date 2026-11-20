@@ -32,9 +32,15 @@ def die(npc, rng=random, killer=None):
     scripts.fire_owner(npc, "on_death", None, killer)
     if npc not in characters:
         return None
+    # 跟牠打的人：在打牠的，和牠在打的（他還沒來得及還手，牠就被別人打死了）
+    foes = [c for c in characters if c.fighting is npc or c is npc.fighting]
     stop_all(npc)
     corpse = objects.make_corpse(npc, rng)
     characters.remove(npc)
+    from . import skills                    # 坑：skills → affects → combat → death 繞一圈，在函式裡才 import
+    for c in foes:                          # 收刀、回神：在打的最後一隻死了、身邊也沒有別的生物在打他，整場戰鬥才算結束
+        if c.fighting is None and not any(o.fighting is c for o in characters):
+            skills.fight_ended(c)
     return corpse
 
 

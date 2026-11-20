@@ -19,6 +19,7 @@ from mud import affects, combat, damage, death, fight, paths, save, skills, stat
 from mud.area import CORPSE_NPC_ITEM_TYPE, MobTier, WeaponKind
 from mud.characters import Position, characters
 from mud.commands import skills as skill_commands
+from mud.commands.system import pad
 from mud.color import colorize
 from mud.config import AFFECT_PULSE_TICKS, ENCODING, TICK_SECONDS
 from mud.npcs import Npc
@@ -107,7 +108,8 @@ def own_skill(p):
 
 def test_skills_match_mud_design(balance):
     # 建立角色就會的、Lv5 公會的傷害技能照 balance.py；路線的技能照 skill_tree.py（test_skill_tree.py），imm 的技能、增益技能（餽贈）是我們自己加的
-    by_guild = {sid for steps in paths.GUILD_SKILLS.values() for _lv, sid in steps}
+    # Lv15、Lv25 的公會被動（調息、收刀…）不是傷害技能，不在 balance.py 的 SKILLS（skill_tree.py 有，test_skill_tree.py 比對）
+    by_guild = {sid for steps in paths.GUILD_SKILLS.values() for _lv, sid in steps if skills.SKILLS[sid].kind != "passive"}
     assert {s["id"] for s in balance.SKILLS.values()} == {s.id for s in skills.SKILLS.values() if s.starter} | by_guild
     for name, want in balance.SKILLS.items():
         s = skills.SKILLS[want["id"]]
@@ -506,18 +508,37 @@ SWORD_HINT = ("\r\n\r\n10 級可以選職業（到秋風城的公會分館找導
               "  戰士：戰士公會（大街東口往南）\r\n  刺客：盜賊公會（暗巷往南）")     # 還沒選職業：最下面寫可以選的職業（paths.py）
 
 
+def damage_text(p, skill):
+    return "傷害 " + skill_commands.span(*skills.display_range(p, skill))
+
+
+def sword_later(p):
+    """劍之公會還沒到 5 級時「還沒學會」那段：公會的技能（paths.GUILD_SKILLS：Lv5 猛擊、Lv15 調息、Lv25 收刀）。"""
+    return ("\r\n還沒學會（升到那一級自動學會）：\r\n"
+            f"  5 級   猛擊 pummel          {damage_text(p, PUMMEL)}\r\n"
+            "                              打 2 次\r\n"
+            "  15 級  調息 breath_control  被動：休息、睡覺回復 ×1.5\r\n"
+            "  25 級  收刀 sheathe         被動：整場戰鬥結束回 HP、MP、MV 各 10%")
+
+
 def test_skills_listing(world):
+    """使用者 2026-11-20 選的表格：技能、效果、消耗、冷卻四欄對齊；還沒學會的另外列，打幾下、條件放下一行對齊效果那一欄。"""
     shabu, ming = fighter("Shabu"), fighter("Ming", guild=stats.Guild.STAFF)
-    low, high = skills.display_range(shabu, SMASH)
-    p_low, p_high = skills.display_range(shabu, PUMMEL)
-    # 5 級才學的猛擊也列出來，寫幾級學會（paths.GUILD_SKILLS）；打兩下的寫「打 2 次」，傷害是一下的範圍
-    assert say(shabu, "skills") == (f"你會的技能：\r\n  重擊 smash  傷害 {low}~{high}  消耗 4 MV  冷卻 6 秒\r\n"
-                                    f"  猛擊 pummel  傷害 {p_low}~{p_high}  打 2 次  消耗 4 MV  冷卻 6 秒\r\n    尚未學會（5 級）{SWORD_HINT}\r\n\r\n{prompt_of(shabu)}")
-    low, high = skills.display_range(ming, FIREBALL)
-    assert say(ming, "sk").startswith(f"你會的技能：\r\n  火球 fireball  傷害 {low}~{high}  消耗 4 MP  冷卻 6 秒\r\n")
+    smash = damage_text(shabu, SMASH)
+    w = max(4, len(smash.encode(ENCODING)))
+    # 5 級才學的猛擊列在「還沒學會」（paths.GUILD_SKILLS）；打兩下的「打 2 次」放下一行，傷害是一下的範圍
+    assert say(shabu, "skills") == ("你會的技能：\r\n"
+                                    f"  技能        {pad('效果', w)}  消耗  冷卻\r\n"
+                                    f"  重擊 smash  {pad(smash, w)}  4 MV  6 秒\r\n"
+                                    + sword_later(shabu) + f"{SWORD_HINT}\r\n\r\n{prompt_of(shabu)}")
+    assert re.search(r"\r\n  火球 fireball  傷害 \d+(~\d+)? +4 MP  6 秒\r\n", say(ming, "sk"))
     shabu.cooldowns["smash"] = 3
     shabu.position = Position.SLEEPING                     # 睡著也能看
-    assert "冷卻 6 秒  還要等 3 秒\r\n" in say(shabu, "skills")
+    assert "4 MV  6 秒  還要等 3 秒\r\n" in say(shabu, "skills")
+
+
+def test_same_numbers_are_written_once():
+    assert skill_commands.span(5, 5) == "5" and skill_commands.span(3, 4) == "3~4"
     bare = Player("Bare", FakeWriter(), zones.world.rooms[101])
     assert say(bare, "skills").startswith("你還不會任何技能。")
 
@@ -578,13 +599,13 @@ def test_thunder_hits_with_your_guilds_damage(world, guild, kind):
 
 def test_skills_listing_for_imm(world):
     shabu = imm_fighter("Shabu")
-    low, high = skills.display_range(shabu, SMASH)
-    t_low, t_high = skills.display_range(shabu, THUNDER)
-    p_low, p_high = skills.display_range(shabu, PUMMEL)
+    smash, thunder = damage_text(shabu, SMASH), damage_text(shabu, THUNDER)
+    w = max(4, len(smash.encode(ENCODING)), len(thunder.encode(ENCODING)))
     assert say(shabu, "skills") == ("你會的技能（imm 用技能不扣消耗、不用等冷卻）：\r\n"
-                                    f"  重擊 smash  傷害 {low}~{high}  消耗 4 MV  冷卻 6 秒\r\n"
-                                    f"  天雷 thunder  傷害 {t_low}~{t_high}  消耗 0  冷卻 0 秒\r\n"
-                                    f"  猛擊 pummel  傷害 {p_low}~{p_high}  打 2 次  消耗 4 MV  冷卻 6 秒\r\n    尚未學會（5 級）{SWORD_HINT}\r\n\r\n{prompt_of(shabu)}")
+                                    f"  技能          {pad('效果', w)}  消耗  冷卻\r\n"
+                                    f"  重擊 smash    {pad(smash, w)}  4 MV  6 秒\r\n"
+                                    f"  天雷 thunder  {pad(thunder, w)}  0     0 秒\r\n"
+                                    + sword_later(shabu) + f"{SWORD_HINT}\r\n\r\n{prompt_of(shabu)}")
 
 
 # ---- 誰會：一開始就會、要用程式加（使用者定的） ----
@@ -677,8 +698,9 @@ def test_sset_is_only_for_imm(world):
 # ---- 增益技能：餽贈（之後教學區的 NPC 送給玩家，使用者定的） ----
 
 GIFT = skills.SKILLS["gift"]
-GIFT_LINES = ["  餽贈 gift  持續 3600 秒  消耗 0  冷卻 0 秒",
-              "    每 3 秒 HP +上限的 10%、力量 +3、智慧 +3、知識 +3、體質 +3、敏捷 +3"]   # 做什麼放下一行，不超過 79 格
+GIFT_ROW = re.compile(r"  餽贈 gift   持續 3600 秒 +0     0 秒")     # 「餽贈 gift」比「重擊 smash」少 1 格，補空白對齊
+GIFT_MORE = [" " * 14 + "每 3 秒 HP +上限的 10%、力量 +3、智慧 +3、知識 +3、體質 +3、",   # 做什麼放下一行，對齊效果那一欄，
+             " " * 14 + "敏捷 +3"]                                                       # 不超過 79 格
 
 
 def gifted(name, room=102):
@@ -759,8 +781,8 @@ def test_an_npc_can_give_it(world):
 def test_skills_line_for_gift(world):
     shabu = gifted("Shabu")
     lines = say(shabu, "skills").split("\r\n")
-    i = lines.index(GIFT_LINES[0])
-    assert lines[i:i + 2] == GIFT_LINES and max(len(line.encode(ENCODING)) for line in lines) <= 79
+    i = next(i for i, line in enumerate(lines) if GIFT_ROW.fullmatch(line))
+    assert lines[i + 1:i + 3] == GIFT_MORE and max(len(line.encode(ENCODING)) for line in lines) <= 79
 
 
 def test_gift_in_score_wraps_within_79(world):
@@ -823,7 +845,7 @@ def test_skills_lists_the_aegis_shield(world):
     shabu = fighter("Shabu")
     skills.learn(shabu, AEGIS)
     out = say(shabu, "skills")
-    assert "天護 aegis  持續 10 秒  消耗 0  冷卻 0 秒" in out and "護盾 HP 上限的 120%" in out and "還剩" not in out
+    assert re.search(r"天護 aegis +持續 10 秒 +0 +0 秒\r\n +護盾 HP 上限的 120%\r\n", out) and "還剩" not in out
 
 
 def test_effects_take_the_skills_name_unless_written():

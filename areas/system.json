@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "file": "system.json",
+  "area": {
+    "header": {
+      "levels": [
+        1,
+        100
+      ],
+      "author": "WindMud2",
+      "title": "系統",
+      "vnums": [
+        1,
+        99
+      ],
+      "type": "system",
+      "reset_empty": null,
+      "reset_players": null
+    },
+    "recall": null,
+    "no_teleport": null,
+    "clan_recall": null,
+    "gem": null
+  },
+  "rooms": [],
+  "mobiles": [
+    {
+      "vnum": 1,
+      "keywords": "skeleton",
+      "short": "骷髏",
+      "long": "骷髏/skeleton/喀啦喀啦地站在主人身邊，眼窩裡沒有光。\n",
+      "description": "一具被法術喚醒的骷髏，骨頭上還黏著泥土，關節一動就喀啦作響。\n",
+      "level": 1,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 2,
+      "affected_by": 0,
+      "alignment": 0,
+      "race": "undead",
+      "sex": 0,
+      "position": 7,
+      "drops": [],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 2,
+      "keywords": "knight",
+      "short": "死亡騎士",
+      "long": "死亡騎士/knight/披著殘破的黑甲，一動也不動地守在主人身後。\n",
+      "description": "一名被法術召回的騎士，盔甲裡只剩一團冰冷的黑霧，手上的長劍鏽跡斑斑。\n",
+      "level": 1,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 2,
+      "affected_by": 0,
+      "alignment": 0,
+      "race": "undead",
+      "sex": 0,
+      "position": 7,
+      "drops": [],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    }
+  ],
+  "objects": [
+    {
+      "vnum": 2,
+      "keywords": "coin gold",
+      "short": "一枚金幣",
+      "long": "一枚金幣被留在地上。",
+      "item_type": 20,
+      "extra_flags": 0,
+      "wear_flags": 1,
+      "values": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "weight": 0,
+      "cost": 0,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 3,
+      "keywords": "coins gold",
+      "short": "一些金幣",
+      "long": "一堆金幣被遺留在地上。",
+      "item_type": 20,
+      "extra_flags": 0,
+      "wear_flags": 1,
+      "values": [
+        2,
+        0,
+        0,
+        0
+      ],
+      "weight": 0,
+      "cost": 0,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 10,
+      "keywords": "corpse",
+      "short": "$n的屍體",
+      "long": "$n的屍體橫躺在地上。",
+      "item_type": 23,
+      "extra_flags": 0,
+      "wear_flags": 0,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 0,
+      "cost": 0,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [],
+      "script": null
+    }
+  ],
+  "resets": []
+}

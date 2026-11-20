@@ -7,7 +7,7 @@ import asyncio
 
 import pytest
 
-from mud import combat, death, objects, skills, stats, summons, zones
+from mud import combat, death, objects, reserved, resets, skills, stats, summons, zones
 from mud.area import MobTier
 from mud.characters import characters
 from mud.commands import skills as skill_commands
@@ -156,10 +156,21 @@ def test_skills_listing_for_summons(world):
 
 
 @pytest.mark.parametrize("skill", ["raise_skeleton", "death_knight"])
-def test_summon_texts_fit_the_rules(skill):
-    look = summons.TYPES[skill]
-    name, keyword, rest = look["long"].split("/")
-    assert (name, [keyword]) == (look["name"], look["keywords"]) and rest.endswith("。")
-    for text in (look["long"], look["description"], look["arrive"], look["gone"]):
+def test_summon_texts_fit_the_rules(world, skill):
+    # 名字、英文名字、look 那一行、描述在系統區域檔（區域檔的檢查看 Big5、格式）；叫出來、消失的那句是技能的訊息，在程式裡
+    shape, look = summons.proto(skill), summons.TYPES[skill]
+    name, keyword, rest = shape["long"].rstrip("\n").split("/")
+    assert (name, keyword) == (shape["short"], shape["keywords"].split()[0]) and rest.endswith("。")
+    for text in (look["arrive"], look["gone"]):
         text.encode("cp950")                                          # Big5 打得出來
-        assert len(text) <= 36 + len(name) + len(keyword) + 2         # 世界觀的寫作規則：一行不超過 36 個中文字
+        assert len(text) <= 36                                        # 世界觀的寫作規則：一行不超過 36 個中文字
+
+
+def test_summons_look_like_the_system_area(world, monkeypatch):
+    """骷髏、死亡騎士長什麼樣子照系統區域檔的生物 1、2（reserved.py，使用者 2026-11-20 定的）：改區域檔就跟著變。"""
+    p = necromancer()
+    monkeypatch.setitem(resets.mobiles, reserved.SKELETON, dict(resets.mobiles[reserved.SKELETON], short="白骨兵", keywords="bones",
+                                                                long="白骨兵/bones/站著。\n", description="一副白骨。\n"))
+    npc = summons.summon(p, skills.SKILLS["raise_skeleton"])
+    assert (npc.name, npc.keywords, npc.long, npc.description) == ("白骨兵", ["bones"], "白骨兵/bones/站著。\n", "一副白骨。\n")
+    assert npc.level == p.level - skills.SKILLS["raise_skeleton"].summon["below"]   # 等級照技能算，不用區域檔寫的

@@ -89,8 +89,9 @@ def test_advance_other_player_up():
     assert shabu.writer.text().startswith("Ming 升到 100 級了。\r\n")
     assert (ming.level, ming.points) == (100, 99) and balanced(ming)
     assert ming.panel["hp"] > 1000 and ming.hp == ming.panel["hp"]       # 從頭算，補滿
-    # 過了 5 級：自動學會猛擊；過了 10 級還沒選職業：提醒（paths.py）
-    assert ming.writer.data == ("\r\n你升到 100 級了！多了 99 點主屬性點數，用 train 分配。\r\n" + colorize("{Y你學會了【猛擊】！{x") + "\r\n"
+    # 過了 5、15、25 級：自動學會猛擊、調息、收刀（公會的技能）；過了 10 級還沒選職業：提醒（paths.py）
+    learned = "".join(colorize("{Y你學會了【" + name + "】！{x") + "\r\n" for name in ("猛擊", "調息", "收刀"))
+    assert ming.writer.data == ("\r\n你升到 100 級了！多了 99 點主屬性點數，用 train 分配。\r\n" + learned +
                                 "你可以選職業了：到秋風城的公會分館找導師（打 skills 看）。\r\n\r\n" + ming.prompt()).encode(ENCODING)
 
 
@@ -270,7 +271,8 @@ def test_goto_a_room_number():
     ming.room = zones.world.rooms[3001]
     commands.command(boss, "goto 3001")
     assert boss.room is zones.world.rooms[3001]
-    assert body(boss).startswith("【秋風城神殿大廳】")                         # 到了先看房間
+    # 到了先看房間；從別的區域檔過來，房間前面先是區域名稱的外框（system.area_banner，使用者 2026-11-20 要的）
+    assert re.match(r"\r\n\+-+\+\r\n\| \*\*\* 秋風城（1～100 級） \*\*\* \|\r\n\+-+\+\r\n\r\n【秋風城神殿大廳】", body(boss))
     assert "Boss在一陣旋風中離開了。" in hua.writer.text()                   # 照 C 版
     assert "Boss乘著旋風出現了。" in ming.writer.text()
 
@@ -356,7 +358,7 @@ def test_vnums_lists_ranges_and_the_gaps(tmp_path):
     commands.command(shabu, "vn")
     assert shabu.writer.text().startswith("區域檔用掉的號碼（照號碼排；房間、生物、物品都在檔案自己的範圍裡）：\r\n"
                                    "  100～199  a.json  測試\r\n  200～299  c.json  測試\r\n  500～599  b.json  測試\r\n"
-                                   "還沒用的號碼（新的區域檔可以用，1～99 是保留的）：\r\n  300～499\r\n  600 以上\r\n\r\n<HP ")
+                                   "還沒用的號碼（新的區域檔可以用，1～99 是系統區域檔用的）：\r\n  300～499\r\n  600 以上\r\n\r\n<HP ")
 
 
 def test_vnums_is_only_for_imm():

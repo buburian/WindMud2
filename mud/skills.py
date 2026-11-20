@@ -11,6 +11,7 @@
 坑：combat → death → fight 繞一圈，這裡也用 from . import 模組。
 """
 import copy
+import math
 from dataclasses import dataclass, field
 
 from . import affects, combat, combos, damage, light, protect, stats, stealth, summons
@@ -57,6 +58,9 @@ class Skill:
     guard: dict = field(default=None, hash=False)   # 替人擋（protect.py）：share（幾成改由你承受）、duration（幾個 tick）
     summon: dict = field(default=None, hash=False)  # 召喚（summons.py）：tier（種類）、below（比主人低幾級）、duration（幾個 tick）
     sure: bool = False          # 必中、必定爆擊（設計文件 §2.6，2026-11-20 使用者定的）：不擲命中、一定爆擊，比率降到平均傷害不變
+    # 不是打架用的被動（設計文件 §2.6 的 Lv15、Lv25 公會被動，2026-11-20 使用者定的：讓玩家少休息）；passive 是空的
+    rest_regen: float = 1.0     # 休息、睡覺時的回復 × 這個（stats.regen，跟吃喝的加倍疊在一起）
+    fight_end: float = 0.0      # 整場戰鬥結束時 HP、MP、MV 各回上限的幾成（fight_ended）
 
 
 SKILLS = {s.id: s for s in (
@@ -200,6 +204,12 @@ SKILLS = {s.id: s for s in (
     Skill("pummel", "猛擊", Guild.SWORD, "damage", "single", 2, 0.475, 6, 0.10, sure=True),
     Skill("flame_arrow", "火焰箭", Guild.STAFF, "damage", "single", 2, 0.315, 6, 0.10, tag="燃燒",
           dot=dict(name="燃燒", ratio=0.6, jumps=3, hurt="燒傷"), sure=True),
+    # Lv15、Lv25 的公會被動（設計文件 §2.6，2026-11-20 使用者定的）：不是打架用的，讓玩家少休息；兩個公會效果一樣、名字不同。
+    # 升到那一級自動學會（paths.GUILD_SKILLS），不用選路。passive 是空的（不改屬性），效果在 rest_regen、fight_end
+    Skill("breath_control", "調息", Guild.SWORD, "passive", "self", 0, 0.0, 0, 0.0, passive={}, rest_regen=1.5),
+    Skill("meditate", "冥想", Guild.STAFF, "passive", "self", 0, 0.0, 0, 0.0, passive={}, rest_regen=1.5),
+    Skill("sheathe", "收刀", Guild.SWORD, "passive", "self", 0, 0.0, 0, 0.0, passive={}, fight_end=0.10),
+    Skill("recollect", "回神", Guild.STAFF, "passive", "self", 0, 0.0, 0, 0.0, passive={}, fight_end=0.10),
 )}
 KIND_NAMES = {"damage": "傷害", "heal": "治療", "buff": "增強", "debuff": "減弱", "control": "控制", "protect": "保護",
               "summon": "召喚", "passive": "被動"}   # 種類的中文（設計文件 §2.6 的 9 類）
@@ -291,6 +301,21 @@ def forget(ch, skill):
     ch.skills.remove(skill.id)
     affects.changed(ch)
     return True
+
+
+def rest_regen(ch):
+    """休息、睡覺時回復的倍率：學會的被動（調息、冥想 ×1.5）乘起來，沒有是 1（stats.regen 用）。"""
+    return math.prod(s.rest_regen for s in passives(ch))
+
+
+def fight_ended(ch):
+    """ch 整場戰鬥結束了（death.die 看的：他在打的最後一隻死了，身邊也沒有別的生物在打他）：
+    學會收刀、回神的，HP、MP、MV 各回上限的 fight_end（10%），超過上限停在上限。沒有訊息（prompt 看得到）。逃跑、回城、對方逃走不算。
+    """
+    share = sum(s.fight_end for s in passives(ch))
+    if share and getattr(ch, "panel", None):
+        for key in ("hp", "mp", "mv"):
+            setattr(ch, key, min(ch.panel[key], getattr(ch, key) + ch.panel[key] * share))
 
 
 def passives(ch):

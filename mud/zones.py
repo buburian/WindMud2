@@ -16,12 +16,12 @@ import logging
 from collections import deque
 from pathlib import Path
 
-from . import affects, area, behavior, fight, light, meals, objects, resets, scripts, skills, stats, terrain, weather
+from . import affects, area, behavior, fight, light, meals, objects, reserved, resets, scripts, skills, stats, terrain, weather
 from .area import AreaType
 from .characters import characters
 from .clock import cancel, every
 from .config import (ACADEMY_FILE, ACADEMY_START, ACADEMY_STUDENT, AREA_TICKS, CHOKE_TICKS, HOUR_TICKS, OBJ_TICKS,
-                     REGEN_TICKS, RELEASE_TICKS, START_ROOM, TICK_SECONDS)
+                     REGEN_TICKS, RELEASE_TICKS, START_ROOM, SYSTEM_AREA, TICK_SECONDS)
 from .npcs import Npc
 from .players import online_players
 
@@ -106,6 +106,9 @@ def load(directory):
     """
     global world, templates, dynamic_rooms, routes
     paths = sorted(Path(directory).glob("*.json"))
+    if not any(area.area_kind(p) == AreaType.SYSTEM for p in paths):
+        # 屍體、金幣、召喚物的文字在系統區域檔（reserved.py）：資料夾裡沒有（測試自己做的區域資料夾）就用遊戲的那一份
+        paths.append(Path(SYSTEM_AREA))
     problems = area.check_files(paths, paths)
     found = [p for path in paths for p in problems[path]]
     if found:
@@ -121,6 +124,8 @@ def load(directory):
             new_mobiles[m["vnum"]] = m
         for o in data["objects"]:           # 物品也是：掉落表可以掉別的區域檔的物品
             new_objects[o["vnum"]] = o
+        if kind == AreaType.SYSTEM:         # 系統區域檔只有程式要用的生物、物品：不建房間
+            continue
         if kind == AreaType.WORLD:
             new_world.add_area(path.name, data)
             continue
@@ -128,6 +133,9 @@ def load(directory):
         if kind == AreaType.DYNAMIC:
             for r in data["rooms"]:
                 new_dynamic_rooms[r["vnum"]] = path.name
+    missing = reserved.check(new_objects, new_mobiles)
+    if missing:                             # 程式要的屍體、金幣、召喚物少了：跟區域檔有錯一樣停止開機
+        raise ValueError(missing[0] + (f"（共 {len(missing)} 個問題）" if len(missing) > 1 else ""))
     stop()
     world, templates, dynamic_rooms = new_world, new_templates, new_dynamic_rooms
     routes = find_routes(entries, START_ROOM)
@@ -162,7 +170,7 @@ def find_routes(entries, start):
     order = {room: i for i, room in enumerate(came)}    # 找到的順序：越前面越近
     out = {}
     for path, data in entries:
-        if AreaType(data["area"]["header"]["type"]) == AreaType.INSTANCE:
+        if AreaType(data["area"]["header"]["type"]) in (AreaType.INSTANCE, AreaType.SYSTEM):
             continue
         reached = [r["vnum"] for r in data["rooms"] if r["vnum"] in order]
         out[path.name] = walk(came, min(reached, key=order.get)) if reached else None

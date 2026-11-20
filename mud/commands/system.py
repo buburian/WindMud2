@@ -123,6 +123,38 @@ def block(text):
     return text if text.endswith("\n") else text + "\n"
 
 
+BANNER_COLOR = "{Y"                         # 換區域的提示：外框和字都是亮黃（使用者 2026-11-20 要的）
+
+
+def area_banner(ch, before):
+    """ch 從 before（房間）來到現在的房間，換了區域檔就回傳有外框的區域名稱（後面空一行），不然是空字串（使用者 2026-11-20 要的）：
+
+      +-----------------------------------+
+      | *** 城西森林草原區（1～8 級） *** |
+      +-----------------------------------+
+
+    走路、逃跑、回城、goto、腳本的 transfer 都用它（arrival()），動態區域、副本也算；同一個區域檔裡走不出現，登入不用。
+    只給醒著的玩家：睡著看不到房間不出現；很暗照樣出現（走到哪個區域是走過來就知道的，不是看到的，我們定的）。
+    名字、等級跟 area 指令一樣（header.title、levels）。外框用半形的 + - |（┌─┐ 有的連線軟體顯示成兩格寬，框會歪），寬度照名字算（中文兩格）。
+    """
+    now = getattr(ch.room, "area", None)
+    if isinstance(ch, Npc) or ch.position <= Position.SLEEPING or now is None:
+        return ""
+    if getattr(before, "area", None) is not None and before.area.name == now.name:
+        return ""
+    header = now.data["area"]["header"]
+    levels = header.get("levels")
+    text = "*** " + header["title"] + (f"（{levels[0]}～{levels[1]} 級）" if levels else "") + " ***"
+    edge = "+" + "-" * (width(plain(text)) + 2) + "+"
+    return colorize(BANNER_COLOR + f"{edge}\n| {text} |\n{edge}" + "{x") + "\n\n"
+
+
+def arrival(ch, before):
+    """走到新房間給 ch 看的：換了區域檔是空一行、外框、空一行（area_banner），再來是房間的畫面（look）。"""
+    banner = area_banner(ch, before)
+    return ("\n" + banner if banner else "") + look(ch)
+
+
 def look(ch):
     """ch 所在房間的樣子：名稱、出口、描述，空一行再列房間裡的東西。登入時也用這個。
 
@@ -221,12 +253,12 @@ def move(ch, direction, leave=terrain.WALK_AWAY):
         ch.send(refused + "\n")
         return
     act(terrain.leave_text(ch.room, to, leave), ch, t=DIRECTIONS[direction], to=TO_ROOM)    # 看不到的人是「某人」
-    ch.room = to
+    before, ch.room = ch.room, to
     arrive(ch)
     for reader, text in compose(terrain.arrive_text(ch, to), ch, t=DIRECTIONS[REVERSE[direction]], to=TO_ROOM):
         if light.visible(reader, ch):
             notify(reader, text)
-    ch.send(look(ch))
+    ch.send(arrival(ch, before))
     scripts.fire(to, "on_enter", ch, ch, REVERSE[direction])   # 腳本的 on_enter(actor, from)：from 是從哪個方向進來
     if not isinstance(ch, Npc):
         summons.follow(ch, direction)       # 召喚物跟著走
@@ -252,9 +284,14 @@ RECALL_ARRIVE = "$n突然在這個房間裡面出現。"
 def do_recall(ch, arg):
     """recall（`/`）：回到返回點（使用者定的，zones.recall_room()：區域檔寫的 recall，沒寫是自己的返回點）。
 
-    不能用：no_recall 的房間（照 C 版）、還沒畢業的學生（不然可以跳過學院）；打架中、休息、睡覺不能用（指令表的最低姿勢 STANDING）。
+    不能用：no_recall 的房間（照 C 版）、還沒畢業的學生（不然可以跳過學院）；休息、睡覺不能用（指令表的最低姿勢 FIGHTING）。
+    打架中可以用，但會失敗（設計文件 §5，使用者 2026-11-20 同意）：機率是 flee 的一半，失敗的等待跟 flee 共用，暈、凍住不能試（commands/combat.py）。
     不扣 MV（C 版扣一半，使用者選不扣）。已經在那裡就什麼都不做（照 C 版）。到了跟腳本的 transfer 一樣觸發 on_enter(actor, nil)。
     """
+    from . import combat                    # 坑：commands/combat.py 也 import system，放在函式裡才不會繞一圈
+    fighting = ch.fighting is not None
+    if fighting and not combat.can_try_escape(ch):
+        return
     act(RECALL_PRAY, ch, to=TO_ROOM)
     if RoomFlag.NO_RECALL in ch.room.room_flags:
         ch.send(RECALL_REFUSED + "\n")
@@ -268,11 +305,13 @@ def do_recall(ch, arg):
         return
     if to is ch.room:
         return
+    if fighting and not combat.recall_escape(ch):
+        return
     act(RECALL_LEAVE, ch, to=TO_ROOM)
-    ch.room = to
+    before, ch.room = ch.room, to
     arrive(ch)
     act(RECALL_ARRIVE, ch, to=TO_ROOM)
-    ch.send(look(ch))
+    ch.send(arrival(ch, before))
     scripts.fire(to, "on_enter", ch, ch, None)
 
 

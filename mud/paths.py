@@ -60,7 +60,9 @@ PATHS = {p.name: p for p in (
 )}
 
 
-GUILD_SKILLS = {S: ((5, "pummel"),), M: ((5, "flame_arrow"),)}   # 不用選路、升到那一級自動學會的（((等級, 技能 id), ...)）
+# 不用選路、升到那一級自動學會的（((等級, 技能 id), ...)）：Lv5 猛擊、火焰箭，Lv15、Lv25 的公會被動（2026-11-20）
+GUILD_SKILLS = {S: ((5, "pummel"), (15, "breath_control"), (25, "sheathe")),
+                M: ((5, "flame_arrow"), (15, "meditate"), (25, "recollect"))}
 
 
 def big(p):

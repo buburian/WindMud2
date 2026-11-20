@@ -49,7 +49,7 @@ def to_lua(r, value):
 def number(n, what="號碼"):
     """腳本寫的號碼：要是完整的遊戲號碼。寫 1～99（保留的，例如舊寫法的檔案號碼）算腳本出錯，不要安靜地找不到。"""
     if isinstance(n, bool) or not isinstance(n, int) or n < MIN_VNUM:
-        raise ScriptError(f"{what}要寫完整的遊戲號碼（{MIN_VNUM} 以上，1～99 是保留的），不能是 {lua_repr(n)}")
+        raise ScriptError(f"{what}要寫完整的遊戲號碼（{MIN_VNUM} 以上，1～99 是系統區域檔用的），不能是 {lua_repr(n)}")
     return n
 
 
@@ -207,15 +207,15 @@ def transfer(ch, n):
     存檔是使用者要的：例如學院畢業送到 101，「畢業了」和人在哪裡馬上存進去。存檔失敗只記 log（跟 give 一樣）。
     """
     from . import death, inventory, save, scripts, zones
-    from .commands.system import look
+    from .commands.system import area_banner, look
     vnum = number(n, "房號")
     target = zones.room_at(ch.room, vnum)
     if target is None:
         raise ScriptError(f"沒有房間 {vnum}，或那是副本（不能送進副本）")
     death.stop_all(ch)
-    ch.room = target
+    before, ch.room = ch.room, target
     arrive(ch)
-    deliver(ch, look(ch), apart=True)       # 新房間的畫面：前面空一行
+    deliver(ch, area_banner(ch, before) + look(ch), apart=True)   # 新房間的畫面：前面空一行；換了區域檔先是外框（area_banner）
     if inventory.is_player(ch):
         try:
             save.save_player(ch)

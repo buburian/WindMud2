@@ -4,6 +4,7 @@
 導師（真的秋風城）在 test_mentors.py。借用 test_skills.py 的區域。
 """
 import math
+import re
 
 import pytest
 
@@ -154,10 +155,10 @@ def test_level_ups_learn_and_remind(world):
     assert paths.level_up_lines(p, 9) == [(paths.REMIND.format("職業", "公會分館"), "")]
     paths.choose(p, "戰士")
     stats.set_level(p, 21)
-    assert paths.level_up_lines(p, 10) == [(paths.LEARNED, "戰吼")]
+    assert paths.level_up_lines(p, 10) == [(paths.LEARNED, "調息"), (paths.LEARNED, "戰吼")]     # 公會的（15 級）在前、職業的在後
     stats.set_level(p, 40)
     small = (paths.REMIND.format("進階職業", "戰士公會（大街東口往南）"), "")
-    assert paths.level_up_lines(p, 21) == [(paths.LEARNED, "鋼鐵之軀"), small]
+    assert paths.level_up_lines(p, 21) == [(paths.LEARNED, "收刀"), (paths.LEARNED, "鋼鐵之軀"), small]
     stats.set_level(p, 41)
     assert paths.level_up_lines(p, 40) == [small]                    # 還沒選小路：每升一級都提醒（使用者 2026-11-20 要的）
     paths.choose(p, "巨武")
@@ -189,7 +190,9 @@ def test_level_5_learns_the_guild_skill_without_a_path(world, guild, name):
 def test_skills_lists_the_guild_skill_before_level_5(world):
     p = knight(level=1)
     text = say(p, "skills")
-    assert "猛擊 pummel  傷害" in text and "尚未學會（5 級）" in text
+    assert re.search(r"還沒學會（升到那一級自動學會）：\r\n  5 級 +猛擊 pummel +傷害", text)
+    assert re.search(r"\r\n  15 級  調息 breath_control +被動：休息、睡覺回復 ×1.5\r\n", text)
+    assert re.search(r"\r\n  25 級  收刀 sheathe +被動：整場戰鬥結束回 HP、MP、MV 各 10%\r\n", text)
 
 
 class Out:
@@ -267,8 +270,9 @@ def test_skills_shows_the_whole_chosen_path(world):
     p = knight(level=25)
     paths.choose(p, "戰士")
     text = listing(p)
-    assert "猛力斬 power_slash  傷害" in text and "戰吼 war_cry  持續 60 秒" in text
-    assert "鋼鐵之軀 iron_body  被動\r\n    尚未學會（30 級）、HP +5%" in text
+    assert re.search(r"猛力斬 power_slash +傷害", text) and re.search(r"戰吼 war_cry +持續 60 秒", text)
+    assert text.index("戰吼") < text.index("還沒學會") < text.index("鋼鐵之軀")
+    assert "  30 級  鋼鐵之軀 iron_body  被動：HP +5%\r\n" in text
     assert "40 級可以選進階職業（到秋風城的公會分館找導師，說出職業的名字）：\r\n  巨武：戰士公會（大街東口往南）\r\n  盾衛：" in text
     assert "橫掃" not in text and "挑釁" not in text                  # 小路還沒選：看不到
     assert say(p, "use iron").startswith("你不會這個技能。")          # 還沒學會的不能用
@@ -276,5 +280,5 @@ def test_skills_shows_the_whole_chosen_path(world):
     paths.choose(p, "戰士")
     paths.choose(p, "盾衛")
     text = listing(p)
-    assert "不倒之盾 last_stand" in text and "尚未學會（100 級）" in text and "可以選" not in text
+    assert re.search(r"  100 級  不倒之盾 last_stand +持續", text) and "可以選" not in text
     assert all(len(line.encode("cp950")) <= 79 for line in text.split("\r\n"))

@@ -1,6 +1,7 @@
 """召喚物（召喚類技能：喚骨術、死亡騎士，設計文件 §2.6）：叫出一隻生物幫主人打。
 
-- 多強：跟一般的怪一樣給等級和種類（stats.mob_stats），等級比主人低 below 級（最低 1），種類看技能。不放進區域檔，這裡做出來。
+- 多強：跟一般的怪一樣給等級和種類（stats.mob_stats），等級比主人低 below 級（最低 1），種類看技能。
+  名字、英文名字、look 那一行、描述照系統區域檔的生物（reserved.py，使用者 2026-11-20 定的）；區域檔寫的等級、種類不用。
 - 牠自動打主人正在打的怪（世界每個 tick 看一次，tick()），不能指揮；怪打誰照原本的規則（還沒在打架的就打牠）。
 - 跟著主人走（system.move 走完叫 follow()；recall、goto 這種被送走的，下一個 tick 跟過去）。不會自己走、不會主動攻擊。
 - 同一個技能只能有一隻，再放就換掉舊的；不同技能叫的可以同時在。
@@ -8,22 +9,29 @@
 - 牠打死的怪：經驗、掉落算主人的（combat.slain）。打一群、群體治療不算牠，玩家也不能打牠（commands.combat.attackable）。
 坑：death → summons → fight → combat → death 繞一圈，都用 from . import 模組。
 """
-from . import fight, npcs, stats
+from . import fight, npcs, reserved, stats
 from .act import TO_CHAR, TO_ROOM, act
 from .area import ActFlag, MobTier
 from .characters import arrive, characters
 from .npcs import Npc
 
-TYPES = {                                   # 技能 id → 這隻長什麼樣子（名字、英文名字、look 看到的那一行、描述、叫出來、消失的那句）
-    "raise_skeleton": dict(name="骷髏", keywords=["skeleton"],
-                           long="骷髏/skeleton/喀啦喀啦地站在主人身邊，眼窩裡沒有光。",
-                           description="一具被法術喚醒的骷髏，骨頭上還黏著泥土，關節一動就喀啦作響。",
+TYPES = {                                   # 技能 id → 系統區域檔的生物號碼、叫出來和消失的那句（技能的訊息，寫在程式裡）
+    "raise_skeleton": dict(vnum=reserved.SKELETON,
                            arrive="地面裂開，一具骷髏喀啦喀啦地爬了出來。", gone="$n散成一堆白骨。"),
-    "death_knight": dict(name="死亡騎士", keywords=["knight"],
-                         long="死亡騎士/knight/披著殘破的黑甲，一動也不動地守在主人身後。",
-                         description="一名被法術召回的騎士，盔甲裡只剩一團冰冷的黑霧，手上的長劍鏽跡斑斑。",
+    "death_knight": dict(vnum=reserved.DEATH_KNIGHT,
                          arrive="一陣冷風颳過，一名死亡騎士從黑霧裡走了出來。", gone="$n化成一團黑霧，消散了。"),
 }
+
+
+def proto(skill_id):
+    """skill_id 叫出來的那隻在系統區域檔的樣子（resets.mobiles 的生物）。"""
+    from . import resets                    # 坑：resets → scripts → … → skills → summons 繞一圈，在函式裡才 import
+    return resets.mobiles[TYPES[skill_id]["vnum"]]
+
+
+def creature_name(skill_id):
+    """skill_id 叫出來的是什麼（skills 的說明「叫出一隻骷髏」用）。"""
+    return proto(skill_id)["short"]
 
 
 def of(owner):
@@ -40,9 +48,10 @@ def summon(owner, skill):
     for old in of(owner):
         if old.summon_source == skill.id:
             dismiss(old)
-    look, info = TYPES[skill.id], skill.summon
-    npc = Npc(look["name"], 0, owner.room)
-    npc.keywords, npc.long, npc.description = list(look["keywords"]), look["long"], look["description"]
+    look, info, shape = TYPES[skill.id], skill.summon, proto(skill.id)
+    npc = Npc(shape["short"], shape["sex"], owner.room)
+    npc.keywords = shape["keywords"].lower().split()      # 跟 npcs.spawn() 一樣
+    npc.long, npc.description = shape["long"], shape["description"]
     npc.level, npc.tier = max(1, owner.level - info["below"]), MobTier(info["tier"])
     npc.base_panel, npc.mix = stats.mob_stats(npc.level, info["tier"], None, None, None)
     npcs.recompute(npc)

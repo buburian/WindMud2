@@ -359,7 +359,7 @@ def test_faerie_fire_not_in_safe_rooms(world):
 def test_skills_lists_them(world):
     ming = person("Ming", knows=["faerie_fire", "pass_door"])
     text = say(ming, "skills")
-    assert "灼熱火燄 faerie_fire  持續 1800 秒" in text and "穿牆術 pass_door  持續 1800 秒" in text
+    assert re.search(r"灼熱火燄 faerie_fire +持續 1800 秒", text) and re.search(r"穿牆術 pass_door +持續 1800 秒", text)
     assert "粉光" in text and "通透" in text
 
 

@@ -3,6 +3,8 @@
 
 借用 test_skills.py 的區域：房間 102 有 5 級的野狗和野貓，101 在南邊（START_ROOM 是 101）。
 """
+import re
+
 import pytest
 
 from mud import affects, combat, protect, skills
@@ -152,9 +154,9 @@ def test_skills_listing_for_protection(world):
     from mud.commands import skills as skill_commands
     skill_commands.do_skills(p, "")
     text = text_of(p)
-    assert "挑釁 taunt  持續 6 秒" in text and "    改打你（被挑釁）" in text
-    assert "守護 guard  持續 30 秒" in text and "    被打的傷害 30% 改由你承受" in text
-    assert "不倒之盾 last_stand  持續 10 秒" in text and "被打的傷害 50% 改由你承受、同房間的其他玩家" in text
+    assert re.search(r"挑釁 taunt +持續 6 秒 .*\r\n +改打你（被挑釁）\r\n", text)
+    assert re.search(r"守護 guard +持續 30 秒 .*\r\n +被打的傷害 30% 改由你承受\r\n", text)
+    assert re.search(r"不倒之盾 last_stand +持續 10 秒 .*\r\n +被打的傷害 50% 改由你承受、同房間的其他玩家\r\n", text)
 
 
 def test_guards_never_take_more_than_all_of_it(world):
