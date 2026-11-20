@@ -15,6 +15,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   **只是參考：這是新遊戲，不是把 C 版改寫**，不照它的結構和命名。要看連線通訊和核心程式時參考它，連線通訊在 `comm.c`（`game_loop_unix`、`read_from_descriptor`、`write_to_descriptor`）。
   原始碼是 Big5，搜尋要用 `LC_ALL=C grep -a`，不然會搜不到。
 
+## Discord 的 patch 通知
+
+使用者 2026-11-20 要的、選的流程：**每次 push 後 GitHub 測試過了，照 `mud.patchnote since` 寫 `patch/草稿.md`、貼給使用者看，他說「發」才跑 `send`**（不能自己發）。
+只寫玩家感受得到的（新指令、技能、區域、數值、修掉的錯），**imm 的指令不寫**（使用者選的），程式結構、測試、手冊同步也不寫。
+webhook 網址在 `patch/discord-webhook`（`.gitignore` 排除，是密碼：不要印出來、不要讀進回覆）。紀錄 `patch/紀錄.md` 跟著下一次 commit 進 git。
+
 ## 待辦
 
 使用者說要做、但之後再做的事，一件一個 Markdown 檔放在 `todo/`（使用者選的：不開 GitHub issue，本機 gh 的帳號沒有這個 repo 的權限）。開始新工作前先看一下有沒有相關的。做完就刪掉那個檔（使用者要的）。
@@ -35,13 +41,15 @@ uv run python -m mud.areacheck                    # 檢查 areas/ 全部的區�
 uv run python -m mud.areacheck areas/test.json    # 只檢查一個區域檔
 uv run python -m mud.builder                      # 區域編輯器，瀏覽器開 http://127.0.0.1:1234（區域檔存在 builder_area/）
 uv run python -m mud.areaconvert 舊.json builder_area/新.json   # 舊區域（area2json 的輸出）轉成我們的格式，印出拿掉了什麼
+uv run python -m mud.patchnote since              # Discord 的 patch 通知：上次發過之後的 commit（寫草稿用）
+uv run python -m mud.patchnote send --dry-run     # 試跑 patch/草稿.md（拿掉 --dry-run 才真的發，發完記進 patch/紀錄.md）
 ```
 
 - `tests/test_telnet.py` 是 `Telnet` 狀態機的單元測試；`tests/test_commands.py` 測指令縮寫比對、tell、reply、quit 和 look（`look 名字` 的描述、11 句受傷狀態、打量、方向先於角色）；`tests/test_color.py` 測顏色代碼；`tests/test_act.py` 測 `act()` 的代換和送給誰；
   `tests/test_log.py` 測紀錄檔的編號、換檔和刪舊檔；`tests/test_area.py` 測區域載入，也比對手冊的數字表跟程式的定義；`tests/test_areacheck.py` 測區域檔檢查的每條規則；
   要自己做區域檔的測試，用 `tests/area_helpers.py` 做出完整的檔案再改欄位（直接 `from area_helpers import …`）；
   `tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit；另一個測試讓 tick 和幾場戰鬥一直跑，確認玩家打字照樣馬上回應。
-  `tests/test_login.py` 也開真的伺服器，測建立角色、密碼、名字規則、存檔、斷線存檔、重複登入接手。`tests/test_imm.py` 測 imm 指令、advance、train、goto（號碼、名字、副本去不了、停手）、givemoney、vnums；`tests/test_health.py` 測 health；`tests/test_position.py` 測姿勢、rest／sleep／stand、睡覺時能用的指令、say、who、save。`tests/test_resets.py` 測生物的重置（M、limit、rare、tier_roll、時機、look）。`tests/test_doors.py` 測門（兩邊都要寫的檢查、走路、open／close／lock／unlock、對面看得到、look、重置 D、副本各自的門）。
+  `tests/test_login.py` 也開真的伺服器，測建立角色、密碼、名字規則、存檔、斷線存檔、重複登入接手。`tests/test_imm.py` 測 imm 指令、advance、train、goto（號碼、名字、副本去不了、停手）、givemoney、vnums；`tests/test_health.py` 測 health；`tests/test_patchnote.py` 測 Discord 的 patch 通知（切訊息、試跑、紀錄、webhook 被 .gitignore 排除；發送換成假的）；`tests/test_position.py` 測姿勢、rest／sleep／stand、睡覺時能用的指令、say、who、save。`tests/test_resets.py` 測生物的重置（M、limit、rare、tier_roll、時機、look）。`tests/test_doors.py` 測門（兩邊都要寫的檢查、走路、open／close／lock／unlock、對面看得到、look、重置 D、副本各自的門）。
   `tests/test_objects.py` 測物品（固定、隨機裝備、掉落表、屍體、slay、look 和 look in、屍體消失、區域物件釋放後不見、基本價格 `base_price()`、cost 存檔）。
   `tests/test_behavior.py` 測生物平常的行為（走動的出口和機率、scavenger、主動攻擊和半身人的不起眼、生物回血、wimpy），亂數換成 `behavior.rng`；
   `tests/test_specials.py` 測 special（打架用的時間、傷害 × 倍率、招式名稱、劇毒，janitor、fido，名字的表跟手冊比對），`damage.strike` 換成固定值、`fight.hit` 不打。
@@ -476,6 +484,14 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   菁英、首領的藍色 100% 給代表的那一件（武器優先）。原本沒穿東西的怪掉新加的四件（使用者要的）：霧骨戒指（必出 crit）、牛頭人圓盾（必出 res_phys）、冰蟲皮披風、柳條腰帶。
   坑：八把鬥士房門的鑰匙是重置 P 放進「競技場鑰匙環」2382 的，所以鑰匙環一定要 G 給競技場管理者帶著（掉落表的東西重置時還不在，P 找不到容器）。
   文字照世界觀改寫（分四段寫的），武器種類照名字改過（弩弓改成獵人長矛：遊戲沒有弓）。
+- **邪龍教派**（`cult.json`，世界區域，15～25 級，號碼 `[9800, 9899]`，重生 2／4 分鐘，使用者 2026-11-20 放進來的）：舊的 cult1.are（搞笑的「公司」風格）轉的，
+  秋風城貧民區東端 3024 往北進施粥棚 9850（教派的前門）。文字照世界觀「邪龍教派的地底」改寫：前門是施粥棚、講道廳、帳房區、抄經室，地底是聖殿、祭壇、牢房（被抓來的女孩）、深坑（死靈祭司），最深處是教派偷偷養大的幼龍威爾麟。
+  首領是死靈祭司、威爾麟（兩個都拿掉了舊版的聖光）；菁英是拷問者、黑鱗騎士、黑鱗女祭司；長袍祭司 tier_roll 菁英 20%；接待員、守夜人、女孩是垃圾怪；主動攻擊全拿掉。
+  威爾麟是 `spec_poison`（幼龍噴不出龍焰；吐息都算龍焰傷害，這個等級擋不住），掉固定裝備幼龍鱗頸飾（只有龍焰抗性 25，藍 100%）和龍鱗護袍（紫 70%／橘 10%）。
+  掉落照牛頭人要塞那一套（一般 白 70／藍 50／紫 10／橘 5、菁英 藍 100／紫 55／橘 7、首領 藍 100／紫 70／橘 10）；新加的皮圍裙（必出 res_phys）、裹屍布綁腿、骨戒（必出 con：25 級只有橘色買得起，使用者選照首領的機率）。
+  地底的伙房 9892，老伙夫（店主）賣粗麥餅、陶杯裝的茶（G）；牢房地上 O 一件灰色的破舊白袍。
+  坑：陷阱房 9873、滑道 9885 往下是單向的，掉進牢房 9866（牢門從裡面打不開）、地窖 9883（鑰匙在門外的拷問者身上）；遊戲沒有撬鎖、撞門，
+  所以這四間拿掉了舊版的 no_recall，一個人掉進去要靠 recall 出來。之後做了撬鎖、撞門再看要不要放回去。
 - **棕仙巷**（`brownie.json`，動態區域（有人走進去才建立，使用者 2026-11-20 從世界區域改的），1～10 級，號碼 `[300, 399]`，使用者 2026-11-20 放進來的）：舊的小精靈村（`smurf1.are`，照卡通做的）轉過來，
   號碼全部加 200，名字和文字照世界觀（mud_design 的「棕仙巷」那節）改成原創的：西城門內側 3040 往北的藤蔓巷、小棕仙、半塌鐘樓裡的瘋煉金師和獨眼野貓。
   使用者定的物品（裝備等級 3）：眼鏡 int、草編小帽 dex、小斧頭 str、莓核項鍊 int 都寫 `main_affix`，掉落都是紫色 100%、另外橘色 5%

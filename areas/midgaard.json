@@ -736,6 +736,13 @@
       "room_flags": 0,
       "sector": 1,
       "exits": {
+        "north": {
+          "description": "往北，巷子盡頭一間靠著老石牆搭起來的施粥棚，飄出麥粥的香味。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 9850
+        },
         "east": {
           "description": "東邊豁然開朗，就是公共廣場，廣場邊的石牆下坐著幾個老人。\n",
           "keywords": "",

@@ -1,0 +1,3251 @@
+{
+  "schema_version": 1,
+  "file": "cult.json",
+  "area": {
+    "header": {
+      "levels": [
+        15,
+        25
+      ],
+      "author": "Sandman",
+      "title": "邪龍教派",
+      "vnums": [
+        9800,
+        9899
+      ],
+      "type": "world",
+      "reset_empty": 2,
+      "reset_players": 4
+    },
+    "recall": null,
+    "no_teleport": null,
+    "clan_recall": null,
+    "gem": null
+  },
+  "rooms": [
+    {
+      "vnum": 9850,
+      "name": "施粥棚",
+      "description": "一間靠著老石牆搭起來的棚子，屋頂是幾片舊門板，底下擺著兩排長板凳。\n灶上一口大鍋咕嘟咕嘟地冒著熱氣，麥粥的香味一直飄到巷子裡。\n石牆上掛著一幅褪色的布畫（painting），門邊立著一塊木牌（sign）。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北，石牆上嵌著一扇漆黑的木門，門上掛著一把大鎖。\n",
+          "keywords": "黑木門 door",
+          "locks": 1,
+          "key": 9825,
+          "to_room": 9851
+        },
+        "south": {
+          "description": "往南出了棚子，就是貧民區東端，屋簷之間拉滿了曬衣繩。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 3024
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "布畫 painting",
+          "description": "畫的是一條巨龍盤在一座宮殿上，跟市場中央的石像很像。\n顏色褪得厲害，底下用小字寫著：「約毀了，火就來。」\n"
+        },
+        {
+          "keywords": "木牌 sign",
+          "description": "「每日早晚施粥，不問來處，不收一文錢。」\n底下還有一行小一點的字：「喝完粥，留下來聽一段道。」\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9851,
+      "name": "昏暗的長廊",
+      "description": "黑木門後是一條又長又暗的走廊，牆是大塊的老石頭砌的，摸上去冰冰涼涼。\n粥的香味到這裡就斷了，換成一股淡淡的焚香，從走廊深處飄過來。\n牆上隔好遠才點著一盞小油燈，火苗壓得很低。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北，走廊盡頭透出一片暗紅的光，焚香的味道越來越濃。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9852
+        },
+        "south": {
+          "description": "往南是那扇漆黑的木門，門外隱約傳來人聲和粥的香味。\n",
+          "keywords": "黑木門 door",
+          "locks": 1,
+          "key": 9825,
+          "to_room": 9850
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 9852,
+      "name": "拜龍廳",
+      "description": "一間高高的石廳，四壁點著紅紙罩的燈，照得牆上的壁畫（mural）一片暗紅。\n廳中央擺著一座銅香爐，三隻爐腳鑄成龍爪的樣子，香灰積了厚厚一層。\n地上的石板被膝蓋磨出了一排排淺淺的凹痕。\n",
+      "room_flags": 12,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北，一排排長板凳朝著一座講臺，地上散著紙頁。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9853
+        },
+        "south": {
+          "description": "往南，一條昏暗的長廊，牆上的油燈隔好遠才有一盞。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9851
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "壁畫 mural",
+          "description": "第一面畫著車隊載著貢品往北走，第二面畫著國王揮手叫車隊停下。\n第三面是一片大火，從天上落在城裡。\n最後一面還沒畫完，只有一群穿黑袍的人跪著，望著北邊的天空。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9853,
+      "name": "講道廳",
+      "description": "一排排長板凳朝著前面的講臺，地上散滿了被踩髒的經文小冊（pamphlets）。\n講臺後面的牆上掛著一塊黑木匾（plaque），比一個人還高。\n講臺旁的地板上有一道活板門，四邊釘著鐵條。東邊的牆上有一扇側門。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "east": {
+          "description": "往東是一扇窄窄的側門，門板上的漆已經剝落了。\n",
+          "keywords": "側門 door",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9880
+        },
+        "south": {
+          "description": "往南，四面牆上畫滿暗紅的壁畫，中間擺著一座銅香爐。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9852
+        },
+        "west": {
+          "description": "往西，牆邊排著幾張板凳，中間一張矮桌。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9871
+        },
+        "down": {
+          "description": "往下，活板門的縫裡透上來一點燭光，底下是一道陡陡的石階。\n",
+          "keywords": "活板門 trapdoor",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9854
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "經文小冊 pamphlets",
+          "description": "粗紙用麻線裝訂，字是一筆一筆抄的：\n「百年前，王毀了秋約，龍焰燒了這座城。\n龍沒有忘記，龍會回來。到那一天，只有替龍做事的人活得下來。」\n"
+        },
+        {
+          "keywords": "木匾 plaque",
+          "description": "木匾上刻著幾行大字，填著暗紅的漆：\n「王毀了約，火從天降。約再立起，火便不來。\n替龍做事的人，龍焰不燒他的家。」\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9854,
+      "name": "地底的交會處",
+      "description": "低矮的石室裡，四條通道在這裡交會，地上的石板被踩出了淺溝。\n一道陡陡的石階（stairs）貼著牆往上，頂端是天花板上的活板門。\n南邊的通道透出一點搖晃的燭光，空氣裡飄著蠟油的味道。\n",
+      "room_flags": 12,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北的開口裡，牆上掛滿了褪色的掛毯。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9856
+        },
+        "east": {
+          "description": "往東是一條樸素的石砌走廊，飄來柴煙和烤麥餅的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9857
+        },
+        "south": {
+          "description": "往南的通道透出燭光，隱約聽得到誦經的低語。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9855
+        },
+        "west": {
+          "description": "往西是一條黑石鋪地的走廊，地面映著淡淡的光。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9859
+        },
+        "up": {
+          "description": "往上，石階頂端是一道釘著鐵條的活板門，門縫漏下燈光，隱約有人在講道。\n",
+          "keywords": "活板門 trapdoor",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9853
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "石階 stairs",
+          "description": "石階又窄又陡，每一級的中間都被踩得凹了下去。\n牆上釘著一條麻繩當扶手，被手磨得發黑。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9855,
+      "name": "燭火聖殿",
+      "description": "石室裡點滿了蠟燭，一排排插在牆邊的鐵架上，燭淚堆得像鐘乳石。\n正中央的石臺上蹲著一座黑石龍像（statue），雙翼張開，俯看著你。\n石臺前的地上鋪著幾張草蓆，每張都被膝蓋壓出兩個淺淺的凹印。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北回到交會的石室，四條通道在那裡碰頭。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9854
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "龍像 statue",
+          "description": "龍像是用一整塊黑石雕的，鱗片一片一片都刻了出來，爪下踩著一座小城。\n底座刻著一行字：『秋約既毀，火自北來。』\n石頭被摸得最亮的地方，是龍的前爪。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9856,
+      "name": "掛毯室",
+      "description": "四面牆上掛滿了大大小小的掛毯（tapestry），顏色都褪得發灰。\n每一幅都織著龍：盤在山頂的龍、飛過城牆的龍、伏在火裡的龍。\n燭火一晃，掛毯跟著輕輕起伏，上面的龍好像在動。\n東牆那幅最大的掛毯底下，有一陣冷風從縫裡鑽出來。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "east": {
+          "description": "東牆那幅大掛毯後面，藏著一道窄窄的密門，門縫透著潮氣。\n",
+          "keywords": "密門 secret",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9886
+        },
+        "south": {
+          "description": "往南回到交會的石室。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9854
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "掛毯 tapestry",
+          "description": "最大的一幅織著一座燒起來的城，城北的天空全是龍。\n角落裡織著一列穿黑袍的人，捧著木箱往北走。\n底下織著一行小字：『他們不送，我們送。』\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9857,
+      "name": "伙房外的走廊",
+      "description": "一條沒有任何裝飾的石砌走廊，牆上每隔幾步嵌著一盞小油燈。\n北邊飄來柴煙和烤麥餅的香味，東邊有一扇木門，門後傳來水聲。\n石地上留著一串濕腳印，從木門一路延伸到西邊。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北是一間小伙房，灶口的火光映在門框上。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9892
+        },
+        "east": {
+          "description": "往東是一扇木門，門板被水氣泡得發脹。\n",
+          "keywords": "木門 door",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9858
+        },
+        "west": {
+          "description": "往西回到交會的石室。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9854
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 9858,
+      "name": "淨身室",
+      "description": "一間窄小的石室，靠牆砌著一道長長的石槽（trough），盛滿冷水。\n牆上釘著一排木釘，掛著幾件剛洗過的黑袍，還在滴水。\n空氣又冷又濕，聞得到香灰和皂角的味道。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "west": {
+          "description": "往西是木門，門外就是走廊。\n",
+          "keywords": "木門 door",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9857
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "石槽 trough",
+          "description": "石槽裡的水冷得刺骨，水面漂著一層灰白的香灰。\n槽邊刻著一行字：『入殿以前，洗去城裡的塵。』\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9859,
+      "name": "黑石走廊",
+      "description": "地上鋪著磨得發亮的黑石板，兩旁油燈的火光倒映在上面，\n像一條淡淡的光帶，一路往西延伸。\n空氣又悶又濕，你沒走幾步就出了一身汗，卻一點也不覺得熱。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "east": {
+          "description": "往東回到交會的石室。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9854
+        },
+        "west": {
+          "description": "往西，走廊在前面轉了一個彎。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9860
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 9860,
+      "name": "走廊轉角",
+      "description": "黑石走廊在這裡轉向北邊，轉角的牆上刻著一隻龍爪（claw）。\n北邊傳來低低的誦經聲，一句接著一句，聽不清在念什麼。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北轉過牆角，誦經聲就是從那裡傳來的。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9861
+        },
+        "east": {
+          "description": "往東是一條黑石鋪地的走廊。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9859
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "龍爪 claw",
+          "description": "龍爪刻得很深，爪尖都朝著北邊，像在替人指路。\n爪心被摸得發亮，經過的人好像都會伸手碰一下。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9861,
+      "name": "邪龍祭壇",
+      "description": "一間挑高的石廳，廳裡立著一座黑石祭壇（altar），兩旁各燒著一盆火。\n地上用黑漆畫著一個大圓圈（circle），圈裡的石板比外面乾淨。\n火光一跳一跳，牆上的影子跟著晃動，像有很多人在走來走去。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北是一間小石室，一道樓梯從那裡往上。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9894
+        },
+        "south": {
+          "description": "往南回到走廊的轉角。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9860
+        },
+        "down": {
+          "description": "圓圈正中的石板底下，藏著一道活板門。\n",
+          "keywords": "活板門 trapdoor",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9862
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "祭壇 altar",
+          "description": "祭壇是一整塊黑石，正面刻著一條盤起來的龍，龍口對著一隻銅碗。\n碗擦得很亮，碗底卻結著一圈洗不掉的暗紅色。\n"
+        },
+        {
+          "keywords": "圓圈 circle",
+          "description": "圓圈畫得很正，邊上用白漆寫滿了看不懂的字。\n正中央那塊石板四周有一道細縫，比別的石板稍微高出一點。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9862,
+      "name": "圓圈下的暗室",
+      "description": "一間沒有點燈的小石室，牆壁摸起來又濕又冷，低得要彎著腰走。\n幾級石階往上，頂上就是那道活板門；南邊的牆上開著一個窄口。\n地上的灰塵裡印著許多腳印，全都朝著南邊。\n",
+      "room_flags": 1037,
+      "sector": 0,
+      "exits": {
+        "south": {
+          "description": "往南的窄口外，是一間圓形的石廳。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9863
+        },
+        "up": {
+          "description": "往上是幾級石階，頂上是一道活板門。\n",
+          "keywords": "活板門 trapdoor",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9861
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 9863,
+      "name": "內圈議事廳",
+      "description": "一間圓形的石廳，沿著牆砌了一圈石凳（benches）。\n正中央擺著一個石盆（basin），教派裡只有身分最高的人，才能進來坐。\n牆上掛著幾盞罩著紅玻璃的燈，整間廳都是暗紅色的。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北是那間低矮的暗室。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9862
+        },
+        "east": {
+          "description": "往東是一間房間，門口垂著厚厚的布簾。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9864
+        },
+        "west": {
+          "description": "往西是一條陰冷的長廊，那頭傳來細細的哭聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9865
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "石凳 benches",
+          "description": "石凳一共十二張，每張的椅背上都刻著一個名字。\n有幾個名字被鑿掉了，鑿痕還很新。\n"
+        },
+        {
+          "keywords": "石盆 basin",
+          "description": "石盆底結著一層黑紅色的乾痕，湊近一聞有股腥味。\n盆邊放著一隻小銀杯，杯口磨得發亮。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9864,
+      "name": "大祭司的寢室",
+      "description": "一間收拾得很乾淨的寢室，床上鋪著黑色的絲被，床頭擺著一座小龍像。\n被子疊得整整齊齊，上面卻積了一層薄灰，好像很久沒人睡了。\n床腳邊有一塊磚塊（brick）比旁邊的髒，邊緣有一圈刮痕。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "west": {
+          "description": "往西回到圓形的議事廳。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9863
+        },
+        "down": {
+          "description": "床腳邊那塊鬆動的磚塊底下，好像是空的。\n",
+          "keywords": "磚塊 brick",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9887
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "磚塊 brick",
+          "description": "磚塊邊上的灰泥被刮掉了，四周的縫隙比別的磚寬。\n用手指一摳，整塊磚好像可以撬起來，底下吹上來一股腐臭的冷風。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9865,
+      "name": "牢房前的長廊",
+      "description": "一條陰冷的長廊，空氣裡有一股霉味和鐵鏽味，讓人背脊發涼。\n北邊的牆上嵌著一道鐵條打成的牢門，裡面傳來斷斷續續的哭聲。\n牢門前的石地上，有一塊被人站得發亮的地方。\n",
+      "room_flags": 9,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北是牢門，鐵條後面有人在低聲啜泣。\n",
+          "keywords": "牢門 door",
+          "locks": 1,
+          "key": 9826,
+          "to_room": 9866
+        },
+        "east": {
+          "description": "往東是圓形的議事廳，透著暗紅色的燈光。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9863
+        },
+        "west": {
+          "description": "往西，長廊越來越窄，牆上的霉斑也越來越多。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9867
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 9866,
+      "name": "地底牢房",
+      "description": "一間又小又臭的石牢，地上鋪著一層發霉的稻草，牆角擺著一隻水罐。\n抬頭看，天花板上有一道活板門（trapdoor），從這裡搆不到，也推不開。\n牆上刻著好幾排細細的刻痕（marks），是有人在數日子。\n",
+      "room_flags": 9,
+      "sector": 0,
+      "exits": {
+        "south": {
+          "description": "往南是鐵條打成的牢門，門外是長廊。\n",
+          "keywords": "牢門 door",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9865
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "活板門 trapdoor",
+          "description": "活板門離地有兩個人那麼高，門板底下沾著灰塵和稻草屑。\n從上面掉下來的人，就只能待在這裡了。\n"
+        },
+        {
+          "keywords": "刻痕 marks",
+          "description": "刻痕五道一組，有的很舊，有的還很新。\n最新的那一排旁邊，有人用小石子刻了一個歪歪扭扭的字：『救』。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9867,
+      "name": "陰冷的長廊深處",
+      "description": "長廊在這裡變得又低又窄，牆上爬滿了黑綠色的霉斑。\n西邊的門縫裡飄出濃濃的薰香，底下卻壓著一股說不出的腥臭。\n牆上的油燈越來越稀，燈芯都剪得很短，好像不想讓人看清楚這裡。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "east": {
+          "description": "往東回到牢房前的長廊。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9865
+        },
+        "west": {
+          "description": "往西是一道漆黑的木門，門縫裡飄出薰香的味道。\n",
+          "keywords": "黑木門 door",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9868
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 9868,
+      "name": "女祭司的臥房",
+      "description": "一間掛著厚重黑紗的臥房，香爐裡燒著濃濃的薰香，熏得人頭昏。\n梳妝臺上立著一面銅鏡（mirror），鏡子前擺著一隻黑瓶子（vial）。\n薰香底下，還是聞得到北邊飄過來的腥臭。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北是一條走廊，一股濃烈的腥臭從那裡湧過來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9869
+        },
+        "east": {
+          "description": "往東是那道黑木門，門外就是長廊。\n",
+          "keywords": "黑木門 door",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9867
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "銅鏡 mirror",
+          "description": "銅鏡磨得很亮，鏡框上纏著一圈細細的黑鱗。\n鏡子前的桌面上，散著幾片黑色的鱗屑。\n"
+        },
+        {
+          "keywords": "瓶子 vial",
+          "description": "瓶口用蠟封著，搖一搖，裡面是濃稠的液體。\n瓶身貼著一張小紙條，只寫了一個字：『血』。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9869,
+      "name": "腥臭的走廊",
+      "description": "一股刺鼻的腥臭塞滿了整條走廊，像爛肉混著潮濕的蛇皮。\n北邊是一道大鐵門，門板上有好幾處從裡面撞出來的凸痕。\n門後偶爾傳來沉重的呼吸聲，還有什麼東西刮過石頭的聲音。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北是那道大鐵門，門縫裡的腥臭濃得嗆鼻。\n",
+          "keywords": "鐵門 door",
+          "locks": 1,
+          "key": 9827,
+          "to_room": 9870
+        },
+        "south": {
+          "description": "往南回到女祭司的臥房，薰香的味道淡淡地飄過來。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9868
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 9870,
+      "name": "幼龍的石窟",
+      "description": "一間挖空的大石窟，頂卻壓得很低，抬頭就看得到滿頂的爪痕（scratches）。\n地上鋪著一層亂七八糟的骨頭（bones），被啃得乾乾淨淨。\n角落堆著幾片蛻下來的黑鱗，邊緣還帶著灰白。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "south": {
+          "description": "往南是那道大鐵門，從這一面看，門上全是撞痕。\n",
+          "keywords": "鐵門 door",
+          "locks": 1,
+          "key": 9827,
+          "to_room": 9869
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "爪痕 scratches",
+          "description": "爪痕一道疊著一道，全都抓在頭頂的岩石上。\n像是有什麼東西一次又一次地想往上鑽，卻怎麼也鑽不出去。\n"
+        },
+        {
+          "keywords": "骨頭 bones",
+          "description": "大多是牛羊的骨頭，被咬成了好幾截。\n有幾根比較細的，看起來不像牲口的。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9871,
+      "name": "接見室",
+      "description": "一間小小的房間，牆邊排著幾張板凳，中間一張矮桌，桌面磨得發亮。\n來見執事的人都在這裡等，板凳底下塞著幾個空麻袋，是裝獻禮用的。\n西邊的牆上有一扇窄門，門縫底下透出一點暗紅的光。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北，牆上掛著一個銅鈴，地上的石板被來回的腳步磨得發亮。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9872
+        },
+        "east": {
+          "description": "往東，一排排長板凳朝著一座講臺。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9853
+        },
+        "west": {
+          "description": "往西是一扇窄門，門縫底下透出一點暗紅的光，聞得到一股霉味。\n",
+          "keywords": "窄門 door",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9873
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 9872,
+      "name": "帳房區的入口",
+      "description": "幾條走道在這裡交會，地上的石板被來來回回的腳步磨得發亮。\n牆邊的木架上塞滿了一捆捆帳本和名冊，紙角都捲起來了。\n門邊的牆上掛著一個銅鈴（bell），拉繩一直垂到地上。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北是一條安靜的走廊，牆上釘著一張發黃的告示。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9874
+        },
+        "east": {
+          "description": "往東，幾張長桌拼在一起，牆邊堆著一袋袋麥子和布匹。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9878
+        },
+        "south": {
+          "description": "往南，一間小房間裡排著板凳，中間一張矮桌。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9871
+        },
+        "west": {
+          "description": "往西，一張木櫃臺上掛滿了黑色的小鐵片，叮叮噹噹地響。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9879
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "銅鈴 bell",
+          "description": "鈴身上刻著一圈看不懂的花紋，鈴舌磨得發亮。\n每過一段時間，有人拉一下繩子，這一區的人就放下手上的事，朝北邊低頭。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9873,
+      "name": "鋪著地毯的窄房",
+      "description": "門在你身後砰的一聲關上了，從這一邊摸不到門把，怎麼推也推不動。\n房間窄得只夠躺一個人，牆上一盞紅紙燈，照得四面石牆暗紅暗紅的。\n地上鋪著一張厚厚的舊地毯（rug），邊角沒有用釘子釘住。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "down": {
+          "description": "往下，地毯底下的活板門通到一間牢房，縫裡透上來陰冷的霉味。\n",
+          "keywords": "活板門 trapdoor",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9866
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "地毯 rug",
+          "description": "一張又厚又重的舊地毯，花紋早就磨平了，聞起來一股霉味。\n掀起一角，底下的石板上有一道方方正正的縫，是一道活板門。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9874,
+      "name": "帳房區的走廊",
+      "description": "這條走廊比外頭安靜得多，腳步聲在刷了白灰的牆之間迴盪。\n牆上釘著一張發黃的告示（notice），四個角用鐵釘釘著。\n走廊北頭的牆不再刷白灰，露出底下黑色的大石頭。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北，牆上的白灰漸漸變成黑石，一道石階往下彎進黑暗裡。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9893
+        },
+        "south": {
+          "description": "往南，牆上掛著一個銅鈴，木架上塞滿了帳本。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9872
+        },
+        "west": {
+          "description": "往西，一間整整齊齊的房間，桌上的名冊疊得方方正正。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9875
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "告示 notice",
+          "description": "「入了教的人，記住三件事：\n一、教裡的事，不對外人說。\n二、每月初一，交上你的貢品。\n三、夜裡聽到底下有聲音，不要問。」\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9875,
+      "name": "執事蓋爾的房間",
+      "description": "房間收拾得乾乾淨淨，地上找不到一張紙屑。\n桌上的名冊（register）疊得方方正正，筆和墨排成一直線。\n牆上釘著一排木格子，每一格都塞著捲好的紙，標著貧民區的巷名。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "east": {
+          "description": "往東是帳房區的走廊，牆上釘著一張發黃的告示。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9874
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "名冊 register",
+          "description": "一頁一頁寫滿了名字，名字後面記著住在哪裡、捐了多少。\n很多住處寫的是空屋門上議會漆的白色號碼。\n有幾個名字旁邊，用墨畫了一個小小的黑圈。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9876,
+      "name": "帳房福雷德的房間",
+      "description": "房間亂成一團，地上到處是揉皺的紙、菸灰和吃剩的麥餅屑。\n中央一張大桌子，攤著一本厚厚的帳本（ledger），旁邊壓著一只鐵錢箱。\n窗子用木板釘死了，屋裡一股嗆人的菸草味，散都散不出去。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "south": {
+          "description": "往南，幾張長桌拼在一起，牆邊堆著一袋袋麥子和布匹。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9878
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "帳本 ledger",
+          "description": "帳本分成兩欄，一欄寫著「施粥」，一欄寫著「貢品」。\n施粥那一欄的數字越記越小，貢品那一欄越記越大。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9877,
+      "name": "守夜人的休息室",
+      "description": "一間小房間，角落鋪著一張草蓆和一條舊毯子，牆上掛著一盞提燈。\n小火爐上坐著一把陶壺，茶湯熬得又黑又苦，滿屋子都是茶味。\n桌面上留著一圈一圈的杯印，椅子只剩三條腿是穩的。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "south": {
+          "description": "往南，幾張桌子排成一排，空氣裡一股墨汁的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9882
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 9878,
+      "name": "記帳的大房間",
+      "description": "幾張長桌拼在一起，桌上攤著帳本、算籌和一疊疊還沒抄完的名冊。\n牆邊堆著一袋袋麥子和布匹，每一袋都貼著紙條，寫著送來的人的名字。\n北邊的房間飄出一股菸草味，東邊飄來墨汁的味道。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北，一間亂糟糟的房間，飄出一股嗆人的菸草味。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9876
+        },
+        "east": {
+          "description": "往東，幾張桌子排成一排，空氣裡一股墨汁的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9882
+        },
+        "west": {
+          "description": "往西，牆上掛著一個銅鈴，地上的石板被腳步磨得發亮。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9872
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 9879,
+      "name": "賣護身符的櫃臺",
+      "description": "一張木櫃臺把房間隔成兩半，櫃臺上方拉著幾條細繩。\n繩子上掛滿了黑色的護身符（amulets），一碰就叮叮噹噹地響。\n房間又小又悶，只有東邊一個出口，站久了讓人只想往外走。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "east": {
+          "description": "往東，幾條走道在那裡交會，牆上掛著一個銅鈴。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9872
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "護身符 amulets",
+          "description": "一枚枚巴掌大的黑鐵片，打成龍鱗的樣子，用紅繩穿著。\n說是戴著它，龍焰就燒不到你。拿指節敲一下，是鐵皮的聲音。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9880,
+      "name": "迴廊",
+      "description": "一條長長的迴廊，一邊是石柱，一邊是牆，圍著一個小小的天井。\n天井裡只有一口乾掉的井和一棵枯樹（tree），枝條細得像手指。\n柱子下擺著幾張長凳，坐在這裡壓低聲音說話，迴廊另一頭聽不見。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北，迴廊走到了盡頭，一扇門朝北、一扇門朝西。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9881
+        },
+        "west": {
+          "description": "往西是一扇窄窄的側門，門板上的漆已經剝落了。\n",
+          "keywords": "側門 door",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9853
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "枯樹 tree",
+          "description": "樹早就死了，樹皮一片片剝落，露出底下灰白的木頭。\n最低的那根枝條上綁著幾條褪色的紅布，不知道是誰綁的。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9881,
+      "name": "迴廊的盡頭",
+      "description": "迴廊在這裡走到了盡頭，地上的灰比別處厚，很少有人來。\n北邊的門包著一層鐵皮，門板上刮滿了細細的痕跡。\n西邊是一扇普通的木門，門縫裡飄出墨汁的味道。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北是一扇包著鐵皮的門，貼上去聽，門後一點聲音也沒有。\n",
+          "keywords": "鐵皮門 iron",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9885
+        },
+        "south": {
+          "description": "往南，迴廊圍著一個天井，天井裡有一棵枯樹。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9880
+        },
+        "west": {
+          "description": "往西是一扇木門，門縫裡飄出墨汁的味道。\n",
+          "keywords": "木門 door",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9882
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 9882,
+      "name": "抄經室",
+      "description": "幾張桌子排成一排，每張桌上都擺著一碟墨、一疊裁好的粗紙。\n教派的經文小冊全是在這裡一筆一筆抄出來的，滿屋子都是墨汁的味道。\n角落有一張桌子（desk）特別乾淨，椅子擦得發亮，卻沒有人去坐。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北，一間小房間，飄出一股熬得太久的茶味。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9877
+        },
+        "east": {
+          "description": "往東是一扇木門，門的另一邊很安靜。\n",
+          "keywords": "木門 door",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9881
+        },
+        "west": {
+          "description": "往西，幾張長桌拼在一起，牆邊堆著一袋袋麥子和布匹。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9878
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "桌子 desk",
+          "description": "桌上只放著一本翻開的經文，那一頁的邊上被手指摸得發黑。\n抄經的人說，這張桌子是講道人的，誰也不許碰。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9883,
+      "name": "地窖",
+      "description": "一間又低又潮的地窖，空氣裡一股霉味混著腐臭，悶得人喘不過氣。\n牆角堆著幾個發了霉的麥袋，早就爛成一攤，爬滿了白色的小蟲。\n頭頂很高的地方有一個方方的洞口，四壁又濕又滑，怎麼也爬不上去。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "west": {
+          "description": "往西是一扇生鏽的鐵門，門縫裡透出一點火光。\n",
+          "keywords": "鐵門 door",
+          "locks": 1,
+          "key": 9837,
+          "to_room": 9884
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 9884,
+      "name": "刑囚室",
+      "description": "一間熱烘烘的石室，中間一個火盆燒得通紅，鐵鉗、鐵鉤擱在炭上。\n牆邊立著一座拷問架（rack），架上綁著一副枯骨。\n北邊的牆上掛滿了鐵鍊，鐵鍊後面的石板有一道細細的縫。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "north": {
+          "description": "往北，鐵鍊後面的石牆上嵌著一道石門，跟牆一個顏色。\n",
+          "keywords": "石門 stone",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9886
+        },
+        "east": {
+          "description": "往東是一扇生鏽的大鐵門，門後飄來一股腐臭。\n",
+          "keywords": "鐵門 door",
+          "locks": 1,
+          "key": 9837,
+          "to_room": 9883
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "拷問架 rack",
+          "description": "枯骨的手腕還綁著繩子，骨頭白得發亮，死了很久了。\n旁邊掛著一塊小木牌，上面只寫了兩個字：「多嘴」。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9885,
+      "name": "滑道",
+      "description": "門後沒有地板，只有一道又陡又滑的石頭斜坡，你一踩上去就往下溜。\n石面被磨得發亮，上面留著幾道抓痕，像是有人想停下來卻停不住。\n回頭看，那扇門已經在高高的上頭，怎麼爬也爬不回去。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "down": {
+          "description": "往下，斜坡一路滑進黑暗裡，底下飄上來一股霉味和腐臭。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9883
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 9886,
+      "name": "祕密通道",
+      "description": "一條又窄又潮的暗道，牆上爬滿了蜘蛛，蛛網一層一層地垂下來，黏在臉上。\n地上的泥有幾行腳印，有的往南，有的往西，看得出常有人走。\n南邊和西邊的石牆上各有一扇門，都做得跟牆一個顏色。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "south": {
+          "description": "往南是一道石門，門後傳來炭火劈啪的聲音。\n",
+          "keywords": "石門 stone",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9884
+        },
+        "west": {
+          "description": "往西是一道密門，門縫裡看得到垂下來的厚布，透著一點燭光。\n",
+          "keywords": "密門 secret",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9856
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 9887,
+      "name": "磚塊下的窄道",
+      "description": "一條鑿在岩石裡的窄道，陡得要手腳並用才爬得下去。\n一股腐屍的臭味從底下湧上來，嗆得你直想吐。\n岩壁上的鑿痕很粗，像是很多年前趕工挖出來的，之後就沒人修過。\n",
+      "room_flags": 13,
+      "sector": 0,
+      "exits": {
+        "up": {
+          "description": "頭頂上是那塊鬆動的磚塊，縫隙裡透下一點微光。\n",
+          "keywords": "磚塊 brick",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9864
+        },
+        "down": {
+          "description": "往下，窄道越來越陡，臭味也越來越重。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9888
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 9888,
+      "name": "深坑邊緣",
+      "description": "窄道到這裡斷了，前面是一個黑漆漆的深坑，一股濁氣從底下冒上來。\n坑壁上釘著一排生鏽的鐵樁（stakes），可以踩著一路往下爬。\n你踢下一顆小石子，過了好久才聽到它落地。\n",
+      "room_flags": 9,
+      "sector": 0,
+      "exits": {
+        "up": {
+          "description": "往上是那條陡峭的窄道，現在爬回去還來得及。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9887
+        },
+        "down": {
+          "description": "往下，踩著坑壁上的鐵樁，一路爬進深坑裡。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9889
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "鐵樁 stakes",
+          "description": "鐵樁鏽得發紅，有幾根已經鬆了，一踩就往下沉。\n最上面那根纏著一截爛掉的繩子。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9889,
+      "name": "深坑隘口",
+      "description": "坑壁在這裡往裡縮，夾出一道窄窄的隘口，只站得下一個人。\n東邊的坑壁抹著一道泥門，泥上留著爪子抓過的痕跡。\n再往下就是坑底了，腐臭濃得化不開，四周冷得讓人發抖。\n這是最後一個可以回頭的地方。\n",
+      "room_flags": 9,
+      "sector": 0,
+      "exits": {
+        "east": {
+          "description": "往東是一道用泥巴糊成的門，摸起來又硬又冷。\n",
+          "keywords": "泥門 door",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9890
+        },
+        "up": {
+          "description": "往上，鐵樁一根接一根，通回深坑的邊緣。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9888
+        },
+        "down": {
+          "description": "往下，鐵樁再踩幾根就到坑底了，底下有一堆白白的東西。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9891
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 9890,
+      "name": "廢棄的獸穴",
+      "description": "泥門後面是一個挖在土裡的洞穴，頂低得要彎著腰走。\n地上鋪著一層乾掉的草和碎骨，看得出是某種動物的窩，已經荒廢很久了。\n洞壁上滿是爪痕（scratches），有幾道深得能塞進一根手指。\n",
+      "room_flags": 9,
+      "sector": 0,
+      "exits": {
+        "west": {
+          "description": "往西是那道泥門，門外就是隘口。\n",
+          "keywords": "泥門 door",
+          "locks": 1,
+          "key": -1,
+          "to_room": 9889
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "爪痕 scratches",
+          "description": "爪痕三道一組，從地上一直抓到洞頂。\n不管是什麼動物住過這裡，牠的個頭都不小。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9891,
+      "name": "深坑底",
+      "description": "深坑的底部又濕又冷，地上散著一堆被咬碎的骨頭（bones）。\n腐臭濃得像一堵牆，你一呼吸，喉嚨就像被什麼東西掐住了。\n牆角堆著幾本泡爛的經書，紙頁黏成了一團。\n",
+      "room_flags": 9,
+      "sector": 0,
+      "exits": {
+        "up": {
+          "description": "往上，踩著坑壁上的鐵樁，可以爬回那道隘口。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9889
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "骨頭 bones",
+          "description": "骨頭上滿是牙印，大多已經碎得認不出是什麼。\n有一根長長的腿骨被啃得乾乾淨淨，上面還纏著一截布條。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9892,
+      "name": "地底伙房",
+      "description": "一間小小的伙房，牆角砌著一座土灶（stove），灶上烤著一排粗麥餅。\n一口銅壺坐在火上咕嘟作響，旁邊疊著一落陶杯。\n煙從灶頂的小洞散出去，屋裡還是燻得有點睜不開眼。\n",
+      "room_flags": 8,
+      "sector": 0,
+      "exits": {
+        "south": {
+          "description": "往南出了伙房，回到石砌的走廊。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9857
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "土灶 stove",
+          "description": "土灶是用泥和碎磚糊成的，灶口燻得漆黑。\n灶頂的煙道往上通，不知道煙最後從城裡的哪裡冒出去。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9893,
+      "name": "黑石樓梯頂",
+      "description": "一道石砌的樓梯從這裡往下，看不到底。\n牆壁越往下，白灰就剝落得越多，到了樓梯轉角，已經全是黑石了。\n樓梯口的牆上掛著一盞油燈，燈罩燻得發黑。\n",
+      "room_flags": 12,
+      "sector": 0,
+      "exits": {
+        "south": {
+          "description": "往南是一條刷著白灰的走廊，飄來墨水和燈油的味道。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9874
+        },
+        "down": {
+          "description": "往下是一道石砌的樓梯，越往下牆壁越黑。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9894
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 9894,
+      "name": "黑石樓梯底",
+      "description": "樓梯到這裡就到底了，四周的牆全是黑石，摸起來冰冷。\n這裡很安靜，靜得聽得到自己的心跳，南邊卻不時傳來低低的誦經聲。\n",
+      "room_flags": 12,
+      "sector": 0,
+      "exits": {
+        "south": {
+          "description": "往南是一間挑高的石廳，火盆的光映在門口。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9861
+        },
+        "up": {
+          "description": "往上是一道石砌的樓梯，牆壁越往上越白。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 9893
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    }
+  ],
+  "mobiles": [
+    {
+      "vnum": 9800,
+      "keywords": "steward woman",
+      "short": "施粥棚管事",
+      "long": "施粥棚管事/steward/拿著一支大木杓，笑咪咪地替人盛粥。\n",
+      "description": "一個圓臉的中年婦人，圍裙洗得發白，笑起來眼睛瞇成一條縫。\n她記得每個常來喝粥的人叫什麼名字，也記得誰家最近斷了糧。\n腰間的麻繩上掛著一把黑鑰匙，從不離身。\n",
+      "level": 15,
+      "tier": "trash",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 2,
+      "affected_by": 0,
+      "alignment": 0,
+      "race": "human",
+      "sex": 2,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 9825,
+          "color": null,
+          "chance": 10000,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 9801,
+      "keywords": "priest minor",
+      "short": "小祭司",
+      "long": "小祭司/priest/捧著一本黑皮經書，嘴裡念念有詞地走過。\n",
+      "description": "一個年輕的祭司，穿著洗得發白的黑袍，頭髮剃得很短。\n他腋下夾著一根黑木杖，念經念得很專心，好像沒看見你。\n",
+      "level": 19,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 192,
+      "affected_by": 8,
+      "alignment": -100,
+      "race": "human",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 9830,
+          "color": "white",
+          "chance": 3500,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9833,
+          "color": "white",
+          "chance": 3500,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9830,
+          "color": "blue",
+          "chance": 2500,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9833,
+          "color": "blue",
+          "chance": 2500,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9830,
+          "color": "purple",
+          "chance": 500,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9833,
+          "color": "purple",
+          "chance": 500,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9830,
+          "color": "orange",
+          "chance": 250,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9833,
+          "color": "orange",
+          "chance": 250,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 9802,
+      "keywords": "priest robed",
+      "short": "長袍祭司",
+      "long": "長袍祭司/priest/雙手攏在袖子裡，冷冷地看著你。\n",
+      "description": "他穿著一件繡滿金線的長袍，袍角拖在地上，走起路來沒有一點聲音。\n寬大的袖子裡好像藏著什麼，偶爾閃出一點黑色的冷光。\n",
+      "level": 21,
+      "tier": "normal",
+      "tier_roll": {
+        "elite": 2000
+      },
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 64,
+      "affected_by": 56,
+      "alignment": -200,
+      "race": "human",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 9832,
+          "color": "white",
+          "chance": 3500,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9835,
+          "color": "white",
+          "chance": 3500,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9832,
+          "color": "blue",
+          "chance": 2500,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9835,
+          "color": "blue",
+          "chance": 2500,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9832,
+          "color": "purple",
+          "chance": 500,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9835,
+          "color": "purple",
+          "chance": 500,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9832,
+          "color": "orange",
+          "chance": 250,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9835,
+          "color": "orange",
+          "chance": 250,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 9803,
+      "keywords": "knight blackscale",
+      "short": "黑鱗騎士",
+      "long": "黑鱗騎士/knight/守在牢門前，頭上戴著一頂龍顱做的頭盔。\n",
+      "description": "他的臉頰和脖子上長滿了黑色的鱗片，一直長到盔甲底下。\n他手裡握著一把骨頭磨成的長劍，腰間掛著一把粗糙的鑰匙。\n他的眼睛黃得像蛇，一眨也不眨地盯著你，卻不說一句話。\n",
+      "level": 22,
+      "tier": "elite",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 66,
+      "affected_by": 56,
+      "alignment": -400,
+      "race": "human",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 9828,
+          "color": "blue",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9828,
+          "color": "purple",
+          "chance": 2750,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9829,
+          "color": "purple",
+          "chance": 2750,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9828,
+          "color": "orange",
+          "chance": 350,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9829,
+          "color": "orange",
+          "chance": 350,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 9804,
+      "keywords": "priestess blackscale",
+      "short": "黑鱗女祭司",
+      "long": "黑鱗女祭司/priestess/慢慢地踱著步，指尖撫過頸上的黑鱗。\n",
+      "description": "她的半邊臉和整條脖子覆著細細的黑鱗，在燈下泛著油亮的光。\n她身上的長袍也綴滿了黑鱗，腰間的細鍊上掛著一把顱骨做的鑰匙。\n她看你的眼神很平靜，好像早就知道你會來。\n",
+      "level": 23,
+      "tier": "elite",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 64,
+      "affected_by": 56,
+      "alignment": -600,
+      "race": "human",
+      "sex": 2,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 9834,
+          "color": "blue",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9834,
+          "color": "purple",
+          "chance": 5500,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9834,
+          "color": "orange",
+          "chance": 700,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": "spec_cast_mage",
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 9805,
+      "keywords": "girl captive",
+      "short": "被抓來的女孩",
+      "long": "被抓來的女孩/girl/縮在牢房的角落，抱著膝蓋發抖。\n",
+      "description": "一個十來歲的女孩，穿著打滿補丁的粗布衣服，臉又髒又瘦。\n她的眼睛哭得紅腫，聽到腳步聲就往牆角縮，\n看清楚你不是穿黑袍的人，才小聲地問：『你是來救我的嗎？』\n",
+      "level": 15,
+      "tier": "trash",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 2,
+      "affected_by": 0,
+      "alignment": 0,
+      "race": "human",
+      "sex": 2,
+      "position": 7,
+      "drops": [],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 9806,
+      "keywords": "dragon wyrmling",
+      "short": "黑龍威爾麟",
+      "long": "黑龍威爾麟/dragon/盤在骨頭堆上，低低地嘶吼著，黃眼睛盯著你。\n",
+      "description": "一條黑色的幼龍，身子比一匹馬還長，翅膀卻只能半張著，貼在石壁上。\n牠的鱗片還沒長硬，邊上泛著灰白，有幾處剛蛻了皮，露出底下粉色的肉。\n牠張開嘴，牙縫裡掛著黃綠色的涎沫，一股苦腥味撲面而來。\n",
+      "level": 25,
+      "tier": "boss",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 6,
+      "affected_by": 8,
+      "alignment": -1000,
+      "race": "dragon",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 9844,
+          "color": "blue",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9834,
+          "color": "purple",
+          "chance": 7000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9834,
+          "color": "orange",
+          "chance": 1000,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": "spec_poison",
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 9807,
+      "keywords": "priest minor",
+      "short": "小祭司",
+      "long": "小祭司/priest/跪在石槽邊，一遍又一遍地搓洗著雙手。\n",
+      "description": "一個年輕的祭司，袖子捲到手肘，雙手被冷水泡得通紅。\n他洗得很用力，好像手上沾了什麼怎麼也洗不掉的東西。\n",
+      "level": 19,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 66,
+      "affected_by": 8,
+      "alignment": -100,
+      "race": "human",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 9830,
+          "color": "white",
+          "chance": 3500,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9833,
+          "color": "white",
+          "chance": 3500,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9830,
+          "color": "blue",
+          "chance": 2500,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9833,
+          "color": "blue",
+          "chance": 2500,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9830,
+          "color": "purple",
+          "chance": 500,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9833,
+          "color": "purple",
+          "chance": 500,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9830,
+          "color": "orange",
+          "chance": 250,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9833,
+          "color": "orange",
+          "chance": 250,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 9808,
+      "keywords": "monk fanatic",
+      "short": "狂熱的僧侶",
+      "long": "狂熱的僧侶/monk/瞪著發紅的眼睛，逢人就說龍焰還會再來。\n",
+      "description": "一個瘦得只剩骨架的男人，剃光了頭，黑袍的下襬沾滿了泥。\n乍看之下，他說話很誠懇，可是看久了，他的眼神讓人發毛。\n他懷裡揣著一疊經文小冊，見人就塞一本。\n",
+      "level": 16,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 0,
+      "affected_by": 8,
+      "alignment": 0,
+      "race": "human",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 9850,
+          "color": null,
+          "chance": 10000,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 9809,
+      "keywords": "bob preacher",
+      "short": "講道人包勃",
+      "long": "講道人包勃/bob/站在講臺上，一句接一句地講個不停。\n",
+      "description": "包勃又高又瘦，一頭黑髮抹了油，梳得服服貼貼。\n他的門牙缺了一角，說話有點漏風，可是一開口就停不下來。\n他講的永遠是同一件事：王毀了約，龍會回來。\n",
+      "level": 16,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 66,
+      "affected_by": 8,
+      "alignment": -1000,
+      "race": "human",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 9831,
+          "color": "white",
+          "chance": 7000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9831,
+          "color": "blue",
+          "chance": 5000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9831,
+          "color": "purple",
+          "chance": 1000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9831,
+          "color": "orange",
+          "chance": 500,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 9810,
+      "keywords": "marie watchwoman",
+      "short": "守夜人瑪麗",
+      "long": "守夜人瑪麗/marie/捧著一杯熱茶，靠在牆邊打盹。\n",
+      "description": "瑪麗是教派的守夜人，夜裡提著燈一間一間地巡，白天就窩著喝茶。\n她什麼地方都肯去，就是不肯下地窖。\n有人問起地窖，她就把茶杯捧得更緊，假裝沒聽見。\n",
+      "level": 16,
+      "tier": "trash",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 66,
+      "affected_by": 8,
+      "alignment": 200,
+      "race": "human",
+      "sex": 2,
+      "position": 7,
+      "drops": [],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 9811,
+      "keywords": "gale deacon",
+      "short": "執事蓋爾",
+      "long": "執事蓋爾/gale/抱著一疊名冊，腳步又快又急。\n",
+      "description": "蓋爾是教派的執事，前門的大小事情，都要經過她的手。\n她把每個信徒的名字、住處、捐了多少，都記得清清楚楚。\n她很少笑，可是誰欠了一個月的貢品，她第一個知道。\n",
+      "level": 17,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 64,
+      "affected_by": 8,
+      "alignment": -1000,
+      "race": "human",
+      "sex": 2,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 9838,
+          "color": "white",
+          "chance": 7000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9838,
+          "color": "blue",
+          "chance": 5000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9838,
+          "color": "purple",
+          "chance": 1000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9838,
+          "color": "orange",
+          "chance": 500,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 9812,
+      "keywords": "fred accountant",
+      "short": "帳房福雷德",
+      "long": "帳房福雷德/fred/叼著菸斗，一邊翻帳本一邊嘀嘀咕咕。\n",
+      "description": "一個挺著大肚子的胖男人，手指被菸草燻得焦黃。\n除了算錢，他什麼都不在行，一整天坐在桌前，偶爾對底下的人吼兩聲。\n",
+      "level": 17,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 66,
+      "affected_by": 8,
+      "alignment": -1000,
+      "race": "human",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 9838,
+          "color": "white",
+          "chance": 7000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9838,
+          "color": "blue",
+          "chance": 5000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9838,
+          "color": "purple",
+          "chance": 1000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9838,
+          "color": "orange",
+          "chance": 500,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 9813,
+      "keywords": "torturer",
+      "short": "拷問者",
+      "long": "拷問者/torturer/在火盆邊磨著一把鐵鉗，頭也不抬。\n",
+      "description": "一個又矮又壯的男人，臉上坑坑疤疤，醜得讓人不想多看一眼。\n身上綁著一件沾滿黑漬的皮圍裙，腰帶上掛著一把生鏽的鑰匙。\n",
+      "level": 20,
+      "tier": "elite",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 66,
+      "affected_by": 8,
+      "alignment": -1000,
+      "race": "human",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 9841,
+          "color": "blue",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9841,
+          "color": "purple",
+          "chance": 5500,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9841,
+          "color": "orange",
+          "chance": 700,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 9814,
+      "keywords": "jim seller",
+      "short": "賣符人吉姆",
+      "long": "賣符人吉姆/jim/像餓壞的禿鷹一樣盯著你的錢袋。\n",
+      "description": "「你好，我是吉姆。來，先摸摸這枚護身符，摸是不用錢的。」\n他說得口沫橫飛，手已經把一枚黑鐵片塞進你的掌心。\n",
+      "level": 16,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 66,
+      "affected_by": 8,
+      "alignment": -1000,
+      "race": "human",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 9838,
+          "color": "white",
+          "chance": 7000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9838,
+          "color": "blue",
+          "chance": 5000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9838,
+          "color": "purple",
+          "chance": 1000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9838,
+          "color": "orange",
+          "chance": 500,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": "spec_cast_undead",
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 9815,
+      "keywords": "zombie",
+      "short": "僵屍",
+      "long": "僵屍/zombie/拖著腳在黑暗裡打轉，一聞到活人的味道就轉過頭來。\n",
+      "description": "這具僵屍還很新，皮肉沒爛，看得出生前是個壯漢。\n身上還穿著貧民區常見的補丁衣服，腿上纏著一圈圈裹屍布。\n他的力氣大得嚇人，千萬別小看他。\n",
+      "level": 19,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 66,
+      "affected_by": 8,
+      "alignment": -1000,
+      "race": "undead",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 9842,
+          "color": "white",
+          "chance": 7000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9842,
+          "color": "blue",
+          "chance": 5000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9842,
+          "color": "purple",
+          "chance": 1000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9842,
+          "color": "orange",
+          "chance": 500,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 9816,
+      "keywords": "lich priest",
+      "short": "死靈祭司",
+      "long": "死靈祭司/lich/蹲在骨頭堆旁，空洞的眼窩慢慢轉向你。\n",
+      "description": "一具乾癟的屍體，皮膚緊緊貼在骨頭上，卻還站得起來、走得動。\n他身上掛著一件爛成布條的祭袍，領口還看得出用金線繡的龍紋。\n聽說他從前是教派裡法力最強的祭司，為了更大的力量，把自己變成了這樣。\n",
+      "level": 25,
+      "tier": "boss",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 66,
+      "affected_by": 56,
+      "alignment": -1000,
+      "race": "undead",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 9843,
+          "color": "blue",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9843,
+          "color": "purple",
+          "chance": 7000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 9843,
+          "color": "orange",
+          "chance": 1000,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": "spec_fido",
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 9817,
+      "keywords": "cook old",
+      "short": "老伙夫",
+      "long": "老伙夫/cook/守著土灶，把剛烤好的粗麥餅一個一個排在木板上。\n",
+      "description": "一個駝背的老人，圍著一條燻黑的圍裙，十根指頭都有燙傷的舊疤。\n他在地底燒了幾十年的灶，賣粗麥餅和陶杯裝的茶，誰來都賣。\n他很少抬頭，好像外面的事早就跟他沒有關係了。\n",
+      "level": 32,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 66,
+      "affected_by": 8,
+      "alignment": -200,
+      "race": "human",
+      "sex": 1,
+      "position": 7,
+      "drops": [],
+      "script": null,
+      "shop": {
+        "buy_types": [],
+        "profit_buy": 110,
+        "profit_sell": 100,
+        "open_hour": 0,
+        "close_hour": 23
+      },
+      "special": null,
+      "special_ratio": null,
+      "poison_ratio": null
+    }
+  ],
+  "objects": [
+    {
+      "vnum": 9825,
+      "keywords": "key black",
+      "short": "黑鑰匙",
+      "long": "一把黑鐵打的鑰匙掉在地上。",
+      "item_type": 18,
+      "extra_flags": 0,
+      "wear_flags": 1,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "鑰匙 key",
+          "description": "鑰匙又粗又沉，通體漆黑，柄上鑄著一隻小小的龍爪。\n是施粥棚後面那扇黑木門的鑰匙。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9826,
+      "keywords": "key primitive",
+      "short": "簡陋的鑰匙",
+      "long": "一把粗鐵打的鑰匙掉在地上，齒口歪歪扭扭的。",
+      "item_type": 18,
+      "extra_flags": 0,
+      "wear_flags": 1,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "鑰匙 key",
+          "description": "鑰匙是用一根粗鐵條敲出來的，齒口歪歪扭扭，像是自己打的。\n握柄纏著一圈髒布條。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9827,
+      "keywords": "key skull",
+      "short": "顱骨鑰匙",
+      "long": "一把骨白色的鑰匙掉在地上，握柄刻成一顆小小的顱骨。",
+      "item_type": 18,
+      "extra_flags": 0,
+      "wear_flags": 1,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "鑰匙 key",
+          "description": "鑰匙是用一整塊骨頭磨成的，握柄刻成一顆小顱骨，眼窩是兩個洞。\n骨頭被摸得油亮，看得出常被人握在手裡。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9828,
+      "keywords": "sword bone",
+      "short": "骸骨之劍",
+      "long": "一把骨頭磨成的長劍躺在地上，劍刃白得發青。",
+      "item_type": 5,
+      "extra_flags": 64,
+      "wear_flags": 8193,
+      "values": [
+        2,
+        0,
+        0,
+        1
+      ],
+      "weight": 40,
+      "cost": 4000,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "長劍 sword",
+          "description": "劍身是用一根很長的骨頭磨成的，刃口磨得極薄，敲起來卻跟鐵一樣響。\n沒有人說得出，這是什麼東西的骨頭。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9829,
+      "keywords": "helm skull dragon",
+      "short": "龍顱頭盔",
+      "long": "一頂用大塊骨頭削成的頭盔落在地上，眉骨的地方凸出兩根短角。",
+      "item_type": 9,
+      "extra_flags": 1,
+      "wear_flags": 17,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 15,
+      "cost": 4000,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "頭盔 helm",
+          "description": "頭盔是從一塊巨大的頭骨上削下來的，骨頭厚得像石頭，上面布滿細小的孔。\n教派的人說，那是龍焚之夜被打下來的一條龍的頭骨。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9830,
+      "keywords": "robes dark",
+      "short": "黑暗護袍",
+      "long": "一件黑色的護袍皺成一團，丟在地上。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": 9,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 5,
+      "cost": 1000,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "護袍 robes",
+          "description": "粗麻織的黑袍，裡層縫了一層硬皮，可以擋一點刀劍。\n袖口繡著一圈小小的龍爪。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9831,
+      "keywords": "pen black iron",
+      "short": "黑鐵筆",
+      "long": "一支黑鐵打的尖筆掉在地上，筆尖磨得跟刀一樣利。",
+      "item_type": 5,
+      "extra_flags": 0,
+      "wear_flags": 8193,
+      "values": [
+        1,
+        0,
+        0,
+        2
+      ],
+      "weight": 8,
+      "cost": 300,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "鐵筆 pen",
+          "description": "筆桿是一整根黑鐵，尖端磨得又細又利，握起來就是一把匕首。\n筆尖沾著乾掉的墨，也沾著一點別的顏色。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9832,
+      "keywords": "dagger black evil",
+      "short": "暗邪匕首",
+      "long": "一把黑色的匕首掉在地上，刃口泛著暗暗的光。",
+      "item_type": 5,
+      "extra_flags": 16,
+      "wear_flags": 8193,
+      "values": [
+        1,
+        0,
+        0,
+        11
+      ],
+      "weight": 10,
+      "cost": 300,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "匕首 dagger",
+          "description": "整把匕首都是黑的，連刃口也是，像是用火燻過再磨。\n握柄纏著黑皮，尾端刻著一隻小小的龍爪。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9833,
+      "keywords": "staff black",
+      "short": "黑木杖",
+      "long": "一根黑木杖橫在地上，杖頭箍著一圈鐵釘。",
+      "item_type": 5,
+      "extra_flags": 16,
+      "wear_flags": 8193,
+      "values": [
+        5,
+        0,
+        0,
+        6
+      ],
+      "weight": 10,
+      "cost": 300,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "木杖 staff",
+          "description": "黑木杖比手臂長一點，木頭又沉又硬，杖頭箍著一圈粗鐵釘。\n說是杖，其實拿來敲人比拿來拄地順手。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9834,
+      "keywords": "robes dragonscale black scales",
+      "short": "龍鱗護袍",
+      "long": "一件綴滿黑色鱗片的長袍攤在地上，鱗片閃著油亮的光。",
+      "item_type": 9,
+      "extra_flags": 80,
+      "wear_flags": 9,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 20,
+      "cost": 5000,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "長袍 robes",
+          "description": "長袍上一片疊一片地綴滿了黑色的鱗片，每一片都只有指甲大。\n鱗片又薄又軟，摸起來像蛇皮。教派的人說，這是龍的鱗。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9835,
+      "keywords": "robes ornate",
+      "short": "華麗護袍",
+      "long": "一件繡滿金線的長袍堆在地上，金線在暗處也閃閃發亮。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": 9,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 20,
+      "cost": 5000,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "長袍 robes",
+          "description": "黑色的厚緞子上，用金線繡滿了盤繞的龍，針腳細得看不見。\n這種袍子，只有教派裡有身分的祭司才穿得起。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9836,
+      "keywords": "robe white torn",
+      "short": "破舊的白袍",
+      "long": "一件破舊的白袍丟在地上，下襬撕破了一大塊。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": 9,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 5,
+      "cost": 10,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "白袍 robe",
+          "description": "一件粗布縫的白袍，洗得很乾淨，下襬卻撕破了一大塊。\n袍子做得太大，穿在身上空蕩蕩的。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9837,
+      "keywords": "key rusty",
+      "short": "生鏽的鑰匙",
+      "long": "一把生鏽的大鐵鑰匙掉在地上，沉甸甸的。",
+      "item_type": 18,
+      "extra_flags": 0,
+      "wear_flags": 1,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "鑰匙 key",
+          "description": "鑰匙鏽得發紅，齒又粗又大。\n是開地窖和刑囚室中間那扇鐵門用的。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9838,
+      "keywords": "pants cloth",
+      "short": "粗布長褲",
+      "long": "一條粗布長褲揉成一團，丟在地上。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": 33,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 5,
+      "cost": 1000,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "長褲 pants",
+          "description": "粗麻布縫的長褲，膝蓋上補了兩塊補丁，針腳細細密密的。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9839,
+      "keywords": "bread barley",
+      "short": "粗麥餅",
+      "long": "一塊粗麥餅掉在地上，硬得像一塊磚。",
+      "item_type": 19,
+      "extra_flags": 0,
+      "wear_flags": 1,
+      "values": [
+        1,
+        "",
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 10,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 9840,
+      "keywords": "cup clay",
+      "short": "陶杯",
+      "long": "一只粗陶杯擱在地上，杯口缺了一個小角。",
+      "item_type": 17,
+      "extra_flags": 0,
+      "wear_flags": 1,
+      "values": [
+        15,
+        15,
+        11,
+        0
+      ],
+      "weight": 1,
+      "cost": 5,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 9841,
+      "keywords": "apron leather",
+      "short": "皮圍裙",
+      "long": "一件沾滿黑漬的皮圍裙丟在地上，散發著一股焦味。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": "1|8",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 8,
+      "cost": 0,
+      "affects": [],
+      "main_affix": "res_phys",
+      "extra_descriptions": [
+        {
+          "keywords": "圍裙 apron",
+          "description": "厚牛皮縫的圍裙，又硬又沉，濺上什麼都擦得掉。\n上面一塊一塊的黑漬，有的是炭灰，有的不是。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9842,
+      "keywords": "leggings shroud",
+      "short": "裹屍布綁腿",
+      "long": "一副灰白的裹屍布綁腿捲在地上，飄出一股霉味。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": "1|32",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 3,
+      "cost": 0,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "綁腿 leggings",
+          "description": "一圈一圈的粗麻布，原本是用來裹死人的，邊上已經發黃。\n纏得很緊，綁在腿上意外地結實。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9843,
+      "keywords": "ring bone",
+      "short": "骨戒",
+      "long": "一枚發黃的骨戒落在地上，戒面刻著細細的紋路。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": "1|2",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [],
+      "main_affix": "con",
+      "extra_descriptions": [
+        {
+          "keywords": "骨戒 ring",
+          "description": "戒指是用一截指骨磨成的，戒面刻滿了細小的咒文。\n戴上它，腦子會變得又冷又清楚，好像什麼都想得通。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9844,
+      "keywords": "necklace scale wyrmling",
+      "short": "幼龍鱗頸飾",
+      "long": "一串黑色的鱗片頸飾掉在地上，鱗片邊緣帶著灰白。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": "1|4",
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [
+        {
+          "location": 16,
+          "modifier": 25
+        }
+      ],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "頸飾 necklace",
+          "description": "幾片拇指大的黑鱗，用皮繩串成一圈，是從幼龍身上掉下來的。\n鱗片硬得像鐵，放在火上烤也不會燙手。\n老人常說，只有龍鱗擋得住龍焰。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 9850,
+      "keywords": "pamphlet scripture",
+      "short": "經文小冊",
+      "long": "一本薄薄的經文小冊掉在地上，封面畫著一隻龍爪。",
+      "item_type": 8,
+      "extra_flags": 128,
+      "wear_flags": 16385,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 1,
+      "cost": 0,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "小冊 pamphlet",
+          "description": "粗紙用麻線裝訂，字是一筆一筆抄的：\n「百年前，王毀了秋約，龍焰燒了這座城。\n龍沒有忘記，龍會回來。到那一天，只有替龍做事的人活得下來。」\n"
+        }
+      ],
+      "script": null
+    }
+  ],
+  "resets": [
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9850,
+      "direction": "north",
+      "state": 2,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9851,
+      "direction": "south",
+      "state": 2,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9853,
+      "direction": "down",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9854,
+      "direction": "up",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9857,
+      "direction": "east",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9858,
+      "direction": "west",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9861,
+      "direction": "down",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9862,
+      "direction": "up",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9864,
+      "direction": "down",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9865,
+      "direction": "north",
+      "state": 2,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9866,
+      "direction": "south",
+      "state": 2,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9867,
+      "direction": "west",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9868,
+      "direction": "east",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9869,
+      "direction": "north",
+      "state": 2,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9870,
+      "direction": "south",
+      "state": 2,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9853,
+      "direction": "east",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9871,
+      "direction": "west",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9873,
+      "direction": "down",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9880,
+      "direction": "west",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9882,
+      "direction": "east",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9881,
+      "direction": "west",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9881,
+      "direction": "north",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9883,
+      "direction": "west",
+      "state": 2,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9884,
+      "direction": "east",
+      "state": 2,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9884,
+      "direction": "north",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9886,
+      "direction": "south",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9886,
+      "direction": "west",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9856,
+      "direction": "east",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9887,
+      "direction": "up",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9889,
+      "direction": "east",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 9890,
+      "direction": "west",
+      "state": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9800,
+      "limit": 1,
+      "room_vnum": 9850,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9801,
+      "limit": 7,
+      "room_vnum": 9855,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9801,
+      "limit": 7,
+      "room_vnum": 9860,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9801,
+      "limit": 7,
+      "room_vnum": 9861,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9801,
+      "limit": 7,
+      "room_vnum": 9861,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9802,
+      "limit": 4,
+      "room_vnum": 9861,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9802,
+      "limit": 4,
+      "room_vnum": 9863,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9802,
+      "limit": 4,
+      "room_vnum": 9863,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9803,
+      "limit": 1,
+      "room_vnum": 9865,
+      "comment": ""
+    },
+    {
+      "cmd": "G",
+      "rare": 1,
+      "obj_vnum": 9826,
+      "color": null,
+      "level": null,
+      "limit": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9804,
+      "limit": 1,
+      "room_vnum": 9868,
+      "comment": ""
+    },
+    {
+      "cmd": "G",
+      "rare": 1,
+      "obj_vnum": 9827,
+      "color": null,
+      "level": null,
+      "limit": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9805,
+      "limit": 1,
+      "room_vnum": 9866,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9806,
+      "limit": 1,
+      "room_vnum": 9870,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9807,
+      "limit": 1,
+      "room_vnum": 9858,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9808,
+      "limit": 1,
+      "room_vnum": 9850,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9809,
+      "limit": 1,
+      "room_vnum": 9853,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9810,
+      "limit": 1,
+      "room_vnum": 9877,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9811,
+      "limit": 1,
+      "room_vnum": 9875,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9812,
+      "limit": 1,
+      "room_vnum": 9876,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9813,
+      "limit": 1,
+      "room_vnum": 9884,
+      "comment": ""
+    },
+    {
+      "cmd": "G",
+      "rare": 0,
+      "obj_vnum": 9837,
+      "color": null,
+      "level": null,
+      "limit": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9814,
+      "limit": 1,
+      "room_vnum": 9879,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9815,
+      "limit": 1,
+      "room_vnum": 9883,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9816,
+      "limit": 1,
+      "room_vnum": 9891,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 9817,
+      "limit": 1,
+      "room_vnum": 9892,
+      "comment": ""
+    },
+    {
+      "cmd": "G",
+      "rare": 0,
+      "obj_vnum": 9839,
+      "color": null,
+      "level": 1,
+      "limit": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "G",
+      "rare": 0,
+      "obj_vnum": 9840,
+      "color": null,
+      "level": 1,
+      "limit": 1,
+      "comment": ""
+    },
+    {
+      "cmd": "O",
+      "if_flag": 0,
+      "obj_vnum": 9850,
+      "color": null,
+      "level": 1,
+      "limit": 1,
+      "room_vnum": 9853,
+      "comment": ""
+    },
+    {
+      "cmd": "O",
+      "if_flag": 0,
+      "obj_vnum": 9839,
+      "color": null,
+      "level": 1,
+      "limit": 1,
+      "room_vnum": 9877,
+      "comment": ""
+    },
+    {
+      "cmd": "O",
+      "if_flag": 0,
+      "obj_vnum": 9840,
+      "color": null,
+      "level": 1,
+      "limit": 1,
+      "room_vnum": 9877,
+      "comment": ""
+    },
+    {
+      "cmd": "O",
+      "if_flag": 0,
+      "obj_vnum": 9836,
+      "color": "gray",
+      "level": 15,
+      "limit": 1,
+      "room_vnum": 9866,
+      "comment": ""
+    }
+  ]
+}

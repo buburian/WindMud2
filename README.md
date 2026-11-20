@@ -119,6 +119,22 @@ sudo systemctl stop windmud-update.timer # 暫停自動部署（start 恢復）
 - 不要在正式機上直接改 git 裡的檔：更新會失敗（不會蓋掉你改的），journal 會每分鐘說一次失敗。
 - GitHub 網頁只看得到測試結果；有沒有真的更新到正式機，看 journal。
 
+### Discord 的 patch 通知
+
+每次上線後，把更新寫成玩家看得懂的通知發到 Discord。先寫草稿給人看過，說好才發（不會自動發）。
+
+1. 寫草稿：`uv run python -m mud.patchnote since` 列出上次發過之後的 commit，照著寫進 `patch/草稿.md`
+   （只寫玩家感受得到的：新指令、技能、區域、數值、修掉的錯；imm 的指令、程式結構、測試不寫）。
+2. 試跑：`uv run python -m mud.patchnote send --dry-run` 印出會發的幾則（Discord 一則最多 2000 字，太長會照段落切開），不發、不記。
+3. 發：`uv run python -m mud.patchnote send`。發完記進 `patch/紀錄.md`（最後一筆的 commit 是下一次的起點），草稿清空。
+
+webhook 網址（Discord 頻道設定 → 整合 → Webhook 複製的網址）知道就能發訊息，所以是密碼：
+放在 `patch/discord-webhook`，`.gitignore` 排除，不會進 git（`tests/test_patchnote.py` 看著）。複製網址後：
+
+```sh
+pbpaste > patch/discord-webhook && chmod 600 patch/discord-webhook
+```
+
 ## 連線
 
 伺服器只講 Big5。Mac 的終端機維持 UTF-8，中間用 cocot 把 UTF-8 和 Big5 互相轉換。

@@ -2,3 +2,4 @@ __pycache__/
 logs/
 players/
 .codegraph/
+patch/discord-webhook
