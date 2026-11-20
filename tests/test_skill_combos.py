@@ -87,12 +87,12 @@ def test_war_cry_boosts_smash(world):
 
 
 def test_war_cry_boosts_pummel_too(world):
-    # Lv5 的猛擊跟重擊一樣算戰吼助威（2026-11-20）
+    # Lv5 的猛擊跟重擊一樣算戰吼助威（2026-11-20）：打兩下，每一下都乘
     p = hero(learn=["war_cry", "pummel"])
     dog = sturdy("野狗")
     say(p, "use war")
     run(lambda: say(p, "use pummel dog"))
-    assert lost(dog) == pytest.approx(hit(p, dog, "phys", skills.SKILLS["pummel"].ratio * damage.crit_mult(p) * 1.3))
+    assert lost(dog) == pytest.approx(2 * hit(p, dog, "phys", skills.SKILLS["pummel"].ratio * damage.crit_mult(p) * 1.3))
 
 
 def test_flame_arrow_burns_stack_with_fireball_and_count_for_blast(world):

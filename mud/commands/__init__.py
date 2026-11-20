@@ -69,6 +69,8 @@ COMMANDS = [
     ("sell", shops.do_sell, P.STANDING),        # se
     ("value", shops.do_value, P.STANDING),      # v
     ("put", items.do_put, P.RESTING),           # p（照 C 版的最低姿勢）
+    ("donate", items.do_donate, P.RESTING),     # don（d 是 down、do 也是 down；照 C 版的最低姿勢）
+    ("area", system.do_area, P.DEAD),           # a（imm 的 advance 要打 ad）：遊戲裡有哪些區域
 ]
 
 # 管理員（imm）才找得到的指令，接在 COMMANDS 後面找，原本的縮寫都不受影響
@@ -79,10 +81,11 @@ IMM_COMMANDS = [
     ("ostat", imm.do_ostat, P.DEAD),            # os
     ("mstat", imm.do_mstat, P.DEAD),            # m
     ("restore", imm.do_restore, P.DEAD),        # res 還是 rest，resto 才是 restore
-    ("affect", imm.do_affect, P.DEAD),          # a 還是 advance，af 才是 affect
+    ("affect", imm.do_affect, P.DEAD),          # a 是 area、ad 是 advance，af 才是 affect
     ("sset", imm.do_sset, P.DEAD),              # s 還是 south、sa 是 say…，ss 才是 sset
     ("goto", imm.do_goto, P.DEAD),              # go（照 C 版的最低姿勢）
     ("givemoney", imm.do_givemoney, P.DEAD),    # give 還是 give，givem 才是 givemoney
+    ("vnums", imm.do_vnums, P.DEAD),            # vn（v 還是 value）：區域檔的號碼範圍和還沒用的
 ]
 
 # 姿勢不夠時的訊息（照 C 版 interp.c）

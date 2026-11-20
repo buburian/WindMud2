@@ -211,15 +211,10 @@ def test_load_problems(tmp_path):
 
 # ---- help 的畫面 ----
 
-SUMMARY = [
-    "說明的分類（help 分類 或 help 指令 看細節）：",
-    "  移動  north east south west up down recall /",
-    "  資訊  look score who weather skills help",
-    "  溝通  chat tell reply say socials",
-    "  角色  train rest sleep stand save config ! quit 屬性",
-    "  戰鬥  kill use flee consider",
-    "  物品  get drop put give wear remove inventory equipment examine eat drink fill list buy sell value quaff recite zap brandish",
-    "  門    open close lock unlock",
+SUMMARY = [                                 # 首頁只列分類（使用者 2026-11-20 要的），指令要 help 分類 才看得到
+    "說明的分類（help 分類 看這一類有哪些指令）：",
+    "  移動", "  資訊", "  溝通", "  角色", "  戰鬥", "  物品", "  門", "  屬性",     # 屬性不是分類：help 屬性 直接看內容
+    "知道指令的名字，也可以直接 help 指令，例如 help kill。",
 ]
 
 
@@ -228,19 +223,9 @@ def test_help_shows_the_categories():
 
 
 def test_imm_sees_the_imm_category():
-    # 分類名稱照最寬的對齊（管理員 6 格）
-    want = [
-        "說明的分類（help 分類 或 help 指令 看細節）：",
-        "  移動    north east south west up down recall /",
-        "  資訊    look score who weather skills help",
-        "  溝通    chat tell reply say socials",
-        "  角色    train rest sleep stand save config ! quit 屬性",
-        "  戰鬥    kill use flee consider",
-        "  物品    get drop put give wear remove inventory equipment examine eat drink fill list buy sell value quaff recite zap brandish",
-        "  門      open close lock unlock",
-        "  管理員  advance slay oload ostat mstat restore affect sset goto givemoney",
-    ]
+    want = SUMMARY[:-2] + ["  管理員"] + SUMMARY[-2:]
     assert say("help", imm=True) == "\r\n".join(want) + "\r\n\r\n> "
+    assert "flee" not in say("help") and "advance" not in say("help", imm=True)    # 首頁不列指令
 
 
 def test_help_category():

@@ -4,7 +4,7 @@ import re
 
 from .. import affects, light, meals, objects, paths, save, scripts, socials, stats, summons, terrain, weather, zones
 from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act, compose, notify
-from ..area import DIRECTIONS, PASSPROOF_LOCKS, REVERSE, AffectFlag, MobTier, RoomFlag
+from ..area import DIRECTIONS, PASSPROOF_LOCKS, REVERSE, AffectFlag, AreaType, MobTier, RoomFlag
 from ..characters import SEX_FEMALE, SEX_MALE, Position, arrive, characters, find_in_room, in_room
 from ..color import colorize
 from ..config import ENCODING, PAGE_LINES, PAGE_LINES_MAX, PAGE_LINES_MIN
@@ -667,3 +667,24 @@ def do_save(ch, arg):
         return
     ch.send("存檔好了。\n")
 
+
+
+AREA_KINDS = {AreaType.WORLD: "世界", AreaType.DYNAMIC: "動態", AreaType.INSTANCE: "副本"}   # area 指令寫的區域種類
+AREA_HEAD = ("區域", "等級", "種類", "作者")
+
+
+def do_area(ch, arg):
+    """area：遊戲裡有哪些區域（使用者 2026-11-20 要的，照 C 版 areas）：名稱、適合的等級、種類（世界、動態、副本）、作者，照等級排。
+
+    資料是區域檔的 header（title、levels、type、author）：世界的在 zones.world.areas，動態、副本的在 zones.templates。
+    """
+    found = [a.data for a in (zones.world.areas if zones.world else [])] + [data for _kind, data in zones.templates.values()]
+    rows = []
+    for data in found:
+        h = data["area"]["header"]
+        low, high = h["levels"]
+        rows.append(((low, high, h["title"]), (h["title"], f"{low}～{high} 級", AREA_KINDS[AreaType(h["type"])], h["author"])))
+    table = [AREA_HEAD] + [cells for _key, cells in sorted(rows)]
+    widths = [max(width(r[i]) for r in table) for i in range(len(AREA_HEAD))]
+    lines = ["  " + "  ".join(pad(c, w) for c, w in zip(r, widths)).rstrip() for r in table]
+    ch.send("遊戲裡的區域：\n" + "\n".join(lines) + "\n")

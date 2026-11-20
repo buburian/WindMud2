@@ -509,9 +509,10 @@ SWORD_HINT = ("\r\n\r\n10 級可以選職業（到秋風城的公會分館找導
 def test_skills_listing(world):
     shabu, ming = fighter("Shabu"), fighter("Ming", guild=stats.Guild.STAFF)
     low, high = skills.display_range(shabu, SMASH)
-    # 5 級才學的猛擊也列出來，寫幾級學會（paths.GUILD_SKILLS）；猛擊跟重擊一樣，傷害範圍一樣
+    p_low, p_high = skills.display_range(shabu, PUMMEL)
+    # 5 級才學的猛擊也列出來，寫幾級學會（paths.GUILD_SKILLS）；打兩下的寫「打 2 次」，傷害是一下的範圍
     assert say(shabu, "skills") == (f"你會的技能：\r\n  重擊 smash  傷害 {low}~{high}  消耗 4 MV  冷卻 6 秒\r\n"
-                                    f"  猛擊 pummel  傷害 {low}~{high}  消耗 4 MV  冷卻 6 秒\r\n    尚未學會（5 級）{SWORD_HINT}\r\n\r\n{prompt_of(shabu)}")
+                                    f"  猛擊 pummel  傷害 {p_low}~{p_high}  打 2 次  消耗 4 MV  冷卻 6 秒\r\n    尚未學會（5 級）{SWORD_HINT}\r\n\r\n{prompt_of(shabu)}")
     low, high = skills.display_range(ming, FIREBALL)
     assert say(ming, "sk").startswith(f"你會的技能：\r\n  火球 fireball  傷害 {low}~{high}  消耗 4 MP  冷卻 6 秒\r\n")
     shabu.cooldowns["smash"] = 3
@@ -531,6 +532,7 @@ def test_display_range_has_the_damage_variance():
 # ---- imm 的技能、imm 用技能 ----
 
 THUNDER = skills.SKILLS["thunder"]
+PUMMEL, FLAME_ARROW = skills.SKILLS["pummel"], skills.SKILLS["flame_arrow"]
 
 
 def imm_fighter(name, guild=stats.Guild.SWORD):
@@ -578,10 +580,11 @@ def test_skills_listing_for_imm(world):
     shabu = imm_fighter("Shabu")
     low, high = skills.display_range(shabu, SMASH)
     t_low, t_high = skills.display_range(shabu, THUNDER)
+    p_low, p_high = skills.display_range(shabu, PUMMEL)
     assert say(shabu, "skills") == ("你會的技能（imm 用技能不扣消耗、不用等冷卻）：\r\n"
                                     f"  重擊 smash  傷害 {low}~{high}  消耗 4 MV  冷卻 6 秒\r\n"
                                     f"  天雷 thunder  傷害 {t_low}~{t_high}  消耗 0  冷卻 0 秒\r\n"
-                                    f"  猛擊 pummel  傷害 {low}~{high}  消耗 4 MV  冷卻 6 秒\r\n    尚未學會（5 級）{SWORD_HINT}\r\n\r\n{prompt_of(shabu)}")
+                                    f"  猛擊 pummel  傷害 {p_low}~{p_high}  打 2 次  消耗 4 MV  冷卻 6 秒\r\n    尚未學會（5 級）{SWORD_HINT}\r\n\r\n{prompt_of(shabu)}")
 
 
 # ---- 誰會：一開始就會、要用程式加（使用者定的） ----
@@ -876,6 +879,20 @@ def test_fireball_burns_3_times(world, monkeypatch):
     for _ in range(6):
         affects.tick()
     assert dog.hp == pytest.approx(after_hit - 3 * 3.6) and dog.affects == []   # 3、6、9 秒各一次，燒完拿掉
+
+
+def test_flame_arrow_hits_twice_and_burns_from_the_first(world, monkeypatch):
+    # 火焰箭（Lv5，2026-11-20）：打兩下，兩下加起來跟火球的一下一樣；燃燒放一次，照第一下 × 60%（兩下的期望值一樣）
+    hits = iter([10.0, 20.0])
+    monkeypatch.setattr(damage, "strike", lambda *args, **kwargs: (next(hits), True))
+    shabu, dog = mage(), mobile("野狗")
+    shabu.skills.append("flame_arrow")
+    before = dog.hp
+    out = in_fight([], lambda: say(shabu, "use flame_arrow dog"))
+    assert out.count("你使用火焰箭攻擊野狗，") == 2
+    assert dog.hp == pytest.approx(before - 30 * FLAME_ARROW.ratio)
+    [burn] = dog.affects
+    assert (burn.source, burn.tag, burn.periodic) == ("flame_arrow", "燃燒", {"hp": pytest.approx(-10 * FLAME_ARROW.ratio * 0.6)})
 
 
 def test_each_burn_does_at_least_1(world, monkeypatch):

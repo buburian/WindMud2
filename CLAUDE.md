@@ -41,7 +41,7 @@ uv run python -m mud.areaconvert 舊.json builder_area/新.json   # 舊區域（
   `tests/test_log.py` 測紀錄檔的編號、換檔和刪舊檔；`tests/test_area.py` 測區域載入，也比對手冊的數字表跟程式的定義；`tests/test_areacheck.py` 測區域檔檢查的每條規則；
   要自己做區域檔的測試，用 `tests/area_helpers.py` 做出完整的檔案再改欄位（直接 `from area_helpers import …`）；
   `tests/test_server.py` 用 port 0 開真的伺服器，兩個 client 登入、chat、quit；另一個測試讓 tick 和幾場戰鬥一直跑，確認玩家打字照樣馬上回應。
-  `tests/test_login.py` 也開真的伺服器，測建立角色、密碼、名字規則、存檔、斷線存檔、重複登入接手。`tests/test_imm.py` 測 imm 指令、advance、train、goto（號碼、名字、副本去不了、停手）、givemoney；`tests/test_position.py` 測姿勢、rest／sleep／stand、睡覺時能用的指令、say、who、save。`tests/test_resets.py` 測生物的重置（M、limit、rare、tier_roll、時機、look）。`tests/test_doors.py` 測門（兩邊都要寫的檢查、走路、open／close／lock／unlock、對面看得到、look、重置 D、副本各自的門）。
+  `tests/test_login.py` 也開真的伺服器，測建立角色、密碼、名字規則、存檔、斷線存檔、重複登入接手。`tests/test_imm.py` 測 imm 指令、advance、train、goto（號碼、名字、副本去不了、停手）、givemoney、vnums；`tests/test_position.py` 測姿勢、rest／sleep／stand、睡覺時能用的指令、say、who、save。`tests/test_resets.py` 測生物的重置（M、limit、rare、tier_roll、時機、look）。`tests/test_doors.py` 測門（兩邊都要寫的檢查、走路、open／close／lock／unlock、對面看得到、look、重置 D、副本各自的門）。
   `tests/test_objects.py` 測物品（固定、隨機裝備、掉落表、屍體、slay、look 和 look in、屍體消失、區域物件釋放後不見、基本價格 `base_price()`、cost 存檔）。
   `tests/test_behavior.py` 測生物平常的行為（走動的出口和機率、scavenger、主動攻擊和半身人的不起眼、生物回血、wimpy），亂數換成 `behavior.rng`；
   `tests/test_specials.py` 測 special（打架用的時間、傷害 × 倍率、招式名稱、劇毒，janitor、fido，名字的表跟手冊比對），`damage.strike` 換成固定值、`fight.hit` 不打。
@@ -231,8 +231,11 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   `affect <名字> <poison|regen|bless|blind|clear>`（`af`，測試用的效果 `TEST_EFFECTS`，見下面「身上的效果」）、
   `sset <名字> <技能> [off]`（`ss`，照 C 版的名字，讓線上的玩家學會／忘掉技能，imm_only 的不能給）、
   `goto <號碼或名字>`（`go`，照 C 版 find_location：號碼用 `zones.room_at()`（副本的房間去不了），名字先同房間、再線上玩家、再全部角色；`death.stop_all()` 停手、旋風的兩句、不觸發 on_enter）、
-  `givemoney <名字> <數量>`（`givem`，使用者 2026-11-18 要的：線上的玩家、正整數、自己的不少，`items.keep()` 幫對方存檔）。
+  `givemoney <名字> <數量>`（`givem`，使用者 2026-11-18 要的：線上的玩家、正整數、自己的不少，`items.keep()` 幫對方存檔）、
+  `vnums`（`vn`，使用者 2026-11-20 要的：伺服器載入的區域檔（世界的 `zones.world.areas`、動態和副本的 `zones.templates`）各自的 `header.vnums`，照號碼排，再列中間還沒用的，最後「N 以上」）。
   **玩家的指令排在 imm 指令前面**：同字首的玩家指令會搶走 imm 指令的縮寫（之前加了 affects，imm 打 `a` 就變成 affects）。
+  **`area`**（`a`，`system.do_area()`，使用者 2026-11-20 要的，照 C 版 areas）：世界（`zones.world.areas`）、動態和副本（`zones.templates`）全部的區域檔，
+  寫 header 的 title、levels、type（`AREA_KINDS`）、author，照等級排；imm 的 advance 因此要打 `ad`。
   **`kill <名字>`**（`commands/combat.py`，`k`，最低姿勢 FIGHTING 照 C 版）：開打同房間的生物，牠自動還手；**不可以打玩家**（使用者要的，自己也不行）。
   **安全區**（`RoomFlag.SAFE`，使用者要的）：`commands/combat.protected()` 送 C 版「$N正在受到神力所保護的房間內。」，kill 和 use 的傷害技能都在扣消耗之前呼叫它；主動攻擊在 `behavior.aggress()` 自己看。開打只有這三個地方，所以安全區裡不會有戰鬥。
   **`recall`**（`rec`，也可以打 `/`，最低姿勢 STANDING，所以打架中、休息、睡覺不能用；規則在玩家角色手冊「回城」，使用者 2026-11-17 定的）：
@@ -278,7 +281,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   `engage()`（使用者定的）：自己沒在打架就 `start_fight(自己, 目標)`（可以用技能開打）；自己在打架、目標沒在打人就 `start_fight(目標, 自己)`：
   目標加進來打你，**你平砍還是打原本的對手**（照 C 版）；目標已經在打別人就不改誰打誰。
   `skills`（`sk`，什麼姿勢都能用）列出會的技能、傷害範圍、消耗、冷卻。
-  **`help`**（`commands/help.py`，`h`，什麼姿勢都能用，使用者選的樣子）：只打 help 是每個分類一行、後面列這一類的指令；
+  **`help`**（`commands/help.py`，`h`，什麼姿勢都能用，使用者選的樣子）：只打 help 只列分類、一個一行（使用者 2026-11-20 要的：首頁不列指令），最後再列 topics（屬性，help 屬性 直接看內容）；
   `help 分類`（整個字一樣）列這一類的指令和一句話；`help 指令` 看說明，**指令跟打指令一樣可以縮寫**（`command_name()`，先轉小寫，`help K` 也是 kill）；
   都不是：「對不起，找不到相對應的說明。」（照 C 版）。imm 的分類（管理員）只有 imm 看得到，不是 imm 也找不到 imm 指令的說明。
   - **說明文字在 `help/help.json`**（`config.HELP_FILE`，使用者選的：不用改程式就能改說明），格式寫在 `helps.py` 開頭：
@@ -399,7 +402,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     **武器種類**（設計文件 §3.3，2026-11-04 使用者定的）寫在武器 `values` 的第 1 個：`WeaponKind` 1～11（匕首…長槍，全部物理類，沒有弓、法術武器），
     `TWO_HANDED_KINDS`（大劍、戰斧、戰鎚、長槍）一定要勾 512 雙手、單手的不能勾；`DEFAULT_ATTACK` 是每種預設的攻擊方式。
     `Attack` 是 `values` 第 4 個的攻擊方式 0～13（名字用 Merc 的 attack_table，手冊只有中文），`MOB_ONLY_ATTACKS`（重擊、利牙、吸取）武器不能用。
-    數值不分種類；背刺只能用匕首（技能還沒做）。手冊的武器種類表、攻擊方式表跟這些定義比對（`test_area.py`），編輯器的 `WEAPON_KINDS` 也比對（`test_builder.py`）。
+    數值不分種類；背刺只能用匕首（`Skill.weapon_kinds`）。手冊的武器種類表、攻擊方式表跟這些定義比對（`test_area.py`），編輯器的 `WEAPON_KINDS` 也比對（`test_builder.py`）。
     **固定裝備**（使用者定的，設計文件 §3.3）：物品寫了 `affects` 就用固定的、不隨機抽；`[]` 才照等級和顏色抽。
     `check_files()` 跨檔案檢查每個放出物品的地方（掉落表用生物等級；`G` 的 level 是 null 就用前面 `M` 的生物等級；`O`、`P` 用 level），
     點數（數值 × 單價）不能超過「部位上限 × 顏色加成」；null、gray 是 ×0，只放得進不算點數的龍焰抗性。
@@ -460,6 +463,11 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   城北平原 `north_plains.json`（10～15 級，北城牆下的刻字 3217 往北）、河流區 `river.json`（12～16 級，碼頭 3049 往南，全區要船）。舊區域轉的，文字照世界觀改寫；生物、物品、重置照使用者核准的設計重做：
   沒有主動攻擊（使用者定的：主動攻擊只規劃在副本）、菁英和首領以外都會走動；掉落一般怪白 30%／藍 30%／紫 10%／橘 5%（使用者 2026-11-19 從 10／10／4／1 改的），菁英藍 100%／紫 55%／橘 5%，首領藍 100%／紫 70%／橘 10%（各自骰，藍色保底），兔、豬、魚另外 30% 掉肉。2026-11-20 使用者要的：首領以外的生物數量加倍（M 筆數和 limit 一起 ×2，城北平原的旅行者、白髮老人沒動），重生是 `reset_empty` 3、`reset_players` 5 分鐘（秋風城照舊 null）。
   通到還沒轉的區域的出口轉換時拿掉了，所以有幾間進不去或出不來（只能 recall），等那些區域轉過來再接。
+- **棕仙巷**（`brownie.json`，動態區域（有人走進去才建立，使用者 2026-11-20 從世界區域改的），1～10 級，號碼 `[300, 399]`，使用者 2026-11-20 放進來的）：舊的小精靈村（`smurf1.are`，照卡通做的）轉過來，
+  號碼全部加 200，名字和文字照世界觀（mud_design 的「棕仙巷」那節）改成原創的：西城門內側 3040 往北的藤蔓巷、小棕仙、半塌鐘樓裡的瘋煉金師和獨眼野貓。
+  使用者定的物品（裝備等級 3）：眼鏡 int、草編小帽 dex、小斧頭 str、莓核項鍊 int 都寫 `main_affix`，掉落都是紫色 100%、另外橘色 5%
+  （帽子是 G 給小棕仙：紫色 rare 1、橘色 rare 510；項鍊白色的話點數買不起 1 點 int，紫色才一定有）；
+  粉紅藥劑（偵查藏匿）G 給長老、小魔杖（偵查隱形，3 次）G 給煉金師，等級寫 3。其他（種類、逃跑、special）照轉換工具的結果。
 - **tick 和戰鬥的 loop**（使用者定的；C 版是全遊戲一個鐘，我們不照它）：
   - tick loop：世界和全部動態區域**共用一個**（世界 tick，`zones.start()` 開始），每次先做世界、再做每個動態區域；
     **副本每份自己一個**（建立時開始，釋放時結束）。間隔 `TICK_SECONDS` 固定 1 秒（使用者 2026-11-04 從 30 秒改成 1 秒，不加亂數）。
@@ -533,7 +541,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
       `weapon_ok()`：有限用武器的技能，主手要拿那種武器（空手不行）；技能那一下用主手的武器。`offhand_ok()`：`Skill.offhand` 是 `"shield"`（副手放護具）、`"dual"`（雙持）。
       **選路**（`paths.py`，規則在玩家角色手冊「選職業」，使用者 2026-11-19 定的；**玩家看到的叫「職業」（大路）、「進階職業」（小路），不叫路**，使用者 2026-11-20 要的，程式裡照舊叫 path）：`PATHS`（8 條小路 ＋ 4 條大路，每級的技能、導師的房間、分館在哪），`Player.paths`（[大路, 小路]，存檔）；
       `choose()` 回傳結果代號，`refused()` 不看錢的檢查，`price()`／`change_cost()`（50 隻同級一般怪的金幣），`learn_upto()` 補齊，`level_up_lines()`（`combat.reward`、imm 的 advance：自動學；10 級以上沒選職業、40 級以上沒選進階職業，每升一級都提醒，降級不說），
-      `GUILD_SKILLS`（Lv5 的猛擊 `pummel`、火焰箭 `flame_arrow`，2026-11-20：跟重擊、火球一樣，不用選路、升級自動學；放在 `SKILLS` 最後面，原本的縮寫才不變），
+      `GUILD_SKILLS`（Lv5 的猛擊 `pummel`、火焰箭 `flame_arrow`，2026-11-20：強度跟重擊、火球一樣但連打兩下（比率減半、燃燒 60% 照第一下），不用選路、升級自動學；
+      放在 `SKILLS` 最後面，原本的縮寫才不變；`skills` 列出時打好幾下的技能寫「打 2 次」），
       `catch_up()`（`login.enter()` 登入時補學等級夠的公會技能，加 Lv5 技能前就 5 級以上的玩家，使用者要的），
       `title()` 稱號（score、who），`hint_lines()`、`chosen_skills()` 給 `skills` 列出整條路和還沒選的路。選路是跟秋風城四間分館的導師（3194～3197，`areas/midgaard/老教頭.lua`…）說路名，
       腳本用 `actor:path()`、`subpath()`、`path_price()`、`choose_path()`（`script_api.choose_path` 送學會、忘掉的訊息、存檔）。`tests/test_paths.py`、`tests/test_mentors.py`（真的秋風城）。
@@ -662,7 +671,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     拿掉效果和生物天生的旗標（照 C 版，直到重生），**先全部拿掉才寫訊息**（不然旁人看到「某人漸漸地現出…」）。放增益不現形。
   - 聖光 `SANCTUARY`：`combat.land()`、`affects.pulse()` 的傷害減一半，在 `absorb()` 之前（訊息寫減完的；窒息 `terrain.choke()` 不減）。不加經驗。
   - 通透 `PASS_DOOR`：`system.move()` 穿得過關著、鎖著的門，`area.PASSPROOF_LOCKS`（locks 5～8）不行。flee 不改（只挑開著的）。
-  - 技能（`skills.SKILLS` 最後 7 個，跟飛翔術一樣用程式加、不扣消耗、沒有冷卻、1800 秒）：invis、hide、pass_door、sanctuary、detect_invis、detect_hidden、faerie_fire。
+  - 技能（`skills.SKILLS` 最後 7 個，跟飛翔術一樣用程式加、不扣消耗、沒有冷卻、1800 秒；detect_invis、detect_hidden 是 600 秒，使用者 2026-11-20 改的）：invis、hide、pass_door、sanctuary、detect_invis、detect_hidden、faerie_fire。
     `Skill.target` 多一種 `"self"`（只能放自己，`SELF_ONLY`；use、物品都擋，`mob:use` 也擋）；`kind` 多一種 `"debuff"`（`skills.debuff()`：跟傷害技能一樣選對象、開打、安全區，
     放 affect、送 `cast_text` 兩句）。`buff()` 先送訊息再放效果（隱身術放了就看不到，先放會寫成「你對某人施展了」）。
   - 粉光 `FAERIE_FIRE`：除了讓隱形、藏匿沒用，閃躲、AC × `stats.FAERIE_FIRE_RATIO` 0.9（設計文件 §2.6），在 `stats.add_affects()` 最後乘（裝備、效果加減完；生物天生的也算）。秋風城有 5 隻生物天生隱形（區域檔原本就寫的），城市守衛的腳本招呼玩家會是「某人說」。
@@ -710,6 +719,8 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     give（照 C 版：給同房間的人、`give N coins 名字` 給金幣、1 級不能給金幣、店主不收、對方是玩家要 `over_limit()` 放得下，給完 `keep()` 幫給的人存檔）、
     wear（`wear x` 換下原本的；`wear all` 只穿空的部位，副手武器排最後）、
     remove（`remove all` 照 SLOTS 的順序，副手在主手前）、inventory（最後一行件數和負重，使用者選的）、equipment（每個部位都列，沒穿的寫「（空）」，副手被雙手武器佔住寫「（雙手武器佔住）」，使用者 2026-11-19 要的）。最低姿勢照 C 版：前四個 RESTING（打架中可以），後兩個 DEAD。
+  - donate（`do_donate`，`don`，RESTING，使用者 2026-11-20 要的，照 C 版 do_donate）：背包裡的裝備（`is_gear()`：有部位、有顏色）送進 `config.DONATION_PIT` 3010（`donation_pit()` 找世界區域地上的，秋風城神殿祭壇 3054）；
+    穿著的要先脫、綁定的不行（`can_let_go()`）、放不下不行（`cannot_donate()`）；祭壇醒著的玩家聽到 `DONATE_SOUND`（一次 donate 一次），捐完 `keep()` 存檔。`tests/test_donate.py`。
   - put（`do_put`，照 C 版 do_put，RESTING，`p`）：容器找地上（`light.floor()`）和背包，只收 `CONTAINER_ITEM_TYPE`（屍體不算）；檢查照 C 版的順序（`cannot_put()`：放自己、綁住的、
     裡面的重量 ＋ 這件 ＞ `Obj.holds`（容器的容量，values 第 1 個，存檔；舊存檔照區域檔現在的值））；`put all` 不行的靜靜跳過，一件都沒放是新加的那句；放了才 `keep()` 存檔。
     C 版把奉獻箱存到檔案，我們不存。

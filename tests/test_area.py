@@ -23,7 +23,7 @@ def room(vnum, room_flags=0, sector=0, **exits):
 def test_test_area_numbers_are_full_game_numbers():
     # 測試區域的範圍是 100～199，房間直接寫遊戲號碼 101、102（世界裡還有秋風城）
     zones.load(AREAS)
-    assert {r for r in zones.world.rooms if r < 1000} == {101, 102}
+    assert {r for r in zones.world.rooms if 100 <= r <= 199} == {101, 102}     # 測試區域自己的範圍（300～399 是棕仙巷）
     assert zones.world.rooms[101].exits == {"north": 102}
     assert zones.world.rooms[102].exits == {"south": 101}
 

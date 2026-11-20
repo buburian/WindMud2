@@ -1,0 +1,1735 @@
+{
+  "schema_version": 1,
+  "file": "brownie.json",
+  "area": {
+    "header": {
+      "levels": [
+        1,
+        10
+      ],
+      "author": "*Generic",
+      "title": "棕仙巷",
+      "vnums": [
+        300,
+        399
+      ],
+      "type": "dynamic",
+      "reset_empty": null,
+      "reset_players": null
+    },
+    "recall": null,
+    "no_teleport": null,
+    "clan_recall": null,
+    "gem": null
+  },
+  "rooms": [
+    {
+      "vnum": 301,
+      "name": "藤蔓巷",
+      "description": "西城門內側往北，城牆根下夾著一條窄巷，兩邊的空屋爬滿了藤蔓。\n門板上還留著議會刷的白漆號碼，褪得快看不見了，一直沒人搬進來。\n腳下的石板縫裡長出細草，踩上去軟軟的，沒什麼人走過。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，藤蔓越長越密，巷子彎進一片陰影裡。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 302
+        },
+        "south": {
+          "description": "往南出了巷口，就是西城門內側的大路。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 3040
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 302,
+      "name": "藤蔓巷",
+      "description": "藤蔓從兩邊的屋簷垂下來，在頭頂上結成一條綠色的頂棚。\n光從葉縫漏下來，一點一點落在地上。北邊隱約傳來細細的歌聲。\n",
+      "room_flags": 4,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，歌聲大了一點，像是好幾個小孩一起哼著。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 303
+        },
+        "south": {
+          "description": "往南，巷子變寬，城牆的影子斜斜地壓在地上。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 301
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 303,
+      "name": "藤蔓巷",
+      "description": "巷子在這裡拐了一個彎，牆角堆著塌下來的碎瓦，上面也爬滿了藤。\n藤上結著一串一串紫紅色的莓果（berries），有幾串被摘得只剩梗。\n",
+      "room_flags": 0,
+      "sector": 3,
+      "exits": {
+        "north": {
+          "description": "往北，巷子盡頭露出一片空街區，屋頂上冒著細細的炊煙。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 304
+        },
+        "south": {
+          "description": "往南是長滿藤蔓的窄巷。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 302
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "莓果 berries",
+          "description": "小小的莓果，紫得發黑，聞起來酸酸甜甜。\n摘過的梗都剪得整整齊齊，不像鳥啄的。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 304,
+      "name": "棕仙巷口",
+      "description": "窄巷到這裡就走完了，前面是城西北角的一片空街區。\n龍焚之夜以後這裡沒人回來住，可是每間空屋的門窗都修補過，\n門檻低得只到你的膝蓋。藤叢裡有好幾雙小眼睛正盯著你看。\n",
+      "room_flags": 0,
+      "sector": 2,
+      "exits": {
+        "north": {
+          "description": "往北是街區的大路，路邊的空屋都掛著小小的門簾。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 305
+        },
+        "south": {
+          "description": "往南是長滿藤蔓的窄巷。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 303
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 305,
+      "name": "莓藤小街",
+      "description": "一條小街穿過空街區，街面掃得乾乾淨淨，連一片落葉也沒有。\n路邊擺著指頭大的小陶碗，裡面盛著清水，像是給路過的人喝的。\n歌聲就在附近，可是你一轉頭，唱歌的就躲進藤叢裡了。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "north": {
+          "description": "往北，小街繼續穿過空屋。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 306
+        },
+        "east": {
+          "description": "往東，小街轉了個彎，沿著一排矮籬笆走。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 310
+        },
+        "south": {
+          "description": "往南是巷口，再過去就是長滿藤蔓的窄巷。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 304
+        },
+        "west": {
+          "description": "往西是一條更窄的小巷。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 311
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 306,
+      "name": "莓藤小街",
+      "description": "街邊一棟空屋的屋頂整片換過了，新瓦片小得像指甲，排得整整齊齊。\n屋簷下掛著一排小鋸子、小刨刀，風一吹就叮叮噹噹地響。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "north": {
+          "description": "往北，前面是一個十字路口。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 307
+        },
+        "east": {
+          "description": "往東，就是那棟換了新瓦的屋子，門開著一條縫。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 320
+        },
+        "south": {
+          "description": "往南，小街一路通回巷口。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 305
+        },
+        "west": {
+          "description": "往西是一條窄巷。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 312
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 307,
+      "name": "十字路口",
+      "description": "兩條小街在這裡交會，路中間用碎瓦片拼出一朵花。\n東邊一大片莓果叢長得比你還高，西邊有一棟門口掛著珠簾的小屋。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "north": {
+          "description": "往北，小街繼續往前。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 308
+        },
+        "east": {
+          "description": "往東是一大片莓果叢，紫紅色的果子掛滿枝頭。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 316
+        },
+        "south": {
+          "description": "往南，小街經過一棟換了新瓦的屋子。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 306
+        },
+        "west": {
+          "description": "往西，那棟小屋的門口掛著一串串珠簾。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 329
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 308,
+      "name": "莓藤小街",
+      "description": "小街兩邊都是莓果叢，藤蔓爬過了舊屋的窗框，把窗子整個塞滿了。\n往西岔出一條碎瓦鋪的小徑，瓦片被磨得光光的，一看就常有人走。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "north": {
+          "description": "往北，路中間好像有一口井。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 309
+        },
+        "east": {
+          "description": "往東是莓果叢，藤叢裡傳來窸窸窣窣的聲音。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 317
+        },
+        "south": {
+          "description": "往南是十字路口。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 307
+        },
+        "west": {
+          "description": "往西是一條碎瓦鋪成的小徑。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 313
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 309,
+      "name": "舊井",
+      "description": "三條路在這裡碰頭，中間有一口舊井（well），井邊圍著一圈矮籬笆。\n籬笆上掛著一個用核桃殼做的小水桶，桶繩是用頭髮搓的。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "east": {
+          "description": "往東是莓果叢。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 318
+        },
+        "south": {
+          "description": "往南，小街兩邊都是莓果叢。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 308
+        },
+        "west": {
+          "description": "往西，小街一路通到街區的盡頭。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 314
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "舊井 井 well",
+          "description": "從前這一帶的人家都在這裡打水。井口的石頭被繩子磨出好幾道溝，\n井水很清，看得見底下的青苔。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 310,
+      "name": "莓藤小街",
+      "description": "小街到這裡轉了個角，一道長滿藤的矮籬笆擋住了東邊和南邊。\n北邊那間小屋的窗台上堆滿了紙頭，用小石子壓著，怕被風吹走。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "north": {
+          "description": "往北，那間小屋的窗台上堆滿了紙。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 319
+        },
+        "west": {
+          "description": "往西，小街一路通往街區中間。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 305
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 311,
+      "name": "窄巷",
+      "description": "兩排空屋之間的窄巷，窄得你得側著身子走。\n牆角整整齊齊地疊著劈好的柴，每一根都只有筷子那麼長。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "north": {
+          "description": "往北，窄巷繼續往前。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 312
+        },
+        "east": {
+          "description": "往東回到小街。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 305
+        },
+        "south": {
+          "description": "往南是一間堆滿柴火的小屋。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 321
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 312,
+      "name": "窄巷",
+      "description": "窄巷在這裡被一堵倒下來的牆堵住了，牆後面就是北邊的街區。\n西邊一間小屋的門上掛著一塊木牌，上面歪歪地寫著「睡覺中」。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "east": {
+          "description": "往東回到小街。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 306
+        },
+        "south": {
+          "description": "往南，窄巷彎回去。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 311
+        },
+        "west": {
+          "description": "往西是那間掛著木牌的小屋，裡面靜悄悄的。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 322
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 313,
+      "name": "碎瓦小徑",
+      "description": "碎瓦片鋪成的小徑，瓦片被磨得光滑，在太陽底下閃著光。\n南邊有一棟比別間都大的屋子，門上鑲著一塊銅片，擦得亮亮的。\n西邊的小屋裡傳來咕嚕咕嚕的石磨聲，還有人在嘀嘀咕咕地抱怨。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "east": {
+          "description": "往東回到小街。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 308
+        },
+        "south": {
+          "description": "往南是那棟大屋子，門關著。\n",
+          "keywords": "門 door",
+          "locks": 1,
+          "key": 307,
+          "to_room": 325
+        },
+        "west": {
+          "description": "往西，小屋裡傳來石磨的聲音。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 323
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 314,
+      "name": "莓藤小街",
+      "description": "小街往西越走越荒，這一頭的空屋還沒修過，窗子都是破的。\n藤蔓爬上了半倒的牆，在牆頂上開出一片白色的小花。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "east": {
+          "description": "往東是那口舊井。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 309
+        },
+        "west": {
+          "description": "往西就是小街的盡頭。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 315
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 315,
+      "name": "小街盡頭",
+      "description": "小街在這裡走到底，北邊的屋頂後面露出一座半塌的鐘樓（tower）。\n鐘樓的影子斜斜地壓過來，這一帶的藤蔓都枯了，地上一片黃。\n南邊有一棟門口歪了的小屋，屋簷上吊著一隻破鞋。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "north": {
+          "description": "往北，一條小徑通往那座半塌的鐘樓。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 326
+        },
+        "east": {
+          "description": "往東，小街一路通回舊井。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 314
+        },
+        "south": {
+          "description": "往南是那棟門口歪了的小屋，看起來有點不對勁。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 324
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "鐘樓 tower",
+          "description": "鐘樓的頂塌了一半，大鐘早就不見了。最上面的窗子透出綠綠的光，\n偶爾冒出一股帶著怪味的黃煙。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 316,
+      "name": "莓果叢",
+      "description": "一大片莓果叢，藤蔓順著倒下的木架爬得比你還高，果子掛滿了枝頭。\n藤叢底下有一條條小小的路，大概只容得下巴掌大的人走。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "north": {
+          "description": "往北，莓果叢連成一片。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 317
+        },
+        "west": {
+          "description": "往西是十字路口。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 307
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 317,
+      "name": "莓果叢",
+      "description": "這一片的莓果特別大，可是飄著一股發酵的酸味。\n有一堆熟過頭的果子沒人摘，爛在地上，引來一群嗡嗡叫的小蟲。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "north": {
+          "description": "往北還是莓果叢。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 318
+        },
+        "south": {
+          "description": "往南是另一片莓果叢。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 316
+        },
+        "west": {
+          "description": "往西回到小街。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 308
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 318,
+      "name": "莓果叢",
+      "description": "莓果叢最北邊的一片，貼著一堵舊磚牆，果子曬得最多太陽，又紫又亮。\n藤上綁著幾條紅線，像是做了記號：這幾串留給誰的。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "south": {
+          "description": "往南是莓果叢。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 317
+        },
+        "west": {
+          "description": "往西是那口舊井。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 309
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 319,
+      "name": "抄書棕仙的家",
+      "description": "屋子裡從地板到天花板都堆滿了紙，有燒焦的帳本、半張告示、撕破的書頁。\n一張小桌上攤著一本手縫的小冊子（book），密密麻麻地抄滿了字。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "south": {
+          "description": "往南回到小街。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 310
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "小冊子 冊子 book",
+          "description": "冊子上的字小得像螞蟻，你瞇著眼睛才看得出幾個：\n「西城門……第三間……麵包……龍焚前」。看樣子是在抄這一帶從前的事。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 320,
+      "name": "木匠棕仙的家",
+      "description": "屋子裡收拾得很整齊，牆上掛滿了小小的工具，每一把都擦得發亮。\n角落堆著從空屋拆下來的木料，量好了、劃好了線，等著鋸。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "west": {
+          "description": "往西回到小街。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 306
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 321,
+      "name": "大個子棕仙的家",
+      "description": "屋子裡堆滿了柴，連床底下都塞滿了，空氣裡都是木頭的香味。\n門後掛著一把小斧頭的皮套，套子是空的。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "north": {
+          "description": "往北回到窄巷。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 311
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 322,
+      "name": "守夜棕仙的家",
+      "description": "屋子裡暗暗的，窗子用布蓋著，地上鋪了好幾層稻草，到處都是枕頭。\n牆上掛著一盞沒點的小燈籠，和一根敲更用的小木棒。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "east": {
+          "description": "往東回到窄巷。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 312
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 323,
+      "name": "磨坊棕仙的家",
+      "description": "屋子中間擺著一個用兩塊瓦片做的小石磨，磨盤上沾著紫色的莓核粉。\n牆上貼滿了小紙條，每一張都寫著抱怨：「誰又踩了我的門口」「藤太吵」。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "east": {
+          "description": "往東回到碎瓦小徑。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 313
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 324,
+      "name": "惡作劇棕仙的家",
+      "description": "你一彎腰進門，門框上的小水桶就翻下來，淋了你一頭水。\n屋子裡到處是機關：會彈起來的地板、綁著線的椅子、塞滿棉花的假莓果。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "north": {
+          "description": "往北回到小街盡頭。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 315
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 325,
+      "name": "長老的家",
+      "description": "這是街區裡最大的一間屋子，從前大概是哪家的廚房。\n灶台被改成了一張大桌子，桌上排滿了一瓶瓶粉紅色的藥劑（potions），\n牆上掛著好幾串曬乾的莓果和草藥。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "north": {
+          "description": "往北是碎瓦小徑，門關著。\n",
+          "keywords": "門 door",
+          "locks": 1,
+          "key": 307,
+          "to_room": 313
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "藥劑 potions",
+          "description": "小瓶子是用碎玻璃燒的，裡面裝著粉紅色的水，搖一搖會發出淡淡的光。\n瓶口用蠟封著，上面按了一個小小的指印。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 326,
+      "name": "往鐘樓的小徑",
+      "description": "一條被踩得光禿禿的小徑，兩邊的藤蔓都枯死了，地上散著碎玻璃。\n空氣裡有一股刺鼻的怪味，像燒焦的頭髮，又像爛掉的雞蛋。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "north": {
+          "description": "往北是半塌的鐘樓，門口堆著一堆空籠子。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 327
+        },
+        "south": {
+          "description": "往南回到小街盡頭。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 315
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 327,
+      "name": "鐘樓外",
+      "description": "半塌的鐘樓就在眼前，石牆上被燻出一片片黑漬。\n門口堆著好幾個小鐵籠（cages），籠門都歪了，裡面是空的。\n鐘樓裡傳來有人罵貓的聲音，和玻璃瓶碰來碰去的叮噹聲。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "north": {
+          "description": "往北是鐘樓的門，門關著。\n",
+          "keywords": "門 door",
+          "locks": 1,
+          "key": 309,
+          "to_room": 328
+        },
+        "south": {
+          "description": "往南是往小街的小徑。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 326
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "鐵籠 籠子 cages",
+          "description": "籠子小得只關得下一隻麻雀。籠底墊著稻草，草上有一根\n小小的草編帽帶。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 328,
+      "name": "半塌的鐘樓",
+      "description": "鐘樓的底層被改成了煉金室，正中間架著一口冒泡的大鍋（cauldron），\n四周的架子上堆滿了瓶瓶罐罐，有幾個罐子裡泡著說不出是什麼的東西。\n樓梯在半空中斷了，上面只剩一個黑洞洞的大窟窿。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "south": {
+          "description": "往南出了鐘樓，門關著。\n",
+          "keywords": "門 door",
+          "locks": 1,
+          "key": 309,
+          "to_room": 327
+        }
+      },
+      "extra_descriptions": [
+        {
+          "keywords": "大鍋 鍋 cauldron",
+          "description": "鍋裡的東西綠得發黑，咕嘟咕嘟地冒著泡，聞起來刺鼻。\n鍋邊擱著一支長柄勺，還有一本寫滿塗改的配方本。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 329,
+      "name": "棕仙姑娘的家",
+      "description": "小屋門口掛著一串串用莓核、碎玻璃珠串成的珠簾，走過去叮叮噹噹地響。\n屋子裡擺著一張小桌，桌上散著還沒串完的珠子，和一根細細的針。\n",
+      "room_flags": 0,
+      "sector": 1,
+      "exits": {
+        "east": {
+          "description": "往東回到十字路口。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": -1,
+          "to_room": 307
+        }
+      },
+      "extra_descriptions": [],
+      "script": null
+    }
+  ],
+  "mobiles": [
+    {
+      "vnum": 301,
+      "keywords": "brownie",
+      "short": "小棕仙",
+      "long": "一個小棕仙/brownie/坐在藤蔓上晃著腳，小聲地唱著歌。\n",
+      "description": "一個只有巴掌大的小人，頭髮亂得像鳥窩，身上穿著用碎布縫的衣服。\n他一看到你就停下歌聲，眨著眼睛，隨時準備躲進藤叢裡。\n",
+      "level": 1,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 192,
+      "affected_by": 0,
+      "alignment": 100,
+      "race": "faerie",
+      "sex": 1,
+      "position": 7,
+      "drops": [],
+      "script": null,
+      "shop": null,
+      "special": "spec_thief",
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 302,
+      "keywords": "brownie",
+      "short": "小棕仙",
+      "long": "一個小棕仙/brownie/踮著腳在藤叢裡摘莓果。\n",
+      "description": "一個只有巴掌大的小人，背上背著一個核桃殼做的小簍子，裝了半簍莓果。\n她摘得很專心，好像沒發現你在看她。\n",
+      "level": 1,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 130,
+      "affected_by": 0,
+      "alignment": 100,
+      "race": "faerie",
+      "sex": 2,
+      "position": 7,
+      "drops": [],
+      "script": null,
+      "shop": null,
+      "special": "spec_thief",
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 303,
+      "keywords": "scribe brownie",
+      "short": "抄書棕仙",
+      "long": "抄書棕仙/scribe/推了推鼻樑上的小眼鏡，對著一片殘頁發愣。\n",
+      "description": "一個瘦瘦的小棕仙，鼻樑上架著一副小眼鏡，手指頭沾滿了墨。\n他說他要把這一帶從前的事都抄下來，免得大家忘了。\n",
+      "level": 3,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 192,
+      "affected_by": 0,
+      "alignment": 100,
+      "race": "faerie",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 301,
+          "color": "purple",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 301,
+          "color": "orange",
+          "chance": 500,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": "spec_thief",
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 304,
+      "keywords": "carpenter brownie",
+      "short": "木匠棕仙",
+      "long": "木匠棕仙/carpenter/咬著一根小釘子，在屋簷下比劃著尺寸。\n",
+      "description": "一個手很巧的小棕仙，腰上掛著一圈小工具，耳朵上夾著一截炭筆。\n街區裡每一片新瓦都是他換的。\n",
+      "level": 3,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 192,
+      "affected_by": 0,
+      "alignment": 100,
+      "race": "faerie",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 303,
+          "color": "purple",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 303,
+          "color": "orange",
+          "chance": 500,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": "spec_thief",
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 305,
+      "keywords": "watchman brownie",
+      "short": "守夜棕仙",
+      "long": "守夜棕仙/watchman/抱著小燈籠，靠在牆角打瞌睡。\n",
+      "description": "一個圓滾滾的小棕仙，眼皮重得快要閉起來，嘴角還掛著口水。\n他說他晚上要守夜，所以白天一定要睡飽。\n",
+      "level": 3,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 192,
+      "affected_by": 0,
+      "alignment": 100,
+      "race": "faerie",
+      "sex": 1,
+      "position": 7,
+      "drops": [],
+      "script": null,
+      "shop": null,
+      "special": "spec_thief",
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 306,
+      "keywords": "woodcutter brownie",
+      "short": "大個子棕仙",
+      "long": "大個子棕仙/woodcutter/扛著一捆柴，走得搖搖晃晃。\n",
+      "description": "一個比別的棕仙高出一個頭的小棕仙，手臂粗粗的，臉上卻總是怯怯的。\n一聽到鐘樓那邊有聲音，他就縮起肩膀。\n",
+      "level": 3,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 192,
+      "affected_by": 0,
+      "alignment": 100,
+      "race": "faerie",
+      "sex": 1,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 303,
+          "color": "purple",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 303,
+          "color": "orange",
+          "chance": 500,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": "spec_thief",
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 307,
+      "keywords": "miller brownie",
+      "short": "磨坊棕仙",
+      "long": "磨坊棕仙/miller/叉著腰，嘀嘀咕咕地不知道在抱怨什麼。\n",
+      "description": "一個眉頭永遠皺著的小棕仙，身上沾滿了紫色的莓核粉。\n不管你做什麼，他都看不順眼。\n",
+      "level": 3,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 192,
+      "affected_by": 0,
+      "alignment": 100,
+      "race": "faerie",
+      "sex": 1,
+      "position": 7,
+      "drops": [],
+      "script": null,
+      "shop": null,
+      "special": "spec_thief",
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 308,
+      "keywords": "prankster brownie",
+      "short": "惡作劇棕仙",
+      "long": "惡作劇棕仙/prankster/躲在藤叢後面偷笑，手裡藏著什麼東西。\n",
+      "description": "一個眼睛亮晶晶的小棕仙，口袋裡塞滿了小石子和綁著線的假莓果。\n你最好別背對著他。\n",
+      "level": 3,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 192,
+      "affected_by": 0,
+      "alignment": 100,
+      "race": "faerie",
+      "sex": 1,
+      "position": 7,
+      "drops": [],
+      "script": null,
+      "shop": null,
+      "special": "spec_thief",
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 309,
+      "keywords": "beader brownie",
+      "short": "棕仙姑娘",
+      "long": "棕仙姑娘/beader/坐在門口，把莓核一顆一顆串成項鍊。\n",
+      "description": "一個梳著兩條小辮子的小棕仙，脖子上掛著好幾串自己串的項鍊。\n她手很巧，連碎玻璃都能磨成亮晶晶的珠子。\n",
+      "level": 3,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 192,
+      "affected_by": 0,
+      "alignment": 100,
+      "race": "faerie",
+      "sex": 2,
+      "position": 7,
+      "drops": [
+        {
+          "obj_vnum": 304,
+          "color": "purple",
+          "chance": 10000,
+          "tiers": null
+        },
+        {
+          "obj_vnum": 304,
+          "color": "orange",
+          "chance": 500,
+          "tiers": null
+        }
+      ],
+      "script": null,
+      "shop": null,
+      "special": "spec_thief",
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 310,
+      "keywords": "elder brownie",
+      "short": "棕仙長老",
+      "long": "棕仙長老/elder/拄著一根草莖做的拐杖，慢慢地在路上巡視。\n",
+      "description": "一位白髮的老婆婆，個子比別的棕仙還小，眼睛卻又亮又利。\n大家都聽她的。她說，煉金師來了以後，街區就再也不安寧了。\n",
+      "level": 10,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 192,
+      "affected_by": 0,
+      "alignment": 100,
+      "race": "faerie",
+      "sex": 2,
+      "position": 7,
+      "drops": [],
+      "script": null,
+      "shop": null,
+      "special": "spec_cast_mage",
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 311,
+      "keywords": "alchemist",
+      "short": "瘋煉金師",
+      "long": "瘋煉金師/alchemist/攪著大鍋，嘴裡念念有詞地數著配方。\n",
+      "description": "一個瘦得只剩骨頭的男人，長袍上滿是燒焦的洞，指甲縫都是綠的。\n聽說他被魔法公會趕了出來，躲到這裡，抓小棕仙熬他的長生藥。\n",
+      "level": 10,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 130,
+      "affected_by": 0,
+      "alignment": -100,
+      "race": "human",
+      "sex": 1,
+      "position": 7,
+      "drops": [],
+      "script": null,
+      "shop": null,
+      "special": "spec_cast_cleric",
+      "special_ratio": null,
+      "poison_ratio": null
+    },
+    {
+      "vnum": 312,
+      "keywords": "cat",
+      "short": "獨眼野貓",
+      "long": "一隻獨眼野貓/cat/弓著背蹲在架子上，那一隻眼睛死死地盯著你。\n",
+      "description": "一隻又瘦又兇的灰貓，一隻眼睛只剩一道疤，耳朵也缺了一角。\n牠是煉金師養的，專門替他抓小棕仙。\n",
+      "level": 8,
+      "tier": "normal",
+      "tier_roll": null,
+      "attack": null,
+      "defense": null,
+      "archetype": null,
+      "act": 130,
+      "affected_by": 0,
+      "alignment": -100,
+      "race": "animal",
+      "sex": 1,
+      "position": 7,
+      "drops": [],
+      "script": null,
+      "shop": null,
+      "special": "spec_poison",
+      "special_ratio": null,
+      "poison_ratio": null
+    }
+  ],
+  "objects": [
+    {
+      "vnum": 301,
+      "keywords": "glasses spectacles",
+      "short": "小眼鏡",
+      "long": "一副只有指甲大的小眼鏡掉在地上。",
+      "item_type": 9,
+      "extra_flags": 1,
+      "wear_flags": 17,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 2,
+      "cost": 500,
+      "affects": [],
+      "main_affix": "int",
+      "extra_descriptions": [
+        {
+          "keywords": "眼鏡 glasses",
+          "description": "鏡片是用碎玻璃磨的，鏡架是銅絲彎的。\n人戴起來只遮得住一點點，可是看東西好像清楚了一些。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 302,
+      "keywords": "hat straw",
+      "short": "草編小帽",
+      "long": "一頂草編的小帽子掉在地上。",
+      "item_type": 9,
+      "extra_flags": 0,
+      "wear_flags": 17,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 2,
+      "cost": 50,
+      "affects": [],
+      "main_affix": "dex",
+      "extra_descriptions": [
+        {
+          "keywords": "草帽 帽子 hat",
+          "description": "用細草莖編的小帽子，帽簷別著一片乾葉子，戴上去意外地合頭。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 303,
+      "keywords": "axe small",
+      "short": "小斧頭",
+      "long": "一把小斧頭丟在地上，斧柄纏著布條。",
+      "item_type": 5,
+      "extra_flags": 0,
+      "wear_flags": 8193,
+      "values": [
+        4,
+        0,
+        0,
+        3
+      ],
+      "weight": 2,
+      "cost": 2000,
+      "affects": [],
+      "main_affix": "str",
+      "extra_descriptions": [
+        {
+          "keywords": "斧頭 axe",
+          "description": "斧刃是從舊門鉸鏈磨出來的，斧柄纏著一圈圈布條。\n小是小，劈柴倒是很順手。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 304,
+      "keywords": "necklace beads",
+      "short": "莓核項鍊",
+      "long": "一串莓核項鍊掉在地上。",
+      "item_type": 9,
+      "extra_flags": 1,
+      "wear_flags": 5,
+      "values": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "weight": 2,
+      "cost": 500,
+      "affects": [],
+      "main_affix": "int",
+      "extra_descriptions": [
+        {
+          "keywords": "項鍊 necklace",
+          "description": "一顆顆磨亮的莓核，中間夾著幾顆碎玻璃磨成的珠子，\n在光底下閃著紫紅色的光。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 305,
+      "keywords": "potion pink",
+      "short": "粉紅藥劑",
+      "long": "一小瓶粉紅藥劑放在地上。",
+      "item_type": 10,
+      "extra_flags": 0,
+      "wear_flags": 1,
+      "values": [
+        3,
+        "detect_hidden",
+        "",
+        ""
+      ],
+      "weight": 1,
+      "cost": 60,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "藥劑 potion",
+          "description": "棕仙長老用莓果和草藥釀的。瓶口用蠟封著。\n聽說喝了眼睛會變亮，連躲起來的東西都看得見。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 306,
+      "keywords": "wand glass",
+      "short": "小魔杖",
+      "long": "一根玻璃管做的小魔杖掉在地上。",
+      "item_type": 3,
+      "extra_flags": 0,
+      "wear_flags": "1|16384",
+      "values": [
+        3,
+        3,
+        3,
+        "detect_invis"
+      ],
+      "weight": 1,
+      "cost": 150,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "魔杖 wand",
+          "description": "細細的玻璃管，裡面有一點一點的亮光在游。\n煉金師拿它找躲起來的小棕仙：揮一下，隱形的東西都會現出來。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 307,
+      "keywords": "key tiny",
+      "short": "微小鑰匙",
+      "long": "一把微小的鑰匙掉在地上。",
+      "item_type": 18,
+      "extra_flags": 0,
+      "wear_flags": 1,
+      "values": [
+        2,
+        0,
+        0,
+        0
+      ],
+      "weight": 2,
+      "cost": 50,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "鑰匙 key",
+          "description": "小得像一根針，柄上刻著一朵小花。\n"
+        }
+      ],
+      "script": null
+    },
+    {
+      "vnum": 308,
+      "keywords": "well",
+      "short": "舊井",
+      "long": "一口長滿青苔的舊井立在路中間。",
+      "item_type": 25,
+      "extra_flags": 0,
+      "wear_flags": 0,
+      "values": [
+        50,
+        50,
+        0,
+        0
+      ],
+      "weight": 500,
+      "cost": 3000,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 309,
+      "keywords": "key small",
+      "short": "小鑰匙",
+      "long": "一把生鏽的小鑰匙掉在地上。",
+      "item_type": 18,
+      "extra_flags": 0,
+      "wear_flags": 1,
+      "values": [
+        2,
+        0,
+        0,
+        0
+      ],
+      "weight": 2,
+      "cost": 50,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [
+        {
+          "keywords": "鑰匙 key",
+          "description": "一把生鏽的鐵鑰匙，柄上纏著一根黃色的線，有一股燒焦的怪味。\n"
+        }
+      ],
+      "script": null
+    }
+  ],
+  "resets": [
+    {
+      "cmd": "O",
+      "if_flag": 0,
+      "obj_vnum": 308,
+      "color": null,
+      "level": 1,
+      "limit": 1,
+      "room_vnum": 309,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 302,
+      "limit": 3,
+      "room_vnum": 318,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 302,
+      "limit": 3,
+      "room_vnum": 317,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 302,
+      "limit": 3,
+      "room_vnum": 316,
+      "comment": ""
+    },
+    {
+      "cmd": "*",
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 301,
+      "limit": 3,
+      "room_vnum": 305,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 301,
+      "limit": 3,
+      "room_vnum": 310,
+      "comment": ""
+    },
+    {
+      "cmd": "G",
+      "rare": 1,
+      "obj_vnum": 302,
+      "color": "purple",
+      "level": 3,
+      "limit": 10,
+      "comment": ""
+    },
+    {
+      "cmd": "G",
+      "rare": 510,
+      "obj_vnum": 302,
+      "color": "orange",
+      "level": 3,
+      "limit": 10,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 301,
+      "limit": 3,
+      "room_vnum": 311,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 301,
+      "limit": 3,
+      "room_vnum": 312,
+      "comment": ""
+    },
+    {
+      "cmd": "G",
+      "rare": 1,
+      "obj_vnum": 302,
+      "color": "purple",
+      "level": 3,
+      "limit": 10,
+      "comment": ""
+    },
+    {
+      "cmd": "G",
+      "rare": 510,
+      "obj_vnum": 302,
+      "color": "orange",
+      "level": 3,
+      "limit": 10,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 301,
+      "limit": 3,
+      "room_vnum": 307,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 301,
+      "limit": 3,
+      "room_vnum": 308,
+      "comment": ""
+    },
+    {
+      "cmd": "G",
+      "rare": 1,
+      "obj_vnum": 302,
+      "color": "purple",
+      "level": 3,
+      "limit": 10,
+      "comment": ""
+    },
+    {
+      "cmd": "G",
+      "rare": 510,
+      "obj_vnum": 302,
+      "color": "orange",
+      "level": 3,
+      "limit": 10,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 301,
+      "limit": 3,
+      "room_vnum": 309,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 301,
+      "limit": 3,
+      "room_vnum": 304,
+      "comment": ""
+    },
+    {
+      "cmd": "G",
+      "rare": 1,
+      "obj_vnum": 302,
+      "color": "purple",
+      "level": 3,
+      "limit": 10,
+      "comment": ""
+    },
+    {
+      "cmd": "G",
+      "rare": 510,
+      "obj_vnum": 302,
+      "color": "orange",
+      "level": 3,
+      "limit": 10,
+      "comment": ""
+    },
+    {
+      "cmd": "*",
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 303,
+      "limit": 1,
+      "room_vnum": 319,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 304,
+      "limit": 1,
+      "room_vnum": 320,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 305,
+      "limit": 1,
+      "room_vnum": 322,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 306,
+      "limit": 1,
+      "room_vnum": 321,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 307,
+      "limit": 1,
+      "room_vnum": 323,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 308,
+      "limit": 1,
+      "room_vnum": 324,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 309,
+      "limit": 1,
+      "room_vnum": 329,
+      "comment": ""
+    },
+    {
+      "cmd": "G",
+      "rare": 1,
+      "obj_vnum": 307,
+      "color": null,
+      "level": null,
+      "limit": 8,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 310,
+      "limit": 1,
+      "room_vnum": 313,
+      "comment": ""
+    },
+    {
+      "cmd": "G",
+      "rare": 1,
+      "obj_vnum": 305,
+      "color": null,
+      "level": 3,
+      "limit": 8,
+      "comment": ""
+    },
+    {
+      "cmd": "G",
+      "rare": 1,
+      "obj_vnum": 309,
+      "color": null,
+      "level": null,
+      "limit": 8,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 311,
+      "limit": 1,
+      "room_vnum": 328,
+      "comment": ""
+    },
+    {
+      "cmd": "G",
+      "rare": 1,
+      "obj_vnum": 306,
+      "color": null,
+      "level": 3,
+      "limit": 8,
+      "comment": ""
+    },
+    {
+      "cmd": "M",
+      "rare": 0,
+      "mob_vnum": 312,
+      "limit": 1,
+      "room_vnum": 328,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 325,
+      "direction": "north",
+      "state": 2,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 313,
+      "direction": "south",
+      "state": 2,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 327,
+      "direction": "north",
+      "state": 2,
+      "comment": ""
+    },
+    {
+      "cmd": "D",
+      "if_flag": 0,
+      "room_vnum": 328,
+      "direction": "south",
+      "state": 2,
+      "comment": ""
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-"""物品類指令：get、drop、put、give、wear、remove、inventory、equipment（玩家角色手冊「物品和裝備」，訊息照 C 版 act_obj.c）。
+"""物品類指令：get、drop、put、give、donate、wear、remove、inventory、equipment（玩家角色手冊「物品和裝備」，訊息照 C 版 act_obj.c）。
 
 名字照 objects.find()（開頭就行、2.sword 是第 2 件），all 是全部（all 不分大小寫）。
 一個指令的訊息合成一段送（inventory.Lines）：get all 撿好幾件，旁邊的人也只看到一個 prompt。
@@ -8,7 +8,9 @@ import re
 
 from .. import inventory, light, objects, save, scripts, stats
 from ..act import TO_NOTVICT, TO_ROOM, TO_VICT
-from ..characters import find_in_room
+from ..characters import Position, characters, find_in_room
+from ..players import Player
+from ..config import DONATION_PIT
 from ..npcs import Npc
 from ..area import (ATTACK_NAMES, CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE, ITEM_TYPE_NAMES, MONEY_ITEM_TYPE, WEAPON_KIND_NAMES,
                     ContainerFlag)
@@ -218,6 +220,92 @@ def put_in(ch, obj, container, out):
     container.contains.insert(0, obj)
     out.add("你把【$t】放進【$T】裡面。", t=objects.short(obj), T=objects.short(container))
     out.add("$n把【$t】放進【$T】裡面。", TO_ROOM, t=objects.short(obj), T=objects.short(container))
+
+
+DONATE_WHAT = "你想捐贈些什麼？"             # donate 的訊息照 C 版 do_donate（只能捐裝備、要先脫下來是新加的）
+DONATE_NO_PIT = "奉獻箱似乎消失於世界上了。"
+DONATE_NOT_HERE = "你沒有這樣的物品。"
+DONATE_WORN = "你要先把【$t】脫下來才能捐。"
+DONATE_NOT_GEAR = "只能捐裝備。"
+DONATE_BOUND = "你沒辦法讓它離開你的身邊。"
+DONATE_FULL = "它放不進去。"
+DONATE_NOTHING = "你沒有可以捐的裝備。"
+DONATED = ("你把【$t】捐獻傳送到【$T】。", "$n把【$t】捐獻傳送到【$T】。")
+DONATE_SOUND = "你聽到奉獻箱裡面發生一聲巨響!!"      # 奉獻箱那間房醒著的人聽到（照 C 版；一次 donate 說一次）
+
+
+def donation_pit():
+    """donate 送去的奉獻箱：世界區域地上第一個 DONATION_PIT，回傳 (房間, 奉獻箱)；不見了是 (None, None)。"""
+    from .. import zones                    # 坑：zones 會 import commands，在函式裡才 import
+    if zones.world is None:
+        return None, None
+    return next(((room, o) for room in zones.world.rooms.values() for o in room.contents if o.vnum == DONATION_PIT), (None, None))
+
+
+def is_gear(obj):
+    """裝備：有穿戴部位、有顏色（跟商店的基本價格同一個分法，火把這種沒有顏色的不算，objects.base_price）。"""
+    return obj.slot is not None and obj.color is not None
+
+
+def cannot_donate(ch, obj, pit):
+    """obj 捐不進 pit 的原因，可以捐是 None：只能捐裝備（使用者 2026-11-20 定的）、綁住的不行（使用者要的，跟 drop、give 一樣）、放不下。"""
+    if not is_gear(obj):
+        return DONATE_NOT_GEAR
+    if not inventory.can_let_go(ch, obj):
+        return DONATE_BOUND
+    if objects.weight(obj) + sum(objects.weight(o) for o in pit.contains) > (pit.holds or 0):
+        return DONATE_FULL
+    return None
+
+
+def do_donate(ch, arg):
+    """donate <東西>、donate all：把背包裡的裝備捐到秋風城神殿祭壇的奉獻箱（照 C 版 do_donate，使用者 2026-11-20 要的）。
+
+    只能捐裝備、穿著的要先脫下來（使用者定的；C 版背包裡的都能捐，垃圾、食物這些直接不見）；綁住的不行；放不下不行。
+    donate all 不行的靜靜跳過（跟 put all 一樣）。奉獻箱那間房醒著的人聽到「巨響」（一次 donate 說一次）。捐完存檔（照 C 版）。
+    """
+    words = arg.split()
+    if not words:
+        ch.send(DONATE_WHAT + "\n")
+        return
+    room, pit = donation_pit()
+    if pit is None:
+        ch.send(DONATE_NO_PIT + "\n")
+        return
+    out, moved = inventory.Lines(ch), []
+    if is_all(words[0]):
+        for obj in list(ch.carrying):
+            if cannot_donate(ch, obj, pit) is None:     # 一件一件看：前面捐進去的會佔掉容量
+                donate(ch, obj, pit, out)
+                moved.append(obj)
+        if not moved:
+            out.add(DONATE_NOTHING)
+    else:
+        obj = objects.find(ch.carrying, words[0])
+        worn = None if obj is not None else objects.find(list(ch.equipment.values()), words[0])
+        if worn is not None:
+            out.add(DONATE_WORN, t=objects.short(worn))
+        elif obj is None:
+            out.add(DONATE_NOT_HERE)
+        elif (reason := cannot_donate(ch, obj, pit)) is not None:
+            out.add(reason)
+        else:
+            donate(ch, obj, pit, out)
+            moved.append(obj)
+    if moved:
+        for p in [c for c in characters if c.room is room and isinstance(c, Player) and c.position > Position.SLEEPING]:
+            out.by.setdefault(p, []).append(DONATE_SOUND)
+    out.send()
+    if moved:
+        keep(ch)
+
+
+def donate(ch, obj, pit, out):
+    ch.carrying.remove(obj)
+    pit.contains.insert(0, obj)
+    mine, theirs = DONATED
+    out.add(mine, t=objects.short(obj), T=objects.short(pit))
+    out.add(theirs, TO_ROOM, t=objects.short(obj), T=objects.short(pit))
 
 
 CANT_DROP = "你無法丟掉這樣東西。"          # 綁住的東西（照 C 版 nodrop 的那句）

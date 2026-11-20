@@ -11,6 +11,7 @@ SOCIAL_FILE = "socials/socials.json"   # 表情動作和說話結尾的表情（
 LOGIN_SCREEN = "screens/login.txt"     # 連線時看到的登入畫面（login.load_screen），可以用顏色代碼，跟 areas/ 同一層
 START_ROOM = 3001    # 畢業、死掉、存檔的房間不在了都回這裡：秋風城的神殿大廳（使用者要的），要在世界區域裡
 # 教學學院（副本，使用者要的）：新角色建好先進自己那一份，沒畢業前登入、死掉都回第一間（zones.home）
+DONATION_PIT = 3010  # donate 送去的奉獻箱：秋風城神殿祭壇 3054 的那個（照 C 版的號碼），要在世界區域裡
 ACADEMY_FILE = "academy.json"
 ACADEMY_START = 201  # 學院的第一間
 ACADEMY_STUDENT = "student"   # 還沒畢業的記號：玩家腳本變數 vars["academy"]["student"]，院長的腳本在畢業時拿掉（名字要一樣）

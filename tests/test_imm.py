@@ -13,6 +13,7 @@ from mud.color import colorize
 from mud.commands import imm, system
 from mud.config import ENCODING
 from mud.players import Player
+from area_helpers import make_area, make_room, write_json
 
 AREAS = Path(__file__).resolve().parent.parent / "areas"
 
@@ -64,7 +65,8 @@ def balanced(p):
 def test_only_imm_finds_imm_commands():
     assert commands.find("advance") is None
     assert commands.find("advance", is_imm=True) is imm.do_advance
-    assert commands.find("a", is_imm=True) is imm.do_advance
+    assert commands.find("ad", is_imm=True) is imm.do_advance
+    assert commands.find("a", is_imm=True) is system.do_area     # 玩家的 area（2026-11-20）排在前面，a 就是 area
     # 原本的縮寫不受影響
     assert commands.find("t", is_imm=True) is system.do_tell
     assert commands.find("tr") is system.do_train
@@ -340,3 +342,38 @@ def test_givemoney_mistakes(line, want):
     boss, ming = player("Boss", is_imm=True), player("Ming")
     commands.command(boss, line)
     assert body(boss) == want and ming.gold == 0
+
+
+# ---- vnums：區域檔的號碼範圍和還沒用的（使用者 2026-11-20 要的） ----
+
+def test_vnums_lists_ranges_and_the_gaps(tmp_path):
+    rooms = lambda first: [make_room(first + 1)]
+    write_json(tmp_path, "b.json", make_area("b.json", rooms(500), (500, 599)))
+    write_json(tmp_path, "a.json", make_area("a.json", rooms(100), (100, 199)))
+    write_json(tmp_path, "c.json", make_area("c.json", rooms(200), (200, 299), kind="instance"))    # 副本的也算
+    zones.load(tmp_path)
+    shabu = player("Shabu", is_imm=True)
+    commands.command(shabu, "vn")
+    assert shabu.writer.text().startswith("區域檔用掉的號碼（照號碼排；房間、生物、物品都在檔案自己的範圍裡）：\r\n"
+                                   "  100～199  a.json  測試\r\n  200～299  c.json  測試\r\n  500～599  b.json  測試\r\n"
+                                   "還沒用的號碼（新的區域檔可以用，1～99 是保留的）：\r\n  300～499\r\n  600 以上\r\n\r\n<HP ")
+
+
+def test_vnums_is_only_for_imm():
+    ming = player("Ming")
+    commands.command(ming, "vnums")
+    assert ming.writer.text().startswith("什麼？")
+
+
+def test_area_lists_every_area(tmp_path):
+    # area（玩家也能用，使用者 2026-11-20 要的）：世界、動態、副本的區域檔都列，照等級排
+    for name, vnums, kind, levels, title in (("a.json", (100, 199), "world", [5, 9], "乙地"), ("b.json", (200, 299), "dynamic", [1, 3], "甲地"),
+                                             ("c.json", (300, 399), "instance", [5, 20], "丙地")):
+        data = make_area(name, [make_room(vnums[0] + 1)], vnums, kind=kind)
+        data["area"]["header"].update(levels=levels, title=title, author="Shabu")
+        write_json(tmp_path, name, data)
+    zones.load(tmp_path)
+    ming = player("Ming")
+    commands.command(ming, "a")
+    assert ming.writer.text().startswith("遊戲裡的區域：\r\n  區域  等級      種類  作者\r\n"
+                                         "  甲地  1～3 級   動態  Shabu\r\n  乙地  5～9 級   世界  Shabu\r\n  丙地  5～20 級  副本  Shabu\r\n\r\n")

@@ -180,7 +180,7 @@ PULSE_SECONDS = AFFECT_PULSE_TICKS * TICK_SECONDS
 
 
 def summary(ch, s):
-    """skills 那一行的「傷害 17~19」「補血 30~30」「持續 60 秒」「被動」，和下一行要寫的（[一句一句]）。"""
+    """skills 那一行的「傷害 17~19」（打好幾下的加「打 2 次」）「補血 30~30」「持續 60 秒」「被動」，和下一行要寫的（[一句一句]）。"""
     if s.kind == "passive":
         return "被動", affects.parts(affects.Affect(source=s.id, name=s.name, duration=0, mult=s.passive))
     if s.kind == "protect" and s.guard:     # 守護：他被打的傷害有 30% 改由你承受
@@ -214,7 +214,8 @@ def summary(ch, s):
         more.append("打中後：" + "、".join(affects.parts(a)) + f"，{a.duration * TICK_SECONDS:g} 秒")
     if s.lifesteal:
         more.append(f"吸血 {s.lifesteal * 100:g}%")
-    return f"傷害 {low}~{high}", more
+    times = f"  打 {s.hits} 次" if s.hits > 1 else ""     # 傷害是一下的範圍：打好幾下的寫幾次（猛擊打兩下，2026-11-20）
+    return f"傷害 {low}~{high}{times}", more
 
 
 SPLIT = "（每多一隻總量 +50%，再平分）"

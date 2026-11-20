@@ -86,10 +86,11 @@ SKILLS = {s.id: s for s in (
         duration=1800, flags=AffectFlag.PASS_DOOR, off_message="你覺得你的身體無法再穿透物品了。")),
     Skill("sanctuary", "聖光術", None, "buff", "ally", 0, 0.0, 0, 0.0, affect=dict(
         duration=1800, flags=AffectFlag.SANCTUARY, off_message="環繞你的神聖光圈從身上消失。")),
+    # 偵查隱形、偵查藏匿：10 分鐘（使用者 2026-11-20 改的，原本 30 分鐘；棕仙巷的小魔杖、粉紅藥劑放這兩個）
     Skill("detect_invis", "偵查隱形", None, "buff", "self", 0, 0.0, 0, 0.0, affect=dict(
-        duration=1800, flags=AffectFlag.DETECT_INVIS, off_message="你不再看到隱形的物體。")),
+        duration=600, flags=AffectFlag.DETECT_INVIS, off_message="你不再看到隱形的物體。")),
     Skill("detect_hidden", "偵查藏匿", None, "buff", "self", 0, 0.0, 0, 0.0, affect=dict(
-        duration=1800, flags=AffectFlag.DETECT_HIDDEN, off_message="你對四週的觀察力下降了。")),
+        duration=600, flags=AffectFlag.DETECT_HIDDEN, off_message="你對四週的觀察力下降了。")),
     # 減益：粉光讓隱形、藏匿都沒用，閃躲、AC ×0.9（stats.add_affects() 看旗標）
     Skill("faerie_fire", "灼熱火燄", None, "debuff", "single", 0, 0.0, 0, 0.0, affect=dict(
         duration=1800, flags=AffectFlag.FAERIE_FIRE, off_message="粉紅色的光圈從你身上消失。"),
@@ -193,11 +194,12 @@ SKILLS = {s.id: s for s in (
     Skill("plague", "瘟疫", Guild.STAFF, "debuff", "group", 1, 0.45, 6, 0.19, dot=dict(name="瘟疫", jumps=10, hurt="侵蝕")),
     Skill("death_knight", "死亡騎士", Guild.STAFF, "summon", "self", 0, 0.0, 6, 0.19,
           summon=dict(tier="elite", below=10, duration=120)),
-    # Lv5 各公會多一個（2026-11-20 使用者定的）：跟重擊、火球一模一樣，只有名字不同；升到 5 級自動學會（paths.GUILD_SKILLS），不用選路。
+    # Lv5 各公會多一個（2026-11-20 使用者定的）：強度跟重擊、火球一樣，但連打兩下（比率減半；火焰箭的燃燒比率加倍，總共跟火球一樣）；
+    # 升到 5 級自動學會（paths.GUILD_SKILLS），不用選路。
     # 放在最後面：技能名稱的縮寫照這個順序找，原本的縮寫（use p 是猛力斬、use fla 是火焰衝擊）才不會變
-    Skill("pummel", "猛擊", Guild.SWORD, "damage", "single", 1, 0.95, 6, 0.10, sure=True),
-    Skill("flame_arrow", "火焰箭", Guild.STAFF, "damage", "single", 1, 0.63, 6, 0.10, tag="燃燒",
-          dot=dict(name="燃燒", ratio=0.3, jumps=3, hurt="燒傷"), sure=True),
+    Skill("pummel", "猛擊", Guild.SWORD, "damage", "single", 2, 0.475, 6, 0.10, sure=True),
+    Skill("flame_arrow", "火焰箭", Guild.STAFF, "damage", "single", 2, 0.315, 6, 0.10, tag="燃燒",
+          dot=dict(name="燃燒", ratio=0.6, jumps=3, hurt="燒傷"), sure=True),
 )}
 KIND_NAMES = {"damage": "傷害", "heal": "治療", "buff": "增強", "debuff": "減弱", "control": "控制", "protect": "保護",
               "summon": "召喚", "passive": "被動"}   # 種類的中文（設計文件 §2.6 的 9 類）

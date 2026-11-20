@@ -8,12 +8,13 @@ from collections import Counter
 
 from .. import affects, death, equipment, inventory, names, objects, paths, skills, stats, zones
 from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act, notify
-from ..area import AFFECT_FLAG_NAMES, ATTACK_NAMES, ITEM_TYPE_NAMES, WEAPON_KIND_NAMES, AffectFlag, Apply, ItemColor
+from ..area import AFFECT_FLAG_NAMES, ATTACK_NAMES, ITEM_TYPE_NAMES, MIN_VNUM, WEAPON_KIND_NAMES, AffectFlag, Apply, ItemColor, vnum_range
 from ..characters import Position, arrive, characters, find_in_room
 from ..color import colorize
 from ..config import TICK_SECONDS
 from ..equipment import SLOT_NAMES, TWO_HANDED
 from . import items, system
+from .system import pad, width
 from ..npcs import Npc
 from ..players import online_players
 
@@ -427,3 +428,31 @@ def do_givemoney(ch, arg):
         return
     act("你給了$N【$t】枚金幣。", ch, victim, t=str(amount), to=TO_CHAR)
     act("$n給你【$t】枚金幣。", ch, victim, t=str(amount), to=TO_VICT)
+
+
+VNUMS_USED = "區域檔用掉的號碼（照號碼排；房間、生物、物品都在檔案自己的範圍裡）："
+VNUMS_FREE = "還沒用的號碼（新的區域檔可以用，1～{} 是保留的）：".format(MIN_VNUM - 1)
+VNUMS_FROM = "{} 以上"
+
+
+def do_vnums(ch, arg):
+    """vnums：列出伺服器載入的區域檔各自的號碼範圍（header.vnums），和中間還沒用的號碼（使用者 2026-11-20 要的：做新區域時挑範圍）。
+
+    只看伺服器載入的（areas/），區域編輯器還沒放進來的不算。號碼沒有上限，最後一段寫「N 以上」。
+    """
+    found = [(a.name, a.data) for a in (zones.world.areas if zones.world else [])]
+    found += [(name, data) for name, (_kind, data) in zones.templates.items()]
+    rows = sorted((vnum_range(data["area"]["header"]["vnums"]), name, data["area"]["header"]["title"]) for name, data in found)
+    spans = [f"{low}～{high}" for (low, high), _name, _title in rows]
+    w_span = max((width(s) for s in spans), default=0)
+    w_name = max((width(name) for _r, name, _t in rows), default=0)
+    lines = [VNUMS_USED]
+    lines += [f"  {pad(span, w_span)}  {pad(name, w_name)}  {title}" for span, (_r, name, title) in zip(spans, rows)]
+    lines.append(VNUMS_FREE)
+    start = MIN_VNUM
+    for (low, high), _name, _title in rows:
+        if start < low:
+            lines.append(f"  {start}～{low - 1}")
+        start = max(start, high + 1)
+    lines.append("  " + VNUMS_FROM.format(start))
+    ch.send("\n".join(lines) + "\n")

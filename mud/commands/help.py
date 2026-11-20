@@ -1,4 +1,4 @@
-"""help：只打 help 看分類和每一類的指令；help 分類 看這一類；help 指令 看說明（指令可以縮寫，規則跟打指令一樣）。
+"""help：只打 help 只看分類（使用者 2026-11-20 要的：首頁不列指令）；help 分類 看這一類的指令；help 指令 看說明（指令可以縮寫，規則跟打指令一樣）。
 指令找不到才找不是指令的說明（helps.topics，例如 help 屬性、help str：名字要打全名）。
 
 說明文字在 help/help.json（helps.py 讀檔、檢查）。標題後面的縮寫照指令表算，指令表改了也不會寫錯。
@@ -32,14 +32,14 @@ def visible(is_imm):
 
 
 def summary(is_imm):
-    """只打 help：每個分類一行，後面是這一類的指令。"""
+    """只打 help：只列分類，一個一行（使用者 2026-11-20 要的：指令要 help 分類 才看得到）；
+    不是指令的說明（topics，例如屬性）也列在最後，help 屬性 直接看內容（使用者要的）。"""
     cats = visible(is_imm)
-    w = max(width(c["name"]) for c in cats)
-    lines = ["說明的分類（help 分類 或 help 指令 看細節）："]
-    for c in cats:
-        names = [name for e in helps.entries if e["category"] == c["name"] for name in e["commands"]]
-        names += [t["names"][0] for t in helps.topics if t["category"] == c["name"]]
-        lines.append(f"  {pad(c['name'], w)}  {' '.join(names)}")
+    seen = {c["name"] for c in cats}
+    lines = ["說明的分類（help 分類 看這一類有哪些指令）："]
+    lines += [f"  {c['name']}" for c in cats]
+    lines += [f"  {t['names'][0]}" for t in helps.topics if t["category"] in seen]
+    lines.append("知道指令的名字，也可以直接 help 指令，例如 help kill。")
     return "\n".join(lines) + "\n"
 
 

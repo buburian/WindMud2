@@ -1084,6 +1084,13 @@
       "room_flags": 0,
       "sector": 1,
       "exits": {
+        "north": {
+          "description": "往北，城牆根下有一條爬滿藤蔓的窄巷，隱約聽得見細細的歌聲。\n",
+          "keywords": "",
+          "locks": 0,
+          "key": 0,
+          "to_room": 301
+        },
         "east": {
           "description": "往東是大街，路邊有個石砌的水槽，空氣裡有牲口的味道。\n",
           "keywords": "",
