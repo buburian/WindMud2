@@ -261,6 +261,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   `health`（`hea`，使用者 2026-11-20 要的：伺服器的健康度：開機多久、記憶體、CPU、系統負載、遊戲裡的數量、Lua 記憶體、版本（git 的版本號、Python、Lua、lupa）；
   `mud/health.py` 只用標準庫，讀不到的寫「看不到」（macOS 沒有 /proc，記憶體只有最高用量；正式機的 Linux 才有現在的），`__main__` 開機時 `health.mark_start()`，
   `lua.memory_used()`／`version()`；`tests/test_health.py` 只比標籤和格式，因為 CI 是 Linux、開發機是 macOS，看得到的值不一樣）、
+  `rstat [號碼或名字]`（`rs`，使用者 2026-11-20 要的，照 C 版 do_rstat）：房間的全部資料（`room_lines()`：區域檔、區域物件、地形、旗標、很暗、描述、可以細看、人物、地上、每個出口和門的狀態、腳本和變數）；找地方跟 goto 共用 `find_location()`，但 `create=False` 用 `zones.find_room()`，不會建立還沒建立的動態區域。
   `vnums`（`vn`，使用者 2026-11-20 要的：伺服器載入的區域檔（世界的 `zones.world.areas`、動態和副本的 `zones.templates`）各自的 `header.vnums`，照號碼排，再列中間還沒用的，最後「N 以上」）。
   **玩家的指令排在 imm 指令前面**：同字首的玩家指令會搶走 imm 指令的縮寫（之前加了 affects，imm 打 `a` 就變成 affects）。
   **`area`**（`a`，`system.do_area()`，使用者 2026-11-20 要的，照 C 版 areas）：世界（`zones.world.areas`）、動態和副本（`zones.templates`）全部的區域檔，
@@ -334,6 +335,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     模組在 `__init__` 裡叫 `help_command`（叫 help 會蓋掉 Python 內建的 `help()`）。
   `train <屬性> [點數]` 分配升級點數（`tr` 起才找得到，`t` 還是 tell），屬性可以寫 str 或中文。
   走路、look 這類指令 NPC 也能用（`command(npc, line)`）；reply、quit 只給玩家用（NPC 沒有 `reply`，quit 對它沒意義）。
+  **quit 要打完整**（使用者 2026-11-20 要的：分頁看完最後一頁、分頁已經結束，習慣按 q 就離開遊戲了）：`commands.FULL_WORD` 是要打完整的指令 → 提醒（照 C 版 do_qui），`run()` 最先看（q、qu、qui 只提醒、不觸發腳本），`help` 的縮寫也不寫（`shortest()`）。
   **`!`**（使用者要的，照 C 版 inlast）：`command()` 在分頁的按鍵（`pager.key()`）之後用 `again()` 把「!」開頭的一行換成 `Player.last_line`；
   有字的才記（只按 Enter、`!` 不記），所以腳本的 on_command 看到的是真的指令。指令表的 `!`（`do_again()`）只有還沒打過指令才跑到。
   `command()` 會在指令跑完後補送 `ch.prompt()`（斷線時不送）。**這個指令有送出訊息就先空一行再補 prompt**，只按 Enter 就直接補（使用者要的）：
@@ -525,6 +527,11 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   地底的伙房 9892，老伙夫（店主）賣粗麥餅、陶杯裝的茶（G）；牢房地上 O 一件灰色的破舊白袍。
   坑：陷阱房 9873、滑道 9885 往下是單向的，掉進牢房 9866（牢門從裡面打不開）、地窖 9883（鑰匙在門外的拷問者身上）；遊戲沒有撬鎖、撞門，
   所以這四間拿掉了舊版的 no_recall，一個人掉進去要靠 recall 出來。之後做了撬鎖、撞門再看要不要放回去。
+- **書商的地圖**（`mud/maps.py`，使用者 2026-11-20 要的，規則在玩家角色手冊「地圖」）：秋風城地圖店（3065）的書商只賣 5 張地圖（物品 3391、3394～3397，`MAPS` 是物品號碼 → 區域檔），
+  內容不是區域檔寫的，是 `objects.extra_descriptions()` 問 `maps.text()`、程式照房間和出口畫的（名字是物品的英文名字和「地圖」，`look_object()` 不用改）。
+  `rooms_to_draw()`：兩邊都通的東南西北出口（`two_way()`），室內（`RoomFlag.INDOORS`）只畫門口，畫通到別的區域的那幾片裡最大的（迷宮那片不通外面）；
+  `layout()`：東西相連同一排、南北相連同一欄（`Groups`），`axis()` 最長路徑再往鄰居中間拉；`clashes()`（撞在同一格、線穿過房間、交叉）每一種推法都試，留下問題最少、線最短的；推不開的交叉畫成＋。
+  第一次看時畫（秋風城約 0.03 秒），`zones.world` 換了才重畫。`tests/test_maps.py`。舊的手畫地圖、市民手冊拿掉了；在地圖店裡 `look 地圖` 先找到房間自己的（照 C 版）。
 - **棕仙巷**（`brownie.json`，動態區域（有人走進去才建立，使用者 2026-11-20 從世界區域改的），1～10 級，號碼 `[300, 399]`，使用者 2026-11-20 放進來的）：舊的小精靈村（`smurf1.are`，照卡通做的）轉過來，
   號碼全部加 200，名字和文字照世界觀（mud_design 的「棕仙巷」那節）改成原創的：西城門內側 3040 往北的藤蔓巷、小棕仙、半塌鐘樓裡的瘋煉金師和獨眼野貓。
   使用者定的物品（裝備等級 3）：眼鏡 int、草編小帽 dex、小斧頭 str、莓核項鍊 int 都寫 `main_affix`，掉落都是紫色 100%、另外橘色 5%

@@ -7,7 +7,8 @@ from pathlib import Path
 import pytest
 
 import mud.commands as commands
-from mud import fight, save, stats, zones
+from mud import doors, fight, save, stats, zones
+from mud.area import DoorState
 from mud.characters import characters
 from mud.color import colorize
 from mud.commands import imm, system
@@ -296,6 +297,45 @@ def test_goto_mistakes(line, want):
     boss = player("Boss", is_imm=True)
     commands.command(boss, line)
     assert body(boss) == want and boss.room is zones.world.rooms[101]
+
+
+# ---- rstat（使用者 2026-11-20 要的，照 C 版 do_rstat）----
+
+def test_rstat_here():
+    boss = player("Boss", is_imm=True)
+    assert commands.find("rs", is_imm=True) is imm.do_rstat and commands.find("r", is_imm=True) is not imm.do_rstat   # r 還是 reply
+    commands.command(boss, "rstat")
+    assert body(boss).split("\r\n") == [
+        "號碼 101  名稱 測試房間（南）", "區域檔 test.json（測試區域）  區域物件 世界", "地形 0 INSIDE  旗標 0  很暗 否",
+        "描述：", "這是測試區域南邊的房間。", "往北可以走到另一個房間。", "可以細看 牌子 sign", "人物 測試商人(101)、Boss", "地上 無",
+        "出口", "  北 → 102 測試房間（北）  門 木門 door DOOR(1) 鑰匙 無 開著  描述 往北看，是測試區域北邊的房間。", "腳本 無  變數 無"]
+    doors.set_state(zones.world.rooms[101], "north", DoorState.LOCKED)       # 門現在的狀態
+    commands.command(boss, "rstat")
+    assert "門 木門 door DOOR(1) 鑰匙 無 鎖著" in body(boss)
+
+
+def test_rstat_by_number_and_name_like_goto():
+    boss, ming = player("Boss", is_imm=True), player("Ming")
+    ming.room = zones.world.rooms[3001]
+    commands.command(boss, "rstat 3024")
+    text = body(boss)
+    assert text.startswith("號碼 3024  名稱 貧民區東端") and "  北 → 9850 施粥棚" in text
+    commands.command(boss, "rstat mi")
+    assert body(boss).startswith("號碼 3001  名稱 秋風城神殿大廳") and boss.room is zones.world.rooms[101]   # 只是看，人不動
+
+
+@pytest.mark.parametrize("line", ["rstat 99999", "rstat 201", "rstat 301", "rstat nobody"])
+def test_rstat_nowhere(line):
+    # 201 是副本（教學學院）、301 是還沒建立的動態區域（棕仙巷）：rstat 不建立它
+    boss = player("Boss", is_imm=True)
+    commands.command(boss, line)
+    assert body(boss) == "沒有這個地方。" and "brownie.json" not in zones.dynamic
+
+
+def test_rstat_is_for_imm_only():
+    ming = player("Ming")
+    commands.command(ming, "rstat")
+    assert body(ming) == "什麼？"
 
 
 def test_goto_stops_the_fight():

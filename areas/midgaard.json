@@ -8393,21 +8393,42 @@
       "script": null
     },
     {
-      "vnum": 3019,
-      "keywords": "creator stone",
-      "short": "造物魔法石",
-      "long": "一顆刻滿細小符文的造物魔法石。",
-      "item_type": 8,
-      "extra_flags": 64,
-      "wear_flags": 1,
+      "vnum": 3018,
+      "keywords": "wand shadow",
+      "short": "察影之杖",
+      "long": "一根漆黑細長的魔杖，能讓人看穿躲在暗處的身影。",
+      "item_type": 3,
+      "extra_flags": 66,
+      "wear_flags": 16385,
       "values": [
         0,
-        0,
-        0,
-        0
+        10,
+        10,
+        "detect_hidden"
       ],
-      "weight": 10,
-      "cost": 50000,
+      "weight": 3,
+      "cost": 48,
+      "affects": [],
+      "main_affix": null,
+      "extra_descriptions": [],
+      "script": null
+    },
+    {
+      "vnum": 3019,
+      "keywords": "wand truesight",
+      "short": "真視之杖",
+      "long": "一根杖頭嵌著透明水晶的魔杖，能讓人看見隱形的東西。",
+      "item_type": 3,
+      "extra_flags": 66,
+      "wear_flags": 16385,
+      "values": [
+        0,
+        10,
+        10,
+        "detect_invis"
+      ],
+      "weight": 3,
+      "cost": 48,
       "affects": [],
       "main_affix": null,
       "extra_descriptions": [],
@@ -9692,7 +9713,7 @@
         "breathe"
       ],
       "weight": 3,
-      "cost": 0,
+      "cost": 48,
       "affects": [],
       "main_affix": null,
       "extra_descriptions": [],
@@ -9720,32 +9741,6 @@
         {
           "keywords": "徽章 badge",
           "description": "粗鑄的銅徽章，正面是一把鏟子和一塊磚，\n背面刻著：『重建工會，一磚一瓦。』\n"
-        }
-      ],
-      "script": null
-    },
-    {
-      "vnum": 3349,
-      "keywords": "Hazaryae map",
-      "short": "哈薩亞大陸地圖",
-      "long": "一張照舊圖重抄的哈薩亞大陸地圖留在這兒。",
-      "item_type": 12,
-      "extra_flags": 0,
-      "wear_flags": 1,
-      "values": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "weight": 1,
-      "cost": 0,
-      "affects": [],
-      "main_affix": null,
-      "extra_descriptions": [
-        {
-          "keywords": "地圖 hazaryae map",
-          "description": "哈薩亞大陸（照龍焚之夜以前的舊圖重抄）\n　　　　　　　　　　　　　　　　Ｄ\n　　　　　　　　　　　　　　　　｜\n　　　　　　　　　　　　　　　　口－口\n　　　　　　　　　　　　　　　　　　｜\n　　口－口－Ｈ　　　　　　　口－口－口－口－口－口－口－Ｆ\n　　　　｜　　　　　　　　　｜　　　｜　　　　　　　｜\n　　　　口　　　　　Ｋ－口－口　　　口　　　　　　　口　        Ｎ－口－Ｊ\n　　　　｜　　　　　　　｜　　　　　｜　　　　　　　｜\n　　　　口－口－口－口－口　　　　　口－口　　　　　口－口－口　　　　　Ｃ\n　　　　　　｜　　　　　　　　　　　　　｜　　　　　｜　｜　｜　　　　　｜\n　　口－口－口－Ｌ　　　　　　　　　　　口　　　　　口－口－口－口－口－口\n　　｜　　　　　　　　　　　　　　　　　｜　　　　　　　　　｜　　　　　｜\nＩ　口　　　　　　　　　　　　　　　　　口　　　　　　　　　口－口　　　Ｎ\n｜　｜　　　　　　　　　　　　　　　　　｜　　　　　　　　　　　｜\n口－口　　　　　Ｂ　口－口－口－口－口－Ｅ　　　　　口－口－口－口\n　　｜　　　　　｜　｜　｜　　　　　　　｜　　　　　｜\n　　口－口－口－口－口　Ｍ　　　　　口－口　　　　　口\n　　　　　　　　　　　　　　　　　　｜　　　　　　　｜\n　　　　　　　口　口　　　　　　　　口　　　Ｇ　　　口－口\n　　　　　　　｜　｜　　　　　　　　｜　　　｜　　　　　｜\n　　　　　口－口－口－Ｋ　　　　　　口－口－口－口－口－口\n　　　　　｜　　　　　　　　　　　　　　｜\n　　　Ｌ－口　　　　　　　　　　　　　　Ａ\n　　　　　｜\n　　　　　口                        Ａ:哈撒亞城\n　　　　　｜                        Ｂ:卡莎城\n　　　　　口                        Ｃ:辛德利那城\n　　　　　｜                        Ｄ:洛特城\n　　　　　口－口                    Ｅ:法蘭城\n　　　　　｜　｜                    Ｆ:戴維爾之家\n　　　　　口　口                    Ｇ:夢幻仙境\n　　　　　｜　｜                    Ｈ:蠻荒叢林\n　　　　　Ｂ　口－口　Ｍ            Ｉ:殺手堡\n　　　　　　　　　｜　｜            Ｊ:天橋(往東通往城西森林)\n　　　　　　　　　口－口\n　　　　　　　　　　　｜\n　　　　　　　　　　　口\n圖上同一個字母的地方，彼此是相連的。\n角落有一行後人用炭筆補的小字：『天橋還走得過去，有些城鎮近況不明。』\n"
         }
       ],
       "script": null
@@ -10214,84 +10209,6 @@
       "script": null
     },
     {
-      "vnum": 3368,
-      "keywords": "desert map",
-      "short": "沙漠地圖",
-      "long": "一張墨色還新的沙漠地圖留在這兒。",
-      "item_type": 12,
-      "extra_flags": 0,
-      "wear_flags": 1,
-      "values": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "weight": 1,
-      "cost": 0,
-      "affects": [],
-      "main_affix": null,
-      "extra_descriptions": [
-        {
-          "keywords": "地圖 desert map",
-          "description": "沙漠\n　 口－口－Ｄ\n　　｜\n＃－＃－＃－＃－＃　　＃沙丘（路每天都會變）\n｜　｜　｜　｜　　　　Ａ城北平原\n＃－＃－＃－＃－＃　　Ｂ往下通往山區\n｜　｜　｜　｜　　　　Ｃ東方大沙漠\n＃－＃－Ｂ－Ｃ　＃　　Ｄ銀月之都\n｜　｜　｜　｜\n＃－＃－＃－＃－＃\n｜　｜　｜　｜　｜\n＃－＃－＃－＃－＃\n　　｜\n　　口\n　　｜\n　　Ａ\n邊上補著一行字：『帶夠水。這張圖畫好以後，沙丘又往東移了不少。』\n"
-        }
-      ],
-      "script": null
-    },
-    {
-      "vnum": 3369,
-      "keywords": "mountain map",
-      "short": "山區地圖",
-      "long": "一張摺痕很深的山區地圖留在這兒。",
-      "item_type": 12,
-      "extra_flags": 0,
-      "wear_flags": 1,
-      "values": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "weight": 1,
-      "cost": 0,
-      "affects": [],
-      "main_affix": null,
-      "extra_descriptions": [
-        {
-          "keywords": "地圖 mountain map",
-          "description": "山區（舊圖重抄）\n　　　　　　　　　　　　　　　　　　　　　Ｈ　Ｉ－口－口－Ｊ\n　Ｒ往下通往Ｓ　　　　　　　　　　　　　　｜　　　　　｜\n　Ｔ摩黎多王國　　　　　　　　　　　　　　Ｇ　Ｆ　　　口\n　Ｕ往下通往城北平原　　　　　　　　　　　　　｜　　　｜\n　　　　　　　　　　　　　　　　　　　　　口－口　Ｒ－Ｋ\n　　　　　　　　　　　　　　　　　　　　　｜\n　　　　　　　　　　　口　　　　　口－口－口　　　　　Ｌ－口－口－口－口\n　　　　　　　　　　　｜　　　　　｜　　　　　　　　　　　　　　　　　｜\n　　　　　　　　　口－口－口－口－口－Ｔ　　　　　Ｅ－口　　　　　　　口\n　　　　　　　　　｜　　　　　　　　　　　　　　　　　　　　　　　　　｜\n　Ｕ－口－口－口　口－口　　　　　　　　　Ｃ　口－Ｄ－口－口－Ｓ　　　Ｍ\n　　　　　　　｜　　　｜　　　　　　　　　｜\n　　　　　　　口　　　口　　　　　　　口－口　　　　　　　Ａ城東森林\n　　　　　　　｜　　　｜　　　　　　　｜　｜　　　　　　　Ｂ三星宮殿\n　　　　　　　口－口－Ｑ－口　　　　　口－口－口　　　　　Ｃ往上通往Ｄ\n　　　　　　　　　　　　　｜　　　　　｜  ｜  ｜　　　　　Ｄ往下通往Ｃ\nＯ　　　　　　　　　　　　口－口－口－口－口－口－口－Ｂ　　往上通往Ｅ\n｜　　　　　　　　　　　　　　　　　　｜  ｜  ｜  ｜　　　Ｅ往下通往Ｄ\n口－口　　　　　　　　　　　　　　　　口－口－口－口　　　　往上通往Ｆ\n｜　　　　　　　　　　　　　　　　　　｜  ｜  ｜  ｜　　　Ｆ往下通往Ｅ\n口　　　　　　　　　　　　　　　　　　口－口－口－口　　　　往上通往Ｇ\n｜　　　　　　　　　　　　　　　　　　｜  ｜  ｜  ｜　　　Ｇ往下通往Ｆ\n口　　　　　　　　　　　　　　　　　　口－口－口　口　　　Ｈ往上通往Ｉ\n｜　　　　　　　　　　　　　　　　　　　　　　　　｜    　Ｉ往下通往Ｈ\n口　　　　　　　　　　　　　口－口－口　　　　　　Ａ      Ｊ冰泊王國\n｜　　　　　　　　　　　　　　　　　｜　　　　　　　　　　Ｋ往下通往Ｌ\n口              Ｐ                  口－口－口－Ｎ　　　　Ｌ往上通往Ｋ\n｜              ｜                  ｜　　　　　　　　　　Ｍ往下通往Ｎ\n口　　　　　　　口－口－口－口－口－口　　　　　　　　　　Ｎ往上通往Ｍ\n｜              ｜　　　　　　　　　　　　　　　　　　　　Ｏ往上通往沙漠\n口　　　　　　　口　　　　　　　　　　　　　　　　　　　　Ｐ往上通往Ｑ\n｜　　　　　　　｜　　　　　　　　　　　　　　　　　　　　Ｑ往下通往Ｐ\n口－口－口－口－口\n圖角有人用紅筆寫著：『冬天別走高處的山道，雪會把路蓋掉。』\n"
-        }
-      ],
-      "script": null
-    },
-    {
-      "vnum": 3370,
-      "keywords": "highmountain map",
-      "short": "高山區地圖",
-      "long": "一張畫在羊皮上的高山區地圖留在這兒。",
-      "item_type": 12,
-      "extra_flags": 0,
-      "wear_flags": 1,
-      "values": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "weight": 1,
-      "cost": 0,
-      "affects": [],
-      "main_affix": null,
-      "extra_descriptions": [
-        {
-          "keywords": "地圖 highmountain map",
-          "description": "高山區（畫在一張羊皮上）\n　 　　　　　 　　　　　　　　　　　　　　　　　　　Ａ:春玉湖泊區\n　　 　　　 　　　　　　　　　　　　　　　　　　　　Ｂ:往上通往Ｆ\n　　 　　 　　　　　　　　　　　　　　　　　　　　　Ｃ:往上通往Ｇ\n　　　  　　　　　　　　　　　　　　　　　　　　　　Ｄ:往上通往Ｈ\n 　 Ｅ　　　　　　　口－口－口－口－Ｈ　　　　　　　Ｅ:高原區\n 　 ｜　　　　　　　｜　　　　　　　｜　　　　　　　Ｆ:往下通往Ｂ\n　  口－口－口－Ｄ　口　　　　　　　口　口－口－口　Ｇ:往下通往Ｃ\n  　｜　　　　　｜　｜　　　　　　　｜　｜　　　｜　Ｈ:往下通往Ｄ\nＡ－口　　　　　口　Ｉ　　　　　　　Ｊ　Ｋ－口　Ｌ　Ｉ:往上通往Ｋ\n　　｜　　　　　｜　｜　　　　　　　｜　｜　　　｜  Ｊ:往上通往Ｌ\n　　口　　　　　口　口　　　　　　　口　口－口－口　Ｋ:往下通往Ｉ\n　　｜　　　　　｜　｜　　　　　　　｜　　　　　　　Ｌ:往下通往Ｊ\n　　Ｂ－口－口－Ｃ　Ｆ－口－口－口－Ｇ\n畫圖的人在空白處寫著：『腳底踩穩。』\n"
-        }
-      ],
-      "script": null
-    },
-    {
       "vnum": 3371,
       "keywords": "ring diamond wedding",
       "short": "鑽石結婚戒指",
@@ -10339,48 +10256,6 @@
         {
           "keywords": "指環 band gold wedding",
           "description": "扁平的黃金指環，內側刻著：『永摯不渝』。\n金子是拿灰燼裡撿回來的舊首飾重新熔鑄的。\n"
-        }
-      ],
-      "script": null
-    },
-    {
-      "vnum": 3373,
-      "keywords": "citizen notebook",
-      "short": "秋風城市民手冊",
-      "long": "一本重建議會印的秋風城市民手冊留在這兒。",
-      "item_type": 12,
-      "extra_flags": 0,
-      "wear_flags": 1,
-      "values": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "weight": 1,
-      "cost": 300,
-      "affects": [],
-      "main_affix": null,
-      "extra_descriptions": [
-        {
-          "keywords": "目錄 citizen notebook",
-          "description": "你翻開第一頁，就看到這本手冊的目錄：\n　　城內地圖　　 ----------- citymap\n　　大眾廣場一帶 ----------- square\n　　公會導師傳說 ----------- legend\n　　算命廣告　　 ----------- fortune\n封面內頁蓋著重建議會的印：「秋風城市民手冊，重建議會印製。」\n"
-        },
-        {
-          "keywords": "城內地圖 citymap",
-          "description": "秋風城城內地圖（重建議會製作）\n                            神殿祭壇\n                                |\n馬車停靠站--馬車站---------秋風城神殿---------公會保管庫\n                                |\n            牧師公會--------神殿廣場----------野豬酒吧（樓上錢莊）\n                                |\n        魔法店    麵包店        |       雜貨店    武器店  召喚師公會\n           |         |          |          |         |        |\n西城門---大街------大街-------市場-------大街------大街-----東城門--城外\n  |        |         |          |          |         |\n城牆路 魔法公會   護甲店        |       珠寶店   戰士公會\n  |                             |\n  |     毛皮店              秋風廣場 地圖店   寵物店 造物師公會\n  |       |                     |       |        |        |\n城牆路--貧民區--貧民區東端--公共廣場--暗巷--暗巷交叉口--暗巷--暗巷盡頭\n  |       |         |           |       |        |                |\n  |   豪賭賭坊  貧民旅店      垃圾場 盜賊公會 格鬥家公會     廢棄的倉庫\n  |                             |\n  |                           碼頭\n斷橋 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 秋風河 ~~~~~~~~~~~~~~~~~~~~~~~\n  |\n大眾廣場  （市長辦公室、守衛隊、灰燼園都在這一帶）\n說明：神殿廣場中央立著龍骨拱門；市場和公共廣場範圍很大，圖上只畫成一格。\n　　　英雄公會在公共廣場的東北角往北。\n　　　出西城門往北，有一條古老小徑繞著北城牆，通到東城門外。\n（注意：線條只表示相互間的關係。地圖的上方為北方。）\n"
-        },
-        {
-          "keywords": "大眾廣場 square",
-          "description": "給本市的來訪者：\n　　從西城門內側沿著城牆路往南走，過了斷橋就是大眾廣場一帶。這裡沒有什麼商\n店，但仍在秋風城城牆的保護之內。市長辦公室在焦木大道東邊的市政廳裡，城市守\n衛隊長的營舍也在附近。焦木大道兩旁只剩焦黑的樹幹，苗圃裡新種的小樹還不到人\n的腰。\n　　從前的公園現在叫灰燼園，一半是墓園，一半開墾成了菜園。園裡的池塘還在，\n咖啡廳也重新開張了，只是咖啡大半是烤大麥煮的。灰燼園南邊是秋風城公立墓園，\n常有人信誓旦旦地說看見有人拿著鐮刀在墓園上空飛，轉眼就不見了；甚至有人說墓\n園裡有吸血鬼，不過都沒有經過證實。\n　　墓園的南方有一座教堂，平常處理墓園的瑣事。坊間傳說那是一座幽靈教堂，謠\n言傳到最後，還說教堂底下有邪惡出沒的墓穴，實在誇張。希望這些事不會影響各位\n來訪者對本市的印象。\n　　PS：焦木大道和公園路交會的十字路口，地上的鐵環拉著一條大鐵鍊，直直伸進\n雲裡。據說這條鐵鍊通往雲上的城堡，還有人首鳥守護著。在我們調查清楚之前，請\n各位旅客不要爬上鐵鍊，以策安全。\n　　　　　　　　　　　　　　　　　　　　　　　　　　　秋風城 城市守衛 箋\n"
-        },
-        {
-          "keywords": "傳說 legend",
-          "description": "『公會導師傳說』（流傳了上百年，真假請自行判斷）\n 1.傳說中凱特神殿騎士團的團長，擁有衝鋒的秘技。\n 2.冰伯王國中有位恐怖的劍客，擁有武士劍技。\n 3.俠客不傳之技，流落在凱特神殿一位不凡的劍士手中。\n 4.身著銀色鎧甲的偉大騎士，擁有恐怖的聖劍技。\n 5.大法師導師隱居在薩雷斯鎮中。\n 6.翡翠城中住著一位擅寫定身咒的魔法師。\n 7.統治高塔的女皇，擁有史上最強的法術。\n 8.奧夫卡鎮內住著秘龍術士。\n 9.傳說中的殺手，隱匿在高地之內。\n10.綠野鎮的盜賊首領，擁有分身的秘技。\n11.精靈森林中有一位美麗的吟遊詩人。\n12.凡特西城中的歌女，能跳出如火焰般的舞蹈。\n13.正義的大祭司，擁有祭司的秘術。\n14.神官導師住在法皇廳中。\n15.希雷郡住著一位獸化導師。\n16.卍卸拳法，乃是少林寺不傳之祕。\n17.隱匿在陰暗大地的魔神，持有逆天之力。\n18.威力強大的死靈法師，藏身在陰暗墓穴的深處。\n19.掌控閃電的統治者，受到精靈之神的加護。\n頁邊有人用炭筆補了一行：『龍焚之後，這些人還在不在、還肯不肯教，沒人說得準。』\n"
-        },
-        {
-          "keywords": "算命 fortune",
-          "description": "嘿！你想算命嗎？\n　　　　想知道你將來的運勢嗎？\n　　　　　　　　想更了解你自己嗎？\n快來我們這邊，最棒的吉普賽人會用水晶球幫你算命！\n我們的篷車就停在毛皮店的西南方，快來，我們等你喔。\n算一次一個銅板，也收麵包。\n"
         }
       ],
       "script": null
@@ -10773,9 +10648,9 @@
     },
     {
       "vnum": 3391,
-      "keywords": "marsh map",
-      "short": "沼澤地帶地圖",
-      "long": "一張邊角發潮的沼澤地帶地圖留在這兒。",
+      "keywords": "city map",
+      "short": "秋風城地圖",
+      "long": "一張秋風城地圖留在這兒，大街小巷都畫得清清楚楚。",
       "item_type": 12,
       "extra_flags": 0,
       "wear_flags": 1,
@@ -10789,64 +10664,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
-      "extra_descriptions": [
-        {
-          "keywords": "地圖 marsh map",
-          "description": "沼澤地帶（位於城西森林南方）\n　　　　Ａ\n　　　　｜　　　　　　　　　　　Ａ城西森林\nＢ　　　口－口　　　口　　　　　Ｂ魔幻高塔\n｜　　　　　｜　　　｜　　　　　Ｃ遠古沼澤\n口－口－口－口－口－口－－－口\n　　｜　｜　　　｜　　　　　｜\n　　口－口－口－口－口　　　口－口\n　　｜　　　｜　　　｜　　　｜\n口－口－口－口－口－口－口－口\n　　　　｜　　　｜　　　　　｜\n　　　　口－口  口－－－－－口－口\n　　　　　　｜\n　　　　　　Ｃ\n圖邊有人補了一句：『這一帶的泥沼會吃人，踩不到底的地方別走。』\n"
-        }
-      ],
-      "script": null
-    },
-    {
-      "vnum": 3392,
-      "keywords": "plateau map",
-      "short": "高原區地圖",
-      "long": "一張新畫的高原區地圖留在這兒。",
-      "item_type": 12,
-      "extra_flags": 0,
-      "wear_flags": 1,
-      "values": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "weight": 1,
-      "cost": 0,
-      "affects": [],
-      "main_affix": null,
-      "extra_descriptions": [
-        {
-          "keywords": "地圖 plateau map",
-          "description": "高原區（位於城東森林東南方）\n　　Ａ　　　　　　　　　　　　　　　　　Ａ城東森林\n　　｜　　　　　　　　　　　　　　　　　Ｂ往上通往Ｃ\n　　口　　　　　　　　　　　　　　　　　Ｃ往下通往Ｂ\n　　｜　　　　　　　　　　　　　　　　　Ｄ往下通往Ｅ\n　　口－Ｂ　口－Ｃ　　　口－口－口－Ｈ　Ｅ往上通往Ｄ\n　　　　　　｜　　　　　｜  ｜  ｜　　　Ｆ高山區\n　　口－口－口－口－口－口－口　｜　　　Ｇ東往龍塔\n　　｜　｜　｜　｜　　　｜　　　｜　　　Ｈ劍士英魂塚\n口　｜　口　｜　口－－－口－口－口\n｜　｜　｜　｜　｜　　　　　　　｜\n口－口－口　口　口－口－口　　　口　Ｅ－口\n｜　｜　｜　｜　｜　　　｜　　　｜　　　｜\n口　｜　口　｜　口－－－口－口－口　　　口\n　　｜　｜　｜　　　　　｜　｜　｜　　　｜\n　　口－口－口－口－口－口－口　｜　　　口\n　　　　｜　　　｜　　　　　　　｜　　　｜\n　　　　口－口－Ｄ－－－－－－－口－Ｇ　Ｆ\nＧ那一行字被人用刀狠狠劃過幾道，還認得出寫的是「東往龍塔」。\n"
-        }
-      ],
-      "script": null
-    },
-    {
-      "vnum": 3393,
-      "keywords": "Seching map",
-      "short": "西京大陸地圖",
-      "long": "一張重抄過的西京大陸地圖留在這兒。",
-      "item_type": 12,
-      "extra_flags": 0,
-      "wear_flags": 1,
-      "values": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "weight": 1,
-      "cost": 0,
-      "affects": [],
-      "main_affix": null,
-      "extra_descriptions": [
-        {
-          "keywords": "地圖 seching map",
-          "description": "西京大陸（舊圖重抄）\n                口－口\n                ｜\n            口－口          口                  Ａ:西京城\n            ｜              ｜                  Ｂ:花園新城\n            口          口－口－口              Ｃ:神聖森林\n            ｜          ｜                      Ｄ:巨人洞穴\nＩ－口－口－口－口      口                      Ｅ:泰洛市\n                ｜      ｜                      Ｆ:神聖國度\n                口－口－口－口－口－口－Ａ      Ｇ:失落的騎士堡壘\n                ｜          ｜                  Ｈ:雲門礦山\n                口      Ｆ  口                  Ｉ:鐵門要塞\n                ｜      ｜  ｜                  Ｊ:沙城\nＪ－口－口－口－口      口－口－口＞Ｂ      口\n                ｜      ｜      ｜          ｜\n                口－口－口－Ｇ  口          口\n                        ｜      ｜          ｜\n                        口      口－口－口－口－Ｃ\n                        ｜      ｜          ｜\n        Ｈ－口－口－口－口      Ｄ          Ｅ\n圖背面寫著：往西京的馬車還在跑，只是路難走，車伕都會叫客人帶著這張圖。\n"
-        }
-      ],
+      "extra_descriptions": [],
       "script": null
     },
     {
@@ -10867,12 +10685,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
-      "extra_descriptions": [
-        {
-          "keywords": "地圖 westforest map",
-          "description": "城西森林\n                        Ａ      Ｈ\n                        ｜      ｜          Ａ:夢幻森林\n        Ｋ－口－口－口－口－口－口          Ｂ:天橋(往西通往哈撒亞大陸)\n            ｜  ｜  ｜  ｜      ｜          Ｃ:希雷郡\n        口－口－口  口  口－口－口  Ｃ      Ｄ:秋風城\n        ｜      ｜  ｜      ｜      ｜      Ｅ:小惡鬼森林\nＢ－口－口      口－口－－－口－口－口－Ｄ  Ｆ:沼澤地帶\n　  ｜  ｜      ｜  ｜      ｜  ｜  ｜      Ｇ:水晶湖\n　  ｜  口－口－口  口－口－口  口－口      Ｈ:糖果鎮\n　  ｜      ｜  ｜      ｜      ｜  ｜      Ｉ:牛頭人要塞\n　  口－－－口－口  口－口－口  ｜  Ｅ      Ｊ:綠野鎮\n　  ｜      ｜  ｜  ｜      ｜  ｜          Ｋ:芙萊王國\n    Ｉ      Ｌ  口－口      口－口－口＞Ｊ  Ｌ:凱特神殿\n　                  ｜      ｜      ｜\n  　                口－口－口－－－口\n    　              ｜              ｜\n                    Ｆ              Ｇ\n圖背面有人記著：『林子裡的路，下過雨就認不得了，記得看樹上的刀痕。』\n"
-        }
-      ],
+      "extra_descriptions": [],
       "script": null
     },
     {
@@ -10893,12 +10706,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
-      "extra_descriptions": [
-        {
-          "keywords": "地圖 eastforest map",
-          "description": "城東森林\n        Ａ                          Ｃ\n        ｜                          ｜\n        口                  口      口             Ａ:侏儒村\n        ｜                  ｜      ｜             Ｂ:秋風城\n        口－口          Ｇ－口－口－口－口－Ｈ     Ｃ:山區\n            ｜              ｜  ｜  ｜  ｜         Ｄ:天橋(往東通往西京城)\n            口              口－口－口－口         Ｅ:高原區\n            ｜              ｜  ｜  ｜  ｜         Ｆ:往下通往Ｊ\n            口              口－口  口  口         Ｇ:凡特希城\n            ｜              ｜  ｜  ｜  ｜         Ｈ:巴比倫塔\nＢ－口－口－口      口－口－口－口－口－口         Ｉ:精靈森林\n            ｜      ｜                  ｜         Ｊ:往上通往Ｆ\n            口－Ｉ  ｜                  Ｐ         Ｋ:矮人王國\n            ｜      ｜                  ｜         Ｌ:矮人育嬰中心\n            口      ｜          口－口－口－口－口 Ｍ:往下通往Ｎ\n            ｜      ｜          ｜              ｜ Ｏ:往上通往Ｐ\n       Ｋ   口      ｜          口              口\n       ｜   ｜      ｜          ｜              ｜\n       Ｊ   Ｆ－－－口－口－Ｍ－口－口      口－口\n       ｜                           ｜      ｜\n       Ｌ                   Ｎ      口      口－口－口－口－Ｄ\n                            ｜      ｜      ｜\n                        口－口      口－口－口\n                            ｜      ｜\n                            口      Ｅ\n                            ｜\n                            口－口－Ｏ\n有幾段路線用紅墨重描過，那是英雄公會護送商隊走的路。\n"
-        }
-      ],
+      "extra_descriptions": [],
       "script": null
     },
     {
@@ -10919,12 +10727,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
-      "extra_descriptions": [
-        {
-          "keywords": "地圖 northplain map",
-          "description": "城北平原\n                    Ａ   Ａ:沙漠\n                    ｜   Ｂ:山區\n                    口   Ｃ:天橋(往北通往格蘭帝亞大陸)\n                    ｜\n                口－口                  Ｃ      Ｄ:矮人天印村\n                    ｜                  ｜      Ｅ:秋風城\n口－Ｈ              口－口      口－口－口  Ｇ  Ｆ:往上通往創世紀\n    ｜                  ｜      ｜  ｜      ｜  Ｇ:新奧夫卡\n    口－口－口－口－口－口－口－口  口－口－口  Ｈ:往下通往高地\n    ｜                  ｜      ｜      ｜  ｜\n    口                  口      口      口  口－口\n    ｜                  ｜      ｜      ｜\n    口                  口－Ｆ－口      口\n    ｜                  ｜              ｜\nＤ－口                  口          口－口－口－口－Ｂ\n                        ｜          ｜  ｜\n                        口－口－口－口－口\n                            ｜\n                            口\n                            ｜\n                            Ｅ\n背面記著幾處還能打水的井。最上面有人加了一句：\n『每年秋天北邊的天空會泛紅，那時候別往北走太遠。』\n"
-        }
-      ],
+      "extra_descriptions": [],
       "script": null
     },
     {
@@ -10945,64 +10748,7 @@
       "cost": 0,
       "affects": [],
       "main_affix": null,
-      "extra_descriptions": [
-        {
-          "keywords": "地圖 river map",
-          "description": "河流區（位於秋風城南方）\n            Ｄ                  Ａ      Ａ:秋風城\n            ｜                  ｜      Ｂ:往下通往涅盤大地\n        口－口－口  口－口      口      Ｃ:春玉湖泊區\n        ｜      ｜  ｜  ｜      ｜      Ｄ:天狼谷\n    Ｅ－口      口－口－口      口－口  Ｅ:往下通往死界\n        ｜              ｜      ｜  ｜\n口－口－口－口－口－口－口      口－口\n    ﹀                  ｜      ｜  ｜\nＢ＜口＞口              口  口－口  口\n                        ｜  ｜      ｜\n                    口－口－口      口－Ｃ\n                    ｜  ｜\n                    口－口\n圖的一角被水泡過，墨跡暈開，後來有人照著原樣描了一遍。\n"
-        }
-      ],
-      "script": null
-    },
-    {
-      "vnum": 3398,
-      "keywords": "laker map",
-      "short": "春玉湖泊區地圖",
-      "long": "一張春玉湖泊區地圖留在這兒，湖面塗著淡淡的藍。",
-      "item_type": 12,
-      "extra_flags": 0,
-      "wear_flags": 1,
-      "values": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "weight": 1,
-      "cost": 0,
-      "affects": [],
-      "main_affix": null,
-      "extra_descriptions": [
-        {
-          "keywords": "地圖 laker map",
-          "description": "春玉湖泊區\n            口                      Ａ:河流區\n            ｜                      Ｂ:水晶聖殿\n        口－口－口－Ｂ              Ｃ:高山區\n        ｜  ｜  ｜                  Ｄ:冰山區\nＡ－口－口－口－口－口－口－口－Ｃ\n        ｜  ｜  ｜  ｜\n        口－口－口  口\n            ｜\n            Ｄ\n湖面塗著淡淡的藍。邊上有人補了一句：『湖水冰得刺骨，別下去游。』\n"
-        }
-      ],
-      "script": null
-    },
-    {
-      "vnum": 3399,
-      "keywords": "icemountain map",
-      "short": "冰山區地圖",
-      "long": "一張冰山區地圖留在這兒，路線只畫了一半。",
-      "item_type": 12,
-      "extra_flags": 0,
-      "wear_flags": 1,
-      "values": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "weight": 1,
-      "cost": 0,
-      "affects": [],
-      "main_affix": null,
-      "extra_descriptions": [
-        {
-          "keywords": "地圖 icemountain map",
-          "description": "冰山區（只畫了一半）\n                    Ａ\n                    ｜           Ａ:春玉湖泊區\n                    口           Ｂ:小避難港\n                    ｜           Ｃ:鬼盜海\n            口－口－口－口－口\n            ｜      ｜  ｜  ｜\n    Ｃ      口－口  口  口－口\n    ｜          ｜  ｜      ｜\nＢ＜口－口－口－口－口  口－口\n            ｜          ｜\n            口          口\n再往外的路，畫圖的人沒走過，只寫了一個字：『冷』。\n"
-        }
-      ],
+      "extra_descriptions": [],
       "script": null
     }
   ],
@@ -11098,8 +10844,17 @@
       "obj_vnum": 3019,
       "color": null,
       "level": 5,
-      "limit": 5000,
-      "comment": "creator stone"
+      "limit": 500,
+      "comment": "Give wand of detect invisible."
+    },
+    {
+      "cmd": "G",
+      "rare": 1,
+      "obj_vnum": 3018,
+      "color": null,
+      "level": 5,
+      "limit": 500,
+      "comment": "Give wand of detect hidden."
     },
     {
       "cmd": "*",
@@ -12717,56 +12472,11 @@
     {
       "cmd": "G",
       "rare": 1,
-      "obj_vnum": 3373,
+      "obj_vnum": 3397,
       "color": null,
       "level": 5,
       "limit": 0,
-      "comment": "citizen notebook"
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3391,
-      "color": null,
-      "level": 5,
-      "limit": 0,
-      "comment": "marsh map"
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3392,
-      "color": null,
-      "level": 5,
-      "limit": 0,
-      "comment": "plateau map"
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3393,
-      "color": null,
-      "level": 5,
-      "limit": 0,
-      "comment": "Seching map"
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3394,
-      "color": null,
-      "level": 5,
-      "limit": 0,
-      "comment": "westforest map"
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3395,
-      "color": null,
-      "level": 5,
-      "limit": 0,
-      "comment": "eastforest map"
+      "comment": "river map"
     },
     {
       "cmd": "G",
@@ -12780,65 +12490,29 @@
     {
       "cmd": "G",
       "rare": 1,
-      "obj_vnum": 3397,
+      "obj_vnum": 3395,
       "color": null,
       "level": 5,
       "limit": 0,
-      "comment": "river map"
+      "comment": "eastforest map"
     },
     {
       "cmd": "G",
       "rare": 1,
-      "obj_vnum": 3398,
+      "obj_vnum": 3394,
       "color": null,
       "level": 5,
       "limit": 0,
-      "comment": "laker map"
+      "comment": "westforest map"
     },
     {
       "cmd": "G",
       "rare": 1,
-      "obj_vnum": 3399,
+      "obj_vnum": 3391,
       "color": null,
       "level": 5,
       "limit": 0,
-      "comment": "icemountain map"
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3370,
-      "color": null,
-      "level": 5,
-      "limit": 0,
-      "comment": "highmountain map"
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3369,
-      "color": null,
-      "level": 5,
-      "limit": 0,
-      "comment": "mountain map"
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3368,
-      "color": null,
-      "level": 5,
-      "limit": 0,
-      "comment": "desert map"
-    },
-    {
-      "cmd": "G",
-      "rare": 1,
-      "obj_vnum": 3349,
-      "color": null,
-      "level": 5,
-      "limit": 0,
-      "comment": "Hazaryae map"
+      "comment": "city map"
     },
     {
       "cmd": "*",

@@ -88,6 +88,7 @@ IMM_COMMANDS = [
     ("givemoney", imm.do_givemoney, P.DEAD),    # give 還是 give，givem 才是 givemoney
     ("vnums", imm.do_vnums, P.DEAD),            # vn（v 還是 value）：區域檔的號碼範圍和還沒用的
     ("health", imm.do_health, P.DEAD),          # hea（h、he 還是 help）：伺服器的健康度
+    ("rstat", imm.do_rstat, P.DEAD),            # rs（r 還是 reply）：房間的全部資料
 ]
 
 # 姿勢不夠時的訊息（照 C 版 interp.c）
@@ -100,6 +101,10 @@ REFUSALS = {
     P.RESTING: "嗯... 你正在休息耶..。",
     P.FIGHTING: "不行!!你還在戰鬥狀態中!!",
 }
+
+# 要打完整的指令 → 只打開頭時的提醒（照 C 版 do_qui）。使用者 2026-11-20 要的：q 不小心按到就離開了，
+# 尤其分頁看完最後一頁、分頁已經結束了，習慣按 (q) 離開分頁，就變成離開遊戲。
+FULL_WORD = {"quit": "如果你想離開【quit】這個虛擬的世界，請拼出全名。"}
 
 
 def _first(word, is_imm):
@@ -172,6 +177,9 @@ def run(ch, line, verb, arg):
     if not line:
         return True
     name = command_name(verb, getattr(ch, "imm", False))
+    if name in FULL_WORD and verb != name:  # quit 要打完整（q、qu、qui 只提醒，腳本也不觸發）
+        ch.send(FULL_WORD[name] + "\n")
+        return True
     scripts.commanding.append(ch)           # 腳本給他的訊息當作這個指令的回覆（prompt 由 command() 補）
     try:
         # 腳本的 on_command：遊戲處理之前，房間先、再房間裡的生物；有一個擋住就不照平常處理（quit 擋不住，使用者選的）

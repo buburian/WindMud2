@@ -97,6 +97,14 @@ def test_q_stops_paging(ming):
     assert do(ming, "q") == normal_prompt(ming) and ming.pages is None
 
 
+def test_q_after_the_last_page_does_not_leave_the_game(ming):
+    # 使用者 2026-11-20 回報的：最後一頁送完分頁就結束了，習慣按 q 離開分頁，以前變成離開遊戲（quit 現在要打完整）
+    do(ming, "many 25")
+    do(ming, "")                                                                  # 最後一頁：分頁結束
+    assert commands.command(ming, "q") is True
+    assert plain(ming).startswith(commands.FULL_WORD["quit"])
+
+
 def test_typing_a_command_stops_paging_and_runs_it(ming):
     do(ming, "many 45")
     out = do(ming, "look")                                                        # 使用者選的：結束分頁，照常執行

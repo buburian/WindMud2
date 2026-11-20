@@ -7,9 +7,10 @@ import logging
 import time
 from collections import Counter
 
-from .. import affects, death, equipment, health, inventory, lua, names, objects, paths, skills, stats, zones
+from .. import affects, death, equipment, health, inventory, light, lua, names, objects, paths, skills, stats, zones
 from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act, notify
-from ..area import AFFECT_FLAG_NAMES, ATTACK_NAMES, ITEM_TYPE_NAMES, MIN_VNUM, WEAPON_KIND_NAMES, AffectFlag, Apply, ItemColor, vnum_range
+from ..area import (AFFECT_FLAG_NAMES, ATTACK_NAMES, DIRECTIONS, ITEM_TYPE_NAMES, MIN_VNUM, WEAPON_KIND_NAMES, AffectFlag, Apply,
+                    AreaType, ItemColor, RoomFlag, vnum_range)
 from ..characters import Position, arrive, characters, find_in_room
 from ..color import colorize
 from ..config import TICK_SECONDS
@@ -387,14 +388,7 @@ def do_goto(ch, arg):
     if not words:
         ch.send("去那兒？\n")
         return
-    word = words[0]
-    if word.isdecimal():
-        to = zones.room_at(ch.room, int(word))
-    else:
-        others = [c for c in characters if c is not ch]
-        who = (find_in_room(ch, word) or names.pick(online_players(), word, lambda c: c.names())
-               or names.pick(others, word, lambda c: c.names()))
-        to = who.room if who is not None else None
+    to = find_location(ch, words[0])
     if to is None:
         ch.send("沒有這個地方。\n")
         return
@@ -405,6 +399,68 @@ def do_goto(ch, arg):
     act(GOTO_ARRIVE, ch, to=TO_ROOM)
     ch.send(system.arrival(ch, before))
     log.info(f"{ch.name} goto 房間 {to.vnum}")
+
+
+def find_location(ch, word, create=True):
+    """goto、rstat 找地方（照 C 版 find_location）：號碼是那間房，名字是那個人所在的房間；找不到是 None。
+    號碼：create 是 zones.room_at()（先找自己所在的區域物件、再世界、再動態區域，還沒建立的動態區域會建立）；
+    不建立（rstat 只是看）用 zones.find_room()。副本的房間用號碼找不到，用人的名字。
+    名字：先找同房間的、再找線上的玩家、最後是遊戲裡所有的角色（開頭就行）。"""
+    if word.isdecimal():
+        return (zones.room_at if create else zones.find_room)(ch.room, int(word))
+    others = [c for c in characters if c is not ch]
+    who = (find_in_room(ch, word) or names.pick(online_players(), word, lambda c: c.names())
+           or names.pick(others, word, lambda c: c.names()))
+    return who.room if who is not None else None
+
+
+DOOR_STATES = {(False, False): "開著", (True, False): "關著", (True, True): "鎖著"}   # (closed, locked)
+
+
+def do_rstat(ch, arg):
+    """rstat [房間號碼或名字]：看房間的全部資料（使用者 2026-11-20 要的，照 C 版 do_rstat）。
+    沒打是自己所在的房間；號碼、名字的找法跟 goto 一樣，但不會建立還沒建立的動態區域（只是看）。"""
+    words = arg.split()
+    room = find_location(ch, words[0], create=False) if words else ch.room
+    if room is None:
+        ch.send("沒有這個地方。\n")
+        return
+    ch.send("\n".join(room_lines(room)) + "\n")
+
+
+def room_lines(room):
+    """rstat 的內容：照區域檔寫的（描述、出口的描述不轉顏色代碼），和現在的狀態（門、地上的東西、裡面的人、腳本的變數）。"""
+    header = room.area.data["area"]["header"] if room.area is not None else None
+    area_name = f"{room.area.name}（{header['title']}）" if header else "無"
+    zone = room.zone.name if room.zone is not None else "無"   # 世界是「世界」
+    if room.zone is not None and room.zone.kind != AreaType.WORLD:
+        owner = f"，擁有者 {room.zone.key[1]}" if room.zone.key else ""
+        zone = f"{system.AREA_KINDS[room.zone.kind]}（{room.zone.name}{owner}）"
+    flags = "|".join(f.name for f in RoomFlag if f in room.room_flags)
+    people = [c.name + (f"({c.vnum})" if isinstance(c, Npc) else "") for c in characters if c.room is room]
+    stuff = [f"{o.name}({o.vnum})" for o in room.contents]
+    lines = [f"號碼 {room.vnum}  名稱 {room.name}",
+             f"區域檔 {area_name}  區域物件 {zone}",
+             f"地形 {int(room.sector)} {room.sector.name}  旗標 {int(room.room_flags)}" + (f"（{flags}）" if flags else "")
+             + f"  很暗 {'是' if light.dark(room) else '否'}",
+             "描述：", room.description.rstrip("\n"),
+             "可以細看 " + ("、".join(" ".join(k) for k, _ in room.extra_descriptions) or "無"),
+             "人物 " + ("、".join(people) or "無"),
+             "地上 " + ("、".join(stuff) or "無"),
+             "出口" + ("" if room.exits else " 無")]
+    for d, to in room.exits.items():
+        there = zones.find_room(room, to) if room.zone is not None else None
+        line = f"  {DIRECTIONS[d]} → {to} {there.name if there else '（還沒建立或不在這裡）'}"
+        door = room.doors.get(d)
+        if door is not None:
+            line += (f"  門 {' '.join(door.keywords) or '（沒有名字）'} {door.locks.name}({int(door.locks)})"
+                     f" 鑰匙 {door.key or '無'} {DOOR_STATES[(door.closed, door.locked)]}")
+        description = room.exit_descriptions.get(d, "").rstrip("\n")
+        lines.append(line + (f"  描述 {description}" if description else ""))
+    script = f"{room.script.name}（timer {room.timer} 秒）" if room.script is not None and room.timer else (
+        room.script.name if room.script is not None else "無")
+    lines.append(f"腳本 {script}  變數 " + (json.dumps(room.vars, ensure_ascii=False) if room.vars else "無"))
+    return lines
 
 
 def do_givemoney(ch, arg):

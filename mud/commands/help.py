@@ -127,6 +127,8 @@ def kind_text(s):
 
 
 def shortest(cmd, is_imm):
-    """cmd 最短的縮寫（照指令表的順序，打這幾個字就會找到它）；沒有比全名短的是 None。"""
-    from . import command_name
+    """cmd 最短的縮寫（照指令表的順序，打這幾個字就會找到它）；沒有比全名短的、要打完整的（quit）是 None。"""
+    from . import FULL_WORD, command_name
+    if cmd in FULL_WORD:
+        return None
     return next((cmd[:n] for n in range(1, len(cmd)) if command_name(cmd[:n], is_imm) == cmd), None)

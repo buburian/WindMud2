@@ -8,7 +8,7 @@ import logging
 import math
 import random
 
-from . import area, equipment, names, reserved, stats
+from . import area, equipment, maps, names, reserved, stats
 from .act import notify
 from .area import (CHANCE_MAX, CHARGED_ITEM_TYPES, CONTAINER_ITEM_TYPE, CORPSE_NPC_ITEM_TYPE, DRINK_CON_ITEM_TYPE, FOOD_ITEM_TYPE,
                    FOUNTAIN_ITEM_TYPE, LIGHT_ITEM_TYPE, MONEY_ITEM_TYPE, SKILL_ITEM_TYPES, WEAPON_ITEM_TYPE, Apply, Attack, ContainerFlag,
@@ -311,7 +311,11 @@ def on_floor(obj):
 
 
 def extra_descriptions(obj):
-    """物品可以細看的東西 [(小寫的名字們, 描述)]：照區域檔現在寫的（存檔不帶，區域檔改了就跟著變）。屍體、區域檔沒有的是空的。"""
+    """物品可以細看的東西 [(小寫的名字們, 描述)]：照區域檔現在寫的（存檔不帶，區域檔改了就跟著變）。屍體、區域檔沒有的是空的。
+    書商賣的地圖是程式畫的（maps.py，使用者 2026-11-20 要的）：名字是物品自己的英文名字和「地圖」。"""
+    drawn = maps.text(obj)
+    if drawn is not None:
+        return [(obj.keywords + [maps.KEYWORD], drawn)]
     proto = protos.get(obj.vnum)
     return area.extra_descriptions(proto["extra_descriptions"]) if proto else []
 

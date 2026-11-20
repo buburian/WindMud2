@@ -75,11 +75,19 @@ def test_real_table():
     assert commands.find("q") is system.do_quit
 
 
-def test_quit_abbreviation_disconnects():
+def test_quit_disconnects():
     # 存檔在 server.handle() 的 finally（直接斷線也存），test_login.py 測
     ming = Player("小明", FakeWriter(), None)   # 用不到房間
-    assert commands.command(ming, "q") is False
+    assert commands.command(ming, "QUIT") is False
     assert ming.writer.data == "再見。\r\n".encode(ENCODING)
+
+
+@pytest.mark.parametrize("line", ["q", "qu", "qui", "Q"])
+def test_quit_must_be_spelled_out(line):
+    # 使用者 2026-11-20 要的：q 不小心按到（分頁看完了還按 q）不會離開，照 C 版 do_qui 提醒
+    ming = Player("小明", FakeWriter(), None)
+    assert commands.command(ming, line) is True
+    assert ming.writer.data.decode(ENCODING).startswith(commands.FULL_WORD["quit"] + "\r\n")
 
 
 def test_unknown_command():
