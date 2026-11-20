@@ -11,7 +11,7 @@ import re
 from collections import deque
 from pathlib import Path
 
-from . import paths, save, skills, stats, zones
+from . import announce, paths, save, skills, stats, zones
 from .characters import SEX_FEMALE, SEX_MALE, characters
 from .color import colorize
 from .commands.system import look
@@ -179,7 +179,8 @@ async def enter(conn, name, data):
     log.info(f"{name} 登入，目前 {len(online_players())} 人")
     # 等級夠、還不會的公會技能補學（加 Lv5 技能之前就 5 級以上的玩家，paths.catch_up），學會的接在歡迎後面
     learned = "".join(colorize(paths.LEARNED.replace("$t", s.name)) + "\n" for s in paths.catch_up(player))
-    conn.send(f"歡迎回來，{name}。\n" + learned + look(player) + "\n" + player.prompt())
+    notice = f"\n{announce.text}\n\n" if announce.text else ""    # 系統公告（announce.py）：前後空一行
+    conn.send(f"歡迎回來，{name}。\n" + learned + notice + look(player) + "\n" + player.prompt())
     return player
 
 

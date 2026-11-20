@@ -18,7 +18,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Discord 的 patch 通知
 
 使用者 2026-11-20 要的、選的流程：**每次 push 後 GitHub 測試過了，照 `mud.patchnote since` 寫 `patch/草稿.md`、貼給使用者看，他說「發」才跑 `send`**（不能自己發）。
-只寫玩家感受得到的（新指令、技能、區域、數值、修掉的錯），**imm 的指令不寫**（使用者選的），程式結構、測試、手冊同步也不寫。
+只寫玩家感受得到的（新指令、技能、區域、數值、修掉的錯），**imm 的指令不寫**（使用者選的），**系統相關的也不寫**（部署、重開伺服器的公告這類，使用者 2026-11-20 說的），程式結構、測試、手冊同步也不寫。
+只有不寫的修改就不用寫草稿、不用問；`since` 會一直列出它們，直到下一次發（發的時候紀錄記到當時的 HEAD）。
 webhook 網址在 `patch/discord-webhook`（`.gitignore` 排除，是密碼：不要印出來、不要讀進回覆）。紀錄 `patch/紀錄.md` 跟著下一次 commit 進 git。
 
 ## 待辦
@@ -186,6 +187,10 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
     `check_screen()` 不過就停止開機：連最後問名字那一行不超過 `SCREEN_HEIGHT` 24 行、每行不超過 `SCREEN_WIDTH` 79 格（中文兩格、顏色代碼不算）、Big5。
     `login()` 一開始送 `CLEAR`（清畫面）＋ 畫面，名字打錯重問不再送。檔案照寫（只拿掉最後一個換行），所以最後的空行會留著。
     沒呼叫 `load_screen()`（測試）就是空的，直接問名字。
+  - **系統公告**（`mud/announce.py`，使用者 2026-11-20 要的，規則在玩家角色手冊「系統公告」）：`screens/announce.txt`（`config.ANNOUNCE_FILE`），`__main__` 開機時 `announce.load()`，
+    `check()` 不過就停止開機（最多 `HEIGHT` 10 行、每行 `WIDTH` 75 格、Big5）；沒有檔案、只有空白是沒有公告（`announce.text` 是空的）。
+    `box()` 做亮黃外框（半形 `+ - |`，照最寬的一行）。舊角色登入（`login.enter()`）接在「歡迎回來」和房間之間、前後空一行；接手、建角不送。
+    指令 `read`（`commands/read.py`，`rea`，什麼姿勢都能用）：`TOPICS` 是能讀的東西（現在只有 announce，之後的 mail 加在這裡）。`tests/test_announcement.py`。
   - **登入和建立角色**（`login.py`，一問一答照順序寫）：名字 3～12 個英文字母（照 C 版，保留字不行），存成第一個字大寫。
     有存檔就問密碼（錯了就斷線）；沒有就建立：密碼兩次（至少 5 個字）、性別、種族、公會，選完就建好、`zones.enroll()`、站在 `zones.home()`、存檔。
     存檔前再看一次檔案在不在（兩條連線同時建同一個名字，後面的不能蓋掉前面的）。密碼雜湊用 `asyncio.to_thread` 做，不卡住別人。

@@ -115,6 +115,16 @@
     },
     {
       "category": "資訊",
+      "commands": ["read"],
+      "usage": "read <東西>",
+      "summary": "讀系統的訊息",
+      "text": [
+        "讀系統的訊息，東西的名字可以只打開頭。只打 read 會列出可以讀的。",
+        "read announce：看系統公告（登入時也會看到）。"
+      ]
+    },
+    {
+      "category": "資訊",
       "commands": ["help"],
       "usage": "help [分類或指令]",
       "summary": "看說明",
