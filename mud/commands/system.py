@@ -2,7 +2,7 @@
 import logging
 import re
 
-from .. import affects, light, meals, objects, paths, save, scripts, sets, socials, stats, summons, terrain, weather, zones
+from .. import affects, inventory, light, meals, objects, paths, save, scripts, sets, socials, stats, summons, terrain, weather, zones
 from ..act import TO_CHAR, TO_NOTVICT, TO_ROOM, TO_VICT, act, compose, notify
 from ..area import DIRECTIONS, PASSPROOF_LOCKS, REVERSE, AffectFlag, AreaType, MobTier, RoomFlag
 from ..characters import SEX_FEMALE, SEX_MALE, Position, arrive, characters, find_in_room, in_room
@@ -84,6 +84,7 @@ CONDITIONS = [
     (30, "身上都是鮮紅的血液。"), (20, "腸子流了出來。"), (10, "快要死了。"),
 ]
 DYING = "瀕臨死亡。"
+WEARING = "$E正使用著下列的物品："            # look 玩家：他穿的裝備（照 C 版 show_char_to_char_1）
 POSSIBLE_DROPS = "可能掉落："                  # look 生物：受傷狀態後面（設計文件 §4.10，只給名字）；太長換行，接在名字那裡對齊
 
 
@@ -95,7 +96,8 @@ def condition(c):
 
 
 def look_at(ch, victim):
-    """look 角色（照 C 版 show_char_to_char_1，使用者選的三樣）：對方和旁邊的人看到打量、描述、受傷狀態。
+    """look 角色（照 C 版 show_char_to_char_1，使用者選的三樣）：對方和旁邊的人看到打量、描述、受傷狀態；
+    玩家接著是他穿的裝備（使用者 2026-11-20 要的，「（綁定）」不寫：那只在看自己的 inventory、equipment）。
 
     看自己不送打量。沒寫描述（玩家都沒有）照 C 版說看不出來；生物的描述可以用顏色代碼（跟房間描述一樣，使用者定的）。
     沒有屬性的角色（測試直接建的）沒有受傷狀態那行。
@@ -110,6 +112,11 @@ def look_at(ch, victim):
         act("你看不出來$M有任何特殊的地方。", ch, victim, to=TO_CHAR)
     if getattr(victim, "panel", None):
         act("$N" + condition(victim), ch, victim, to=TO_CHAR)
+    worn = [(pos, victim.equipment[pos]) for pos, _name in inventory.SLOTS if pos in victim.equipment]
+    if worn and not isinstance(victim, Npc):    # 玩家穿的裝備（使用者 2026-11-20 要的，照 C 版）：空一行，部位跟 equipment 一樣、只列有穿的
+        ch.send("\n")
+        act(WEARING, ch, victim, to=TO_CHAR)
+        ch.send("".join(f" 【 {inventory.label(pos, obj)} 】 {objects.short(obj)}\n" for pos, obj in worn))
     drops = objects.possible_drops(victim) if isinstance(victim, Npc) else []
     if drops:                               # 可能掉落（設計文件 §4.10）：名字是區域作者寫的，照寫、不轉顏色代碼（跟物品名字一樣）
         indent = width(POSSIBLE_DROPS)

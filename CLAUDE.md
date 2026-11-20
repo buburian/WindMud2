@@ -368,7 +368,7 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
   **`look 名字`**（`look_at()`，照 C 版 show_char_to_char_1，使用者 2026-11-16 選的三樣，規則在玩家角色手冊「看別人」）：方向也對不上才用 `find_in_room()` 找角色
   （C 版最先找；名字只比開頭，放前面的話 `look d`、`look n` 會變成看人）。對方 `TO_VICT`、旁人 `TO_NOTVICT` 送「$n對…仔細地上下打量了一番。」（看自己不送）→
   描述（生物的 `description` 用 `block()`，可以用顏色代碼；沒寫是「你看不出來$M有任何特殊的地方。」）→ 有 `panel` 才有受傷狀態（`condition()`，`CONDITIONS` 11 句照 C 版）。
-  C 版的種族那行、裝備、偷看背包不做。生物最後多一行「可能掉落：…。」（`objects.possible_drops()`，設計文件 §4.10，2026-11-20）：
+  玩家接著列身上穿的裝備（使用者 2026-11-20 要的，照 C 版：空一行、「$E正使用著下列的物品：」、部位跟 equipment 一樣、只列有穿的，不寫（綁定））。C 版的種族那行、偷看背包不做。生物最後多一行「可能掉落：…。」（`objects.possible_drops()`，設計文件 §4.10，2026-11-20）：
   `drop_lines()`（跟 `roll_drops()` 共用：tiers 是 null 或有牠的種類）裡的物品名字，同一件只列一次、機率 0 和找不到的號碼不列，只給名字、照寫不轉顏色代碼；G 給的不列。
   **look 物品**（`look_object()`，照 C 版）：角色也找不到才找背包、身上、地上（照這個順序）的物品：先找物品的 `extra_descriptions`（`objects.extra_descriptions()` 照區域檔現在寫的，存檔不帶；
   名字要整個字一樣，例如 `look pit` 看奉獻箱），再用 `objects.find()` 找名字、送它的 `long`。房間、物品的 extra_descriptions 都用 `area.extra_descriptions()` 解析。

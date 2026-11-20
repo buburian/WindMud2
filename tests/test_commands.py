@@ -5,7 +5,7 @@ import pytest
 
 import mud.commands as commands
 from area_helpers import make_exit, make_room, write_area
-from mud import stats, zones
+from mud import objects, stats, zones
 from mud.area import MobTier
 from mud.characters import SEX_NEUTRAL, Position, characters
 from mud.commands import system
@@ -360,6 +360,18 @@ def test_look_at_a_player(world):
     assert ming.writer.data == "你看不出來他有任何特殊的地方。\r\n\r\n> ".encode(ENCODING)
     assert hua.writer.data == "\r\n小明對你仔細地上下打量了一番。\r\n\r\n> ".encode(ENCODING)
     assert bob.writer.data == b""
+
+
+def test_look_at_a_player_shows_what_he_wears(world):
+    # 使用者 2026-11-20 要的（照 C 版）：空一行、「他正使用著下列的物品：」、只列有穿的部位，順序照 equipment
+    ming, hua = world["小明"], world["阿華"]
+    ring, cloak = objects.Obj("戒指", "", 9, ["ring"]), objects.Obj("披風", "", 9, ["cloak"])
+    ring.bind = cloak.bind = None
+    hua.equipment = {"about": cloak, "finger_l": ring}
+    commands.command(ming, "look 阿華")
+    text = re.sub(r"\x1b\[[0-9;]*m", "", ming.writer.data.decode(ENCODING))
+    assert text == ("你看不出來他有任何特殊的地方。\r\n\r\n他正使用著下列的物品：\r\n"
+                    " 【 左手手指 】 戒指/ring\r\n 【 披在身上 】 披風/cloak\r\n\r\n> ")
 
 
 def test_look_at_yourself(world):
