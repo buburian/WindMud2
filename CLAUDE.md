@@ -617,6 +617,14 @@ cocot -t UTF-8 -p BIG5 telnet 127.0.0.1 4000    # 視窗 2：連線
       **飛翔術、水中呼吸術**（`fly`、`breathe`，使用者定的）：帶 `AffectFlag.FLYING`、`GILLS` 的增益，1800 秒，要用程式加、不扣消耗、沒有冷卻，`off_message` 照 C 版。
       **NPC 直接呼叫 `skills.use(npc, SKILLS["gift"], 玩家)` 就能放**（不用學、不用在打架）。`skills` 指令的增益技能：那一行寫持續多久，做什麼放下一行（`system.wrap()`，不超過 79 格）。
       冷卻用 tick 數：世界每個 tick `skills.tick()` 減 1，所以實際等 5～6 秒。
+      **打架中更順**（`skill_queue.py`，使用者 2026-11-21 定的，設計文件 §2.6，規則在玩家角色手冊「技能」）：
+      `commands/skills.py` 的 `do_use` 拆成 `cast()` ＝ `aim()`（找目標和目標的檢查，吃打的名字或排隊記下的角色）→ `ready()` → 開打 → `skills.use()`，排隊自動放也走 `cast()`。
+      `ready()` 冷卻中：沒在打架照舊說還要等；打架中有破綻（`Player.breach`）其他都過了就用掉、先說「你抓住了破綻！」；沒破綻就排起來（`Player.queued`：技能 id → 打了名字的那隻或 None，dict 照順序）。
+      `Fight.tick()` 每個 tick 在 `collecting()` 裡呼叫 `skill_queue.fight_tick()`：冷卻好的照順序放（暈、凍住、沉默時留著；打名字的那隻不在了靜靜拿掉），回合打完的那個 tick 每個玩家擲破綻（`skill_queue.rng`、`BREACH_CHANCE` 0.2），有排著的放最前面那個。
+      自動放時把 `ch.capture` 換成 `skill_queue.Into`：送給他的字照順序進那一場的訊息，所以一段一個 prompt、受傷狀態在最後。
+      戰鬥結束（沒在打、也沒人在打他）`skill_queue.settle()` 清掉排隊和破綻：`fight.stop_fighting()` 對停手的人和他原本的對手各看一次（坑：打死怪時先停玩家，那時怪還指著他，停怪時再看一次才清得掉）。
+      **有餽贈時技能只扣一半**：`skills.spend(ch, skill)`（`cost()` 的整數減半、四捨五入、最少 1，消耗 0 的照樣 0），`pay()`、`affordable()`、`skills` 的消耗那欄用它；`cost()` 不動（跟 balance.py 比對）。
+      坑：`tests/conftest.py` 把 `skill_queue.rng` 一律換成不會有破綻的（不然比對整段戰鬥訊息的測試 20% 會多一行），要測的自己換。`tests/test_skill_queue.py`（狀態要在 `in_fight()` 的 body 裡讀：`asyncio.run` 結束時戰鬥被收掉，排隊和破綻就清了）。
       `weapon_ok()`：有限用武器的技能，主手要拿那種武器（空手不行）；技能那一下用主手的武器。`offhand_ok()`：`Skill.offhand` 是 `"shield"`（副手放護具）、`"dual"`（雙持）。
       **選路**（`paths.py`，規則在玩家角色手冊「選職業」，使用者 2026-11-19 定的；**玩家看到的叫「職業」（大路）、「進階職業」（小路），不叫路**，使用者 2026-11-20 要的，程式裡照舊叫 path）：`PATHS`（8 條小路 ＋ 4 條大路，每級的技能、導師的房間、分館在哪），`Player.paths`（[大路, 小路]，存檔）；
       `choose()` 回傳結果代號，`refused()` 不看錢的檢查，`price()`／`change_cost()`（50 隻同級一般怪的金幣），`learn_upto()` 補齊，`level_up_lines()`（`combat.reward`、imm 的 advance：自動學；10 級以上沒選職業、40 級以上沒選進階職業，每升一級都提醒，降級不說），

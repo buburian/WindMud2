@@ -438,11 +438,12 @@ def test_cost_and_cooldown(world):
 
     first, again, waiting, ready = in_fight([(shabu, dog)], body)
     assert first.startswith("你使用重擊攻擊野狗，")
-    assert again.startswith("你還要等 6 秒才能再用重擊。")
-    assert waiting.startswith("你還要等 1 秒才能再用重擊。")
+    assert again.startswith("重擊還要等 6 秒，好了就放。")           # 打架中：排起來（skill_queue.py，test_skill_queue.py）
+    assert waiting.startswith("重擊還要等 1 秒，好了就放。")
     assert ready.startswith("你使用重擊攻擊野狗，")                 # 6 個 tick 後又能用
     assert shabu.mv == pytest.approx(mv - 2 * skills.cost(SMASH, 1))
     assert shabu.cooldowns == {"smash": 6}
+    assert shabu.queued == {}                                       # 自己打 use 放出去了：排著的拿掉
 
 
 @pytest.mark.parametrize("mv, ok", [(3.6, True), (3.5, True), (3.4, False)])

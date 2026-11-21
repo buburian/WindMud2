@@ -15,7 +15,7 @@ import heapq
 import itertools
 import logging
 
-from . import act, affects, behavior, combat, damage, meals, scripts, specials  # 坑：combat 會 import 回來，要用「模組.名字」，不能 from .combat import hit
+from . import act, affects, behavior, combat, damage, meals, scripts, skill_queue, specials  # 坑：combat 會 import 回來，要用「模組.名字」，不能 from .combat import hit
 from .act import notify
 from .characters import Position, characters
 from .clock import cancel, every
@@ -49,19 +49,22 @@ class Fight:
             end(self)
 
     def tick(self):
-        """一個 tick：每回合的第一個 tick 打一輪，其他 tick 停（打一輪、停一秒）；生物打架用的 special 到時間就放。
+        """一個 tick：每回合的第一個 tick 打一輪，其他 tick 停（打一輪、停一秒）；生物打架用的 special 到時間就放；
+        玩家排著的技能冷卻好了就放、回合打完擲破綻（skill_queue.py）。
         回傳 False 代表這場結束了。
         """
         self.ticks += 1
-        with self.collecting():             # 這一秒打的、腳本說的話（on_death、on_fight）、逃跑、special 合成一段
+        round_end = (self.ticks - 1) % ROUND_TICKS == 0
+        with self.collecting():             # 這一秒打的、腳本說的話（on_death、on_fight）、逃跑、special、排著的技能合成一段
             try:
-                if (self.ticks - 1) % ROUND_TICKS == 0:
+                if round_end:
                     self.round()
                     for ch in list(self.members):   # 腳本的 on_fight(target)：每回合打完以後，還在打的生物（出錯 scripts 自己接住）
                         if ch.fight is self and ch.fighting is not None and scripts.has(ch, "on_fight"):
                             scripts.fire_owner(ch, "on_fight", ch.fighting, ch.fighting)
                     behavior.wimpy(self)    # 回合結束：wimpy 的生物 HP 低於一半，可能逃跑
                 specials.fight(self)        # 打架用的 special：開打後每 SPECIAL_TICKS 一次（不管是不是出手的那一秒）
+                skill_queue.fight_tick(self, round_end)
             except Exception:
                 log.exception("戰鬥出錯，結束這一場")
                 return False
@@ -198,7 +201,12 @@ def start_fight(ch, victim):
 
 
 def stop_fighting(ch):
-    """ch 停手：移出那一場，姿勢回到站著。"""
+    """ch 停手：移出那一場，姿勢回到站著。
+
+    他和他原本的對手，誰的戰鬥結束了（沒在打、也沒人在打他）就清掉排著的技能、破綻（skill_queue.settle）。
+    坑：兩個都要看：打死怪時 stop_all 先停玩家，那時怪還指著他；接著停怪的時候再看一次玩家，才清得掉（怪走掉、逃跑也一樣）。
+    """
+    foe = ch.fighting
     if ch.fight is not None:
         if ch in ch.fight.members:
             ch.fight.members.remove(ch)
@@ -207,6 +215,9 @@ def stop_fighting(ch):
     ch.fight = ch.fighting = None
     if ch.position == Position.FIGHTING:
         ch.position = Position.STANDING
+    skill_queue.settle(ch)
+    if foe is not None:
+        skill_queue.settle(foe)
 
 
 def end(fight):

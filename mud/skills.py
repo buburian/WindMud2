@@ -244,6 +244,24 @@ def cost(skill, level):
     return max(1, stats.shown(stats.resource_standard(level, skill.guild, resource(skill)) * skill.cost))
 
 
+GIFT = "gift"                               # 餽贈的技能 id：身上有它，技能只扣一半（spend）
+GIFT_COST = 0.5
+
+
+def gifted(ch):
+    """ch 身上有沒有餽贈（看 Affect.source）。"""
+    return any(a.source == GIFT for a in getattr(ch, "affects", []))
+
+
+def spend(ch, skill):
+    """ch 用一次 skill 扣多少（pay、affordable、skills 的消耗那欄都用它）：cost()，身上有餽贈時是一半（設計文件 §2.6「打架中更順」，使用者 2026-11-21 定的）。
+
+    一半是拿整數的消耗再減半、四捨五入、最少 1（3 → 2、5 → 3；skills 顯示的就是扣的）；消耗 0 的照樣 0。
+    """
+    full = cost(skill, ch.level)
+    return max(1, stats.shown(full * GIFT_COST)) if full and gifted(ch) else full
+
+
 def display_range(ch, skill):
     """skills 顯示的傷害 (最低, 最高)：還沒被抗性擋、不含爆擊（必定爆擊的 sure 一定爆擊，所以乘上自己的爆擊倍率，balance.py 的 skill_display_range）。
 
@@ -355,7 +373,7 @@ def free(ch):
 
 def affordable(ch, skill):
     """夠不夠付（使用者選的）：現在的 MV／MP 四捨五入後（跟 prompt 顯示的一樣）≥ 消耗就可以。imm、沒有消耗的技能一律夠。"""
-    return free(ch) or resource(skill) is None or stats.shown(getattr(ch, resource(skill))) >= cost(skill, ch.level)
+    return free(ch) or resource(skill) is None or stats.shown(getattr(ch, resource(skill))) >= spend(ch, skill)
 
 
 def weapon_ok(ch, skill):
@@ -377,12 +395,12 @@ def offhand_ok(ch, skill):
 
 
 def pay(ch, skill):
-    """扣消耗、開始冷卻（imm 都不用）。沒有消耗的不扣、冷卻 0 的不設（所以生物也能用這種技能）。"""
+    """扣消耗（spend：有餽贈扣一半）、開始冷卻（imm 都不用）。沒有消耗的不扣、冷卻 0 的不設（所以生物也能用這種技能）。"""
     if free(ch):
         return
     pool = resource(skill)
     if pool is not None:
-        setattr(ch, pool, max(0.0, getattr(ch, pool) - cost(skill, ch.level)))    # 比的是四捨五入，扣完可能小於 0
+        setattr(ch, pool, max(0.0, getattr(ch, pool) - spend(ch, skill)))     # 比的是四捨五入，扣完可能小於 0
     if skill.cooldown:
         ch.cooldowns[skill.id] = skill.cooldown
 

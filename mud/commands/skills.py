@@ -4,7 +4,7 @@
 誰會哪個技能看 skills.known()（技能自己設計：一開始就會、要用程式加）。傷害、減益技能可以開打（使用者定的）；
 補血、增益技能放在自己或同房間的玩家身上（"self" 的只有自己），不開打；被動技能不用放。
 """
-from .. import affects, combos, fight, paths, skills, summons, temper
+from .. import affects, combos, fight, paths, skill_queue, skills, summons, temper
 from ..area import TWO_HANDED_KINDS, WEAPON_KIND_NAMES
 from ..characters import characters, find_in_room
 from ..config import AFFECT_PULSE_TICKS, TICK_SECONDS
@@ -15,7 +15,10 @@ from .system import wrap
 
 
 def do_use(ch, arg):
-    """use <技能> [名字]：技能可以縮寫（只找自己會的），名字照 find_in_room()（開頭、2.dog）。檢查都過了才開打、打出去。"""
+    """use <技能> [名字]：技能可以縮寫（只找自己會的），名字照 find_in_room()（開頭、2.dog）。檢查都過了才開打、打出去。
+
+    打架中技能還在冷卻：排起來、好了自動放，有破綻就馬上放（ready()、skill_queue.py，設計文件 §2.6「打架中更順」）。
+    """
     words = arg.split()
     if not words:
         ch.send("你想要用什麼技能？\n")
@@ -34,48 +37,24 @@ def do_use(ch, arg):
     if affects.controlled(ch, affects.MUTED):    # 暈、凍住、沉默：不能用技能（設計文件 §2.6）
         ch.send((system.HELD if affects.controlled(ch, affects.HELD) else SILENCED) + "\n")
         return
-    if skill.target in skills.GROUP_TARGETS:
-        group(ch, skill)
+    cast(ch, skill, words[1] if len(words) > 1 else None)
+
+
+def cast(ch, skill, who):
+    """對 who 放 skill：who 是打的名字、排著的技能記下的那隻（角色），或 None（沒打名字）。use 和排隊自動放（skill_queue.fire）都走這裡。
+
+    目標（aim）→ 冷卻、消耗、武器（ready：冷卻中可能排起來或用掉破綻）→ 開打（傷害、減益、控制、挑釁）→ 放出去，從排隊拿掉。
+    """
+    target = aim(ch, skill, who)
+    if target is None:
         return
-    if skill.kind == "summon":              # 召喚：不用打名字，不開打
-        if ready(ch, skill):
-            skills.use(ch, skill, ch)
+    chosen = None if who is None or skill.target in skills.GROUP_TARGETS or skill.kind == "summon" else target
+    if not ready(ch, skill, chosen):
         return
-    if skills.friendly(skill):              # 補血、增益：沒打名字是自己，只能放在玩家身上，不開打
-        target = find_in_room(ch, words[1]) if len(words) > 1 else ch
-        if target is None:
-            ch.send("這裡沒有這個人。\n")
-        elif skill.target == "self" and target is not ch:
-            ch.send(skills.SELF_ONLY + "\n")
-        elif skill.kind == "protect" and target is ch:
-            ch.send(NOT_YOURSELF + "\n")
-        elif isinstance(target, Npc):
-            ch.send(f"{skill.name}只能放在玩家身上。\n")
-        elif ready(ch, skill):
-            skills.use(ch, skill, target)
-        return
-    if len(words) > 1:
-        victim = find_in_room(ch, words[1])
-    elif ch.fighting is not None:
-        victim = ch.fighting
-        # 戰鬥中可以走路：對手走了要等下一回合才會停手，所以現在的對手也要看還在不在同一間房
-        if victim not in characters or victim.room is not ch.room:
-            victim = None
-    else:
-        ch.send("你想要攻擊誰？\n")
-        return
-    if victim is None:
-        ch.send("找不到你想攻擊的人。\n")
-        return
-    if not attackable(ch, victim):
-        return
-    if skill.opener and (ch.fighting is not None or victim.fighting is not None) and not combos.opener_ok(victim):
-        ch.send(OPENER.format(skill.name) + "\n")
-        return
-    if protected(ch, victim) or not ready(ch, skill):   # 安全區在扣消耗之前擋
-        return
-    engage(ch, victim)                      # 檢查都過了才開打：沒過就不會開打
-    skills.use(ch, skill, victim)
+    for victim in (target if skill.target == "group" else [target] if skill.target == "single" else []):
+        engage(ch, victim)                  # 檢查都過了才開打：沒過就不會開打
+    ch.queued.pop(skill.id, None)
+    skills.use(ch, skill, target)
 
 
 PASSIVE = "{}是被動技能，學會就一直有效，不用放。"
@@ -88,33 +67,81 @@ NOT_YOURSELF = "你不能保護自己。"
 NOBODY_ELSE = "這裡沒有別人可以保護。"
 
 
+def aim(ch, skill, who):
+    """skill 放在誰身上（還沒看冷卻、消耗）：找目標和目標的檢查，不行就送那句、回傳 None。
+    回傳一個角色；打一群、放在一群上的是名單。who 同 cast()。
+    """
+    if skill.target in skills.GROUP_TARGETS:
+        return group(ch, skill)
+    if skill.kind == "summon":              # 召喚：不用打名字，不開打
+        return ch
+    found = find_in_room(ch, who) if isinstance(who, str) else who
+    if skills.friendly(skill):              # 補血、增益：沒打名字是自己，只能放在玩家身上，不開打
+        target = ch if who is None else found
+        if target is None:
+            ch.send("這裡沒有這個人。\n")
+        elif skill.target == "self" and target is not ch:
+            ch.send(skills.SELF_ONLY + "\n")
+        elif skill.kind == "protect" and target is ch:
+            ch.send(NOT_YOURSELF + "\n")
+        elif isinstance(target, Npc):
+            ch.send(f"{skill.name}只能放在玩家身上。\n")
+        else:
+            return target
+        return None
+    if who is not None:
+        victim = found
+    elif ch.fighting is not None:
+        victim = ch.fighting
+        # 戰鬥中可以走路：對手走了要等下一回合才會停手，所以現在的對手也要看還在不在同一間房
+        if victim not in characters or victim.room is not ch.room:
+            victim = None
+    else:
+        ch.send("你想要攻擊誰？\n")
+        return None
+    if victim is None:
+        ch.send("找不到你想攻擊的人。\n")
+        return None
+    if not attackable(ch, victim):
+        return None
+    if skill.opener and (ch.fighting is not None or victim.fighting is not None) and not combos.opener_ok(victim):
+        ch.send(OPENER.format(skill.name) + "\n")
+        return None
+    if protected(ch, victim):               # 安全區在扣消耗之前擋
+        return None
+    return victim
+
+
 def group(ch, skill):
-    """打一群（房間裡看得到的生物全部）、放在一群自己人上（自己和同房間的玩家）：不用打名字，打了也不管。
-    打一群跟傷害技能一樣：安全區不能用、檢查都過了才開打，還沒在打架的也會開打（engage 每一隻）。
+    """打一群（房間裡看得到的生物全部）、放在一群自己人上（自己和同房間的玩家）的名單：不用打名字，打了也不管。
+    打一群跟傷害技能一樣：安全區不能用、檢查都過了才開打，還沒在打架的也會開打（cast 對每一隻 engage）。不行就送那句、回傳 None。
     """
     if skill.target == "allies":
         targets = skills.allies(ch)
         if skill.kind == "protect" and len(targets) == 1:     # 不倒之盾：只有自己
             ch.send(NOBODY_ELSE + "\n")
-        elif ready(ch, skill):
-            skills.use(ch, skill, targets)
-        return
+            return None
+        return targets
     victims = skills.enemies(ch)
     if not victims:
         ch.send(NO_ENEMIES + "\n")
-        return
-    if protected(ch, victims[0]) or not ready(ch, skill):
-        return
-    for victim in victims:
-        engage(ch, victim)
-    skills.use(ch, skill, victims)
+        return None
+    return None if protected(ch, victims[0]) else victims
 
 
-def ready(ch, skill):
-    """冷卻、MV／MP、武器、副手都過了才是 True；沒過就送那一句。"""
+def ready(ch, skill, chosen=None):
+    """冷卻、MV／MP、武器、副手都過了才是 True；沒過就送那一句。
+
+    冷卻中（設計文件 §2.6「打架中更順」）：沒在打架照舊說還要等；打架中有破綻，其他都過了就用掉破綻、照放（冷卻從這時重新算）；
+    打架中沒有破綻就排起來（skill_queue.add，chosen 是打了名字的那隻），好了自動放。
+    """
     wait = ch.cooldowns.get(skill.id)
-    if wait:
+    if wait and ch.fighting is None:
         ch.send(f"你還要等 {wait} 秒才能再用{skill.name}。\n")
+        return False
+    if wait and not ch.breach:
+        skill_queue.add(ch, skill, chosen)
+        ch.send(skill_queue.QUEUED.format(skill.name, wait) + "\n")
         return False
     if not skills.affordable(ch, skill):
         ch.send(f"你的 {skills.RESOURCE_NAMES[skills.resource(skill)]} 不夠。\n")
@@ -125,6 +152,9 @@ def ready(ch, skill):
     if not skills.offhand_ok(ch, skill):
         ch.send(skills.OFFHAND_NEEDS[skill.offhand].format(skill.name) + "\n")
         return False
+    if wait:                                # 抓住破綻：一次只多放一個
+        ch.breach = False
+        ch.send(skill_queue.TAKEN + "\n")
     return True
 
 
@@ -176,7 +206,7 @@ def known_lines(ch, known):
             spent = cooldown = ""
         else:
             pool = skills.resource(s)
-            spent = f"{skills.cost(s, ch.level)}" + (f" {skills.RESOURCE_NAMES[pool]}" if pool else "")    # 沒有資源的技能
+            spent = f"{skills.spend(ch, s)}" + (f" {skills.RESOURCE_NAMES[pool]}" if pool else "")    # 沒有資源的技能；有餽贈是一半
             cooldown = f"{s.cooldown} 秒"
             wait = ch.cooldowns.get(s.id)
             if wait:

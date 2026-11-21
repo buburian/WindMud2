@@ -32,6 +32,8 @@ class Player(Character):
         self.paths = []                      # 選了的路（paths.py）：[大路] 或 [大路, 小路]，存檔；舊存檔沒有是空的
         self.skills = []                     # 會的技能 id（學會的順序，存檔）：建立角色時是公會一開始就會的（skills.starter）
         self.cooldowns = {}                  # 技能 id（還有 flee 失敗的等待 "flee"）→ 還要等幾個 tick 才能再用（skills.tick() 數），不存檔
+        self.queued = {}                     # 打架中排著的技能（skill_queue.py）：技能 id → 打了名字的那隻（沒打名字是 None），照排的順序，不存檔
+        self.breach = False                  # 對手露出了破綻（skill_queue.py）：到下一回合打完以前，可以多放一個還在冷卻的技能，不存檔
         # 設定（config 指令，存檔）
         self.autoloot = False                # 打死生物後自動拾取屍體（使用者選的：預設關，照 C 版）
         self.temper_stones = 0               # 淬火石（temper.py，存檔）：像金幣，不是物品
